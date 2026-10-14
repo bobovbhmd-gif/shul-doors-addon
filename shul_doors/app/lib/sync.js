@@ -47,8 +47,10 @@ function modeName(v, legend) {
   if (typeof v === "number" || /^\d+$/.test(String(v))) { const l = legend && legend[Number(v)]; return l ? modeName(l, null) : String(v); }
   return MODES.find((x) => key(x) === key(v)) || MODE_ALIAS[key(v)] || String(v);
 }
-const normSpan = (x, legend) => ({ d: dayName(x.DayOfWeek), a: minutes(x.StartTime), b: minutes(x.StopTime), m: modeName(x.Mode ?? x.TimeSpanState, legend) });
-const norm = (s) => (s || []).map((x) => { const n = normSpan(x); return [n.d, n.a, n.b, n.m]; }).sort((p, q) => String(p).localeCompare(String(q)));
+// Real servers read back {DayOfWeek, DayOfWeekVal, StartMinFromMidnight, StopMinFromMidnight, TimeSpanState, TimeSpanStateVal}.
+const normSpan = (x, legend) => ({ d: dayName(x.DayOfWeek ?? x.DayOfWeekVal), a: minutes(x.StartTime ?? x.StartMinFromMidnight), b: minutes(x.StopTime ?? x.StopMinFromMidnight),
+  m: modeName(x.Mode ?? x.TimeSpanState ?? x.TimeSpanStateVal, legend) });
+const norm = (s) => (s || []).filter((x) => !x.DeletedOn).map((x) => { const n = normSpan(x); return [n.d, n.a, n.b, n.m]; }).sort((p, q) => String(p).localeCompare(String(q)));
 
 async function sync({ client, engine, state, store, now = Date.now(), mode = "practice", pilotDoors = [], horizonDays = 30, budget = 24, log = () => {} }) {
   const write = mode !== "practice";
@@ -233,7 +235,7 @@ async function compareDoors({ client, engine, ids, byOur, now, today }) {
       if (!sample) sample = { id: tzId, name: t.Name, tried: r.tried };
     }
     if (!sample && t) sample = { id: tzId, name: t.Name, spans: Array.isArray(t.TimeSpans) ? t.TimeSpans.slice(0, 3) : t.TimeSpans, legend };
-    const sp = t && Array.isArray(t.TimeSpans) ? t.TimeSpans.map((x) => normSpan(x, legend)).filter((x) => Number.isFinite(x.a) && Number.isFinite(x.b)) : null;
+    const sp = t && Array.isArray(t.TimeSpans) ? t.TimeSpans.filter((x) => !x.DeletedOn).map((x) => normSpan(x, legend)).filter((x) => Number.isFinite(x.a) && Number.isFinite(x.b)) : null;
     spansOf.set(tzId, sp); return sp;
   };
   const tomorrow = engine.addDays(today, 1), out = { checked: 0, differ: [], skipped: [] };
