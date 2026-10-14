@@ -152,11 +152,28 @@ async function tick() {
 
 // ---------- web ----------
 let saveTimer = null;
+// The weekly schedules the doors run today, in plain words, grouped by schedule.
+function currentLines(cur) {
+  if (!cur) return [];
+  const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const LBL = { Unlock: "Open", CardOrPin: "Card or PIN", Card: "Card only", Pin: "PIN only", CardAndPin: "Card and PIN", UnlockWithFirstCardIn: "First credential in", Lockdown: "Lockdown", DualCard: "Dual card" };
+  const t = (m) => { const h = Math.floor(m / 60) % 24, mi = m % 60; return `${h % 12 || 12}:${String(mi).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
+  const out = ["", "Current schedules in Protector.Net:"];
+  for (const g of Object.values(cur)) {
+    out.push(`  ${g.name} (${g.doors.join(", ")})`);
+    const byDay = DAYS.map((d) => g.spans.filter((s) => s.d === d).sort((a, b) => a.a - b.a).map((s) => `${t(s.a)} to ${t(s.b)} ${LBL[s.m] || s.m}`).join("; ") || "nothing set");
+    // days with the same plan are written once
+    const seen = new Map(); DAYS.forEach((d, i) => { const k = byDay[i]; seen.set(k, [...(seen.get(k) || []), d.slice(0, 3)]); });
+    for (const [plan, days] of seen) out.push(`    ${days.join(", ")}: ${plan}`);
+  }
+  return out;
+}
 function compareLines(c) {
   if (!c) return ["Rules compared with the doors: not yet"];
   if (c.error) return [`Rules compared with the doors: could not check (${c.error})`];
   const head = `Rules compared with the doors (rest of today and tomorrow): ${c.checked} doors checked, ${c.differ.length} differ${c.skipped.length ? `, ${c.skipped.length} could not be read` : ""}`;
   return [head, ...c.differ.map((d) => `  ${d.name}: ${d.minutes} minutes differ, first at ${d.first.date} ${d.first.at} (rules say ${d.first.rules}, the door is ${d.first.door})`),
+    ...currentLines(c.current),
     ...(c.sample ? ["", "How Protector.Net reports a schedule (for checking):", "  " + JSON.stringify(c.sample).slice(0, 900)] : [])];
 }
 function send(res, code, body, type = "application/json") {

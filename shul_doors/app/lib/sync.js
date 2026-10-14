@@ -247,6 +247,11 @@ async function compareDoors({ client, engine, ids, byOur, now, today }) {
     const mine = [...(byDoor.get(`#${live.Id}`) || []), ...(byDoor.get(`n:${live.Name}`) || [])];
     const sp = await getSpans(live.DoorTimeZoneId);
     if (!sp || !sp.length) { out.skipped.push(id); continue; }
+    // what each door runs today in Protector.Net, so it can be copied into rules
+    const tzName = (tzList.find((x) => Number(x.Id) === Number(live.DoorTimeZoneId)) || {}).Name || `schedule ${live.DoorTimeZoneId}`;
+    out.current = out.current || {};
+    if (!out.current[live.DoorTimeZoneId]) out.current[live.DoorTimeZoneId] = { name: tzName, doors: [], spans: sp };
+    out.current[live.DoorTimeZoneId].doors.push(id);
     out.checked++;
     let minutes = 0, first = null;
     for (const date of [today, tomorrow]) {
