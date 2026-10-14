@@ -2535,9 +2535,15 @@ function stateNow(door){
   if(ov){mode=ov.mode;by={ov}}
   else for(let k=0;k<=maxDays()&&!by;k++){const t=min+k*1440;const x=resolve(door,dayInfo(addDays(s,-k))).find(x=>x.a<=t&&t<x.b);if(x){mode=x.r.mode;by={x}}}
   if(!mode){mode=doorDef(door);by={def:true}}
-  // next change: nearest window start or end after now
+  // next change: the next moment the door's mode really changes (today or tomorrow),
+  // from the same day plan the doors run; a rule handing over to another rule with
+  // the same mode is not a change
   let next=null;
-  for(let k=-maxDays();k<=1;k++){resolve(door,dayInfo(addDays(s,k))).forEach(x=>{[[x.a,"starts",x],[x.b,"ends",x]].forEach(([m,what,w])=>{const t=m+k*1440;if(t>min&&(!next||t<next.t))next={t,what,w}})})}
+  { const segMode=g=>g.c.ov?g.c.ov.mode:g.c.r.mode;
+    const segs=[...daySegments(door,s),...daySegments(door,addDays(s,1)).map(g=>({...g,a:g.a+1440,b:g.b+1440}))];
+    const i=segs.findIndex(g=>g.a<=min&&min<g.b);
+    if(i>=0){const from=segMode(segs[i]);for(let j=i+1;j<segs.length;j++){const m=segMode(segs[j]);if(m!==from){next={t:segs[j].a,mode:m,from};break}}}
+  }
   const badges=[];
   for(let k=0;k<=maxDays();k++){const t=min+k*1440;resolve(door,dayInfo(addDays(s,-k)),"access").filter(x=>x.a<=t&&t<x.b).forEach(x=>badges.push(x.r.group))}
   return {mode,by,next,badges,sensor:EXAMPLE_SENSORS[door]||null};
@@ -2691,7 +2697,11 @@ function openDoor(id){DOOR_OPEN=id;DM_PICK=null;renderDoorSheet();openModal("mDo
 let SIMPLE=true;try{SIMPLE=localStorage.getItem("shulDoorSimple")!=="0"}catch(e){}
 function renderView(){document.body.classList.toggle("simple",SIMPLE);document.querySelectorAll(".viewseg button").forEach(b=>b.classList.toggle("on",(b.dataset.view==="simple")===SIMPLE))}
 function plainMode(m){return m==="Unlock"?"open":m==="Lockdown"?"in lockdown":m==="Card or Pin"?"locked (card or PIN)":"locked ("+m.toLowerCase()+")"}
-function nextVerb(door,next){const m=next.what==="starts"?next.w.r.mode:doorDef(door);return m==="Unlock"?"opens":m==="Lockdown"?"goes into lockdown":"locks"}
+const MODE_WORD={"Card or Pin":"card or PIN","Card":"card only","Pin":"PIN only","Card and Pin":"card and PIN","First Credential In":"first credential in"};
+function nextVerb(door,next){const m=next.mode,f=next.from;
+  if(m==="Unlock")return "opens";if(m==="Lockdown")return "goes into lockdown";
+  if(f==="Unlock")return `locks (${MODE_WORD[m]||m})`;if(f==="Lockdown")return `comes out of lockdown (${MODE_WORD[m]||m})`;
+  return `changes to ${MODE_WORD[m]||m}`}
 function whenWord(t){return t>=1440?`tomorrow at ${fmt(t-1440)}`:`at ${fmt(t)}`}
 function renderHero(){
   const ds=visDoors(), t=dayInfo(todayNY());
