@@ -1,0 +1,36 @@
+name: Shul Doors
+version: "0.1.1"
+slug: shul_doors
+description: Runs the shul's Protector.Net doors by zmanim, Jewish holidays, events and situations.
+url: https://github.com/bobovbhmd-gif/shul-doors-addon
+arch:
+  - amd64
+  - aarch64
+init: false
+startup: application
+boot: auto
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:door
+panel_title: Shul Doors
+panel_admin: true
+options:
+  mode: practice
+  protector_url: ""
+  protector_username: ""
+  protector_password: ""
+  partition: ""
+  pilot_doors: ""
+  sync_time: "00:30"
+  horizon_days: 30
+  budget: 24
+schema:
+  mode: list(practice|pilot|live|restore)
+  protector_url: str?
+  protector_username: str?
+  protector_password: password?
+  partition: str?
+  pilot_doors: str?
+  sync_time: match(^([01]\d|2[0-3]):[0-5]\d$)
+  horizon_days: int(7,90)
+  budget: int(4,30)
