@@ -1177,7 +1177,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
     <button type="button">Open the main doors 6 to 11 PM next Tuesday for the Cohen wedding</button>
     <button type="button">Give the plumber a code for the mikva tomorrow 9 to 5</button>
   </div>
-  <form id="askForm"><textarea id="askIn" placeholder="Ask about the door schedule, or tell it what to set up" aria-label="Message"></textarea><button class="btn pri" type="submit" id="askSend">Send</button></form>
+  <form id="askForm"><textarea id="askIn" placeholder="Ask about the door schedule, or tell it what to set up" aria-label="Message"></textarea><button class="btn" type="button" id="askMic" hidden aria-label="Speak instead of typing" title="Speak instead of typing">Speak</button><button class="btn pri" type="submit" id="askSend">Send</button></form>
 </section>
 
 <div class="shell" id="app">
@@ -3426,11 +3426,49 @@ async function boxSampler(){
   let turns=[], ctl=null, busy=false;
   const msgs=$("#askMsgs");
   const add=(cls,text)=>{const d=document.createElement("div");d.className="msg "+cls;d.textContent=text;msgs.append(d);msgs.scrollTop=msgs.scrollHeight;return d};
-  $("#askOpen").onclick=()=>{$("#askPanel").hidden=false;$("#askOpen").hidden=true;$("#askIn").focus();if(!msgs.children.length)add("sys","Ask about doors, schedules, rules, events, codes or zmanim for the schedule. This assistant only handles the door system. Changes are shown to you first and only saved when you press Save. To speak instead of typing, tap the microphone on your phone's keyboard, or press Windows key + H on a PC.")};
+  $("#askOpen").onclick=()=>{$("#askPanel").hidden=false;$("#askOpen").hidden=true;$("#askIn").focus();if(!msgs.children.length)add("sys","Ask about doors, schedules, rules, events, codes or zmanim for the schedule. This assistant only handles the door system. Changes are shown to you first and only saved when you press Save. "+($("#askMic").hidden?"To speak instead of typing, tap the microphone on your phone's keyboard, or press Windows key + H on a PC.":"To speak instead of typing, press Speak, talk, then press Stop. Your words appear in the box so you can check them before sending."))};
   $("#askClose").onclick=()=>{$("#askPanel").hidden=true;$("#askOpen").hidden=false};
   $("#askClear").onclick=()=>{ctl?.abort();turns=[];msgs.innerHTML="";$("#askSugg").hidden=false;add("sys","New chat.")};
   $("#askSugg").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;$("#askIn").value=b.textContent;$("#askForm").requestSubmit()});
   $("#askIn").addEventListener("keydown",ev=>{if(ev.key==="Enter"&&!ev.shiftKey){ev.preventDefault();$("#askForm").requestSubmit()}});
+
+  /* speak instead of typing: record here, Whisper on the box writes it down */
+  if(ON_BOX){
+    fetch("api/stt").then(r=>r.json()).then(j=>{if(j&&j.on)$("#askMic").hidden=false}).catch(()=>{});
+    let rec=null,sending=false;const mic=$("#askMic");
+    const help=(html)=>{const d=add("sys","");d.innerHTML=html;return d};
+    async function startRec(){
+      if(!window.isSecureContext||!navigator.mediaDevices){help(`Chrome only allows the microphone on a secure page. On this PC, once: open a new tab, go to <b>chrome://flags/#unsafely-treat-insecure-origin-as-secure</b>, type <b>${esc((window.top===window?location:document.referrer?new URL(document.referrer):location).origin)}</b> in the box, set it to <b>Enabled</b>, and click <b>Relaunch</b>.`);return}
+      let stream;
+      try{stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true}})}
+      catch(e){
+        if(window.top!==window){const d=help(`The microphone is blocked inside Home Assistant's frame. <button class="btn sm" type="button">Open Shul Doors in its own window</button> and press Speak there.`);d.querySelector("button").onclick=()=>window.open(location.href,"_blank")}
+        else help("The microphone was not allowed. Click the microphone icon at the right of Chrome's address bar, choose Allow, and try again.");
+        return}
+      const ctx=new (window.AudioContext||window.webkitAudioContext)(),src=ctx.createMediaStreamSource(stream),proc=ctx.createScriptProcessor(4096,1,1),parts=[];
+      proc.onaudioprocess=e=>parts.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+      src.connect(proc);proc.connect(ctx.destination);
+      rec={stream,ctx,proc,src,parts,rate:ctx.sampleRate,timer:setTimeout(()=>stopRec(),110000)};
+      mic.textContent="Stop";mic.classList.add("pri");
+    }
+    async function stopRec(){
+      if(!rec)return;const r=rec;rec=null;clearTimeout(r.timer);
+      r.src.disconnect();r.proc.disconnect();r.stream.getTracks().forEach(t=>t.stop());r.ctx.close();
+      mic.textContent="Speak";mic.classList.remove("pri");
+      const n=r.parts.reduce((a,p)=>a+p.length,0),all=new Float32Array(n);let o=0;r.parts.forEach(p=>{all.set(p,o);o+=p.length});
+      const m=Math.floor(n*16000/r.rate),pcm=new Int16Array(m);   // to 16 kHz, 16-bit, what Whisper expects
+      for(let i=0;i<m;i++){const x=i*r.rate/16000,j=Math.floor(x),f=x-j,v=(all[j]||0)*(1-f)+(all[j+1]||0)*f;pcm[i]=Math.max(-32768,Math.min(32767,Math.round(v*32767)))}
+      if(m<16000*0.4){add("sys","That was too short. Press Speak, talk, then press Stop.");return}
+      sending=true;mic.disabled=true;mic.textContent="Writing...";
+      try{const res=await fetch("api/stt",{method:"POST",headers:{"Content-Type":"application/octet-stream"},body:pcm.buffer});const j=await res.json().catch(()=>({}));
+        if(!res.ok)throw new Error(j.error||"The speech engine did not answer.");
+        const t=String(j.text||"").trim();if(!t){add("sys","I didn't catch any words. Try again a little closer to the microphone.");return}
+        const box=$("#askIn");box.value=(box.value.trim()?box.value.trim()+" ":"")+t;box.focus();box.setSelectionRange(box.value.length,box.value.length)}
+      catch(e){add("sys",e.message)}
+      finally{sending=false;mic.disabled=false;mic.textContent="Speak"}
+    }
+    mic.onclick=()=>{if(sending)return;rec?stopRec():startRec()};
+  }
 
   /* helpers the tools share */
   const visIds=()=>visDoors().map(d=>d.id);

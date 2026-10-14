@@ -153,6 +153,50 @@ async function tick() {
 // ---------- web ----------
 let saveTimer = null;
 
+// ---------- speech to text: the page records, Whisper on this box listens ----------
+// Talks the Wyoming protocol to Home Assistant's Whisper add-on (port 10300):
+// one JSON header line per event, then its data and payload bytes.
+const WHISPER_HOST = opts.whisper_host || "core-whisper", WHISPER_PORT = +opts.whisper_port || 10300;
+function wyEvent(type, data, payload) {
+  const d = data ? Buffer.from(JSON.stringify(data)) : null;
+  const h = { type, version: "1.5.0", ...(d ? { data_length: d.length } : {}), ...(payload ? { payload_length: payload.length } : {}) };
+  return Buffer.concat([Buffer.from(JSON.stringify(h) + "\n"), ...(d ? [d] : []), ...(payload ? [payload] : [])]);
+}
+function whisper(pcm) {   // pcm: 16 kHz, 16-bit, mono
+  return new Promise((resolve, reject) => {
+    const sock = require("net").connect(WHISPER_PORT, WHISPER_HOST);
+    let buf = Buffer.alloc(0), done = false;
+    const finish = (err, text) => { if (done) return; done = true; sock.destroy(); err ? reject(err) : resolve(text); };
+    sock.setTimeout(60000, () => finish(new Error("Whisper took too long")));
+    sock.on("error", (e) => finish(e));
+    sock.on("close", () => finish(new Error("Whisper closed the connection")));
+    sock.on("data", (c) => {
+      buf = Buffer.concat([buf, c]);
+      for (;;) {
+        const nl = buf.indexOf(10); if (nl < 0) return;
+        let h; try { h = JSON.parse(buf.slice(0, nl).toString("utf8")); } catch { return finish(new Error("bad answer from Whisper")); }
+        const dl = h.data_length || 0, pl = h.payload_length || 0;
+        if (buf.length < nl + 1 + dl + pl) return;
+        let data = h.data || {}; if (dl) { try { data = { ...data, ...JSON.parse(buf.slice(nl + 1, nl + 1 + dl).toString("utf8")) }; } catch { /* ignore */ } }
+        buf = buf.slice(nl + 1 + dl + pl);
+        if (h.type === "transcript") return finish(null, String(data.text || "").trim());
+        if (h.type === "error") return finish(new Error(data.text || "Whisper error"));
+      }
+    });
+    sock.on("connect", () => {
+      const fmt = { rate: 16000, width: 2, channels: 1 };
+      sock.write(wyEvent("transcribe", { language: "en" }));
+      sock.write(wyEvent("audio-start", fmt));
+      for (let i = 0; i < pcm.length; i += 32000) sock.write(wyEvent("audio-chunk", fmt, pcm.slice(i, i + 32000)));
+      sock.write(wyEvent("audio-stop", {}));
+    });
+  });
+}
+function whisperUp() {
+  return new Promise((resolve) => { const s = require("net").connect(WHISPER_PORT, WHISPER_HOST); const t = setTimeout(() => { s.destroy(); resolve(false); }, 1500);
+    s.on("connect", () => { clearTimeout(t); s.destroy(); resolve(true); }); s.on("error", () => { clearTimeout(t); resolve(false); }); });
+}
+
 // ---------- assistant: the page asks the box, the box asks Claude ----------
 // The API key stays here; the browser never sees it. Tools run in the page (they
 // only read the schedule or show proposals the person must Save), so this just
@@ -237,6 +281,18 @@ const server = http.createServer((req, res) => {
       ...compareLines(r.compare), "",
       `${opts.mode === "practice" ? "Would do" : "Did"} (${(r.actions || []).length}):`, ...(r.actions || []).map((x) => "  " + x), "", "Special days loaded through:", ...Object.entries(r.loadedThrough || {}).map(([d, t]) => `  ${d}: ${t}`)];
     return send(res, 200, lines.join("\n"), "text/plain; charset=utf-8");
+  }
+  if (req.method === "GET" && p === "/api/stt") { whisperUp().then((on) => send(res, 200, { on })); return; }
+  if (req.method === "POST" && p === "/api/stt") {
+    const chunks = []; let size = 0;
+    req.on("data", (c) => { size += c.length; if (size <= 4e6) chunks.push(c); });
+    req.on("end", async () => {
+      if (size > 4e6) return send(res, 413, { error: "Recording too long. Keep it under two minutes." });
+      if (size < 3200) return send(res, 400, { error: "Nothing was recorded." });
+      try { send(res, 200, { text: await whisper(Buffer.concat(chunks)) }); }
+      catch (e) { log("warn", "speech: " + e.message); send(res, 502, { error: "The speech engine (Whisper) did not answer. Check that it is installed and running in Home Assistant." }); }
+    });
+    return;
   }
   if (req.method === "GET" && p === "/api/ai") return send(res, 200, { on: !!opts.anthropic_api_key, model: AI_MODEL });
   if (req.method === "POST" && p === "/api/ai") {
