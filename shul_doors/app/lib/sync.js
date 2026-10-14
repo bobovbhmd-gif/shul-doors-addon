@@ -26,7 +26,8 @@ const sameSpans = (a, b) => JSON.stringify(norm(a)) === JSON.stringify(norm(b));
 // mode as a display name or a number), so everything is brought to one form.
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MODES = ["Lockdown", "Card", "Pin", "CardOrPin", "CardAndPin", "Unlock", "UnlockWithFirstCardIn", "DualCard"];
-const MODE_ALIAS = { firstcredentialin: "UnlockWithFirstCardIn", firstcardin: "UnlockWithFirstCardIn", dualcredential: "DualCard", open: "Unlock", unlocked: "Unlock", locked: "Lockdown" };
+const MODE_ALIAS = { firstcredentialin: "UnlockWithFirstCardIn", firstcardin: "UnlockWithFirstCardIn", dualcredential: "DualCard", open: "Unlock", unlocked: "Unlock", locked: "Lockdown",
+  cardonly: "Card", pinonly: "Pin" };
 const key = (v) => String(v).toLowerCase().replace(/[^a-z]/g, "");
 function dayName(v) {
   if (typeof v === "number" || /^\d+$/.test(String(v))) return DAYS[Number(v) % 7];
@@ -226,7 +227,11 @@ async function compareDoors({ client, engine, ids, byOur, now, today }) {
   const getSpans = async (tzId) => {
     if (spansOf.has(tzId)) return spansOf.get(tzId);
     let t = tzList.find((x) => Number(x.Id) === Number(tzId));
-    if (!t || !Array.isArray(t.TimeSpans)) { try { t = await client.timeZone(tzId); } catch { t = null; } }
+    if (!t || !Array.isArray(t.TimeSpans) || !t.TimeSpans.length) {   // the list came without times: ask for this one
+      const r = await client.timeSpans(tzId);
+      t = { ...(t || {}), TimeSpans: r.spans };
+      if (!sample) sample = { id: tzId, name: t.Name, tried: r.tried };
+    }
     if (!sample && t) sample = { id: tzId, name: t.Name, spans: Array.isArray(t.TimeSpans) ? t.TimeSpans.slice(0, 3) : t.TimeSpans, legend };
     const sp = t && Array.isArray(t.TimeSpans) ? t.TimeSpans.map((x) => normSpan(x, legend)).filter((x) => Number.isFinite(x.a) && Number.isFinite(x.b)) : null;
     spansOf.set(tzId, sp); return sp;

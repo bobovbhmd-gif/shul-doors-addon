@@ -2920,6 +2920,7 @@ function boxHealth(){
     {k:"Last check",v:err?`${when}, ${err} problem${err>1?"s":""}`:when,st:!r.at?"na":err?"bad":"ok"},
     ...(b.problem?[{k:"Rules file",v:b.problem,st:"bad"}]:[]),
     ...(lt?[{k:"Special days loaded through",v:longDate(lt),st:"ok"}]:[]),
+    ...(r.compare&&r.compare.skipped&&r.compare.skipped.length?[{k:"Reading door schedules",v:`${r.compare.skipped.length} door${r.compare.skipped.length>1?"s":""} could not be read`,st:"warn"}]:[]),
     {k:"Power, UPS, panels online",v:"Not connected yet",st:"na"}];
 }
 function health(){
@@ -3568,7 +3569,7 @@ if(ON_BOX){
       const r=j.last||{};const when=!r.at?"not yet":nyDate(r.at)===todayNY()?new Date(r.at).toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"}):whenText(r.at);
       const err=(r.errors||[]).length, warn=(r.warnings||[]).length;
       b.className="sdbanner "+(err?"bad":j.mode==="live"?"ok":"info");
-      b.innerHTML=`<b>${esc(MODE_TXT[j.mode]||j.mode)}</b><span>Checked ${esc(when)} · ${r.actions?r.actions.length:0} ${j.mode==="practice"?"changes it would make":"changes made"}${err?`, ${err} problem${err>1?"s":""}`:""}${warn?`, ${warn} note${warn>1?"s":""}`:""}${r.compare&&r.compare.differ?` · ${r.compare.differ.length?`rules and doors differ on ${r.compare.differ.length} door${r.compare.differ.length>1?"s":""}`:"rules and doors match"}`:""}.</span>${(r.warnings||[]).some(x=>/login not set/i.test(x))?`<span><b>Next step:</b> enter the Protector.Net login in the add-on's Configuration tab (Settings, Apps, Shul Doors, Configuration).</span>`:""}<a href="api/report" target="_blank">See details</a>`;
+      b.innerHTML=`<b>${esc(MODE_TXT[j.mode]||j.mode)}</b><span>Checked ${esc(when)} · ${r.actions?r.actions.length:0} ${j.mode==="practice"?"changes it would make":"changes made"}${err?`, ${err} problem${err>1?"s":""}`:""}${warn?`, ${warn} note${warn>1?"s":""}`:""}${r.compare&&r.compare.differ?` · ${r.compare.differ.length?`rules and doors differ on ${r.compare.differ.length} door${r.compare.differ.length>1?"s":""}`:r.compare.checked?`rules and doors match on ${r.compare.checked} door${r.compare.checked>1?"s":""}`:"could not read the doors' schedules yet"}${r.compare.checked&&r.compare.skipped&&r.compare.skipped.length?`, ${r.compare.skipped.length} could not be read`:""}`:""}.</span>${(r.warnings||[]).some(x=>/login not set/i.test(x))?`<span><b>Next step:</b> enter the Protector.Net login in the add-on's Configuration tab (Settings, Apps, Shul Doors, Configuration).</span>`:""}<a href="api/report" target="_blank">See details</a>`;
       b.hidden=false;BOX_ST=j;renderHealth();renderHero()}catch(e){}
   }
   // check often until the first run is done, then once a minute

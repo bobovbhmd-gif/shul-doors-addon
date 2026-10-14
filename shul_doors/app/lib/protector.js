@@ -78,6 +78,18 @@ function makeClient({ baseUrl, username, password, partitionId = null, log = () 
       return Number(id);
     },
     async timeZone(tzId) { const d = await call("GET", `/api/DoorTimeZones/${tzId}`); return (d && d.Result) || d; },
+    // The list may come without the times. Ask for one schedule's times, trying the
+    // likely addresses; what each answered is kept so the report can show it.
+    async timeSpans(tzId) {
+      const tried = [];
+      const pick = (d) => { if (!d) return null; if (Array.isArray(d)) return d; const r = d.Result || d;
+        if (Array.isArray(r.TimeSpans)) return r.TimeSpans; if (Array.isArray(r.Results)) return r.Results; if (Array.isArray(r)) return r; return null; };
+      for (const p of [`/api/DoorTimeZones/${tzId}/TimeSpans`, `/api/DoorTimeZones/${tzId}`]) {
+        try { const d = await call("GET", p); const sp = pick(d); tried.push({ p, ok: true, got: JSON.stringify(d).slice(0, 300) }); if (sp && sp.length) return { spans: sp, tried }; }
+        catch (e) { tried.push({ p, ok: false, got: String(e.message).slice(0, 150) }); }
+      }
+      return { spans: null, tried };
+    },
     async setTimeSpans(tzId, spans) { return call("PUT", `/api/DoorTimeZones/${tzId}/TimeSpans`, { json: { Id: Number(tzId), TimeSpans: spans } }); },
     async deleteTimeZone(tzId) { return call("DELETE", `/api/DoorTimeZones/${tzId}`); },
     async otrs() { return pages("/api/OneTimeRunTimeZones/Doors", { PerPage: 100 }); },
