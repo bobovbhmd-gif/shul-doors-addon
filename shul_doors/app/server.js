@@ -152,6 +152,34 @@ async function tick() {
 
 // ---------- web ----------
 let saveTimer = null;
+
+// ---------- assistant: the page asks the box, the box asks Claude ----------
+// The API key stays here; the browser never sees it. Tools run in the page (they
+// only read the schedule or show proposals the person must Save), so this just
+// relays one Messages API call at a time, with a spending guard.
+const AI_URL = process.env.SD_AI_URL || "https://api.anthropic.com/v1/messages";
+const AI_MODEL = opts.ai_model || "claude-sonnet-5-5";
+const aiCalls = [];   // times of recent calls, for the hourly cap
+const AI_PER_HOUR = 120;
+function aiAsk(body) {
+  return new Promise((resolve) => {
+    const now = Date.now(); while (aiCalls.length && aiCalls[0] < now - 3600e3) aiCalls.shift();
+    if (aiCalls.length >= AI_PER_HOUR) return resolve({ status: 429, body: { code: "rate_limited" } });
+    aiCalls.push(now);
+    const payload = JSON.stringify({ model: AI_MODEL, max_tokens: 2000, system: body.system, messages: body.messages, ...(body.tools && body.tools.length ? { tools: body.tools } : {}) });
+    const u = new URL(AI_URL), lib = u.protocol === "https:" ? require("https") : http;
+    const req = lib.request(u, { method: "POST", timeout: 90000, headers: { "content-type": "application/json", "x-api-key": opts.anthropic_api_key, "anthropic-version": "2023-06-01", "content-length": Buffer.byteLength(payload) } }, (r) => {
+      const chunks = []; r.on("data", (c) => chunks.push(c)); r.on("end", () => {
+        let j = null; try { j = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { /* not json */ }
+        if (r.statusCode >= 400) log("warn", `assistant: Claude answered ${r.statusCode} ${j && j.error ? j.error.type : ""}`);
+        resolve({ status: r.statusCode < 400 ? 200 : r.statusCode === 429 ? 429 : 502, body: r.statusCode < 400 ? j : { code: r.statusCode === 401 ? "bad_key" : r.statusCode === 429 ? "rate_limited" : "error" } });
+      });
+    });
+    req.on("timeout", () => req.destroy(new Error("timeout")));
+    req.on("error", (e) => { log("warn", "assistant: " + e.message); resolve({ status: 502, body: { code: "unreachable" } }); });
+    req.end(payload);
+  });
+}
 // The weekly schedules the doors run today, in plain words, grouped by schedule.
 function currentLines(cur) {
   if (!cur) return [];
@@ -209,6 +237,19 @@ const server = http.createServer((req, res) => {
       ...compareLines(r.compare), "",
       `${opts.mode === "practice" ? "Would do" : "Did"} (${(r.actions || []).length}):`, ...(r.actions || []).map((x) => "  " + x), "", "Special days loaded through:", ...Object.entries(r.loadedThrough || {}).map(([d, t]) => `  ${d}: ${t}`)];
     return send(res, 200, lines.join("\n"), "text/plain; charset=utf-8");
+  }
+  if (req.method === "GET" && p === "/api/ai") return send(res, 200, { on: !!opts.anthropic_api_key, model: AI_MODEL });
+  if (req.method === "POST" && p === "/api/ai") {
+    if (!opts.anthropic_api_key) return send(res, 503, { code: "not_declared" });
+    const chunks = []; let size = 0;
+    req.on("data", (c) => { size += c.length; if (size < 600000) chunks.push(c); });
+    req.on("end", async () => {
+      if (size >= 600000) return send(res, 413, { code: "too_long" });
+      let body; try { body = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { return send(res, 400, { code: "error" }); }
+      if (!Array.isArray(body.messages) || !body.messages.length) return send(res, 400, { code: "error" });
+      const r = await aiAsk(body); send(res, r.status, r.body);
+    });
+    return;
   }
   if (req.method === "POST" && p === "/api/sync") { runSync("by hand").then((r) => send(res, 200, r)); return; }
   if (req.method === "PUT" && p === "/api/state") {

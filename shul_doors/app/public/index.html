@@ -3383,9 +3383,42 @@ $("#impGo").onclick=()=>{if(!IMP)return;let added=0;
   commit(`Imported ${n} doors from a spreadsheet (${added} new)`)};
 
 /* ---------- assistant: Claude answers from the schedule and proposes changes for confirmation ---------- */
+// On the shul's box: the box holds the API key and passes each call to Claude.
+// Same tools as in the preview; they run here in the page, and anything that
+// changes the doors is still only a proposal until the person presses Save.
+async function boxSampler(){
+  let st=null;try{st=await (await fetch("api/ai")).json()}catch(e){}
+  if(!st||!st.on) return null;
+  const f=async(messages,{signal,tools,onText}={})=>{
+    let sys="",msgs=messages.map(m=>({role:m.role,content:m.content}));
+    if(msgs.length>1&&msgs[0].role==="user"&&msgs[1].role==="user"){sys=msgs[0].content;msgs.shift()}   // the instructions go in as the system prompt
+    const apiTools=(tools||[]).map(t=>({name:t.name,description:t.description,input_schema:t.inputSchema||{type:"object",properties:{}}}));
+    for(let i=0;i<10;i++){
+      let r,j;
+      try{r=await fetch("api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system:sys,messages:msgs,tools:apiTools}),signal});j=await r.json().catch(()=>({}))}
+      catch(e){const x=new Error("stopped");x.code=e&&e.name==="AbortError"?"cancelled":"box_unreachable";throw x}
+      if(!r.ok){const x=new Error(j.code||"error");x.code=j.code==="not_declared"||j.code==="rate_limited"?j.code:"box_"+(j.code||"error");throw x}
+      const text=(j.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n").trim();
+      if(text&&onText)onText({text});
+      if(j.stop_reason!=="tool_use") return {text};
+      msgs.push({role:"assistant",content:j.content});
+      const results=[];
+      for(const b of j.content.filter(b=>b.type==="tool_use")){
+        const t=(tools||[]).find(t=>t.name===b.name);
+        try{if(!t)throw new Error("Unknown tool "+b.name);const out=await t.execute(b.input||{},{});results.push({type:"tool_result",tool_use_id:b.id,content:JSON.stringify(out===undefined?null:out)})}
+        catch(e){results.push({type:"tool_result",tool_use_id:b.id,is_error:true,content:String((e&&e.message)||e)})}
+      }
+      msgs.push({role:"user",content:results});
+    }
+    return {text:"I couldn't finish that one. Try asking it a simpler way."};
+  };
+  f.limits=async()=>({tools:true});
+  return f;
+}
 (async()=>{
   let sample=null;
   try{sample=await claude.use("sample")}catch(e){}
+  if(!sample&&ON_BOX) sample=await boxSampler();
   if(!sample) return;
   const lim=await sample.limits().catch(()=>null);
   const hasTools=!!(lim&&lim.tools);
@@ -3393,7 +3426,7 @@ $("#impGo").onclick=()=>{if(!IMP)return;let added=0;
   let turns=[], ctl=null, busy=false;
   const msgs=$("#askMsgs");
   const add=(cls,text)=>{const d=document.createElement("div");d.className="msg "+cls;d.textContent=text;msgs.append(d);msgs.scrollTop=msgs.scrollHeight;return d};
-  $("#askOpen").onclick=()=>{$("#askPanel").hidden=false;$("#askOpen").hidden=true;$("#askIn").focus();if(!msgs.children.length)add("sys","Ask about doors, schedules, rules, events, codes or zmanim for the schedule. This assistant only handles the door system. Changes are shown to you first and only saved when you press Save. To speak instead of typing, tap the microphone on your keyboard.")};
+  $("#askOpen").onclick=()=>{$("#askPanel").hidden=false;$("#askOpen").hidden=true;$("#askIn").focus();if(!msgs.children.length)add("sys","Ask about doors, schedules, rules, events, codes or zmanim for the schedule. This assistant only handles the door system. Changes are shown to you first and only saved when you press Save. To speak instead of typing, tap the microphone on your phone's keyboard, or press Windows key + H on a PC.")};
   $("#askClose").onclick=()=>{$("#askPanel").hidden=true;$("#askOpen").hidden=false};
   $("#askClear").onclick=()=>{ctl?.abort();turns=[];msgs.innerHTML="";$("#askSugg").hidden=false;add("sys","New chat.")};
   $("#askSugg").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;$("#askIn").value=b.textContent;$("#askForm").requestSubmit()});
@@ -3543,7 +3576,7 @@ Use the tools to look things up rather than guessing. To change anything, call a
       out.textContent=text;turns.push({role:"assistant",content:text});
     }catch(e){
       const keep=e&&e.text;out.textContent=keep||"";
-      const why={cancelled:"Stopped.",not_granted:"The assistant needs your permission to use Claude. Reopen the page to be asked again.",rate_limited:"Too many questions right now. Try again in a minute.",session_expired:"Please sign in to Claude again.",refused:"I can't help with that one."}[e&&e.code]||"Something went wrong. Try again.";
+      const why={box_bad_key:"The Claude key in the add-on settings was not accepted. Check it in Settings, Apps, Shul Doors, Configuration.",box_unreachable:"The box couldn't reach Claude. Check the internet connection and try again.",box_too_long:"That chat got too long. Press New chat and ask again.",cancelled:"Stopped.",not_granted:"The assistant needs your permission to use Claude. Reopen the page to be asked again.",rate_limited:"Too many questions right now. Try again in a minute.",session_expired:"Please sign in to Claude again.",refused:"I can't help with that one."}[e&&e.code]||"Something went wrong. Try again.";
       if(!keep)out.remove();add("sys",why);
       if(e&&["not_granted","sampling_disabled","not_declared","capability_disabled"].includes(e.code)){$("#askOpen").hidden=true;$("#askPanel").hidden=true;$("#qaAsk").hidden=true}
     }finally{busy=false;$("#askSend").textContent="Send";msgs.scrollTop=msgs.scrollHeight}

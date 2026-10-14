@@ -1,5 +1,5 @@
 name: Shul Doors
-version: "0.1.4"
+version: "0.1.5"
 slug: shul_doors
 description: Runs the shul's Protector.Net doors by zmanim, Jewish holidays, events and situations.
 url: https://github.com/bobovbhmd-gif/shul-doors-addon
@@ -24,6 +24,8 @@ options:
   sync_time: "00:30"
   horizon_days: 30
   budget: 24
+  anthropic_api_key: ""
+  ai_model: "claude-sonnet-5-5"
 schema:
   mode: list(practice|pilot|live|restore)
   protector_url: str?
@@ -34,3 +36,5 @@ schema:
   sync_time: match(^([01]\d|2[0-3]):[0-5]\d$)
   horizon_days: int(7,90)
   budget: int(4,30)
+  anthropic_api_key: password?
+  ai_model: str?
