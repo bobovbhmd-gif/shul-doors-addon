@@ -58,20 +58,20 @@ const SAMPLE={
   log:[{t:Date.UTC(2026,9,12,3,10),u:"Hershy",text:"Example entry: added rule \"Wedding\"",push:"sent",sentAt:Date.UTC(2026,9,12,3,10,22)},{t:Date.UTC(2026,9,12,3,5),u:"Gabbai",text:"Example entry: added event \"Weiss sheva brachos\"",push:"sent",sentAt:Date.UTC(2026,9,12,3,5,19)}],
   rules:[
     R({id:1,name:"Weekday Shacharis",doors:["D301"],stop:false,inc:{wd:W5},exc:{fest:["yt_any","tisha_bav"]},start:{a:"clock",t:"05:45",o:0},end:{a:"clock",t:"09:30",o:0},mode:"Unlock"}),
-    R({id:2,name:"Weekday Mincha / Maariv",note:"Mincha is 30 min before shkiah; doors close after the last Maariv.",doors:["g:g_shabbos_open"],inc:{wd:W5},start:{a:"sunset",o:-30},end:{a:"clock",t:"22:30",o:0},mode:"Unlock"}),
+    R({id:2,name:"Weekday Mincha / Maariv",note:"Mincha is 30 min before shkiah; doors close after the last Maariv.",doors:["g:g_shabbos_open"],inc:{wd:W5},start:{a:"sunset",o:-30},end:{a:"clock",t:"22:30",o:0},mode:"Unlock",yields:[{"id":6,"doors":[]},{"id":7,"doors":[]},{"id":10,"doors":[]},{"id":8,"doors":[]},{"id":3,"doors":["D301"]}]}),
     R({id:3,name:"Rabbi away, weeknights",doors:["D301"],rabbi:"away",inc:{wd:W5},start:{a:"sunset",o:-20},end:{a:"clock",t:"21:30",o:0},mode:"Unlock"}),
-    R({id:4,name:"Erev Shabbos",doors:["g:g_shabbos_open"],inc:{wd:[5]},start:{a:"candles",o:-60},end:{a:"clock",t:"23:30",o:0},mode:"Unlock"}),
-    R({id:5,name:"Shabbos day",doors:["g:g_shabbos_open"],inc:{wd:[6]},start:{a:"clock",t:"07:00",o:0},end:{a:"havdalah",o:30},mode:"Unlock"}),
+    R({id:4,name:"Erev Shabbos",doors:["g:g_shabbos_open"],inc:{wd:[5]},start:{a:"candles",o:-60},end:{a:"clock",t:"23:30",o:0},mode:"Unlock",yields:[{"id":7,"doors":[]},{"id":6,"doors":[]}]}),
+    R({id:5,name:"Shabbos day",doors:["g:g_shabbos_open"],inc:{wd:[6]},start:{a:"clock",t:"07:00",o:0},end:{a:"havdalah",o:30},mode:"Unlock",yields:[{"id":7,"doors":[]}]}),
     R({id:6,name:"Erev yom tov",doors:["g:g_shabbos_open"],inc:{fest:["erev_yt_any"]},start:{a:"candles",o:-60},end:{a:"clock",t:"23:59",o:0},mode:"Unlock"}),
     R({id:17,name:"Rosh Hashana, ezras nashim open through both days",doors:["D204"],inc:{fest:["erev_rh"]},start:{a:"candles",o:-60},end:{a:"havdalah",o:15,days:2},mode:"Unlock"}),
-    R({id:7,name:"Yom tov",doors:["g:g_shabbos_open"],inc:{fest:["yt_any"]},start:{a:"clock",t:"07:00",o:0},end:{a:"clock",t:"23:59",o:0},mode:"Unlock"}),
+    R({id:7,name:"Yom tov",doors:["g:g_shabbos_open"],inc:{fest:["yt_any"]},start:{a:"clock",t:"07:00",o:0},end:{a:"clock",t:"23:59",o:0},mode:"Unlock",yields:[{"id":8,"doors":[]}]}),
     R({id:8,name:"First day Succos, early (not on Shabbos)",doors:["g:g_shabbos_open"],inc:{fest:["succos1"]},exc:{wd:[6]},start:{a:"alos",o:0},end:{a:"clock",t:"23:59",o:0},mode:"Unlock"}),
     R({id:9,name:"Shovavim Thursdays",doors:["D301"],stop:false,inc:{fest:["shovavim"]},exc:{wd:[0,1,2,3,5,6]},start:{a:"clock",t:"04:30",o:0},end:{a:"clock",t:"05:45",o:0},mode:"Unlock"}),
     R({id:10,name:"Rosh Chodesh Av seudah",doors:["g:g_shabbos_open"],stop:false,inc:{fest:["hd:h1"]},start:{a:"plag",o:0},end:{a:"clock",t:"23:59",o:0},mode:"Unlock"}),
-    R({id:11,name:"Late Maariv, Tammuz to Av",doors:["D301"],stop:false,inc:{hr:[{fm:4,fd:1,tm:5,td:30}]},exc:{wd:[5,6],fest:["tisha_bav"]},start:{a:"tzeis",o:0},end:{a:"clock",t:"23:30",o:0},mode:"Unlock"}),
+    R({id:11,name:"Late Maariv, Tammuz to Av",doors:["D301"],stop:false,inc:{hr:[{fm:4,fd:1,tm:5,td:30}]},exc:{wd:[5,6],fest:["tisha_bav"]},start:{a:"clock",t:"22:30",o:0},end:{a:"clock",t:"23:30",o:0},mode:"Unlock",yields:[{"id":10,"doors":[]}]}),
     R({id:12,name:"Wedding",doors:["g:g_shabbos_open"],stop:false,inc:{fest:["type:Wedding"]},start:{a:"clock",t:"17:00",o:0},end:{a:"clock",t:"01:00",o:0},mode:"Unlock"}),
     R({id:13,name:"Sheva brachos",doors:["D204"],stop:false,inc:{fest:["type:Sheva brachos"]},exc:{wd:[5,6]},start:{a:"clock",t:"19:00",o:0},end:{a:"clock",t:"23:59",o:0},mode:"Unlock"}),
-    R({id:14,name:"Mikva, summer clock",doors:["g:g_mikva"],season:"dst",inc:{wd:W5},start:{a:"sunset",o:0},end:{a:"clock",t:"23:30",o:0},mode:"Card or Pin"}),
+    R({id:14,name:"Mikva, summer clock",doors:["g:g_mikva"],season:"dst",inc:{wd:W5},start:{a:"sunset",o:0},end:{a:"clock",t:"23:30",o:0},mode:"Card or Pin",yields:[{"id":16,"doors":[]}]}),
     R({id:15,name:"Mikva, winter clock",doors:["g:g_mikva"],season:"std",inc:{wd:W5},start:{a:"sunset",o:0},end:{a:"clock",t:"22:30",o:0},mode:"Card or Pin"}),
     R({id:18,name:"Mikva attendants' cards, mikva hours",kind:"access",group:"Mikva attendants",note:"Attendants come 30 min early to set up.",doors:["g:g_mikva"],inc:{wd:[0,1,2,3,4,5]},exc:{fest:["yt_any"]},start:{a:"sunset",o:-30},end:{a:"clock",t:"23:59",o:0}}),
     R({id:19,name:"Members' cards, weekdays",kind:"access",group:"Members",doors:["g:g_shabbos_open"],inc:{wd:W5},start:{a:"clock",t:"05:00",o:0},end:{a:"clock",t:"23:00",o:0}}),
@@ -251,7 +251,21 @@ function expandDoors(list){const out=new Set();list.forEach(x=>{if(x.startsWith(
 function doorsText(list){return list.map(x=>x.startsWith("g:")?((S.groups.find(g=>"g:"+g.id===x)||{name:"(deleted group)"}).name):doorName(x)).join(", ")}
 
 /* ---------- rule logic ---------- */
-function evalRule(r,info){
+// "Gives way": after a clash, the losing rule steps aside on the shared doors on
+// every day the winning rule runs there. It follows the winner if that rule is later
+// changed, and lapses if it is deleted.
+function givesWay(r,info,door,seen){
+  if(!r.yields||!r.yields.length||!door) return false;
+  seen=new Set(seen||[]);seen.add(String(r.id));if(seen.size>12) return false;
+  for(const y of r.yields){
+    if(y.doors&&y.doors.length&&!y.doors.includes(door)) continue;
+    const W=S.rules.find(x=>String(x.id)===String(y.id));
+    if(!W||seen.has(String(W.id))||(W.kind||"door")!==(r.kind||"door")||!expandDoors(W.doors).includes(door)) continue;
+    if(evalRule(W,info,door,seen)) return true;
+  }
+  return false;
+}
+function evalRule(r,info,door,seen){
   if(r.rabbi==="local"&&info.away) return null;
   if(r.rabbi==="away"&&!info.away) return null;
   if(r.sit&&!info.sits.has(r.sit)) return null;
@@ -262,7 +276,7 @@ function evalRule(r,info){
   if(x.wd.includes(info.w)) return null;
   // the plain week (what goes into each door's weekly schedule) only uses weekday rules;
   // anything tied to dates, Hebrew dates or holidays is sent separately as one-time overrides
-  if(info.plain) return r.inc.wd.includes(info.w)?{score:10+(r.rabbi!=="any"?10:0)+(r.season!=="any"?5:0),via:WDN[info.w]}:null;
+  if(info.plain) return r.inc.wd.includes(info.w)&&!givesWay(r,info,door,seen)?{score:10+(r.rabbi!=="any"?10:0)+(r.season!=="any"?5:0),via:WDN[info.w]}:null;
   if(x.fest.some(k=>info.keys.has(k))) return null;
   if(x.dates.some(d=>dateMatch(d,info.s))) return null;
   if(x.hr.some(hr=>hrMatches(hr,info.h))) return null;
@@ -273,6 +287,7 @@ function evalRule(r,info){
   n.fest.forEach(k=>{ if(info.keys.has(k)&&keyRank(k)>best){best=keyRank(k);via=keyLabel(k)} });
   n.dates.forEach(d=>{ const r=d.yearly?55:100; if(dateMatch(d,info.s)&&r>best){best=r;via=dateText(d)} });
   if(best<0) return null;
+  if(givesWay(r,info,door,seen)) return null;
   return {score:best+sitBonus(r)+(r.rabbi!=="any"?10:0)+(r.season!=="any"?5:0),via};
 }
 function staticScore(r){
@@ -285,14 +300,20 @@ function anchorMin(x,info){
   if(x.a==="clock"){const [h,m]=(x.t||"00:00").split(":").map(Number);return h*60+m}
   return info.z[x.a]+(+x.o||0);
 }
+// Which layer a rule is in. The schedule (weekdays, holidays, dates, rabbi) is one
+// layer and its rules may never overlap; events override it during their hours,
+// like a one-time override on the panel; a situation that is switched on overrides
+// too, and one marked "beats everything" also beats events. By hand beats all (1000).
+const LAYER={schedule:0,event:1,situation:2,top:3};
+function isEventRule(r){return r.inc.fest.some(k=>k.startsWith("type:")||k.startsWith("ev:"))}
+function ruleLayer(r){if(r.sit){const x=sitOf(r.sit);return x&&x.top?LAYER.top:LAYER.situation}return isEventRule(r)?LAYER.event:LAYER.schedule}
+const LAYER_NAME=["the schedule","events","situations","situations that beat everything"];
 function resolve(door,info,kind){
   kind=kind||"door";
-  const m=S.rules.filter(r=>(r.kind||"door")===kind&&expandDoors(r.doors).includes(door)).map(r=>({r,e:evalRule(r,info)})).filter(x=>x.e);
-  const stops=m.filter(x=>x.r.stop!==false);
-  const top=stops.length?Math.max(...stops.map(x=>x.e.score)):Infinity;
-  return m.filter(x=>x.r.stop===false||x.e.score===top)
-    .map(({r,e})=>{const a=anchorMin(r.start,info),k=+r.end.days||0;let b=anchorMin(r.end,k?dayInfo(addDays(info.s,k)):info)+k*1440;if(!k&&b<=a)b+=1440;return {r,via:e.via,sc:e.score,a,b,s:info.s,next:b>1440}})
-    .sort((x,y)=>x.a-y.a);
+  return S.rules.map((r,i)=>({r,i})).filter(({r})=>(r.kind||"door")===kind&&expandDoors(r.doors).includes(door)).map(({r,i})=>({r,i,e:evalRule(r,info,door)})).filter(x=>x.e)
+    .map(({r,i,e})=>{const a=anchorMin(r.start,info),k=+r.end.days||0;let b=anchorMin(r.end,k?dayInfo(addDays(info.s,k)):info)+k*1440;if(!k&&b<=a)b+=1440;
+      return {r,via:e.via,sc:ruleLayer(r),ord:i,a,b,s:info.s,next:b>1440}})
+    .sort((x,y)=>x.a-y.a||x.ord-y.ord);
 }
 // end times: minutes counted from midnight of the start day, so they can run several days
 function maxDays(){return Math.max(1,...S.rules.map(r=>+r.end.days||0))}
@@ -309,79 +330,68 @@ function carried(door,s){ // windows that started on an earlier day and are stil
   }
   return out;
 }
-/* ---------- clash check: equal-score rules may not overlap with different modes ---------- */
+/* ---------- clash check: two rules in the same layer may never overlap ---------- */
+// Schedule rules for weekdays, holidays, dates and the rabbi may not run on the same door at
+// the same time; neither may two events or two situations. Events and situations
+// override the schedule on purpose, so those are not clashes.
 function scanAll(doors,from,days){
-  const out={clash:[],applied:new Map(),cuts:[],top:new Map()};DI_CACHE=new Map();
+  const out=[];DI_CACHE=new Map();
   try{
     for(const door of doors){
       const list=[];
-      for(let i=0;i<days;i++){const s=addDays(from,i);resolve(door,dayInfo(s)).forEach(x=>{
-        list.push({x,st:i*1440+x.a,en:i*1440+x.b,s});
-        out.applied.set(door+"|"+s+"|"+x.r.id,{door,s,r:x.r,sc:x.sc});
-        const t=out.top.get(door+"|"+s);if(!t||x.sc>t.sc)out.top.set(door+"|"+s,{r:x.r,sc:x.sc});
-      })}
+      for(let i=0;i<days;i++){const s=addDays(from,i);resolve(door,dayInfo(s)).forEach(x=>list.push({x,st:i*1440+x.a,en:i*1440+x.b,s}))}
       list.sort((p,q)=>p.st-q.st);
       for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length&&list[j].st<list[i].en;j++){
         const A=list[i],B=list[j];
-        if(A.x.r.id===B.x.r.id||A.x.r.mode===B.x.r.mode) continue;
-        const off=daysBetween(from,B.s)*1440, st=Math.max(A.st,B.st)-off, en=Math.min(A.en,B.en)-off;
-        if(A.x.sc===B.x.sc) out.clash.push({key:door+"|"+B.s+"|"+[A.x.r.id,B.x.r.id].sort().join("-"),door,s:B.s,a:A.x.r,b:B.x.r,st,en,sc:A.x.sc});
-        else{const hi=A.x.sc>B.x.sc?A.x:B.x, lo=hi===A.x?B.x:A.x;
-          out.cuts.push({key:door+"|"+B.s+"|"+hi.r.id+">"+lo.r.id,door,s:B.s,hi:hi.r,lo:lo.r,hs:hi.sc,ls:lo.sc,st,en})}
+        if(A.x.r.id===B.x.r.id||A.x.sc!==B.x.sc) continue;
+        const off=daysBetween(from,B.s)*1440;
+        const ids=[A.x.r.id,B.x.r.id].map(String).sort();
+        out.push({key:door+"|"+B.s+"|"+ids.join("-"),pair:ids.join("-"),door,s:B.s,a:A.x.r,b:B.x.r,layer:A.x.sc,st:Math.max(A.st,B.st)-off,en:Math.min(A.en,B.en)-off});
       }
     }
   }finally{DI_CACHE=null}
   return out;
 }
-// try a change without keeping it: what would clash, and which lower-score schedules it would replace
-function trial(change,doors,from,days,selfId){
-  const keep={rules:structuredClone(S.rules),events:structuredClone(S.events),hdates:structuredClone(S.hdates),gdates:structuredClone(S.gdates)};
-  const B=scanAll(doors,from,days);
-  change();
-  const A=scanAll(doors,from,days);
-  Object.assign(S,keep);
-  const bClash=new Set(B.clash.map(c=>c.key)), bCut=new Set(B.cuts.map(c=>c.key));
-  const clashes=A.clash.filter(c=>!bClash.has(c.key));
-  const g={};
-  // rules that ran before but no longer run that day, because something scored higher
-  B.applied.forEach((v,k)=>{ if(A.applied.has(k)||v.r.id===selfId) return; const t=A.top.get(v.door+"|"+v.s); if(!t||t.sc<=v.sc) return;
-    const gk="r|"+v.door+"|"+v.r.id+"|"+t.r.id;(g[gk]=g[gk]||{type:"replaced",door:v.door,lo:v.r,ls:v.sc,hi:t.r,hs:t.sc,n:0,first:v.s}).n++; if(v.s<g[gk].first)g[gk].first=v.s });
-  // rules that still run but lose part of their time to a higher-score rule with a different mode
-  A.cuts.filter(c=>!bCut.has(c.key)&&c.lo.id!==selfId).forEach(c=>{const gk="c|"+c.door+"|"+c.lo.id+"|"+c.hi.id;
-    (g[gk]=g[gk]||{type:"cut",door:c.door,lo:c.lo,ls:c.ls,hi:c.hi,hs:c.hs,n:0,first:c.s,st:c.st,en:c.en}).n++; if(c.s<g[gk].first){g[gk].first=c.s;g[gk].st=c.st;g[gk].en=c.en} });
-  const cg={};clashes.forEach(c=>{const k=c.door+"|"+[c.a.id,c.b.id].sort().join("-");(cg[k]=cg[k]||{c,n:0}).n++});
-  return {
-    clashes:Object.values(cg).slice(0,5).map(({c,n})=>`"${c.a.name}" and "${c.b.name}" clash on ${c.door} (${c.a.mode} vs ${c.b.mode}, both score ${c.sc}) on ${n} day${n===1?"":"s"}, first ${WDN[dow(c.s)]}, ${shortDate(c.s)}, ${fmt(c.st)} to ${fmt(c.en)}`),
-    displaced:Object.values(g)
-  };
+// try a change without keeping it: which new clashes it would cause, grouped by the two rules
+function trial(change,doors,from,days){
+  const keep={rules:structuredClone(S.rules),events:structuredClone(S.events),hdates:structuredClone(S.hdates),gdates:structuredClone(S.gdates),groups:structuredClone(S.groups),situations:structuredClone(S.situations||[])};
+  let B,A;
+  try{B=scanAll(doors,from,days);change();A=scanAll(doors,from,days)}
+  finally{Object.assign(S,keep)}
+  const before=new Set(B.map(c=>c.key)),g={};
+  A.filter(c=>!before.has(c.key)).forEach(c=>{
+    const p=g[c.pair]||(g[c.pair]={a:structuredClone(c.a),b:structuredClone(c.b),layer:c.layer,doors:new Set(),days:new Set(),first:c.s,st:c.st,en:c.en});
+    p.doors.add(c.door);p.days.add(c.s);if(c.s<p.first){p.first=c.s;p.st=c.st;p.en=c.en}});
+  const pairs=Object.values(g).map(p=>({...p,doors:[...p.doors],n:p.days.size}));
+  return {pairs,clashes:pairs.map(clashLine)};
 }
-function clashMsg(list){return `Not saved. ${list.join(". ")}. Change the times, make one rule more or less specific, or set one to run alongside.`}
-function displacedLine(d){
-  const when=`${d.n} day${d.n===1?"":"s"} in the next year, first ${WDN[dow(d.first)]}, ${shortDate(d.first)}`;
-  return d.type==="replaced"
-    ?`"${d.lo.name}" (score ${d.ls}) will not run on ${d.door} on ${when}. "${d.hi.name}" (score ${d.hs}) replaces it.`
-    :`"${d.lo.name}" (score ${d.ls}, ${d.lo.mode}) is overridden on ${d.door} by "${d.hi.name}" (score ${d.hs}, ${d.hi.mode}) for part of ${when}, ${fmt(d.st)} to ${fmt(d.en)}.`;
+function clashLine(p){return `"${p.a.name}" and "${p.b.name}" both set ${p.doors.length>3?p.doors.length+" doors":p.doors.map(doorName).join(", ")} on ${p.n} day${p.n===1?"":"s"} in the coming year, first ${WDN[dow(p.first)]}, ${shortDate(p.first)}, ${fmt(p.st)} to ${fmt(p.en)}`}
+// how the losing rule steps aside when the other one runs: it gives way to that rule
+// on the doors they share, on the days it runs there
+function exceptionFor(L,W,doors){
+  const all=expandDoors(L.doors),on=(doors||[]).filter(d=>all.includes(d));
+  const scoped=on.length&&on.length<all.length;
+  const ct=typeof condText==="function"?condText:null, days=ct?ct(W.inc):"";   // the wording lives with the screens; the box only needs the exception
+  return {yields:{id:W.id,doors:scoped?on:[]},text:`gives way to "${W.name}"${days?` (${days})`:""}${scoped?" on "+on.map(doorName).join(", "):""}`};
 }
-// run a change through the checks: block clashes, ask before replacing lower-score schedules
-function attempt({change,doors,from,days,selfId,el,done}){
-  const t=trial(change,doors,from,days,selfId);
-  if(t.clashes.length){el.innerHTML=`<div class="warnbox" style="background:var(--lock-soft);color:var(--lock)">${esc(clashMsg(t.clashes))}</div>`;el.hidden=false;return}
-  const finish=()=>{change();el.innerHTML="";const sum=t.displaced.length?` (replaces lower-score schedules: ${[...new Set(t.displaced.map(d=>`"${d.lo.name}" on ${d.door}`))].join(", ")})`:"";done(sum)};
-  if(!t.displaced.length){finish();return}
-  el.innerHTML=`<div class="warnbox"><b>This changes schedules that have a lower score.</b><ul>${t.displaced.slice(0,8).map(d=>`<li>${esc(displacedLine(d))}</li>`).join("")}</ul>
-    ${t.displaced.length>8?`<p style="margin:4px 0">and ${t.displaced.length-8} more.</p>`:""}
-    <div class="tline" style="margin-top:8px"><button class="btn sm pri" type="button" data-cyes>Save anyway</button><button class="btn sm" type="button" data-cno>Cancel</button></div></div>`;
-  el.hidden=false;
-  el.querySelector("[data-cyes]").onclick=finish;
-  el.querySelector("[data-cno]").onclick=()=>{el.innerHTML=""};
+function applyException(loserId,x){
+  const L=S.rules.find(r=>String(r.id)===String(loserId));if(!L||!x||!x.yields)return;
+  L.yields=L.yields||[];
+  const y=L.yields.find(v=>String(v.id)===String(x.yields.id));
+  if(!y){L.yields.push({id:x.yields.id,doors:[...x.yields.doors]});return}
+  if(!y.doors.length||!x.yields.doors.length){y.doors=[];return}   // everywhere wins
+  x.yields.doors.forEach(d=>{if(!y.doors.includes(d))y.doors.push(d)});
+}
+function yieldsText(r){
+  return (r.yields||[]).map(y=>{const W=S.rules.find(x=>String(x.id)===String(y.id));if(!W)return "";
+    const all=expandDoors(r.doors);return `gives way to "${W.name}"${y.doors&&y.doors.length&&y.doors.length<all.length?" on "+y.doors.map(doorName).join(", "):""}`}).filter(Boolean).join("; ");
 }
 function conflicts(door,info,w){
   const out=[];
   for(let i=0;i<w.length;i++)for(let j=i+1;j<w.length;j++){
-    const A=w[i],B=w[j]; if(A.r.mode===B.r.mode||A.sc!==B.sc) continue;
-    const ae=A.b, be=B.b;
-    const s=Math.max(A.a,B.a), e=Math.min(ae,be);
-    if(s<e) out.push(`${door}: "${A.r.name}" (${A.r.mode}) and "${B.r.name}" (${B.r.mode}) overlap ${fmt(s)} to ${fmt(e)} with the same score`);
+    const A=w[i],B=w[j]; if(A.sc!==B.sc||A.r.id===B.r.id) continue;
+    const s=Math.max(A.a,B.a), e=Math.min(A.b,B.b);
+    if(s<e) out.push(`${door}: "${A.r.name}" and "${B.r.name}" overlap ${fmt(s)} to ${fmt(e)}. Open either rule and save it to choose which one runs.`);
   }
   if(!w.length&&info.keys.has("yt_any")&&S.rules.some(r=>expandDoors(r.doors).includes(door)))
     out.push(`${door}: no rule on yom tov, so it falls back to its regular Protector.Net schedule`);
@@ -408,7 +418,7 @@ function daySegments(door,s){
   resolve(door,info).forEach(x=>cand.push({a:x.a,b:Math.min(x.b,1440),r:x.r,pr:x.sc,src:x.via,end:x}));
   if(!NO_OV) overridesFor(door,s).forEach(o=>cand.push({a:o.a,b:o.b,ov:o.o,pr:1000}));
   const slot=new Array(1440).fill(null);
-  cand.forEach(c=>{const rank=c.pr+((c.r&&c.r.mode==="Lockdown")?500:0);
+  cand.forEach(c=>{const rank=c.ov?1e6:c.pr*1e4+((c.r&&c.r.mode==="Lockdown")?5000:0)-((c.end&&c.end.ord)||0);
     for(let m=Math.max(0,c.a);m<Math.min(1440,c.b);m++){const cur=slot[m];if(!cur||rank>cur.rank)slot[m]={c,rank}}});
   const dc={r:DEF_RULE(door),isDef:true};
   for(let m=0;m<1440;m++) if(!slot[m]) slot[m]={c:dc,rank:-1};

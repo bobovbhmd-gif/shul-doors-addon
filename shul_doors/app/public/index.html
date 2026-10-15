@@ -571,6 +571,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .ask .sugg button{border:0;background:var(--fill);padding:6px 12px}
 .ask form{border-top:.5px solid var(--line)}
 .ask form textarea{border-radius:18px;padding:10px 14px}
+.clashbox .cpair{margin:10px 0 4px;padding-top:10px;border-top:1px solid color-mix(in srgb,currentColor 18%,transparent)}
+.clashbox .cpair p{margin:0 0 8px;font-weight:600}
+.clashbox .cpick{display:flex;gap:10px;align-items:flex-start;margin:6px 0;padding:10px 12px;border-radius:10px;background:var(--surface);color:var(--fg);cursor:pointer;font-weight:400}
+.clashbox .cpick input{margin-top:3px;flex:none}
+.clashbox .cpick:has(input:checked){outline:2px solid var(--accent)}
+.clashbox .cpick.off{opacity:.6;cursor:default}
 .ask .mic{width:46px;min-width:46px;height:46px;align-self:center;padding:0;border-radius:50%;display:grid;place-items:center}
 .ask .mic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .ask .mic.rec{background:var(--r);color:#fff;animation:micpulse 1.2s ease-in-out infinite}
@@ -1323,8 +1329,9 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
       <label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="rqSearch" type="search" placeholder="Search by name, door or holiday" aria-label="Search rules"></label>
       <select id="rqDoorF" aria-label="Filter by door"></select>
     </div>
-    <details class="how adv"><summary>How the system picks which rule wins</summary>
-      <p>On each day, every door runs its highest-scoring matching rules: one-time dates 100, the shul's own events and dates 70, specific holidays 60, Hebrew date ranges and yearly dates 55, general holidays and periods 50, weekdays 10. A rabbi condition adds 10, a situation adds 10 (200 if it beats everything), a clock-season condition adds 5. Rules marked "runs alongside" always apply on top. Two rules with the same score can't overlap with different modes; the system won't save that. Outside every rule, a door is on its default.</p></details>
+    <details class="how"><summary>How rules work together</summary>
+      <p><b>The schedule</b> is every rule for weekdays, holidays, dates and the rabbi. Two of these may never run on the same door at the same time. When you save one that overlaps another, the system asks which one runs. The other rule then gives way to it, only on the doors they share and only on the days it runs, and you see that on both rules.</p>
+      <p><b>Events</b> (wedding, kiddush, sheva brachos) take over from the schedule during their hours, then the schedule continues. <b>Situations</b> that are switched on take over the same way; one marked "beats everything" also beats events. <b>Open or lock now</b> by hand beats everything. Outside every rule, a door is on its default.</p></details>
     <div class="card admin-only adv bulk" id="bulkBar" hidden>
       <div class="secthead" style="margin:0 0 10px"><b id="pickCount"></b><span class="grow"></span><button class="btn sm" type="button" id="pickNone">Clear selection</button></div>
       <div class="grid2">
@@ -1731,20 +1738,20 @@ const SAMPLE={
   log:[{t:Date.UTC(2026,9,12,3,10),u:"Hershy",text:"Example entry: added rule \"Wedding\"",push:"sent",sentAt:Date.UTC(2026,9,12,3,10,22)},{t:Date.UTC(2026,9,12,3,5),u:"Gabbai",text:"Example entry: added event \"Weiss sheva brachos\"",push:"sent",sentAt:Date.UTC(2026,9,12,3,5,19)}],
   rules:[
     R({id:1,name:"Weekday Shacharis",doors:["D301"],stop:false,inc:{wd:W5},exc:{fest:["yt_any","tisha_bav"]},start:{a:"clock",t:"05:45",o:0},end:{a:"clock",t:"09:30",o:0},mode:"Unlock"}),
-    R({id:2,name:"Weekday Mincha / Maariv",note:"Mincha is 30 min before shkiah; doors close after the last Maariv.",doors:["g:g_shabbos_open"],inc:{wd:W5},start:{a:"sunset",o:-30},end:{a:"clock",t:"22:30",o:0},mode:"Unlock"}),
+    R({id:2,name:"Weekday Mincha / Maariv",note:"Mincha is 30 min before shkiah; doors close after the last Maariv.",doors:["g:g_shabbos_open"],inc:{wd:W5},start:{a:"sunset",o:-30},end:{a:"clock",t:"22:30",o:0},mode:"Unlock",yields:[{"id":6,"doors":[]},{"id":7,"doors":[]},{"id":10,"doors":[]},{"id":8,"doors":[]},{"id":3,"doors":["D301"]}]}),
     R({id:3,name:"Rabbi away, weeknights",doors:["D301"],rabbi:"away",inc:{wd:W5},start:{a:"sunset",o:-20},end:{a:"clock",t:"21:30",o:0},mode:"Unlock"}),
-    R({id:4,name:"Erev Shabbos",doors:["g:g_shabbos_open"],inc:{wd:[5]},start:{a:"candles",o:-60},end:{a:"clock",t:"23:30",o:0},mode:"Unlock"}),
-    R({id:5,name:"Shabbos day",doors:["g:g_shabbos_open"],inc:{wd:[6]},start:{a:"clock",t:"07:00",o:0},end:{a:"havdalah",o:30},mode:"Unlock"}),
+    R({id:4,name:"Erev Shabbos",doors:["g:g_shabbos_open"],inc:{wd:[5]},start:{a:"candles",o:-60},end:{a:"clock",t:"23:30",o:0},mode:"Unlock",yields:[{"id":7,"doors":[]},{"id":6,"doors":[]}]}),
+    R({id:5,name:"Shabbos day",doors:["g:g_shabbos_open"],inc:{wd:[6]},start:{a:"clock",t:"07:00",o:0},end:{a:"havdalah",o:30},mode:"Unlock",yields:[{"id":7,"doors":[]}]}),
     R({id:6,name:"Erev yom tov",doors:["g:g_shabbos_open"],inc:{fest:["erev_yt_any"]},start:{a:"candles",o:-60},end:{a:"clock",t:"23:59",o:0},mode:"Unlock"}),
     R({id:17,name:"Rosh Hashana, ezras nashim open through both days",doors:["D204"],inc:{fest:["erev_rh"]},start:{a:"candles",o:-60},end:{a:"havdalah",o:15,days:2},mode:"Unlock"}),
-    R({id:7,name:"Yom tov",doors:["g:g_shabbos_open"],inc:{fest:["yt_any"]},start:{a:"clock",t:"07:00",o:0},end:{a:"clock",t:"23:59",o:0},mode:"Unlock"}),
+    R({id:7,name:"Yom tov",doors:["g:g_shabbos_open"],inc:{fest:["yt_any"]},start:{a:"clock",t:"07:00",o:0},end:{a:"clock",t:"23:59",o:0},mode:"Unlock",yields:[{"id":8,"doors":[]}]}),
     R({id:8,name:"First day Succos, early (not on Shabbos)",doors:["g:g_shabbos_open"],inc:{fest:["succos1"]},exc:{wd:[6]},start:{a:"alos",o:0},end:{a:"clock",t:"23:59",o:0},mode:"Unlock"}),
     R({id:9,name:"Shovavim Thursdays",doors:["D301"],stop:false,inc:{fest:["shovavim"]},exc:{wd:[0,1,2,3,5,6]},start:{a:"clock",t:"04:30",o:0},end:{a:"clock",t:"05:45",o:0},mode:"Unlock"}),
     R({id:10,name:"Rosh Chodesh Av seudah",doors:["g:g_shabbos_open"],stop:false,inc:{fest:["hd:h1"]},start:{a:"plag",o:0},end:{a:"clock",t:"23:59",o:0},mode:"Unlock"}),
-    R({id:11,name:"Late Maariv, Tammuz to Av",doors:["D301"],stop:false,inc:{hr:[{fm:4,fd:1,tm:5,td:30}]},exc:{wd:[5,6],fest:["tisha_bav"]},start:{a:"tzeis",o:0},end:{a:"clock",t:"23:30",o:0},mode:"Unlock"}),
+    R({id:11,name:"Late Maariv, Tammuz to Av",doors:["D301"],stop:false,inc:{hr:[{fm:4,fd:1,tm:5,td:30}]},exc:{wd:[5,6],fest:["tisha_bav"]},start:{a:"clock",t:"22:30",o:0},end:{a:"clock",t:"23:30",o:0},mode:"Unlock",yields:[{"id":10,"doors":[]}]}),
     R({id:12,name:"Wedding",doors:["g:g_shabbos_open"],stop:false,inc:{fest:["type:Wedding"]},start:{a:"clock",t:"17:00",o:0},end:{a:"clock",t:"01:00",o:0},mode:"Unlock"}),
     R({id:13,name:"Sheva brachos",doors:["D204"],stop:false,inc:{fest:["type:Sheva brachos"]},exc:{wd:[5,6]},start:{a:"clock",t:"19:00",o:0},end:{a:"clock",t:"23:59",o:0},mode:"Unlock"}),
-    R({id:14,name:"Mikva, summer clock",doors:["g:g_mikva"],season:"dst",inc:{wd:W5},start:{a:"sunset",o:0},end:{a:"clock",t:"23:30",o:0},mode:"Card or Pin"}),
+    R({id:14,name:"Mikva, summer clock",doors:["g:g_mikva"],season:"dst",inc:{wd:W5},start:{a:"sunset",o:0},end:{a:"clock",t:"23:30",o:0},mode:"Card or Pin",yields:[{"id":16,"doors":[]}]}),
     R({id:15,name:"Mikva, winter clock",doors:["g:g_mikva"],season:"std",inc:{wd:W5},start:{a:"sunset",o:0},end:{a:"clock",t:"22:30",o:0},mode:"Card or Pin"}),
     R({id:18,name:"Mikva attendants' cards, mikva hours",kind:"access",group:"Mikva attendants",note:"Attendants come 30 min early to set up.",doors:["g:g_mikva"],inc:{wd:[0,1,2,3,4,5]},exc:{fest:["yt_any"]},start:{a:"sunset",o:-30},end:{a:"clock",t:"23:59",o:0}}),
     R({id:19,name:"Members' cards, weekdays",kind:"access",group:"Members",doors:["g:g_shabbos_open"],inc:{wd:W5},start:{a:"clock",t:"05:00",o:0},end:{a:"clock",t:"23:00",o:0}}),
@@ -1924,7 +1931,21 @@ function expandDoors(list){const out=new Set();list.forEach(x=>{if(x.startsWith(
 function doorsText(list){return list.map(x=>x.startsWith("g:")?((S.groups.find(g=>"g:"+g.id===x)||{name:"(deleted group)"}).name):doorName(x)).join(", ")}
 
 /* ---------- rule logic ---------- */
-function evalRule(r,info){
+// "Gives way": after a clash, the losing rule steps aside on the shared doors on
+// every day the winning rule runs there. It follows the winner if that rule is later
+// changed, and lapses if it is deleted.
+function givesWay(r,info,door,seen){
+  if(!r.yields||!r.yields.length||!door) return false;
+  seen=new Set(seen||[]);seen.add(String(r.id));if(seen.size>12) return false;
+  for(const y of r.yields){
+    if(y.doors&&y.doors.length&&!y.doors.includes(door)) continue;
+    const W=S.rules.find(x=>String(x.id)===String(y.id));
+    if(!W||seen.has(String(W.id))||(W.kind||"door")!==(r.kind||"door")||!expandDoors(W.doors).includes(door)) continue;
+    if(evalRule(W,info,door,seen)) return true;
+  }
+  return false;
+}
+function evalRule(r,info,door,seen){
   if(r.rabbi==="local"&&info.away) return null;
   if(r.rabbi==="away"&&!info.away) return null;
   if(r.sit&&!info.sits.has(r.sit)) return null;
@@ -1935,7 +1956,7 @@ function evalRule(r,info){
   if(x.wd.includes(info.w)) return null;
   // the plain week (what goes into each door's weekly schedule) only uses weekday rules;
   // anything tied to dates, Hebrew dates or holidays is sent separately as one-time overrides
-  if(info.plain) return r.inc.wd.includes(info.w)?{score:10+(r.rabbi!=="any"?10:0)+(r.season!=="any"?5:0),via:WDN[info.w]}:null;
+  if(info.plain) return r.inc.wd.includes(info.w)&&!givesWay(r,info,door,seen)?{score:10+(r.rabbi!=="any"?10:0)+(r.season!=="any"?5:0),via:WDN[info.w]}:null;
   if(x.fest.some(k=>info.keys.has(k))) return null;
   if(x.dates.some(d=>dateMatch(d,info.s))) return null;
   if(x.hr.some(hr=>hrMatches(hr,info.h))) return null;
@@ -1946,6 +1967,7 @@ function evalRule(r,info){
   n.fest.forEach(k=>{ if(info.keys.has(k)&&keyRank(k)>best){best=keyRank(k);via=keyLabel(k)} });
   n.dates.forEach(d=>{ const r=d.yearly?55:100; if(dateMatch(d,info.s)&&r>best){best=r;via=dateText(d)} });
   if(best<0) return null;
+  if(givesWay(r,info,door,seen)) return null;
   return {score:best+sitBonus(r)+(r.rabbi!=="any"?10:0)+(r.season!=="any"?5:0),via};
 }
 function staticScore(r){
@@ -1958,14 +1980,20 @@ function anchorMin(x,info){
   if(x.a==="clock"){const [h,m]=(x.t||"00:00").split(":").map(Number);return h*60+m}
   return info.z[x.a]+(+x.o||0);
 }
+// Which layer a rule is in. The schedule (weekdays, holidays, dates, rabbi) is one
+// layer and its rules may never overlap; events override it during their hours,
+// like a one-time override on the panel; a situation that is switched on overrides
+// too, and one marked "beats everything" also beats events. By hand beats all (1000).
+const LAYER={schedule:0,event:1,situation:2,top:3};
+function isEventRule(r){return r.inc.fest.some(k=>k.startsWith("type:")||k.startsWith("ev:"))}
+function ruleLayer(r){if(r.sit){const x=sitOf(r.sit);return x&&x.top?LAYER.top:LAYER.situation}return isEventRule(r)?LAYER.event:LAYER.schedule}
+const LAYER_NAME=["the schedule","events","situations","situations that beat everything"];
 function resolve(door,info,kind){
   kind=kind||"door";
-  const m=S.rules.filter(r=>(r.kind||"door")===kind&&expandDoors(r.doors).includes(door)).map(r=>({r,e:evalRule(r,info)})).filter(x=>x.e);
-  const stops=m.filter(x=>x.r.stop!==false);
-  const top=stops.length?Math.max(...stops.map(x=>x.e.score)):Infinity;
-  return m.filter(x=>x.r.stop===false||x.e.score===top)
-    .map(({r,e})=>{const a=anchorMin(r.start,info),k=+r.end.days||0;let b=anchorMin(r.end,k?dayInfo(addDays(info.s,k)):info)+k*1440;if(!k&&b<=a)b+=1440;return {r,via:e.via,sc:e.score,a,b,s:info.s,next:b>1440}})
-    .sort((x,y)=>x.a-y.a);
+  return S.rules.map((r,i)=>({r,i})).filter(({r})=>(r.kind||"door")===kind&&expandDoors(r.doors).includes(door)).map(({r,i})=>({r,i,e:evalRule(r,info,door)})).filter(x=>x.e)
+    .map(({r,i,e})=>{const a=anchorMin(r.start,info),k=+r.end.days||0;let b=anchorMin(r.end,k?dayInfo(addDays(info.s,k)):info)+k*1440;if(!k&&b<=a)b+=1440;
+      return {r,via:e.via,sc:ruleLayer(r),ord:i,a,b,s:info.s,next:b>1440}})
+    .sort((x,y)=>x.a-y.a||x.ord-y.ord);
 }
 // end times: minutes counted from midnight of the start day, so they can run several days
 function maxDays(){return Math.max(1,...S.rules.map(r=>+r.end.days||0))}
@@ -1982,79 +2010,68 @@ function carried(door,s){ // windows that started on an earlier day and are stil
   }
   return out;
 }
-/* ---------- clash check: equal-score rules may not overlap with different modes ---------- */
+/* ---------- clash check: two rules in the same layer may never overlap ---------- */
+// Schedule rules for weekdays, holidays, dates and the rabbi may not run on the same door at
+// the same time; neither may two events or two situations. Events and situations
+// override the schedule on purpose, so those are not clashes.
 function scanAll(doors,from,days){
-  const out={clash:[],applied:new Map(),cuts:[],top:new Map()};DI_CACHE=new Map();
+  const out=[];DI_CACHE=new Map();
   try{
     for(const door of doors){
       const list=[];
-      for(let i=0;i<days;i++){const s=addDays(from,i);resolve(door,dayInfo(s)).forEach(x=>{
-        list.push({x,st:i*1440+x.a,en:i*1440+x.b,s});
-        out.applied.set(door+"|"+s+"|"+x.r.id,{door,s,r:x.r,sc:x.sc});
-        const t=out.top.get(door+"|"+s);if(!t||x.sc>t.sc)out.top.set(door+"|"+s,{r:x.r,sc:x.sc});
-      })}
+      for(let i=0;i<days;i++){const s=addDays(from,i);resolve(door,dayInfo(s)).forEach(x=>list.push({x,st:i*1440+x.a,en:i*1440+x.b,s}))}
       list.sort((p,q)=>p.st-q.st);
       for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length&&list[j].st<list[i].en;j++){
         const A=list[i],B=list[j];
-        if(A.x.r.id===B.x.r.id||A.x.r.mode===B.x.r.mode) continue;
-        const off=daysBetween(from,B.s)*1440, st=Math.max(A.st,B.st)-off, en=Math.min(A.en,B.en)-off;
-        if(A.x.sc===B.x.sc) out.clash.push({key:door+"|"+B.s+"|"+[A.x.r.id,B.x.r.id].sort().join("-"),door,s:B.s,a:A.x.r,b:B.x.r,st,en,sc:A.x.sc});
-        else{const hi=A.x.sc>B.x.sc?A.x:B.x, lo=hi===A.x?B.x:A.x;
-          out.cuts.push({key:door+"|"+B.s+"|"+hi.r.id+">"+lo.r.id,door,s:B.s,hi:hi.r,lo:lo.r,hs:hi.sc,ls:lo.sc,st,en})}
+        if(A.x.r.id===B.x.r.id||A.x.sc!==B.x.sc) continue;
+        const off=daysBetween(from,B.s)*1440;
+        const ids=[A.x.r.id,B.x.r.id].map(String).sort();
+        out.push({key:door+"|"+B.s+"|"+ids.join("-"),pair:ids.join("-"),door,s:B.s,a:A.x.r,b:B.x.r,layer:A.x.sc,st:Math.max(A.st,B.st)-off,en:Math.min(A.en,B.en)-off});
       }
     }
   }finally{DI_CACHE=null}
   return out;
 }
-// try a change without keeping it: what would clash, and which lower-score schedules it would replace
-function trial(change,doors,from,days,selfId){
-  const keep={rules:structuredClone(S.rules),events:structuredClone(S.events),hdates:structuredClone(S.hdates),gdates:structuredClone(S.gdates)};
-  const B=scanAll(doors,from,days);
-  change();
-  const A=scanAll(doors,from,days);
-  Object.assign(S,keep);
-  const bClash=new Set(B.clash.map(c=>c.key)), bCut=new Set(B.cuts.map(c=>c.key));
-  const clashes=A.clash.filter(c=>!bClash.has(c.key));
-  const g={};
-  // rules that ran before but no longer run that day, because something scored higher
-  B.applied.forEach((v,k)=>{ if(A.applied.has(k)||v.r.id===selfId) return; const t=A.top.get(v.door+"|"+v.s); if(!t||t.sc<=v.sc) return;
-    const gk="r|"+v.door+"|"+v.r.id+"|"+t.r.id;(g[gk]=g[gk]||{type:"replaced",door:v.door,lo:v.r,ls:v.sc,hi:t.r,hs:t.sc,n:0,first:v.s}).n++; if(v.s<g[gk].first)g[gk].first=v.s });
-  // rules that still run but lose part of their time to a higher-score rule with a different mode
-  A.cuts.filter(c=>!bCut.has(c.key)&&c.lo.id!==selfId).forEach(c=>{const gk="c|"+c.door+"|"+c.lo.id+"|"+c.hi.id;
-    (g[gk]=g[gk]||{type:"cut",door:c.door,lo:c.lo,ls:c.ls,hi:c.hi,hs:c.hs,n:0,first:c.s,st:c.st,en:c.en}).n++; if(c.s<g[gk].first){g[gk].first=c.s;g[gk].st=c.st;g[gk].en=c.en} });
-  const cg={};clashes.forEach(c=>{const k=c.door+"|"+[c.a.id,c.b.id].sort().join("-");(cg[k]=cg[k]||{c,n:0}).n++});
-  return {
-    clashes:Object.values(cg).slice(0,5).map(({c,n})=>`"${c.a.name}" and "${c.b.name}" clash on ${c.door} (${c.a.mode} vs ${c.b.mode}, both score ${c.sc}) on ${n} day${n===1?"":"s"}, first ${WDN[dow(c.s)]}, ${shortDate(c.s)}, ${fmt(c.st)} to ${fmt(c.en)}`),
-    displaced:Object.values(g)
-  };
+// try a change without keeping it: which new clashes it would cause, grouped by the two rules
+function trial(change,doors,from,days){
+  const keep={rules:structuredClone(S.rules),events:structuredClone(S.events),hdates:structuredClone(S.hdates),gdates:structuredClone(S.gdates),groups:structuredClone(S.groups),situations:structuredClone(S.situations||[])};
+  let B,A;
+  try{B=scanAll(doors,from,days);change();A=scanAll(doors,from,days)}
+  finally{Object.assign(S,keep)}
+  const before=new Set(B.map(c=>c.key)),g={};
+  A.filter(c=>!before.has(c.key)).forEach(c=>{
+    const p=g[c.pair]||(g[c.pair]={a:structuredClone(c.a),b:structuredClone(c.b),layer:c.layer,doors:new Set(),days:new Set(),first:c.s,st:c.st,en:c.en});
+    p.doors.add(c.door);p.days.add(c.s);if(c.s<p.first){p.first=c.s;p.st=c.st;p.en=c.en}});
+  const pairs=Object.values(g).map(p=>({...p,doors:[...p.doors],n:p.days.size}));
+  return {pairs,clashes:pairs.map(clashLine)};
 }
-function clashMsg(list){return `Not saved. ${list.join(". ")}. Change the times, make one rule more or less specific, or set one to run alongside.`}
-function displacedLine(d){
-  const when=`${d.n} day${d.n===1?"":"s"} in the next year, first ${WDN[dow(d.first)]}, ${shortDate(d.first)}`;
-  return d.type==="replaced"
-    ?`"${d.lo.name}" (score ${d.ls}) will not run on ${d.door} on ${when}. "${d.hi.name}" (score ${d.hs}) replaces it.`
-    :`"${d.lo.name}" (score ${d.ls}, ${d.lo.mode}) is overridden on ${d.door} by "${d.hi.name}" (score ${d.hs}, ${d.hi.mode}) for part of ${when}, ${fmt(d.st)} to ${fmt(d.en)}.`;
+function clashLine(p){return `"${p.a.name}" and "${p.b.name}" both set ${p.doors.length>3?p.doors.length+" doors":p.doors.map(doorName).join(", ")} on ${p.n} day${p.n===1?"":"s"} in the coming year, first ${WDN[dow(p.first)]}, ${shortDate(p.first)}, ${fmt(p.st)} to ${fmt(p.en)}`}
+// how the losing rule steps aside when the other one runs: it gives way to that rule
+// on the doors they share, on the days it runs there
+function exceptionFor(L,W,doors){
+  const all=expandDoors(L.doors),on=(doors||[]).filter(d=>all.includes(d));
+  const scoped=on.length&&on.length<all.length;
+  const ct=typeof condText==="function"?condText:null, days=ct?ct(W.inc):"";   // the wording lives with the screens; the box only needs the exception
+  return {yields:{id:W.id,doors:scoped?on:[]},text:`gives way to "${W.name}"${days?` (${days})`:""}${scoped?" on "+on.map(doorName).join(", "):""}`};
 }
-// run a change through the checks: block clashes, ask before replacing lower-score schedules
-function attempt({change,doors,from,days,selfId,el,done}){
-  const t=trial(change,doors,from,days,selfId);
-  if(t.clashes.length){el.innerHTML=`<div class="warnbox" style="background:var(--lock-soft);color:var(--lock)">${esc(clashMsg(t.clashes))}</div>`;el.hidden=false;return}
-  const finish=()=>{change();el.innerHTML="";const sum=t.displaced.length?` (replaces lower-score schedules: ${[...new Set(t.displaced.map(d=>`"${d.lo.name}" on ${d.door}`))].join(", ")})`:"";done(sum)};
-  if(!t.displaced.length){finish();return}
-  el.innerHTML=`<div class="warnbox"><b>This changes schedules that have a lower score.</b><ul>${t.displaced.slice(0,8).map(d=>`<li>${esc(displacedLine(d))}</li>`).join("")}</ul>
-    ${t.displaced.length>8?`<p style="margin:4px 0">and ${t.displaced.length-8} more.</p>`:""}
-    <div class="tline" style="margin-top:8px"><button class="btn sm pri" type="button" data-cyes>Save anyway</button><button class="btn sm" type="button" data-cno>Cancel</button></div></div>`;
-  el.hidden=false;
-  el.querySelector("[data-cyes]").onclick=finish;
-  el.querySelector("[data-cno]").onclick=()=>{el.innerHTML=""};
+function applyException(loserId,x){
+  const L=S.rules.find(r=>String(r.id)===String(loserId));if(!L||!x||!x.yields)return;
+  L.yields=L.yields||[];
+  const y=L.yields.find(v=>String(v.id)===String(x.yields.id));
+  if(!y){L.yields.push({id:x.yields.id,doors:[...x.yields.doors]});return}
+  if(!y.doors.length||!x.yields.doors.length){y.doors=[];return}   // everywhere wins
+  x.yields.doors.forEach(d=>{if(!y.doors.includes(d))y.doors.push(d)});
+}
+function yieldsText(r){
+  return (r.yields||[]).map(y=>{const W=S.rules.find(x=>String(x.id)===String(y.id));if(!W)return "";
+    const all=expandDoors(r.doors);return `gives way to "${W.name}"${y.doors&&y.doors.length&&y.doors.length<all.length?" on "+y.doors.map(doorName).join(", "):""}`}).filter(Boolean).join("; ");
 }
 function conflicts(door,info,w){
   const out=[];
   for(let i=0;i<w.length;i++)for(let j=i+1;j<w.length;j++){
-    const A=w[i],B=w[j]; if(A.r.mode===B.r.mode||A.sc!==B.sc) continue;
-    const ae=A.b, be=B.b;
-    const s=Math.max(A.a,B.a), e=Math.min(ae,be);
-    if(s<e) out.push(`${door}: "${A.r.name}" (${A.r.mode}) and "${B.r.name}" (${B.r.mode}) overlap ${fmt(s)} to ${fmt(e)} with the same score`);
+    const A=w[i],B=w[j]; if(A.sc!==B.sc||A.r.id===B.r.id) continue;
+    const s=Math.max(A.a,B.a), e=Math.min(A.b,B.b);
+    if(s<e) out.push(`${door}: "${A.r.name}" and "${B.r.name}" overlap ${fmt(s)} to ${fmt(e)}. Open either rule and save it to choose which one runs.`);
   }
   if(!w.length&&info.keys.has("yt_any")&&S.rules.some(r=>expandDoors(r.doors).includes(door)))
     out.push(`${door}: no rule on yom tov, so it falls back to its regular Protector.Net schedule`);
@@ -2075,6 +2092,34 @@ function overridesFor(door,s){
 
 /* ---------- render ---------- */
 /*ENGINE:PAUSE*/
+// Shows each clash and lets the person pick which rule runs on those days. The other
+// rule gets the matching exception. onDone(patch,summary) runs once every clash has
+// an answer; patch() applies the exceptions after the change itself.
+function clashChooser(el,pairs,onDone,onCancel){
+  const pick={};
+  const mayEdit=r=>typeof canEditRule!=="function"||canEditRule(S.rules.find(x=>String(x.id)===String(r.id))||r);
+  el.innerHTML=`<div class="warnbox clashbox"><b>These rules would overlap. Only one can run at a time on a door, so choose which one runs on those days.</b>
+    ${pairs.map((p,i)=>{const xa=exceptionFor(p.b,p.a,p.doors),xb=exceptionFor(p.a,p.b,p.doors);
+      const opt=(w,l,x,k)=>x&&mayEdit(l)?`<label class="cpick"><input type="radio" name="cp${i}" value="${k}"> <span><b>"${esc(w.name)}" runs.</b> "${esc(l.name)}" ${esc(x.text)}.</span></label>`:`<div class="cpick off"><span><b>"${esc(w.name)}" can't win here</b>${x?`: you may not change "${esc(l.name)}"`:""}.</span></div>`;
+      return `<div class="cpair"><p>${esc(clashLine(p))}.</p>${opt(p.a,p.b,xa,"a")}${opt(p.b,p.a,xb,"b")}</div>`}).join("")}
+    <p class="hint" style="margin:6px 0">Or cancel and change the times or doors so they don't overlap.</p>
+    <div class="tline"><button class="btn sm pri" type="button" data-cgo disabled>Save with these choices</button><button class="btn sm" type="button" data-cno>Cancel</button></div></div>`;
+  el.hidden=false;
+  const go=el.querySelector("[data-cgo]");
+  el.querySelectorAll("input[type=radio]").forEach(r=>r.onchange=()=>{pick[r.name.slice(2)]=r.value;go.disabled=pairs.some((_,i)=>!pick[i])});
+  go.onclick=()=>{const fixes=pairs.map((p,i)=>{const w=pick[i]==="a"?p.a:p.b,l=pick[i]==="a"?p.b:p.a;return {l,w,x:exceptionFor(l,w,p.doors)}});
+    onDone(()=>fixes.forEach(f=>applyException(f.l.id,f.x)),fixes.map(f=>`"${f.l.name}" ${f.x.text}`).join("; "))};
+  el.querySelector("[data-cno]").onclick=()=>{el.innerHTML="";onCancel&&onCancel()};
+}
+function clashMsg(list){return `Not saved. ${list.join(". ")}. Change the times or doors, or choose which one runs on those days.`}
+// run a change through the clash check; if it overlaps another rule, ask which one runs
+function attempt({change,doors,from,days,el,done}){
+  const t=trial(change,doors,from,days);
+  if(!t.pairs.length){change();el.innerHTML="";done("");return}
+  clashChooser(el,t.pairs,(patch,summary)=>{
+    attempt({change:()=>{change();patch()},doors,from,days,el,done:s2=>done(` (${summary})`+s2)})});
+}
+
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 /* ---------- UI helpers: plain labels, icons, sheets, toast ---------- */
@@ -2137,7 +2182,7 @@ function daySegments(door,s){
   resolve(door,info).forEach(x=>cand.push({a:x.a,b:Math.min(x.b,1440),r:x.r,pr:x.sc,src:x.via,end:x}));
   if(!NO_OV) overridesFor(door,s).forEach(o=>cand.push({a:o.a,b:o.b,ov:o.o,pr:1000}));
   const slot=new Array(1440).fill(null);
-  cand.forEach(c=>{const rank=c.pr+((c.r&&c.r.mode==="Lockdown")?500:0);
+  cand.forEach(c=>{const rank=c.ov?1e6:c.pr*1e4+((c.r&&c.r.mode==="Lockdown")?5000:0)-((c.end&&c.end.ord)||0);
     for(let m=Math.max(0,c.a);m<Math.min(1440,c.b);m++){const cur=slot[m];if(!cur||rank>cur.rank)slot[m]={c,rank}}});
   const dc={r:DEF_RULE(door),isDef:true};
   for(let m=0;m<1440;m++) if(!slot[m]) slot[m]={c:dc,rank:-1};
@@ -2241,16 +2286,15 @@ function ruleRow(r){
   const cond=[]; if(r.rabbi!=="any") cond.push(r.rabbi==="away"?"the rabbi is away":"the rabbi is local");
   if(r.sit) cond.push(`"${(sitOf(r.sit)||{name:"(deleted situation)"}).name}" is on`);
   if(r.season!=="any") cond.push(r.season==="dst"?"daylight saving time":"standard time");
-  const tags=[];if(isTempRule(r)&&ruleLastDay(r))tags.push(`Ends ${shortDate(ruleLastDay(r))}`);if(r.year)tags.push(`${r.year} only`);if(r.stop===false)tags.push("Runs alongside");
+  const tags=[];if(isTempRule(r)&&ruleLastDay(r))tags.push(`Ends ${shortDate(ruleLastDay(r))}`);if(r.year)tags.push(`${r.year} only`);{const L=ruleLayer(r);if(L===LAYER.event)tags.push("Overrides the schedule during the event");else if(L>=LAYER.situation)tags.push(L===LAYER.top?"Overrides everything while on":"Overrides the schedule while on")}
   return `<div class="row rrow${ed?" tap":""}" id="rule-${r.id}"${ed?` data-edit="${r.id}" tabindex="0" role="button" aria-label="Edit ${esc(r.name)}"`:""}>
     <input type="checkbox" class="admin-only adv" data-pick="${r.id}"${PICK.has(r.id)?" checked":""} aria-label="Select ${esc(r.name)}">
     <span class="ic" style="--c:${col}">${ico(acc?"badge":modeIco(r.mode))}</span>
     <div class="rt"><b>${esc(r.name)}${tags.map(t=>` <span class="mini">${esc(t)}</span>`).join("")}</b>
       <span><span class="mtag" style="--c:${col}">${esc(acc?r.group+" cards":modeLabel(r.mode))}</span> ${esc(ruleTime(r))}</span>
       <span>${esc(shownDoorsText(r.doors))}</span>
-      ${(()=>{let inc=condText(r.inc),exc=r.exc;if(!r.inc.wd.length&&r.exc.wd.length>=4){const keep=[0,1,2,3,4,5,6].filter(x=>!r.exc.wd.includes(x));inc+=`, only on ${keep.map(x=>WDN[x]).join(" and ")}`;exc={...r.exc,wd:[]}}const et=condText(exc);return `<span>${esc(inc)||"No days yet"}${et?` <span class="x">except ${esc(et)}</span>`:""}`})()}${cond.length?`, only when ${esc(cond.join(" and "))}`:""}</span>
+      ${(()=>{let inc=condText(r.inc),exc=r.exc;if(!r.inc.wd.length&&r.exc.wd.length>=4){const keep=[0,1,2,3,4,5,6].filter(x=>!r.exc.wd.includes(x));inc+=`, only on ${keep.map(x=>WDN[x]).join(" and ")}`;exc={...r.exc,wd:[]}}const et=condText(exc),yt=yieldsText(r);return `<span>${esc(inc)||"No days yet"}${et?` <span class="x">except ${esc(et)}</span>`:""}${yt?` <span class="x">${esc(yt)}</span>`:""}`})()}${cond.length?`, only when ${esc(cond.join(" and "))}`:""}</span>
       ${r.note?`<span class="note">${esc(r.note)}</span>`:""}</div>
-    <span class="score adv" title="Higher wins">${staticScore(r)}</span>
     ${ed?'<span class="chev"></span>':isAdmin()?'<span class="hint">View only</span>':`<button class="btn sm" type="button" data-reqrule="${r.id}">Ask to change</button>`}</div>`;
 }
 function renderRules(){
@@ -2258,7 +2302,7 @@ function renderRules(){
   const fd=$("#rqDoorF").value, q=$("#rqSearch").value.trim().toLowerCase();
   $("#rqDoorF").innerHTML=`<option value="">All doors</option>`+visDoors().map(d=>`<option value="${esc(d.id)}"${fd===d.id?" selected":""}>${esc(d.name)}</option>`).join("");
   const match=r=>(!fd||expandDoors(r.doors).includes(fd))&&(!q||[r.name,doorsText(r.doors),condText(r.inc),condText(r.exc),r.note||"",r.mode,modeLabel(r.mode)].join(" ").toLowerCase().includes(q));
-  const old=vis.filter(isArchived), list=vis.filter(r=>!isArchived(r)&&match(r)).sort((a,b)=>staticScore(b)-staticScore(a));
+  const old=vis.filter(isArchived), list=vis.filter(r=>!isArchived(r)&&match(r)).sort((a,b)=>ruleLayer(a)-ruleLayer(b)||String(a.name).localeCompare(String(b.name)));
   $("#archived").innerHTML=old.length?`<details class="arch"><summary class="gh">Archived (${old.length})</summary><div class="glist">${old.map(r=>`<div class="row" style="opacity:.8"><span class="ic" style="--c:var(--gray)">${ico("clock")}</span><div class="rt"><b>${esc(r.name)}</b><span>${esc(shownDoorsText(r.doors))}, ${esc(condText(r.inc))}, ${esc(ruleTime(r))}</span></div>${canEditRule(r)?`<button class="btn sm" type="button" data-dup="${r.id}">Use again</button><button class="btn sm danger" type="button" data-purge="${r.id}">Delete</button>`:""}</div>`).join("")}</div><p class="gf">These ran on dates that are past. They stay for history. Use one again with new dates.</p></details>`:"";
   if(!list.length){$("#rules").innerHTML=q||fd?emptyState("tag","No rules match","Try a different word or door."):emptyState("tag","No rules yet","A rule tells doors what to do on certain days, like opening for Maariv every weekday.",(can("rules")||isAdmin())?`<button class="btn pri" type="button" onclick="$('#addRule').click()">New rule</button>`:"");return}
   $("#rules").innerHTML=CATS.map(([t,sub],i)=>{const rs=list.filter(r=>ruleCat(r)===i);return rs.length?`<h2 class="gh">${esc(t)}<span>${esc(sub)}</span></h2><div class="glist">${rs.map(ruleRow).join("")}</div>`:""}).join("");
@@ -2321,7 +2365,7 @@ function anchorFields(p,x){
 }
 function captureTop(){
   if(!$("#ruleForm")) return;
-  Object.assign(E,{kind:$("#rKind").value,group:$("#rGroup").value,note:$("#rNote").value,year:$("#rYear").value,name:$("#rName").value,mode:$("#rMode").value,rabbi:$("#rRabbi").value,sit:$("#rSit").value,season:$("#rSeason").value,stop:$("#rStop").checked,
+  Object.assign(E,{kind:$("#rKind").value,group:$("#rGroup").value,note:$("#rNote").value,year:$("#rYear").value,name:$("#rName").value,mode:$("#rMode").value,rabbi:$("#rRabbi").value,sit:$("#rSit").value,season:$("#rSeason").value,
     doors:[...document.querySelectorAll("input[name=rDoor]:checked")].map(x=>x.value),
     start:{a:$("#sA").value,t:$("#sT").value,o:(+$("#sO").value||0)*(+$("#sS").value||1)},end:{a:$("#eA").value,t:$("#eT").value,o:(+$("#eO").value||0)*(+$("#eS").value||1),days:+$("#eD").value||0}});
 }
@@ -2349,15 +2393,14 @@ function drawEditor(){
     </div>
     <p class="gf">Times like havdalah come from the day it ends. If the end is earlier than the start on the same day, it runs past midnight.</p>
     ${sched()==="temp"?`<p class="notice">You can make temporary schedules only: pick specific dates (leave Every year unticked) or one event.</p>`:""}
-    ${condBox("inc")}${condBox("exc")}
+    ${condBox("inc")}${condBox("exc")}${(E.yields||[]).length?`<h3 class="gh">Gives way to</h3><div class="glist form" id="yBox">${E.yields.map((y,i)=>{const W=S.rules.find(x=>String(x.id)===String(y.id));return `<div class="row"><div class="rt"><b>${esc(W?W.name:"(deleted rule)")}</b><span>${W?esc(condText(W.inc)):"No longer has any effect"}${y.doors&&y.doors.length?", on "+esc(y.doors.map(doorName).join(", ")):", on all shared doors"}</span></div><button class="btn sm danger" type="button" data-yrm="${i}">Remove</button></div>`}).join("")}</div>`:""}
     <p class="gf">The rule runs on any day that matches Runs on, unless it also matches Except on.</p>
-    <details class="more"${(!SIMPLE||e.sit||(e.rabbi&&e.rabbi!=="any")||e.year||(e.season&&e.season!=="any")||e.stop===false)?" open":""}><summary class="gh">More options</summary>
+    <details class="more"${(!SIMPLE||e.sit||(e.rabbi&&e.rabbi!=="any")||e.year||(e.season&&e.season!=="any"))?" open":""}><summary class="gh">More options</summary>
     <div class="glist form">
       <div class="frow"><label for="rSit">Situation</label><select id="rSit"><option value="">Any time</option>${(S.situations||[]).map(x=>`<option value="${esc(x.id)}"${e.sit===x.id?" selected":""}>Only when "${esc(x.name)}" is on</option>`).join("")}</select></div>
       <div class="frow"><label for="rRabbi">Rabbi</label><select id="rRabbi"><option value="any">Local or away</option><option value="local"${e.rabbi==="local"?" selected":""}>Only when local</option><option value="away"${e.rabbi==="away"?" selected":""}>Only when away</option></select></div>
       <div class="frow"><label for="rYear">Repeat</label><select id="rYear"><option value="">Every year</option>${[5787,5788,5789,5790,5791,5792].map(y=>`<option value="${y}"${+e.year===y?" selected":""}>Only in ${y} (${hebYearSpan(y)})</option>`).join("")}</select></div>
       <div class="frow"><label for="rSeason">Clock</label><select id="rSeason"><option value="any">Any time of year</option><option value="dst"${e.season==="dst"?" selected":""}>Daylight saving only</option><option value="std"${e.season==="std"?" selected":""}>Standard time only</option></select></div>
-      <label class="frow swrow"><span class="rt"><b>Replace the regular schedule</b><span>Turn off for extras like a wedding that add hours without cancelling the usual times.</span></span><input type="checkbox" class="switch" id="rStop"${e.stop!==false?" checked":""}></label>
     </div></details>
     <h3 class="gh">Note</h3>
     <div class="glist form"><div class="frow"><textarea id="rNote" placeholder="Why this rule exists, who asked for it" aria-label="Note">${esc(e.note||"")}</textarea></div></div>
@@ -2373,9 +2416,10 @@ function drawEditor(){
   if(!e.isNew){
     $("#delRule").onclick=()=>{$("#delConfirm").hidden=false;$("#delConfirm").scrollIntoView({block:"nearest"})};
     $("#delNo").onclick=()=>{$("#delConfirm").hidden=true};
-    $("#delYes").onclick=()=>{S.rules=S.rules.filter(x=>x.id!==e.id);log(`Deleted rule "${e.name}"`);save();closeEditor();renderAll();toast("Rule deleted")};
+    $("#delYes").onclick=()=>{S.rules=S.rules.filter(x=>x.id!==e.id);S.rules.forEach(x=>{if(x.yields)x.yields=x.yields.filter(y=>String(y.id)!==String(e.id))});log(`Deleted rule "${e.name}"`);save();closeEditor();renderAll();toast("Rule deleted")};
     $("#dupRule").onclick=()=>{captureTop();const c={...structuredClone(E),id:Date.now(),name:(E.name||"Rule")+" (copy)"};delete c.isNew;openEditor(c,true)};
   }
+  $("#yBox")?.addEventListener("click",ev=>{const b=ev.target.closest("[data-yrm]");if(!b)return;E.yields.splice(+b.dataset.yrm,1);redraw()});
   document.querySelectorAll("[data-box]").forEach(box=>{
     const c=E[box.dataset.box];
     box.addEventListener("click",ev=>{
@@ -2396,7 +2440,7 @@ function drawEditor(){
     const hs=box.querySelector("[data-hsearch]");if(hs){hs.addEventListener("input",()=>{HQ[box.dataset.box]=hs.value;hpFilter(box,box.dataset.box)});hpFilter(box,box.dataset.box)}
   });
   function redraw(){const sc=$("#ruleForm .mbody").scrollTop;captureTop();drawEditor();$("#ruleForm .mbody").scrollTop=sc}
-  const build=()=>({id:E.id,kind:E.kind||"door",group:E.group||"",note:(E.note||"").trim(),year:E.year||"",name:(E.name||"").trim()||"Untitled rule",mode:E.mode,doors:E.doors,rabbi:E.rabbi,sit:E.sit||"",season:E.season,stop:E.stop,inc:E.inc,exc:E.exc,start:E.start,end:E.end});
+  const build=()=>({id:E.id,kind:E.kind||"door",group:E.group||"",note:(E.note||"").trim(),year:E.year||"",name:(E.name||"").trim()||"Untitled rule",mode:E.mode,doors:E.doors,rabbi:E.rabbi,sit:E.sit||"",season:E.season,inc:E.inc,exc:E.exc,yields:E.yields||[],start:E.start,end:E.end});
   const check=r=>{const has=r.inc.wd.length||r.inc.fest.length||r.inc.dates.length||r.inc.hr.length;
     return !r.doors.length?"Pick at least one door or group.":!has?"Add at least one day under Runs on.":(r.start.a==="clock"&&!r.start.t)||(r.end.a==="clock"&&!r.end.t)?"Enter a clock time for the start and the end.":""};
   const showErr=t=>{$("#formErr").textContent=t;$("#formErr").hidden=!t;if(t)$("#formErr").scrollIntoView({block:"nearest"})};
@@ -2885,7 +2929,7 @@ function newRequest(to,subject,text,change){const q={id:"q"+Date.now(),from:S.me
 function forMe(q){return q.to===S.me||(q.to==="admins"&&isAdmin())}
 function seeReq(q){return isAdmin()||q.from===S.me||q.to===S.me}
 function unread(q){const last=q.msgs[q.msgs.length-1];return forMe(q)&&q.status==="open"&&last.u!==S.me&&(!q.read||!q.read[S.me]||q.read[S.me]<last.t)}
-function changeLines(c){if(!c)return[];const r=c.rule;return [`Doors: ${doorsText(r.doors)}`,`${anchorText(r.start)} to ${anchorText(r.end)}${r.end.days?` (${r.end.days} day${r.end.days>1?"s":""} later)`:""}, ${r.kind==="access"?r.group+" cards":r.mode}`,`Runs on: ${condText(r.inc)}`,...(condText(r.exc)?[`Except: ${condText(r.exc)}`]:[]),r.stop===false?"Runs alongside other rules":"Replaces lower-score rules on those days",...(isTempRule(r)?["Temporary"]:["Permanent"])]}
+function changeLines(c){if(!c)return[];const r=c.rule;return [`Doors: ${doorsText(r.doors)}`,`${anchorText(r.start)} to ${anchorText(r.end)}${r.end.days?` (${r.end.days} day${r.end.days>1?"s":""} later)`:""}, ${r.kind==="access"?r.group+" cards":r.mode}`,`Runs on: ${condText(r.inc)}`,...(condText(r.exc)?[`Except: ${condText(r.exc)}`]:[]),["Part of the schedule","Overrides the schedule during the event","Overrides the schedule while the situation is on","Overrides everything while the situation is on"][ruleLayer(r)],...(isTempRule(r)?["Temporary"]:["Permanent"])]}
 let OPENQ=null;
 function renderRequests(){
   {const oq=S.requests.find(q=>q.id===OPENQ);if(oq&&seeReq(oq)&&(forMe(oq)||oq.from===S.me)){oq.read=oq.read||{};oq.read[S.me]=Date.now()}}
@@ -3512,18 +3556,20 @@ async function boxSampler(){
 
   /* proposals wait for the person to press Save */
   function proposal({title,lines,check,apply,logText}){
-    const t=check?trial(check.change,check.doors,check.from,check.days,check.selfId):{clashes:[],displaced:[]};
+    const t=check?trial(check.change,check.doors,check.from,check.days):{pairs:[],clashes:[]};
     const card=document.createElement("div");card.className="prop";
-    const blocked=t.clashes.length>0;
-    card.innerHTML=`<b>${esc(title)}</b><ul>${lines.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
-      ${blocked?`<div class="x">Can't be saved: ${esc(t.clashes.join(". "))}</div>`:""}
-      ${t.displaced.length?`<div>This replaces lower-score schedules:<ul>${t.displaced.slice(0,5).map(d=>`<li>${esc(displacedLine(d))}</li>`).join("")}</ul></div>`:""}
-      <div class="tline">${blocked?"":`<button class="btn sm pri" type="button" data-ok>Save</button>`}<button class="btn sm" type="button" data-no>${blocked?"Dismiss":"Discard"}</button></div>`;
+    card.innerHTML=`<b>${esc(title)}</b><ul>${lines.map(l=>`<li>${esc(l)}</li>`).join("")}</ul><div data-clash></div>
+      <div class="tline">${t.pairs.length?"":`<button class="btn sm pri" type="button" data-ok>Save</button>`}<button class="btn sm" type="button" data-no>Discard</button></div>`;
     msgs.append(card);msgs.scrollTop=msgs.scrollHeight;
-    card.querySelector("[data-no]").onclick=()=>{card.querySelector(".tline").innerHTML=`<span class="hint">Discarded.</span>`};
+    const done=sum=>{commit(logText+sum+", via assistant");card.querySelector(".tline").innerHTML=`<span class="hint">Saved.</span>`;const c=card.querySelector("[data-clash]");if(c)c.innerHTML=""};
+    card.querySelector("[data-no]").onclick=()=>{card.querySelector(".tline").innerHTML=`<span class="hint">Discarded.</span>`;card.querySelector("[data-clash]").innerHTML=""};
     const ok=card.querySelector("[data-ok]");
-    if(ok) ok.onclick=()=>{apply();const sum=t.displaced.length?` (replaces lower-score schedules: ${[...new Set(t.displaced.map(d=>`"${d.lo.name}" on ${d.door}`))].join(", ")})`:"";commit(logText+sum+", via assistant");card.querySelector(".tline").innerHTML=`<span class="hint">Saved and sent to the doors.</span>`};
-    return blocked?{status:"blocked",reason:t.clashes}:{status:"shown_for_confirmation",replaces_lower_score:t.displaced.map(displacedLine)};
+    if(ok) ok.onclick=()=>{apply();done("")};
+    // it overlaps another rule: the person picks which one runs, right in the card
+    if(t.pairs.length) clashChooser(card.querySelector("[data-clash]"),t.pairs,(patch,summary)=>{
+      attempt({change:()=>{apply();patch()},doors:check.doors,from:check.from,days:check.days,el:card.querySelector("[data-clash]"),done:s2=>done(` (${summary})`+s2)})},
+      ()=>{card.querySelector(".tline").innerHTML=`<span class="hint">Discarded.</span>`});
+    return t.pairs.length?{status:"shown_with_clash_choice",clashes:t.clashes,note:"The person chooses in the card which rule runs on the overlapping days; the other rule gets an exception. Do not propose the rule again."}:{status:"shown_for_confirmation"};
   }
 
   const TOOLS=[
@@ -3534,8 +3580,8 @@ async function boxSampler(){
         return {date:s,weekday:WDN[info.w],hebrew:hebText(info.h),holidays:[...info.keys].filter(k=>!k.startsWith("type:")).map(keyLabel),rabbi:info.away?"away":"local",
           zmanim:Object.fromEntries(["alos","sunrise","plag","sunset","candles","tzeis","havdalah"].map(k=>[k,fmt(info.z[k])])),
           doors:ids.map(d=>({door:d,name:doorName(d),windows:daySegments(d,s).map(g=>({from:fmt(g.a),to:g.b>=1440?"midnight":fmt(g.b),mode:g.c.ov?g.c.ov.mode:g.c.r.mode,set_by:g.c.ov?"manual override by "+g.c.ov.by:g.c.isDef?"door default":`rule "${g.c.r.name}" (${g.c.src})`}))}))}}},
-    {name:"list_rules",description:"All rules this person can see: id, name, doors, when it runs and its exceptions, start and end, mode, score, notes.",
-      execute(){return S.rules.filter(canSeeRule).map(r=>({id:r.id,name:r.name,kind:r.kind||"door",doors:shownDoorsText(r.doors),runs_on:condText(r.inc),except:condText(r.exc),start:anchorText(r.start),end:anchorText(r.end)+(r.end.days?` (+${r.end.days} days)`:""),mode:r.kind==="access"?r.group+" cards":r.mode,score:staticScore(r),alongside:r.stop===false,only_when:[r.rabbi!=="any"?"rabbi "+r.rabbi:"",r.season!=="any"?r.season:""].filter(Boolean).join(", "),note:r.note||""}))}},
+    {name:"list_rules",description:"All rules this person can see: id, name, doors, when it runs and its exceptions, start and end, mode, layer (schedule, event or situation), notes.",
+      execute(){return S.rules.filter(canSeeRule).map(r=>({id:r.id,name:r.name,kind:r.kind||"door",doors:shownDoorsText(r.doors),runs_on:condText(r.inc),except:condText(r.exc),gives_way:yieldsText(r),start:anchorText(r.start),end:anchorText(r.end)+(r.end.days?` (+${r.end.days} days)`:""),mode:r.kind==="access"?r.group+" cards":r.mode,layer:["schedule","event (overrides the schedule during its hours)","situation (overrides while switched on)","situation that beats everything"][ruleLayer(r)],only_when:[r.rabbi!=="any"?"rabbi "+r.rabbi:"",r.season!=="any"?r.season:""].filter(Boolean).join(", "),note:r.note||""}))}},
     {name:"find_dates",description:"Find the next dates (up to 12) in the coming 2 years that match a day key such as rc_any, succos1, shovavim, or a weekday name. Returns YYYY-MM-DD with Hebrew date.",
       inputSchema:{type:"object",properties:{key:{type:"string"},from:{type:"string"}},required:["key"]},
       execute(i){const k=String(i.key),w=WDN.findIndex(n=>n.toLowerCase().startsWith(k.toLowerCase().slice(0,3)));const out=[];let s=/^\d{4}-\d{2}-\d{2}$/.test(i.from||"")?i.from:todayNY();
@@ -3548,16 +3594,15 @@ async function boxSampler(){
         except_weekdays:{type:"array",items:{type:"string"}},except_day_keys:{type:"array",items:{type:"string"}},except_dates:{type:"array",items:{type:"object"}},
         start:{type:"object",properties:{anchor:{type:"string"},time:{type:"string"},offset_minutes:{type:"number"}}},
         end:{type:"object",properties:{anchor:{type:"string"},time:{type:"string"},offset_minutes:{type:"number"},days_later:{type:"number"}}},
-        runs_alongside:{type:"boolean",description:"true for extras that should not cancel the regular schedule"},
         rabbi:{type:"string",enum:["any","local","away"]},note:{type:"string"}},required:["name","doors","mode","start","end"]},
       execute(i){if(!can("rules"))throw new Error(S.me+" may not make schedules.");
         const doors=resolveDoors(i.doors);checkEditable(doors);if(!MODES.includes(i.mode))throw new Error("mode must be one of "+MODES.join(", "));
-        const r=R({id:Date.now(),name:String(i.name).slice(0,80),doors,mode:i.mode,stop:!i.runs_alongside,rabbi:["local","away"].includes(i.rabbi)?i.rabbi:"any",note:String(i.note||""),
+        const r=R({id:Date.now(),name:String(i.name).slice(0,80),doors,mode:i.mode,rabbi:["local","away"].includes(i.rabbi)?i.rabbi:"any",note:String(i.note||""),
           inc:{wd:wd(i.weekdays),fest:dayKeys(i.day_keys),dates:dates(i.dates),hr:[]},exc:{wd:wd(i.except_weekdays),fest:dayKeys(i.except_day_keys),dates:dates(i.except_dates),hr:[]},
           start:anchor(i.start,"Start"),end:anchor(i.end,"End")});
         if(!r.inc.wd.length&&!r.inc.fest.length&&!r.inc.dates.length)throw new Error("Give at least one weekday, day key or date.");
         if(!canSchedule(r))throw new Error(S.me+" may only make temporary schedules: specific one-time dates or one event (ev: key), no weekdays, holidays or yearly dates.");
-        return proposal({title:"New rule: "+r.name,lines:[`Doors: ${doorsText(r.doors)}`,`${anchorText(r.start)} to ${anchorText(r.end)}${r.end.days?` (${r.end.days} day${r.end.days>1?"s":""} later)`:""}, ${r.mode}`,`Runs on: ${condText(r.inc)}`,...(condText(r.exc)?[`Except: ${condText(r.exc)}`]:[]),r.stop?"Replaces lower-score rules on those days":"Runs alongside other rules",...(r.rabbi!=="any"?["Only when the rabbi is "+r.rabbi]:[])],
+        return proposal({title:"New rule: "+r.name,lines:[`Doors: ${doorsText(r.doors)}`,`${anchorText(r.start)} to ${anchorText(r.end)}${r.end.days?` (${r.end.days} day${r.end.days>1?"s":""} later)`:""}, ${r.mode}`,`Runs on: ${condText(r.inc)}`,...(condText(r.exc)?[`Except: ${condText(r.exc)}`]:[]),["Part of the schedule","Overrides the schedule during the event","Overrides the schedule while the situation is on","Overrides everything while the situation is on"][ruleLayer(r)],...(r.rabbi!=="any"?["Only when the rabbi is "+r.rabbi]:[])],
           check:{change:()=>S.rules.push(r),doors:expandDoors(r.doors),from:todayNY(),days:365,selfId:r.id},apply:()=>S.rules.push(r),logText:`Added rule "${r.name}"`})}},
     {name:"propose_note",description:"Offer to save a short house note (one general sentence about how this shul does things) so the assistant follows it in future chats. Shown to the user to save or discard. Notes from a super admin are active at once; from anyone else they wait for a super admin to approve.",
       inputSchema:{type:"object",properties:{text:{type:"string",description:"The note, one short sentence, max 300 characters"}},required:["text"]},
@@ -3568,7 +3613,7 @@ async function boxSampler(){
       inputSchema:{type:"object",properties:{to:{type:"string",description:"A user name, or 'admins'"},subject:{type:"string"},message:{type:"string"},rule:{type:"object"}},required:["to","subject","message"]},
       execute(i){const to=String(i.to).toLowerCase().includes("admin")?"admins":(S.users.find(u=>u.name.toLowerCase()===String(i.to).toLowerCase())||{}).name;if(!to)throw new Error("Unknown user. Users: "+S.users.map(u=>u.name).join(", ")+", or admins");
         let change=null;if(i.rule){const x=i.rule;const doors=resolveDoors(x.doors);if(!MODES.includes(x.mode))throw new Error("rule.mode must be one of "+MODES.join(", "));
-          const r=R({id:Date.now(),name:String(x.name||i.subject).slice(0,80),doors,mode:x.mode,stop:!x.runs_alongside,rabbi:["local","away"].includes(x.rabbi)?x.rabbi:"any",note:String(x.note||""),
+          const r=R({id:Date.now(),name:String(x.name||i.subject).slice(0,80),doors,mode:x.mode,rabbi:["local","away"].includes(x.rabbi)?x.rabbi:"any",note:String(x.note||""),
             inc:{wd:wd(x.weekdays),fest:dayKeys(x.day_keys),dates:dates(x.dates),hr:[]},exc:{wd:wd(x.except_weekdays),fest:dayKeys(x.except_day_keys),dates:dates(x.except_dates),hr:[]},start:anchor(x.start,"Start"),end:anchor(x.end,"End")});
           change={type:"rule",isNew:true,rule:r}}
         return proposal({title:`Request to ${recipName(to)}: ${i.subject}`,lines:[String(i.message),...(change?changeLines(change):[])],apply:()=>newRequest(to,String(i.subject),String(i.message),change),logText:`Sent request "${i.subject}" to ${recipName(to)}`})}},
@@ -3613,7 +3658,7 @@ Now: ${todayNY()} ${WDN[t.w]}, ${hebText(t.h)}, ${fmt(nyMinutes(Date.now()))} Ne
 Doors this person can see: ${visDoors().map(d=>`${d.id} "${d.name}" (${perm(d.id)==="edit"?"can edit":"view only"}, default ${d.def})`).join("; ")}.
 Groups: ${S.groups.map(g=>`"${g.name}" = ${g.doors.join(",")}`).join("; ")}.
 Modes: ${MODES.join(", ")}. Time anchors: ${Object.entries(ANCHORS).map(([k,v])=>k+"="+v).join(", ")}; use offset_minutes (negative = before). For clock use 24-hour HH:MM.
-How rules combine: on each day a door runs the highest-scoring matching rules (one-time dates 100, the shul's own events and dates 70, specific holidays 60, Hebrew ranges and yearly dates 55, general holidays and periods 50, weekdays 10; +10 if rabbi-specific, +5 if clock-season-specific) plus any rule marked runs alongside. Two equal-score rules may not overlap with different modes; the system blocks that. Outside all rules a door is on its default. Manual overrides beat everything.
+How rules combine: the schedule is every rule for weekdays, holidays, dates and the rabbi; two schedule rules may never run on the same door at the same time. If a new rule would overlap one, the card asks the person which runs; the other rule then gives way to it on the shared doors on the days it runs, so don't try to avoid it with tricks; just propose the rule. Event rules (with event-type keys) override the schedule during their hours, situations override while switched on (one marked "beats everything" also beats events), and Open or lock now by hand beats everything. Outside all rules a door is on its default. There are no scores.
 Day keys for day_keys: ${Object.entries(FEST).map(([k,v])=>k+"="+festName(k)+(festName(k)!==v.label?" (also called "+v.label+")":"")).join("; ")}${S.hdates.length?"; "+S.hdates.map(h=>"hd:"+h.id+"="+h.name).join("; "):""}${S.gdates.length?"; "+S.gdates.map(g=>"gd:"+g.id+"="+g.name).join("; "):""}; event types: ${S.types.map(x=>"type:"+x).join(", ")}.
 Use the tools to look things up rather than guessing. To change anything, call a propose_ tool: it shows the person a card with Save and Discard, and nothing is saved until they press Save. Never say a change was saved; say it is ready for them to confirm. If the person lacks permission for a change, offer to send it as a request to a super admin or another user with send_request. If a request is ambiguous (which doors, which date), ask one short question first. If a tool returns an error, fix the input or explain.`;
   }
