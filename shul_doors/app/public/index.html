@@ -1343,7 +1343,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
     <p class="notice editor-note">You see rules for your doors. You can change a rule only if you may edit every door in it.</p>
     <div class="searchbar">
       <label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="rqSearch" type="search" placeholder="Search by name, door or holiday" aria-label="Search rules"></label>
-      <select id="rqDoorF" aria-label="Filter by door"></select>
+      <select id="rqDoorF" aria-label="Filter by door or group"></select>
     </div>
     <details class="how"><summary>How rules work together</summary>
       <p><b>The schedule</b> is every rule for weekdays, holidays, dates and the rabbi. Two of these may never run on the same door at the same time. When you save one that overlaps another, the system asks which one runs. The other rule then gives way to it, only on the doors they share and only on the days it runs, and you see that on both rules.</p>
@@ -2317,11 +2317,14 @@ function ruleRow(r){
 function renderRules(){
   const vis=[...S.rules].filter(canSeeRule);
   const fd=$("#rqDoorF").value, q=$("#rqSearch").value.trim().toLowerCase();
-  $("#rqDoorF").innerHTML=`<option value="">All doors</option>`+visDoors().map(d=>`<option value="${esc(d.id)}"${fd===d.id?" selected":""}>${esc(d.name)}</option>`).join("");
-  const match=r=>(!fd||expandDoors(r.doors).includes(fd))&&(!q||[r.name,doorsText(r.doors),condText(r.inc),condText(r.exc),r.note||"",r.mode,modeLabel(r.mode)].join(" ").toLowerCase().includes(q));
+  const visF=new Set(visDoors().map(d=>d.id)),grps=S.groups.filter(g=>expandDoors(["g:"+g.id]).some(id=>visF.has(id)));
+  const opt=(v,t)=>`<option value="${esc(v)}"${fd===v?" selected":""}>${esc(t)}</option>`;
+  $("#rqDoorF").innerHTML=opt("","All doors and groups")+(grps.length?`<optgroup label="Groups">${grps.map(g=>opt("g:"+g.id,g.name)).join("")}</optgroup>`:"")+`<optgroup label="Doors">${visDoors().map(d=>opt(d.id,d.name)).join("")}</optgroup>`;
+  const fset=!fd?null:new Set(expandDoors([fd]));
+  const match=r=>(!fset||expandDoors(r.doors).some(id=>fset.has(id)))&&(!q||[r.name,doorsText(r.doors),condText(r.inc),condText(r.exc),r.note||"",r.mode,modeLabel(r.mode)].join(" ").toLowerCase().includes(q));
   const old=vis.filter(isArchived), list=vis.filter(r=>!isArchived(r)&&match(r)).sort((a,b)=>ruleLayer(a)-ruleLayer(b)||String(a.name).localeCompare(String(b.name)));
   $("#archived").innerHTML=old.length?`<details class="arch"><summary class="gh">Archived (${old.length})</summary><div class="glist">${old.map(r=>`<div class="row" style="opacity:.8"><span class="ic" style="--c:var(--gray)">${ico("clock")}</span><div class="rt"><b>${esc(r.name)}</b><span>${esc(shownDoorsText(r.doors))}, ${esc(condText(r.inc))}, ${esc(ruleTime(r))}</span></div>${canEditRule(r)?`<button class="btn sm" type="button" data-dup="${r.id}">Use again</button><button class="btn sm danger" type="button" data-purge="${r.id}">Delete</button>`:""}</div>`).join("")}</div><p class="gf">These ran on dates that are past. They stay for history. Use one again with new dates.</p></details>`:"";
-  if(!list.length){$("#rules").innerHTML=q||fd?emptyState("tag","No rules match","Try a different word or door."):emptyState("tag","No rules yet","A rule tells doors what to do on certain days, like opening for Maariv every weekday.",(can("rules")||isAdmin())?`<button class="btn pri" type="button" onclick="$('#addRule').click()">New rule</button>`:"");return}
+  if(!list.length){$("#rules").innerHTML=q||fd?emptyState("tag","No rules match","Try a different word, door or group."):emptyState("tag","No rules yet","A rule tells doors what to do on certain days, like opening for Maariv every weekday.",(can("rules")||isAdmin())?`<button class="btn pri" type="button" onclick="$('#addRule').click()">New rule</button>`:"");return}
   $("#rules").innerHTML=CATS.map(([t,sub],i)=>{const rs=list.filter(r=>ruleCat(r)===i);return rs.length?`<h2 class="gh">${esc(t)}<span>${esc(sub)}</span></h2><div class="glist">${rs.map(ruleRow).join("")}</div>`:""}).join("");
 }
 
