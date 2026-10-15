@@ -1107,6 +1107,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
 @media (max-width:899px){.herorow{grid-template-columns:minmax(0,1fr)}}
 .hn-off input.plain{color:var(--muted)}
 .dpick .frow{flex-wrap:wrap}
+.checks label.via{background:color-mix(in srgb,var(--accent) 22%,var(--fill2));color:var(--accent);pointer-events:none}
 .dpick .search.sm{flex:1;min-width:200px;height:36px}
 .dp-sum{font-size:13px;color:var(--muted);margin-left:auto}
 .dp-sec{flex-direction:column;align-items:stretch!important;gap:8px}
@@ -2449,8 +2450,12 @@ function drawEditor(){
     ${(canSave&&!isAdmin())||!e.isNew?`<div class="glist acts">${canSave&&!isAdmin()?`<button type="button" class="row tap" id="asReq">Send as a request instead</button>`:""}${e.isNew?"":`<button type="button" class="row tap" id="dupRule">Duplicate</button><button type="button" class="row tap danger-row" id="delRule">Delete rule</button>`}</div>`:""}
     <p id="delConfirm" class="confirm" hidden>Delete this rule? <button class="btn sm lockall" type="button" id="delYes">Delete</button> <button class="btn sm" type="button" id="delNo">Keep</button></p>
    </div></form>`;
-  { const sum=()=>{const v=[...document.querySelectorAll("input[name=rDoor]:checked")].map(x=>x.value),g=v.filter(x=>x.startsWith("g:")).length,d=v.length-g;
-      $("#rDoorSum").textContent=v.length?[g?`${g} group${g>1?"s":""}`:"",d?`${d} door${d>1?"s":""}`:""].filter(Boolean).join(", ")+" chosen":"None chosen"};
+  { const sum=()=>{const v=[...document.querySelectorAll("input[name=rDoor]:checked")].map(x=>x.value),gs=v.filter(x=>x.startsWith("g:")),g=gs.length,d=v.length-g;
+      // doors a chosen group already covers show as selected under Single doors
+      const via=new Map();gs.forEach(x=>{const G=S.groups.find(y=>"g:"+y.id===x);if(G)G.doors.forEach(id=>{if(!via.has(id))via.set(id,G.name)})});
+      document.querySelectorAll("#rDoorMore label[data-dpn]").forEach(l=>{const id=l.querySelector("input").value,on=via.has(id)&&!l.querySelector("input").checked;l.classList.toggle("via",on);l.title=on?`Included by the ${via.get(id)} group`:""});
+      const total=new Set([...via.keys(),...v.filter(x=>!x.startsWith("g:"))]).size;
+      $("#rDoorSum").textContent=v.length?[g?`${g} group${g>1?"s":""}`:"",d?`${d} door${d>1?"s":""}`:""].filter(Boolean).join(", ")+` · ${total} door${total===1?"":"s"} in all`:"None chosen"};
     const filt=()=>{const q=DPQ.trim().toLowerCase();document.querySelectorAll(".dpick [data-dpn]").forEach(l=>{l.hidden=!!q&&!l.dataset.dpn.includes(q)&&!l.querySelector("input").checked});if(q)$("#rDoorMore").open=true};
     $("#rDoorQ").addEventListener("input",ev=>{DPQ=ev.target.value;filt()});
     $("#rDoorMore").addEventListener("toggle",ev=>{DPOPEN=ev.target.open});
