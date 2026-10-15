@@ -1105,6 +1105,17 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
 .upcard .linkbtn{margin-top:10px;font-size:14px;font-weight:600}
 .up-none{margin:4px 0 0;color:var(--muted);font-size:14.5px}
 @media (max-width:899px){.herorow{grid-template-columns:minmax(0,1fr)}}
+.hn-off input.plain{color:var(--muted)}
+.dpick .frow{flex-wrap:wrap}
+.dpick .search.sm{flex:1;min-width:200px;height:36px}
+.dp-sum{font-size:13px;color:var(--muted);margin-left:auto}
+.dp-sec{flex-direction:column;align-items:stretch!important;gap:8px}
+.dp-lab{font-size:12px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--muted)}
+.dp-more summary{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none}
+.dp-more summary::-webkit-details-marker{display:none}
+.dp-more summary::after{content:"";width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);margin-left:auto;transition:transform .15s}
+.dp-more[open] summary::after{transform:rotate(45deg)}
+.dp-more[open] summary{margin-bottom:8px}
 .hero-next li small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:1px}
 .hero-next .linkbtn{margin-top:8px;padding:0;border:0;background:none;color:var(--accent,#0a84ff);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
 .hero-next p{margin:4px 0 0;font-size:14.5px}
@@ -1463,7 +1474,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
 
         <div class="panel admin-only" data-sp="holnames" data-ic="cal" data-c="var(--o)">
           <h2>Holiday names</h2>
-          <p class="gf top">Rename any holiday or special day to the name your shul uses. The new name shows everywhere: rules, the schedule, the week sheet and the assistant. The schedule itself doesn't change.</p>
+          <p class="gf top">Rename any holiday or special day to the name your shul uses. The new name shows everywhere: rules, the schedule, the week sheet and the assistant. The schedule itself doesn't change. Tap Hide on any you never use and it drops out of the list when you pick days for a rule. A day that a rule uses can't be hidden.</p>
           <div class="glist addrow"><div class="row"><input type="search" id="hnSearch" placeholder="Search, like Shmini Atzeres" aria-label="Search holidays"></div></div>
           <div id="hnRows"></div>
         </div>
@@ -1810,7 +1821,7 @@ function can(k){if(k==="rules")return sched()!=="none";return isAdmin()||!!(me()
 // a temporary rule runs only on specific one-time dates or one specific event; anything that repeats is permanent
 function isTempRule(r){const n=r.inc;return !n.wd.length&&!n.hr.length&&n.fest.every(k=>k.startsWith("ev:"))&&n.dates.every(d=>!d.yearly)&&(n.dates.length+n.fest.length)>0}
 function ruleLastDay(r){let last="";r.inc.dates.forEach(d=>{if(d.to>last)last=d.to});r.inc.fest.forEach(k=>{const e=S.events.find(x=>"ev:"+x.id===k);if(e&&e.to>last)last=e.to});return last}
-function isArchived(r){if(!isTempRule(r))return false;const last=ruleLastDay(r);return !!last&&addDays(last,(+r.end.days||0)+1)<todayNY()}
+function isArchived(r){if(r.until&&addDays(r.until,(+r.end.days||0)+1)<todayNY())return true;if(!isTempRule(r))return false;const last=ruleLastDay(r);return !!last&&addDays(last,(+r.end.days||0)+1)<todayNY()}
 function canSchedule(r){const sc=sched();return sc==="both"||(sc==="temp"&&isTempRule(r))}
 function perm(d){return isAdmin()?"edit":((me().perm||{})[d]||"hidden")}
 function visDoors(){return S.doors.filter(d=>perm(d.id)!=="hidden")}
@@ -1968,6 +1979,7 @@ function evalRule(r,info,door,seen){
   if(r.sit&&!info.sits.has(r.sit)) return null;
   if(r.season==="dst"&&!info.dst) return null;
   if(r.season==="std"&&info.dst) return null;
+  if(r.until&&info.s>r.until) return null;
   if(r.year&&hebYear(info.s)!==+r.year) return null;
   const x=r.exc;
   if(x.wd.includes(info.w)) return null;
@@ -2237,7 +2249,7 @@ function renderTimeline(start){
       return `<div class="lab">${esc(door.id)} <small>${esc(door.name)}</small></div><div class="tbar">${bars}${grid}</div>`;
     }).join("");
     html+=`<article class="tlday${special?" hol":""}"><div class="tlhead"><span class="dname">${WDN[info.w]}, ${esc(dateTxt)}</span><span class="heb">${esc(hebText(info.h))}</span>
-      <span class="dmeta">Shkiah ${fmt(info.z.sunset)} · ${info.dst?"EDT":"EST"}</span><span class="chips" style="margin:0">${chips.join("")}</span></div>
+      <span class="dmeta">Shkiah ${fmt(info.z.sunset)} · ${info.dst?"Summer clock":"Winter clock"}</span><span class="chips" style="margin:0">${chips.join("")}</span></div>
       <div class="tlgrid"><div></div><div class="axis">${ticks.map((t,k)=>`<span style="left:${pct(t)}">${tlab[k]}</span>`).join("")}</div>${rows}</div></article>`;
   }
   return html;
@@ -2302,8 +2314,8 @@ function ruleRow(r){
   const ed=canEditRule(r), acc=r.kind==="access", col=acc?"var(--o)":modeColor(r.mode);
   const cond=[]; if(r.rabbi!=="any") cond.push(r.rabbi==="away"?"the rabbi is away":"the rabbi is local");
   if(r.sit) cond.push(`"${(sitOf(r.sit)||{name:"(deleted situation)"}).name}" is on`);
-  if(r.season!=="any") cond.push(r.season==="dst"?"daylight saving time":"standard time");
-  const tags=[];if(isTempRule(r)&&ruleLastDay(r))tags.push(`Ends ${shortDate(ruleLastDay(r))}`);if(r.year)tags.push(`${r.year} only`);{const L=ruleLayer(r);if(L===LAYER.event)tags.push("Overrides the schedule during the event");else if(L>=LAYER.situation)tags.push(L===LAYER.top?"Overrides everything while on":"Overrides the schedule while on")}
+  if(r.season!=="any") cond.push(r.season==="dst"?"summer clock":"winter clock");
+  const tags=[];if(r.until)tags.push(r.until<todayNY()?`Stopped ${shortDate(r.until)}`:`Until ${shortDate(r.until)}`);else if(isTempRule(r)&&ruleLastDay(r))tags.push(`Ends ${shortDate(ruleLastDay(r))}`);if(r.year)tags.push(`${r.year} only`);{const L=ruleLayer(r);if(L===LAYER.event)tags.push("Overrides the schedule during the event");else if(L>=LAYER.situation)tags.push(L===LAYER.top?"Overrides everything while on":"Overrides the schedule while on")}
   return `<div class="row rrow${ed?" tap":""}" id="rule-${r.id}"${ed?` data-edit="${r.id}" tabindex="0" role="button" aria-label="Edit ${esc(r.name)}"`:""}>
     <input type="checkbox" class="admin-only adv" data-pick="${r.id}"${PICK.has(r.id)?" checked":""} aria-label="Select ${esc(r.name)}">
     <span class="ic" style="--c:${col}">${ico(acc?"badge":modeIco(r.mode))}</span>
@@ -2342,8 +2354,10 @@ const monOpts=()=>HMONTHS.map(([v,n])=>`<option value="${v}">${n}</option>`).joi
 
 let E=null;
 const HOPEN=new Set(), HQ={};
-function pickGroups(){
-  const g=GROUPS.map(([n,items])=>[n,items.map(([k])=>[k,festName(k)])]);
+function holUses(k){return S.rules.filter(r=>r.inc.fest.includes(k)||r.exc.fest.includes(k)).length}
+function holHidden(k){return !!(S.holHide&&S.holHide.includes(k))}
+function pickGroups(keep){
+  const g=GROUPS.map(([n,items])=>[n,items.filter(([k])=>!holHidden(k)||(keep&&keep.includes(k))).map(([k])=>[k,festName(k)])]).filter(([,it])=>it.length);
   if(S.gdates.length)g.push(["Your yearly dates",S.gdates.map(x=>["gd:"+x.id,x.name])]);
   if(S.hdates.length)g.push(["Your Hebrew dates",S.hdates.map(x=>["hd:"+x.id,x.name])]);
   if(S.types.length)g.push(["Event types",S.types.map(t=>["type:"+t,"Any "+t])]);
@@ -2354,7 +2368,7 @@ function festPick(kind,c){
   const n=c.fest.length;
   return `<details class="frow hpick" data-hp="${kind}"${HOPEN.has(kind)?" open":""}><summary><span class="hp-t">Holidays and special days</span><span class="hint">${n?n+" chosen":kind==="exc"?"None":"Tap to choose"}</span><span class="chev"></span></summary>
    <div class="hp-body"><input type="search" class="hsearch" data-hsearch value="${esc(HQ[kind]||"")}" placeholder="Search, like Pesach or fast" aria-label="Search holidays">
-   ${pickGroups().map(([g,items])=>{const on=items.filter(([k])=>c.fest.includes(k)).length, id=kind+"|"+g;
+   ${pickGroups(c.fest).map(([g,items])=>{const on=items.filter(([k])=>c.fest.includes(k)).length, id=kind+"|"+g;
      return `<details class="hgrp" data-hg="${esc(id)}"${HOPEN.has(id)?" open":""}><summary><span class="chev"></span><b>${esc(g)}</b>${on?`<span class="hcount">${on}</span>`:""}<button type="button" class="lnk" data-hall="${esc(g)}">${on===items.length?"Clear":"Select all"}</button></summary>
      <div class="checks">${items.map(([k,l])=>`<label data-hl="${esc((l+" "+g).toLowerCase())}"><input type="checkbox" data-fk="${esc(k)}"${c.fest.includes(k)?" checked":""}>${esc(l)}</label>`).join("")}</div></details>`}).join("")}
    <p class="hint hnone" hidden>Nothing matches.</p></div></details>`;
@@ -2387,6 +2401,7 @@ function captureTop(){
   if(!$("#ruleForm")) return;
   Object.assign(E,{kind:$("#rKind").value,group:$("#rGroup").value,note:$("#rNote").value,year:$("#rYear").value,name:$("#rName").value,mode:$("#rMode").value,rabbi:$("#rRabbi").value,sit:$("#rSit").value,season:$("#rSeason").value,
     doors:[...document.querySelectorAll("input[name=rDoor]:checked")].map(x=>x.value),
+    until:(()=>{const k=$("#rUntilK").value;if(!k)return "";if(k==="date")return $("#rUntil").value||"";return addDays(todayNY(),+k-1)})(),
     start:{a:$("#sA").value,t:$("#sT").value,o:(+$("#sO").value||0)*(+$("#sS").value||1)},end:{a:$("#eA").value,t:$("#eT").value,o:(+$("#eO").value||0)*(+$("#eS").value||1),days:+$("#eD").value||0}});
 }
 function drawEditor(){
@@ -2401,17 +2416,21 @@ function drawEditor(){
       <div class="frow adv"><label for="rKind">Controls</label><select id="rKind"><option value="door"${e.kind!=="access"?" selected":""}>Door mode</option><option value="access"${e.kind==="access"?" selected":""}>Badge access</option></select></div>
     </div>
     <h3 class="gh">Doors</h3>
-    <div class="glist form"><div class="frow"><div class="checks">
-      ${S.groups.filter(g=>isAdmin()||g.doors.length&&g.doors.every(d=>perm(d)!=="hidden")).map(g=>`<label class="grp"><input type="checkbox" name="rDoor" value="g:${esc(g.id)}"${e.doors.includes("g:"+g.id)?" checked":""}>${esc(g.name)}</label>`).join("")}
-      ${visDoors().map(d=>`<label><input type="checkbox" name="rDoor" value="${esc(d.id)}"${e.doors.includes(d.id)?" checked":""}>${esc(d.name)}${perm(d.id)!=="edit"?` <span class="hint">(by request)</span>`:""}</label>`).join("")}</div></div></div>
-    <p class="gf">Outlined choices are door groups.</p>
+    <div class="glist form dpick">
+      <div class="frow"><label class="search sm"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="rDoorQ" placeholder="Find a door or group" aria-label="Find a door or group" value="${esc(DPQ)}"></label><span class="dp-sum" id="rDoorSum"></span></div>
+      <div class="frow dp-sec"><span class="dp-lab">Groups</span><div class="checks">
+      ${S.groups.filter(g=>isAdmin()||g.doors.length&&g.doors.every(d=>perm(d)!=="hidden")).map(g=>`<label class="grp" data-dpn="${esc(g.name.toLowerCase())}"><input type="checkbox" name="rDoor" value="g:${esc(g.id)}"${e.doors.includes("g:"+g.id)?" checked":""}>${esc(g.name)}</label>`).join("")}</div></div>
+      <details class="frow dp-sec dp-more" id="rDoorMore"${DPQ||DPOPEN||e.doors.some(x=>!x.startsWith("g:"))?" open":""}><summary><span class="dp-lab">Single doors</span><span class="hint">${visDoors().length}</span></summary><div class="checks">
+      ${visDoors().map(d=>`<label data-dpn="${esc((d.name+" "+d.id).toLowerCase())}"><input type="checkbox" name="rDoor" value="${esc(d.id)}"${e.doors.includes(d.id)?" checked":""}>${esc(d.name)}${perm(d.id)!=="edit"?` <span class="hint">(by request)</span>`:""}</label>`).join("")}</div></details>
+    </div>
     <h3 class="gh">Time</h3>
     <div class="glist form">
       <div class="frow"><label for="sA">Starts</label>${anchorFields("s",e.start)}</div>
       <div class="frow"><label for="eA">Ends</label>${anchorFields("e",e.end)}</div>
       <div class="frow"><label for="eD">Ends on</label><select id="eD">${[0,1,2,3,4,5,6,7].map(k=>`<option value="${k}"${(+e.end.days||0)===k?" selected":""}>${k===0?"The same day":k===1?"The next day":k+" days later"}</option>`).join("")}</select></div>
+      <div class="frow"><label for="rUntilK">Keep this rule</label><div class="tline"><select id="rUntilK"><option value="">Until I delete it</option><option value="30">For 30 days</option><option value="60">For 60 days</option><option value="90">For 90 days</option><option value="date"${e.until?" selected":""}>Until a date…</option></select><input type="date" id="rUntil" value="${esc(e.until||"")}" aria-label="Last day"${e.until?"":" hidden"}></div></div>
     </div>
-    <p class="gf">Times like havdalah come from the day it ends. If the end is earlier than the start on the same day, it runs past midnight.</p>
+    <p class="gf">Times like havdalah come from the day it ends. If the end is earlier than the start on the same day, it runs past midnight.${e.until?` This rule runs through ${esc(longDate(e.until))}, then stops.`:""}</p>
     ${sched()==="temp"?`<p class="notice">You can make temporary schedules only: pick specific dates (leave Every year unticked) or one event.</p>`:""}
     ${condBox("inc")}${condBox("exc")}${(E.yields||[]).length?`<h3 class="gh">Gives way to</h3><div class="glist form" id="yBox">${E.yields.map((y,i)=>{const W=S.rules.find(x=>String(x.id)===String(y.id));return `<div class="row"><div class="rt"><b>${esc(W?W.name:"(deleted rule)")}</b><span>${W?esc(condText(W.inc)):"No longer has any effect"}${y.doors&&y.doors.length?", on "+esc(y.doors.map(doorName).join(", ")):", on all shared doors"}</span></div><button class="btn sm danger" type="button" data-yrm="${i}">Remove</button></div>`}).join("")}</div>`:""}
     <p class="gf">The rule runs on any day that matches Runs on, unless it also matches Except on.</p>
@@ -2420,7 +2439,7 @@ function drawEditor(){
       <div class="frow"><label for="rSit">Situation</label><select id="rSit"><option value="">Any time</option>${(S.situations||[]).map(x=>`<option value="${esc(x.id)}"${e.sit===x.id?" selected":""}>Only when "${esc(x.name)}" is on</option>`).join("")}</select></div>
       <div class="frow"><label for="rRabbi">Rabbi</label><select id="rRabbi"><option value="any">Local or away</option><option value="local"${e.rabbi==="local"?" selected":""}>Only when local</option><option value="away"${e.rabbi==="away"?" selected":""}>Only when away</option></select></div>
       <div class="frow"><label for="rYear">Repeat</label><select id="rYear"><option value="">Every year</option>${[5787,5788,5789,5790,5791,5792].map(y=>`<option value="${y}"${+e.year===y?" selected":""}>Only in ${y} (${hebYearSpan(y)})</option>`).join("")}</select></div>
-      <div class="frow"><label for="rSeason">Clock</label><select id="rSeason"><option value="any">Any time of year</option><option value="dst"${e.season==="dst"?" selected":""}>Daylight saving only</option><option value="std"${e.season==="std"?" selected":""}>Standard time only</option></select></div>
+      <div class="frow"><label for="rSeason">Clock</label><select id="rSeason"><option value="any">Any time of year</option><option value="dst"${e.season==="dst"?" selected":""}>Summer clock only</option><option value="std"${e.season==="std"?" selected":""}>Winter clock only</option></select></div>
     </div></details>
     <h3 class="gh">Note</h3>
     <div class="glist form"><div class="frow"><textarea id="rNote" placeholder="Why this rule exists, who asked for it" aria-label="Note">${esc(e.note||"")}</textarea></div></div>
@@ -2430,6 +2449,13 @@ function drawEditor(){
     ${(canSave&&!isAdmin())||!e.isNew?`<div class="glist acts">${canSave&&!isAdmin()?`<button type="button" class="row tap" id="asReq">Send as a request instead</button>`:""}${e.isNew?"":`<button type="button" class="row tap" id="dupRule">Duplicate</button><button type="button" class="row tap danger-row" id="delRule">Delete rule</button>`}</div>`:""}
     <p id="delConfirm" class="confirm" hidden>Delete this rule? <button class="btn sm lockall" type="button" id="delYes">Delete</button> <button class="btn sm" type="button" id="delNo">Keep</button></p>
    </div></form>`;
+  { const sum=()=>{const v=[...document.querySelectorAll("input[name=rDoor]:checked")].map(x=>x.value),g=v.filter(x=>x.startsWith("g:")).length,d=v.length-g;
+      $("#rDoorSum").textContent=v.length?[g?`${g} group${g>1?"s":""}`:"",d?`${d} door${d>1?"s":""}`:""].filter(Boolean).join(", ")+" chosen":"None chosen"};
+    const filt=()=>{const q=DPQ.trim().toLowerCase();document.querySelectorAll(".dpick [data-dpn]").forEach(l=>{l.hidden=!!q&&!l.dataset.dpn.includes(q)&&!l.querySelector("input").checked});if(q)$("#rDoorMore").open=true};
+    $("#rDoorQ").addEventListener("input",ev=>{DPQ=ev.target.value;filt()});
+    $("#rDoorMore").addEventListener("toggle",ev=>{DPOPEN=ev.target.open});
+    document.querySelectorAll("input[name=rDoor]").forEach(x=>x.addEventListener("change",sum));sum();filt(); }
+  $("#rUntilK").addEventListener("change",ev=>{const d=ev.target.value==="date";$("#rUntil").hidden=!d;if(d&&!$("#rUntil").value)$("#rUntil").value=addDays(todayNY(),29)});
   ["s","e"].forEach(p=>$(`#${p}A`).addEventListener("change",ev=>{const c=ev.target.value==="clock";$(`#${p}T`).hidden=!c;$(`#${p}OW`).hidden=c}));
   $("#rKind").addEventListener("change",ev=>{const a=ev.target.value==="access";$("#modeField").hidden=a;$("#agField").hidden=!a});
   $("#cancelEdit").onclick=closeEditor;
@@ -2445,7 +2471,7 @@ function drawEditor(){
     box.addEventListener("click",ev=>{
       const t=ev.target, w=t.closest("[data-wd]"), rf=t.closest("[data-rmfest]"), rd=t.closest("[data-rmdate]"), rh=t.closest("[data-rmhr]");
       const ha=t.closest("[data-hall]");
-      if(ha){ev.preventDefault();const it=(pickGroups().find(([g])=>g===ha.dataset.hall)||[0,[]])[1].map(([k])=>k);const all=it.every(k=>c.fest.includes(k));c.fest=all?c.fest.filter(k=>!it.includes(k)):[...c.fest,...it.filter(k=>!c.fest.includes(k))];HOPEN.add(box.dataset.box+"|"+ha.dataset.hall);redraw();return}
+      if(ha){ev.preventDefault();const it=(pickGroups(c.fest).find(([g])=>g===ha.dataset.hall)||[0,[]])[1].map(([k])=>k);const all=it.every(k=>c.fest.includes(k));c.fest=all?c.fest.filter(k=>!it.includes(k)):[...c.fest,...it.filter(k=>!c.fest.includes(k))];HOPEN.add(box.dataset.box+"|"+ha.dataset.hall);redraw();return}
       if(w){const i=+w.dataset.wd;c.wd=c.wd.includes(i)?c.wd.filter(x=>x!==i):[...c.wd,i].sort()}
       else if(rf){c.fest=c.fest.filter(k=>k!==rf.dataset.rmfest)}
       else if(rd){c.dates.splice(+rd.dataset.rmdate,1)}
@@ -2460,7 +2486,7 @@ function drawEditor(){
     const hs=box.querySelector("[data-hsearch]");if(hs){hs.addEventListener("input",()=>{HQ[box.dataset.box]=hs.value;hpFilter(box,box.dataset.box)});hpFilter(box,box.dataset.box)}
   });
   function redraw(){const sc=$("#ruleForm .mbody").scrollTop;captureTop();drawEditor();$("#ruleForm .mbody").scrollTop=sc}
-  const build=()=>({id:E.id,kind:E.kind||"door",group:E.group||"",note:(E.note||"").trim(),year:E.year||"",name:(E.name||"").trim()||"Untitled rule",mode:E.mode,doors:E.doors,rabbi:E.rabbi,sit:E.sit||"",season:E.season,inc:E.inc,exc:E.exc,yields:E.yields||[],start:E.start,end:E.end});
+  const build=()=>({id:E.id,kind:E.kind||"door",group:E.group||"",note:(E.note||"").trim(),year:E.year||"",name:(E.name||"").trim()||"Untitled rule",until:E.until||"",mode:E.mode,doors:E.doors,rabbi:E.rabbi,sit:E.sit||"",season:E.season,inc:E.inc,exc:E.exc,yields:E.yields||[],start:E.start,end:E.end});
   const check=r=>{const has=r.inc.wd.length||r.inc.fest.length||r.inc.dates.length||r.inc.hr.length;
     return !r.doors.length?"Pick at least one door or group.":!has?"Add at least one day under Runs on.":(r.start.a==="clock"&&!r.start.t)||(r.end.a==="clock"&&!r.end.t)?"Enter a clock time for the start and the end.":""};
   const showErr=t=>{$("#formErr").textContent=t;$("#formErr").hidden=!t;if(t)$("#formErr").scrollIntoView({block:"nearest"})};
@@ -2484,7 +2510,8 @@ function drawEditor(){
     const fw=$("#formWarn");if(fw&&fw.innerHTML)fw.scrollIntoView({block:"nearest"});
   };
 }
-function openEditor(r,isNew){E={...structuredClone(r),isNew};E.inc=Object.assign(C(),E.inc);E.exc=Object.assign(C(),E.exc);drawEditor();openModal("mRule");$("#editorSlot").scrollTop=0}
+let DPQ="",DPOPEN=false;
+function openEditor(r,isNew){DPQ="";DPOPEN=false;E={...structuredClone(r),isNew};E.inc=Object.assign(C(),E.inc);E.exc=Object.assign(C(),E.exc);drawEditor();openModal("mRule");$("#editorSlot").scrollTop=0}
 function closeEditor(){E=null;$("#editorSlot").innerHTML="";closeModal("mRule")}
 
 function nextGreg(g){const t=todayNY();let y=+t.slice(0,4);let s=iso(y,g.m,g.d);if(s<t)s=iso(y+1,g.m,g.d);return shortDate(s)}
@@ -2516,10 +2543,11 @@ function renderOverride(){
   $("#nowWrap").hidden=!list.length;
   $("#ovList").innerHTML=list.map(o=>`<div class="row"><span class="ic" style="--c:var(--p)">${ico("hand")}</span><div class="rt"><b>${esc(shownDoorsText(o.doors))}: ${esc(modeLabel(o.mode))}</b><span>${o.to?"Until "+esc(whenText(o.to)):"Until someone ends it"}, by ${esc(o.by)}${o.why?`, ${esc(o.why)}`:""}</span></div><button class="btn sm" type="button" data-ovend="${esc(o.id)}">End now</button></div>`).join("");
 }
+const HN_OPEN=new Set();   // holiday groups the person has open, kept across redraws
 function renderHolNames(){
   const q=($("#hnSearch").value||"").trim().toLowerCase(), H=S.holNames||{};
-  const html=GROUPS.map(([g,items])=>{const it=items.filter(([k,l])=>!q||(l+" "+(H[k]||"")+" "+g).toLowerCase().includes(q));if(!it.length)return"";const ren=items.filter(([k])=>H[k]).length;
-    return `<details class="hngrp"${q?" open":""}><summary class="gh">${esc(g)}<span>${ren?ren+" renamed":""}</span></summary><div class="glist">${it.map(([k,l])=>`<div class="row"><div class="rt"><input class="plain" data-hn="${k}" value="${esc(H[k]||l)}" placeholder="${esc(l)}" aria-label="Name for ${esc(l)}">${H[k]?`<span>Built-in name: ${esc(l)}</span>`:""}</div>${H[k]?`<button class="btn sm" type="button" data-hnreset="${k}">Reset</button>`:""}</div>`).join("")}</div></details>`}).join("");
+  const html=GROUPS.map(([g,items])=>{const it=items.filter(([k,l])=>!q||(l+" "+(H[k]||"")+" "+g).toLowerCase().includes(q));if(!it.length)return"";const ren=items.filter(([k])=>H[k]).length,hid=items.filter(([k])=>holHidden(k)).length;
+    return `<details class="hngrp" data-hng="${esc(g)}"${q||HN_OPEN.has(g)?" open":""}><summary class="gh">${esc(g)}<span>${[ren?ren+" renamed":"",hid?hid+" hidden":""].filter(Boolean).join(" · ")}</span></summary><div class="glist">${it.map(([k,l])=>{const hd=holHidden(k),used=holUses(k);return `<div class="row${hd?" hn-off":""}"><div class="rt"><input class="plain" data-hn="${k}" value="${esc(H[k]||l)}" placeholder="${esc(l)}" aria-label="Name for ${esc(l)}">${H[k]||hd||used?`<span>${[H[k]?"Built-in name: "+esc(l):"",hd?"Hidden from the rule list":"",used?`Used by ${used} rule${used>1?"s":""}`:""].filter(Boolean).join(" · ")}</span>`:""}</div>${H[k]?`<button class="btn sm" type="button" data-hnreset="${k}">Reset</button>`:""}${hd||!used?`<button class="btn sm" type="button" data-hnhide="${k}" aria-pressed="${hd}">${hd?"Show":"Hide"}</button>`:""}</div>`}).join("")}</div></details>`}).join("");
   $("#hnRows").innerHTML=html||emptyState("cal","Nothing matches","Try a different word.");
 }
 function renderSetup(){
@@ -2556,7 +2584,7 @@ function renderLog(){
 function renderStatus(){
   const t=dayInfo(todayNY());
   $("#hebNow").textContent=hebText(t.h);
-  $("#seasonNow").textContent=t.dst?"EDT":"EST";
+  $("#seasonNow").textContent=t.dst?"Summer clock":"Winter clock";
   $("#gregNow").textContent=new Date().toLocaleDateString("en-US",{timeZone:TZ,weekday:"short",month:"short",day:"numeric"});
   $("#sunNow").textContent=fmt(t.z.sunset);
   $("#rabLocal").classList.toggle("on",!S.rabbiAwayNow);$("#rabAway").classList.toggle("on",S.rabbiAwayNow);
@@ -3302,7 +3330,7 @@ $("#jumpSel").addEventListener("change",ev=>{const v=ev.target.value;if(!v)retur
 $("#days").addEventListener("click",ev=>{const a=ev.target.closest("[data-rule]");if(!a)return;
   showTab("rules");const el=$("#rule-"+a.dataset.rule);if(el){el.scrollIntoView({block:"center"});el.classList.add("flash");setTimeout(()=>el.classList.remove("flash"),1600)}});
 // rules
-$("#addRule").onclick=()=>openEditor({id:Date.now(),name:"",doors:[],rabbi:"any",season:"any",stop:true,inc:C(),exc:C(),start:{a:"sunset",t:"",o:0},end:{a:"clock",t:"22:00",o:0},mode:"Unlock"},true);
+$("#addRule").onclick=()=>openEditor({id:Date.now(),name:"",doors:[],rabbi:"any",season:"any",stop:true,inc:C(),exc:C(),start:{a:"clock",t:"18:00",o:0},end:{a:"clock",t:"22:00",o:0},mode:"Unlock"},true);
 $("#rules").addEventListener("click",ev=>{if(ev.target.closest("[data-pick]"))return;const rq=ev.target.closest("[data-reqrule]");if(rq){openEditor(S.rules.find(r=>r.id==rq.dataset.reqrule),false);return}
   const ed=ev.target.closest("[data-edit]"),dp=ev.target.closest("[data-dup]");
   if(ed) openEditor(S.rules.find(r=>r.id==ed.dataset.edit),false);
@@ -3422,10 +3450,12 @@ $("#ovMode").addEventListener("change",renderOverride);
 })();
 /* notes wiring */
 $("#hnSearch").addEventListener("input",renderHolNames);
+$("#hnRows").addEventListener("toggle",ev=>{const d=ev.target;if(!d.dataset||!d.dataset.hng||($("#hnSearch").value||"").trim())return;d.open?HN_OPEN.add(d.dataset.hng):HN_OPEN.delete(d.dataset.hng)},true);
 $("#hnRows").addEventListener("change",ev=>{const k=ev.target.dataset.hn;if(!k)return;const v=ev.target.value.trim();S.holNames=S.holNames||{};const old=festName(k);
   if(v&&v!==FEST[k].label)S.holNames[k]=v;else delete S.holNames[k];if(festName(k)===old){renderHolNames();return}
   commit(`Renamed holiday "${old}" to "${festName(k)}"`);toast("Renamed everywhere")});
-$("#hnRows").addEventListener("click",ev=>{const b=ev.target.closest("[data-hnreset]");if(!b)return;const k=b.dataset.hnreset,old=festName(k);delete S.holNames[k];commit(`Renamed holiday "${old}" back to "${festName(k)}"`);toast("Back to the built-in name")});
+$("#hnRows").addEventListener("click",ev=>{const h=ev.target.closest("[data-hnhide]");if(h){const k=h.dataset.hnhide,hd=holHidden(k);if(!hd&&holUses(k)){toast("A rule uses this day, so it can't be hidden");renderHolNames();return}S.holHide=(S.holHide||[]).filter(x=>x!==k);if(!hd)S.holHide.push(k);commit(`${hd?"Showing":"Hiding"} "${festName(k)}" in the rule list`);toast(hd?"Shown in rules again":"Hidden from the rule list");return}
+  const b=ev.target.closest("[data-hnreset]");if(!b)return;const k=b.dataset.hnreset,old=festName(k);delete S.holNames[k];commit(`Renamed holiday "${old}" back to "${festName(k)}"`);toast("Back to the built-in name")});
 $("#noteAdd").onclick=()=>{const n=addNote($("#noteText").value,"typed");if(!n)return;$("#noteText").value="";commit(n.status==="active"?`Added assistant note: "${n.text}"`:`Suggested assistant note: "${n.text}"`);renderSetupIndex();toast(n.status==="active"?"Note added. The assistant uses it from the next chat.":"Sent to a super admin to approve")};
 $("#noteRows").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;const d=b.dataset;
   if(d.napprove){const n=S.notes.find(x=>x.id===d.napprove);n.status="active";n.approvedBy=S.me;n.approvedAt=Date.now();commit(`Approved assistant note: "${n.text}"`);renderSetupIndex();toast("Note approved");return}
@@ -3663,7 +3693,7 @@ async function boxSampler(){
           zmanim:Object.fromEntries(["alos","sunrise","plag","sunset","candles","tzeis","havdalah"].map(k=>[k,fmt(info.z[k])])),
           doors:ids.map(d=>({door:d,name:doorName(d),windows:daySegments(d,s).map(g=>({from:fmt(g.a),to:g.b>=1440?"midnight":fmt(g.b),mode:g.c.ov?g.c.ov.mode:g.c.r.mode,set_by:g.c.ov?"manual override by "+g.c.ov.by:g.c.isDef?"door default":`rule "${g.c.r.name}" (${g.c.src})`}))}))}}},
     {name:"list_rules",description:"All rules this person can see: id, name, doors, when it runs and its exceptions, start and end, mode, layer (schedule, event or situation), notes.",
-      execute(){return S.rules.filter(canSeeRule).map(r=>({id:r.id,name:r.name,kind:r.kind||"door",doors:shownDoorsText(r.doors),runs_on:condText(r.inc),except:condText(r.exc),gives_way:yieldsText(r),start:anchorText(r.start),end:anchorText(r.end)+(r.end.days?` (+${r.end.days} days)`:""),mode:r.kind==="access"?r.group+" cards":r.mode,layer:["schedule","event (overrides the schedule during its hours)","situation (overrides while switched on)","situation that beats everything"][ruleLayer(r)],only_when:[r.rabbi!=="any"?"rabbi "+r.rabbi:"",r.season!=="any"?r.season:""].filter(Boolean).join(", "),note:r.note||""}))}},
+      execute(){return S.rules.filter(canSeeRule).map(r=>({id:r.id,name:r.name,kind:r.kind||"door",doors:shownDoorsText(r.doors),runs_on:condText(r.inc),except:condText(r.exc),gives_way:yieldsText(r),start:anchorText(r.start),end:anchorText(r.end)+(r.end.days?` (+${r.end.days} days)`:""),mode:r.kind==="access"?r.group+" cards":r.mode,layer:["schedule","event (overrides the schedule during its hours)","situation (overrides while switched on)","situation that beats everything"][ruleLayer(r)],only_when:[r.rabbi!=="any"?"rabbi "+r.rabbi:"",r.season!=="any"?(r.season==="dst"?"summer clock only":"winter clock only"):""].filter(Boolean).join(", "),note:r.note||""}))}},
     {name:"find_dates",description:"Find the next dates (up to 12) in the coming 2 years that match a day key such as rc_any, succos1, shovavim, or a weekday name. Returns YYYY-MM-DD with Hebrew date.",
       inputSchema:{type:"object",properties:{key:{type:"string"},from:{type:"string"}},required:["key"]},
       execute(i){const k=String(i.key),w=WDN.findIndex(n=>n.toLowerCase().startsWith(k.toLowerCase().slice(0,3)));const out=[];let s=/^\d{4}-\d{2}-\d{2}$/.test(i.from||"")?i.from:todayNY();

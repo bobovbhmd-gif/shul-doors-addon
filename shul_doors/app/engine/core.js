@@ -113,7 +113,7 @@ function can(k){if(k==="rules")return sched()!=="none";return isAdmin()||!!(me()
 // a temporary rule runs only on specific one-time dates or one specific event; anything that repeats is permanent
 function isTempRule(r){const n=r.inc;return !n.wd.length&&!n.hr.length&&n.fest.every(k=>k.startsWith("ev:"))&&n.dates.every(d=>!d.yearly)&&(n.dates.length+n.fest.length)>0}
 function ruleLastDay(r){let last="";r.inc.dates.forEach(d=>{if(d.to>last)last=d.to});r.inc.fest.forEach(k=>{const e=S.events.find(x=>"ev:"+x.id===k);if(e&&e.to>last)last=e.to});return last}
-function isArchived(r){if(!isTempRule(r))return false;const last=ruleLastDay(r);return !!last&&addDays(last,(+r.end.days||0)+1)<todayNY()}
+function isArchived(r){if(r.until&&addDays(r.until,(+r.end.days||0)+1)<todayNY())return true;if(!isTempRule(r))return false;const last=ruleLastDay(r);return !!last&&addDays(last,(+r.end.days||0)+1)<todayNY()}
 function canSchedule(r){const sc=sched();return sc==="both"||(sc==="temp"&&isTempRule(r))}
 function perm(d){return isAdmin()?"edit":((me().perm||{})[d]||"hidden")}
 function visDoors(){return S.doors.filter(d=>perm(d.id)!=="hidden")}
@@ -271,6 +271,7 @@ function evalRule(r,info,door,seen){
   if(r.sit&&!info.sits.has(r.sit)) return null;
   if(r.season==="dst"&&!info.dst) return null;
   if(r.season==="std"&&info.dst) return null;
+  if(r.until&&info.s>r.until) return null;
   if(r.year&&hebYear(info.s)!==+r.year) return null;
   const x=r.exc;
   if(x.wd.includes(info.w)) return null;
