@@ -1107,6 +1107,8 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
 @media (max-width:899px){.herorow{grid-template-columns:minmax(0,1fr)}}
 .hn-off input.plain{color:var(--muted)}
 .dpick .frow{flex-wrap:wrap}
+.cpair.need{outline:2px solid var(--warn);outline-offset:4px;border-radius:12px}
+[data-cgo].pulse{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 35%,transparent)}
 .checks label.via{background:color-mix(in srgb,var(--accent) 22%,var(--fill2));color:var(--accent);pointer-events:none}
 .dpick .search.sm{flex:1;min-width:200px;height:36px}
 .dp-sum{font-size:13px;color:var(--muted);margin-left:auto}
@@ -2132,11 +2134,13 @@ function clashChooser(el,pairs,onDone,onCancel){
     ${pairs.map((p,i)=>{const xa=exceptionFor(p.b,p.a,p.doors),xb=exceptionFor(p.a,p.b,p.doors);
       const opt=(w,l,x,k)=>x&&mayEdit(l)?`<label class="cpick"><input type="radio" name="cp${i}" value="${k}"> <span><b>"${esc(w.name)}" runs.</b> "${esc(l.name)}" ${esc(x.text)}.</span></label>`:`<div class="cpick off"><span><b>"${esc(w.name)}" can't win here</b>${x?`: you may not change "${esc(l.name)}"`:""}.</span></div>`;
       return `<div class="cpair"><p>${esc(clashLine(p))}.</p>${opt(p.a,p.b,xa,"a")}${opt(p.b,p.a,xb,"b")}</div>`}).join("")}
-    <p class="hint" style="margin:6px 0">Or cancel and change the times or doors so they don't overlap.</p>
+    <p class="hint" style="margin:6px 0">${pairs.length>1?`Choose for all ${pairs.length}, then save.`:"Choose one, then save."} Or cancel and change the times or doors so they don't overlap.</p>
     <div class="tline"><button class="btn sm pri" type="button" data-cgo disabled>Save with these choices</button><button class="btn sm" type="button" data-cno>Cancel</button></div></div>`;
   el.hidden=false;
   const go=el.querySelector("[data-cgo]");
-  el.querySelectorAll("input[type=radio]").forEach(r=>r.onchange=()=>{pick[r.name.slice(2)]=r.value;go.disabled=pairs.some((_,i)=>!pick[i])});
+  el.querySelectorAll("input[type=radio]").forEach(r=>r.onchange=()=>{pick[r.name.slice(2)]=r.value;go.disabled=pairs.some((_,i)=>!pick[i]);
+    if(!go.disabled){go.scrollIntoView({behavior:"smooth",block:"center"});go.classList.add("pulse");setTimeout(()=>go.classList.remove("pulse"),1500)}
+    else{const nx=[...el.querySelectorAll(".cpair")].find((c,i)=>!pick[i]);if(nx)nx.scrollIntoView({behavior:"smooth",block:"center"})}});
   go.onclick=()=>{const fixes=pairs.map((p,i)=>{const w=pick[i]==="a"?p.a:p.b,l=pick[i]==="a"?p.b:p.a;return {l,w,x:exceptionFor(l,w,p.doors)}});
     onDone(()=>fixes.forEach(f=>applyException(f.l.id,f.x)),fixes.map(f=>`"${f.l.name}" ${f.x.text}`).join("; "))};
   el.querySelector("[data-cno]").onclick=()=>{el.innerHTML="";onCancel&&onCancel()};
@@ -2502,7 +2506,12 @@ function drawEditor(){
     $("#reqBox").scrollIntoView({block:"nearest"});
     $("#rbGo").onclick=()=>{const q=newRequest($("#rbTo").value,`${E.isNew?"New rule":"Change rule"}: ${r.name}`,$("#rbText").value.trim()||"Please review and approve this change.",{type:"rule",isNew:E.isNew,rule:structuredClone(r)});
       closeEditor();commit(`Sent request "${q.subject}" to ${recipName(q.to)}`);showTab("msgs");toast("Request sent")}};
-  $("#ruleForm").onsubmit=ev=>{ev.preventDefault();captureTop();
+  $("#ruleForm").onsubmit=ev=>{ev.preventDefault();
+    const cg=document.querySelector("#formWarn [data-cgo]");
+    if(cg){if(!cg.disabled){cg.click();return}
+      const miss=[...document.querySelectorAll("#formWarn .cpair")].find(c=>!c.querySelector("input:checked"));
+      (miss||cg).scrollIntoView({behavior:"smooth",block:"center"});if(miss){miss.classList.add("need");setTimeout(()=>miss.classList.remove("need"),1600)}toast("Choose which rule runs for each overlap");return}
+    captureTop();
     const r=build(), err=check(r);
     const noDoor=expandDoors(r.doors).filter(d=>perm(d)!=="edit");
     const err2=err||(noDoor.length?`You can't change ${noDoor.map(doorName).join(", ")} yourself. Choose Send as a request to ask someone who can.`:"")||(!canSchedule(r)?"You can only make temporary schedules: use specific calendar dates (not every year) or one event, with no weekdays or holidays. Send it as a request to ask a super admin.":"");
