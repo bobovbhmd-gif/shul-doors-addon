@@ -11,14 +11,18 @@ const KEEP_DAYS = 400;
 const ENTRY = /^(.*?)\s+(granted|denied)\s+access\b/i;
 
 function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.now(), fetchImpl = fetch }) {
+  let stale = false;
   let events = [], seen = new Set(), lastPoll = 0, sensors = [], status = { on: false, problem: "", sensors: 0, lastPoll: 0 };
   // load what we already have
   try {
     for (const line of fs.readFileSync(file, "utf8").split("\n")) {
       if (!line.trim()) continue;
-      try { const e = JSON.parse(line); events.push(e); seen.add(e.k); } catch { /* skip a damaged line */ }
+      try { const e = JSON.parse(line); if (e.v === 2) { events.push(e); seen.add(e.k); } else stale = true; } catch { /* skip a damaged line */ }
     }
   } catch { /* first start */ }
+  // entries from the first version counted one card swipe up to 3 times (Home Assistant also records
+  // the door relocking as a change). Drop them and read Home Assistant's history again.
+  if (stale) { try { fs.writeFileSync(file, events.map((e) => JSON.stringify(e)).join("\n") + (events.length ? "\n" : "")); } catch { /* next poll retries */ } }
   if (events.length) lastPoll = Math.max(...events.map((e) => e.t));
 
   const api = async (path) => {
@@ -31,13 +35,16 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
   function record(entity, st) {
     const m = ENTRY.exec(String(st.state || ""));
     if (!m) return false;   // locked/unlocked messages and one-time-run notes are not entries
-    const t = Date.parse(st.last_updated || st.last_changed);
+    const a = st.attributes || {};
+    // one card swipe is one "Reader Message Time"; Home Assistant may record the same swipe several
+    // times as other details change (the door unlocking and locking again), so that time is the key
+    const when = a["Reader Message Time"] || st.last_changed || st.last_updated;
+    const t = Date.parse(when);
     if (!Number.isFinite(t)) return false;
-    const k = entity + "|" + (st.last_updated || st.last_changed);
+    const k = entity + "|" + when;
     if (seen.has(k)) return false;
     seen.add(k);
-    const a = st.attributes || {};
-    const e = { k, t, pid: a["Door ID"] != null ? Number(a["Door ID"]) : null, door: String(a.friendly_name || "").replace(/\s+Last Door Log.*$/i, ""), who: m[1].trim(), ok: m[2].toLowerCase() === "granted" };
+    const e = { v: 2, k, t, pid: a["Door ID"] != null ? Number(a["Door ID"]) : null, door: String(a.friendly_name || "").replace(/\s+Last Door Log.*$/i, ""), who: m[1].trim(), ok: m[2].toLowerCase() === "granted" };
     events.push(e);
     fs.appendFileSync(file, JSON.stringify(e) + "\n");
     return true;

@@ -1091,6 +1091,8 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
 .hero-next ul{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:auto 1fr;gap:5px 14px}
 .hero-next li{display:contents;font-size:14.5px}
 .hero-next li .tm{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hero-next li small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:1px}
+.hero-next .linkbtn{margin-top:8px;padding:0;border:0;background:none;color:var(--accent,#0a84ff);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
 .hero-next p{margin:4px 0 0;font-size:14.5px}
 .dc .dhow{font-size:12.5px;color:var(--muted);margin-top:-2px}
 .dc .nx{font-size:12.5px;color:var(--fg);margin-top:4px}
@@ -1392,13 +1394,14 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
     <div class="calbar">
       <select id="rpDays" aria-label="Period"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select>
       <select id="rpDoor" aria-label="Doors"></select>
+      <label class="gf" style="display:flex;align-items:center;gap:6px">After hours from <select id="rpAhFrom" aria-label="After hours start"></select> to <select id="rpAhTo" aria-label="After hours end"></select></label>
       </div>
     <div class="kpis" id="rpKpi"></div>
     <p class="gf" style="margin:-4px 4px 16px" id="rpSrc">Sample numbers in the prototype. The live system reads each panel's door log.</p>
     <div class="card"><h2 class="ch">Entries by hour</h2><div id="rpHours"></div></div>
     <div class="homecols">
       <div><h2 class="gh">By door</h2><div class="card tw" id="rpDoors"></div></div>
-      <div><h2 class="gh">After hours, 11 PM to 5 AM</h2><div class="card tw" id="rpLate"></div></div>
+      <div><h2 class="gh" id="rpLateH">After hours</h2><div class="card tw" id="rpLate"></div></div>
     </div>
     <h2 class="gh" id="rpUnusedH">Cards not used in this period</h2>
     <div class="card"><div class="tags" id="rpUnused"></div></div>
@@ -2747,6 +2750,24 @@ function nextVerb(door,next){const m=next.mode,f=next.from;
   if(f==="Unlock")return `locks (${MODE_WORD[m]||m})`;if(f==="Lockdown")return `comes out of lockdown (${MODE_WORD[m]||m})`;
   return `changes to ${MODE_WORD[m]||m}`}
 function whenWord(t){return t>=1440?`tomorrow at ${fmt(t-1440)}`:`at ${fmt(t)}`}
+// every real mode change in the next 24 hours, doors changing the same way at the same minute grouped
+function upcomingChanges(ds){
+  const now=Date.now(),s=todayNY(),min=nyMinutes(now),end=min+1440,map=new Map();
+  const segMode=g=>g.c.ov?g.c.ov.mode:g.c.r.mode;
+  ds.forEach(d=>{
+    const segs=[...daySegments(d.id,s),...daySegments(d.id,addDays(s,1)).map(g=>({...g,a:g.a+1440,b:g.b+1440}))];
+    const i=segs.findIndex(g=>g.a<=min&&min<g.b);if(i<0)return;
+    let from=segMode(segs[i]);
+    for(let j=i+1;j<segs.length&&segs[j].a<end;j++){const m=segMode(segs[j]);if(m===from)continue;
+      const k=segs[j].a+"|"+m+"|"+from;if(!map.has(k))map.set(k,{t:segs[j].a,mode:m,from,doors:[]});map.get(k).doors.push(d);from=m}
+  });
+  return [...map.values()].sort((a,b)=>a.t-b.t||b.doors.length-a.doors.length);
+}
+let HERO_ALL=false;
+function upRow(n){const tm=n.t>=1440?WSHORT[(dow(todayNY())+1)%7]+" "+fmt(n.t-1440):fmt(n.t);
+  const one=n.doors.length===1,verb=nextVerb(n.doors[0].id,n);
+  const names=n.doors.map(d=>d.name),list=names.length>3?names.slice(0,3).join(", ")+` and ${names.length-3} more`:names.join(", ");
+  return `<li><span class="tm">${esc(tm)}</span><span>${one?`${esc(names[0])} ${esc(verb)}`:`<b>${n.doors.length} doors</b> ${esc(verb.replace(/^(opens|locks|goes|comes|changes)/,w=>({opens:"open",locks:"lock",goes:"go",comes:"come",changes:"change"})[w]))}<small>${esc(list)}</small>`}</span></li>`}
 function renderHero(){
   const ds=visDoors(), t=dayInfo(todayNY());
   let open=0,locked=0,ld=0,alarm=[],ovs=0;const nexts=[];
@@ -2762,7 +2783,9 @@ function renderHero(){
   const title=ld?`${ld} door${ld>1?"s are":" is"} in lockdown`:issues.length?`${issues.length} thing${issues.length>1?"s need":" needs"} a look`:"Everything is on schedule";
   const ch=dayChips(t);
   const icon=lvl==="ok"?'<path d="M7 12.5l3.2 3.2L17 9"/>':'<path d="M12 7.5v6M12 16.8v.2"/>';
-  const soon=nexts.slice(0,3).map(n=>`<li><span class="tm">${n.t>=1440?WSHORT[(dow(todayNY())+1)%7]+" "+fmt(n.t-1440):fmt(n.t)}</span><span>${esc(n.door.name)} ${esc(nextVerb(n.door.id,n))}</span></li>`).join("");
+  const ups=upcomingChanges(ds),SHOW=5;
+  const soon=(HERO_ALL?ups:ups.slice(0,SHOW)).map(upRow).join("");
+  const more=ups.length>SHOW?`<button type="button" class="linkbtn" id="heroMore">${HERO_ALL?"Show less":`Show all ${ups.length}`}</button>`:"";
   $("#hero").className="hero "+lvl;
   $("#hero").innerHTML=`<div class="hero-top"><span class="hero-ic" aria-hidden="true"><svg viewBox="0 0 24 24">${icon}</svg></span>
     <div class="hero-txt"><div class="hero-title">${esc(title)}</div>
@@ -2771,8 +2794,9 @@ function renderHero(){
     ${issues.length?`<div class="hero-issues">${issues.map(x=>x.id?`<button type="button" class="hi tapx" data-hdoor="${esc(x.id)}">${ico("warn")}<span>${esc(x.t)}</span><span class="chev"></span></button>`:`<div class="hi">${ico("warn")}<span>${esc(x.t)}</span></div>`).join("")}</div>`:""}
     <div class="hero-grid">
       <div class="hero-stats"><button type="button" data-hf="open"><span class="n">${open}</span><span>Open</span></button><button type="button" data-hf="locked"><span class="n">${locked}</span><span>Locked</span></button><button type="button" data-hf="lockdown"><span class="n${ld?" r":""}">${ld}</span><span>Lockdown</span></button><button type="button" data-hf="hand"><span class="n">${ovs}</span><span>By hand</span></button></div>
-      <div class="hero-next"><span class="lab">Coming up</span>${soon?`<ul>${soon}</ul>`:"<p>No more changes today.</p>"}</div>
+      <div class="hero-next"><span class="lab">Coming up, next 24 hours</span>${soon?`<ul>${soon}</ul>${more}`:"<p>No changes in the next 24 hours.</p>"}</div>
     </div>`;
+  const hm=$("#heroMore");if(hm)hm.onclick=()=>{HERO_ALL=!HERO_ALL;renderHero()};
 }
 /* ---------- bulk edit ---------- */
 const PICK=new Set();
@@ -3051,8 +3075,16 @@ function renderReports(){
     drawReports(ev,days,ids,true);
   }).catch(()=>{$("#rpSrc").textContent="Could not load door activity from the box. Try again in a minute."});
 }
+// after hours is the viewer's choice, kept in this browser (default 11 PM to 5 AM)
+function ahGet(){let v=null;try{v=JSON.parse(localStorage.getItem("shulAfterHours")||"null")}catch(e){}return v&&Number.isInteger(v.a)&&Number.isInteger(v.b)?v:{a:23,b:5}}
+function ahSet(v){try{localStorage.setItem("shulAfterHours",JSON.stringify(v))}catch(e){}}
+function ahIn(h,v){return v.a===v.b?false:v.a<v.b?(h>=v.a&&h<v.b):(h>=v.a||h<v.b)}
+function ahFill(){const v=ahGet(),o=Array.from({length:24},(_,h)=>`<option value="${h}">${fmt(h*60)}</option>`).join("");
+  for(const [id,k] of [["#rpAhFrom","a"],["#rpAhTo","b"]]){const el=$(id);if(!el)continue;if(!el.options.length)el.innerHTML=o;el.value=String(v[k])}
+  const h=$("#rpLateH");if(h)h.textContent=`After hours, ${fmt(v.a*60)} to ${fmt(v.b*60)}`}
 function drawReports(ev,days,ids,real){
-  const ok=ev.filter(e=>e.ok), late=ok.filter(e=>e.h>=23||e.h<5), denied=ev.filter(e=>!e.ok);
+  const AH=ahGet();ahFill();
+  const ok=ev.filter(e=>e.ok), late=ok.filter(e=>ahIn(e.h,AH)), denied=ev.filter(e=>!e.ok);
   const used=new Set(ok.map(e=>e.card));
   $("#rpKpi").innerHTML=[["Card and PIN entries",ok.length],["Per day, average",ok.length/days<10?Math.round(ok.length/days*10)/10:Math.round(ok.length/days)],["After hours",late.length],["Denied attempts",denied.length]].map(([l,n])=>`<div class="kpi"><div class="lab">${l}</div><div class="n">${n.toLocaleString()}</div></div>`).join("");
   const byH=Array(24).fill(0);ok.forEach(e=>byH[e.h]++);const mx=Math.max(1,...byH);
@@ -3064,7 +3096,7 @@ function drawReports(ev,days,ids,real){
     return `<tr><td><b>${esc(doorName(d))}</b><br><span class="hint">${esc(d)}</span></td><td class="time">${e.length}</td><td class="time">${late.filter(x=>x.d===d).length}</td><td class="time">${denied.filter(x=>x.d===d).length}</td><td class="time">${e.length?fmt(bh*60):"none"}</td></tr>`}).join("")}</tbody></table>`;
   const at=e=>real?fmt(e.min):fmt(e.h*60+17);
   const lateRows=[...late].sort((a,b)=>(a.t||0)-(b.t||0));
-  $("#rpLate").innerHTML=late.length?`<table><thead><tr><th>When</th><th>Door</th><th>${real?"Who":"Card"}</th></tr></thead><tbody>${lateRows.slice(-12).reverse().map(e=>`<tr><td>${esc(WSHORT[dow(e.s)])}, ${esc(shortDate(e.s).replace(/, \d{4}$/,""))}, ${at(e)}</td><td>${esc(doorName(e.d))}</td><td>${esc(e.card)}</td></tr>`).join("")}</tbody></table>${late.length>12?`<p class="hint">Showing the latest 12 of ${late.length}.</p>`:""}`:`<p class="none">None in this period.</p>`;
+  $("#rpLate").innerHTML=late.length?`<table><thead><tr><th>When</th><th>Door</th><th>${real?"Who":"Card"}</th></tr></thead><tbody>${lateRows.slice(-12).reverse().map(e=>`<tr><td>${esc(WSHORT[dow(e.s)])}, ${esc(shortDate(e.s).replace(/, \d{4}$/,""))}, ${at(e)}</td><td><b>${esc(doorName(e.d))}</b><br><span class="hint">${esc(e.d)}</span></td><td>${esc(e.card)}</td></tr>`).join("")}</tbody></table>${late.length>12?`<p class="hint">Showing the latest 12 of ${late.length}.</p>`:""}`:`<p class="none">None in this period.</p>`;
   if(real){
     // the box doesn't have the card list, so show who came most and the denied attempts instead
     $("#rpUnusedH").textContent="Most frequent and denied";
@@ -3182,6 +3214,7 @@ $("#simPower").onclick=()=>{POWER_OUT=POWER_OUT?false:Date.now();renderHealth()}
 setInterval(()=>{if(POWER_OUT)renderHealth()},30000);
 // reports
 $("#rpDays").addEventListener("change",renderReports);$("#rpDoor").addEventListener("change",renderReports);
+["#rpAhFrom","#rpAhTo"].forEach(id=>{const el=$(id);if(el)el.addEventListener("change",()=>{ahSet({a:+$("#rpAhFrom").value,b:+$("#rpAhTo").value});renderReports()})});
 $("#rpHours").addEventListener("mousemove",ev=>{const el=ev.target.closest("[data-tip]");el?showTip(el,ev.clientX,ev.clientY):hideTip()});
 $("#rpHours").addEventListener("mouseleave",hideTip);
 $("#rpHours").addEventListener("focusin",ev=>{const el=ev.target.closest("[data-tip]");if(el){const r=el.getBoundingClientRect();showTip(el,r.left,r.top-40)}});
