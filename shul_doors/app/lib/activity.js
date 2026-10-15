@@ -43,7 +43,14 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
     return true;
   }
 
+  let lastNote = "";
+  const note = (lvl, msg) => { if (msg !== lastNote) { lastNote = msg; log(lvl, "activity: " + msg); } };
   async function poll() {
+    const st = await poll1();
+    if (st.problem) note("warn", st.problem); else note("info", `reading ${st.sensors} door log sensors from Home Assistant, ${events.length} entries kept`);
+    return st;
+  }
+  async function poll1() {
     if (!token || !haUrl) { status = { ...status, on: false, problem: "This box can't reach Home Assistant's records (no access token)." }; return status; }
     try {
       const states = await api("/states");
@@ -63,7 +70,6 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
       status = { on: true, problem: "", sensors: sensors.length, lastPoll: t0, since: events.length ? Math.min(...events.map((e) => e.t)) : null };
     } catch (e) {
       status = { ...status, on: status.on, problem: "Could not read door activity from Home Assistant: " + e.message, lastPoll: now() };
-      log("warn", "activity: " + e.message);
     }
     return status;
   }
@@ -83,7 +89,7 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
   // events for the Reports page, with the shul's door number (D301...) when known
   function list(days, idOfPid, idOfName) {
     const from = now() - days * 864e5;
-    return events.filter((e) => e.t >= from).map((e) => ({ t: e.t, door: (e.pid != null && idOfPid(e.pid)) || idOfName(e.door) || null, doorName: e.door, who: e.who, ok: e.ok }));
+    return events.filter((e) => e.t >= from).map((e) => ({ t: e.t, door: idOfName(e.door) || (e.pid != null && idOfPid(e.pid)) || null, doorName: e.door, who: e.who, ok: e.ok }));
   }
   return { poll, list, status: () => ({ ...status, count: events.length }) };
 }

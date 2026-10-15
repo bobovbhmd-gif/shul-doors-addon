@@ -155,8 +155,21 @@ async function tick() {
 let saveTimer = null;
 
 // ---------- door activity for Reports (read from Home Assistant's records) ----------
-const HA_TOKEN = process.env.SD_HA_TOKEN || process.env.SUPERVISOR_TOKEN || "";
-const HA_URL = process.env.SD_HA_URL || (process.env.SUPERVISOR_TOKEN ? "http://supervisor/core/api" : "");
+// Home Assistant gives each app a key. It is normally in the environment, but the base image's
+// start-up can hide it there, so also look where the base image keeps a copy.
+function supervisorToken() {
+  for (const k of ["SUPERVISOR_TOKEN", "HASSIO_TOKEN"]) if (process.env[k]) return process.env[k];
+  for (const k of ["SUPERVISOR_TOKEN", "HASSIO_TOKEN"]) {
+    for (const dir of ["/run/s6/container_environment", "/var/run/s6/container_environment"]) {
+      try { const v = fs.readFileSync(dir + "/" + k, "utf8").trim(); if (v) return v; } catch { /* not there */ }
+    }
+  }
+  return "";
+}
+const SUP_TOKEN = supervisorToken();
+const HA_TOKEN = process.env.SD_HA_TOKEN || SUP_TOKEN;
+const HA_URL = process.env.SD_HA_URL || (SUP_TOKEN ? "http://supervisor/core/api" : "");
+log("info", HA_TOKEN ? "activity: Home Assistant access key found" : "activity: no Home Assistant access key found");
 let activity = null;
 try { activity = createActivity({ file: file("activity.jsonl"), haUrl: HA_URL, token: HA_TOKEN, log }); }
 catch (e) { log("error", "activity: " + e.message); }
