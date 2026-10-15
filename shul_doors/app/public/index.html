@@ -1394,15 +1394,15 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
       <select id="rpDoor" aria-label="Doors"></select>
       </div>
     <div class="kpis" id="rpKpi"></div>
-    <p class="gf" style="margin:-4px 4px 16px">Sample numbers in the prototype. The live system reads each panel's door log.</p>
+    <p class="gf" style="margin:-4px 4px 16px" id="rpSrc">Sample numbers in the prototype. The live system reads each panel's door log.</p>
     <div class="card"><h2 class="ch">Entries by hour</h2><div id="rpHours"></div></div>
     <div class="homecols">
       <div><h2 class="gh">By door</h2><div class="card tw" id="rpDoors"></div></div>
       <div><h2 class="gh">After hours, 11 PM to 5 AM</h2><div class="card tw" id="rpLate"></div></div>
     </div>
-    <h2 class="gh">Cards not used in this period</h2>
+    <h2 class="gh" id="rpUnusedH">Cards not used in this period</h2>
     <div class="card"><div class="tags" id="rpUnused"></div></div>
-    <p class="gf">Worth checking: lost cards, people who moved, or cards to cancel.</p>
+    <p class="gf" id="rpUnusedP">Worth checking: lost cards, people who moved, or cards to cancel.</p>
   </section>
 
   <section id="tab-msgs" hidden>
@@ -3023,16 +3023,38 @@ function activity(days,doorIds){
         for(let k=0;k<n;k++){const card=CARDS[Math.floor(Math.pow(R2(),1.7)*40)];ev.push({s,d,h,card,ok:R2()>0.03})}}}}
   return ev;
 }
+// On the box: real card swipes, collected from Home Assistant's records of the
+// Protector.Net door log sensors. Fetched once a minute at most per period.
+let RP_CACHE={days:0,at:0,data:null,busy:false};
+async function boxActivity(days){
+  if(RP_CACHE.data&&RP_CACHE.days===days&&Date.now()-RP_CACHE.at<60000) return RP_CACHE.data;
+  const r=await fetch("api/activity?days="+days);const j=await r.json();
+  RP_CACHE={days,at:Date.now(),data:j,busy:false};return j;
+}
 function renderReports(){
   if($("#tab-reports").hidden) return;
-  if(ON_BOX){$("#tab-reports").innerHTML=emptyState("chart","Reports are not connected yet","Door activity reports will come from Protector.Net in a later version. Until then, use Reporting in Protector.Net.");return}
   const sel=$("#rpDoor").value||"all";
   $("#rpDoor").innerHTML=`<option value="all">All doors</option>`+S.groups.map(g=>`<option value="g:${esc(g.id)}">${esc(g.name)}</option>`).join("")+S.doors.map(d=>`<option value="${esc(d.id)}">${esc(d.id)} ${esc(d.name)}</option>`).join("");
   $("#rpDoor").value=sel;
   const ids=sel==="all"?S.doors.map(d=>d.id):expandDoors([sel]);
-  const days=+$("#rpDays").value, ev=activity(days,ids), ok=ev.filter(e=>e.ok), late=ok.filter(e=>e.h>=23||e.h<5), denied=ev.filter(e=>!e.ok);
+  const days=+$("#rpDays").value;
+  if(!ON_BOX){drawReports(activity(days,ids),days,ids,false);return}
+  boxActivity(days).then(j=>{
+    if($("#tab-reports").hidden) return;
+    const st=j.status||{};
+    if(!st.on&&!(j.events||[]).length){
+      $("#rpKpi").innerHTML="";["#rpHours","#rpDoors","#rpLate","#rpUnused"].forEach(x=>$(x).innerHTML="");
+      $("#rpSrc").innerHTML=`<b>No door activity yet.</b> ${esc(st.problem||"The box is still reading Home Assistant's records. Check again in a minute.")}`;return}
+    const want=new Set(ids);
+    const ev=(j.events||[]).filter(e=>e.door&&want.has(e.door)).map(e=>{const m=nyMinutes(e.t);return {t:e.t,s:nyDate(e.t),d:e.door,h:Math.floor(m/60),min:m,card:e.who,ok:e.ok}});
+    $("#rpSrc").textContent=`Real card and PIN activity from Protector.Net, collected through Home Assistant.${st.since?" Collected since "+whenText(st.since)+".":""}${st.problem?" Note: "+st.problem:""}`;
+    drawReports(ev,days,ids,true);
+  }).catch(()=>{$("#rpSrc").textContent="Could not load door activity from the box. Try again in a minute."});
+}
+function drawReports(ev,days,ids,real){
+  const ok=ev.filter(e=>e.ok), late=ok.filter(e=>e.h>=23||e.h<5), denied=ev.filter(e=>!e.ok);
   const used=new Set(ok.map(e=>e.card));
-  $("#rpKpi").innerHTML=[["Card and PIN entries",ok.length],["Per day, average",Math.round(ok.length/days)],["After hours",late.length],["Denied attempts",denied.length]].map(([l,n])=>`<div class="kpi"><div class="lab">${l}</div><div class="n">${n.toLocaleString()}</div></div>`).join("");
+  $("#rpKpi").innerHTML=[["Card and PIN entries",ok.length],["Per day, average",ok.length/days<10?Math.round(ok.length/days*10)/10:Math.round(ok.length/days)],["After hours",late.length],["Denied attempts",denied.length]].map(([l,n])=>`<div class="kpi"><div class="lab">${l}</div><div class="n">${n.toLocaleString()}</div></div>`).join("");
   const byH=Array(24).fill(0);ok.forEach(e=>byH[e.h]++);const mx=Math.max(1,...byH);
   const step=Math.max(1,Math.ceil(mx/4/10)*10),lines=[];for(let v=step;v<=mx;v+=step)lines.push(v);
   TIPS={...TIPS};byH.forEach((n,h)=>TIPS["h"+h]=`<b>${fmt(h*60)} to ${fmt((h+1)*60)}</b>${n.toLocaleString()} entries · ${Math.round(n/days*10)/10} a day`);
@@ -3040,7 +3062,19 @@ function renderReports(){
     <div class="haxis">${byH.map((_,h)=>`<span>${h%3===0?["12a","3a","6a","9a","12p","3p","6p","9p"][h/3]:""}</span>`).join("")}</div>`;
   $("#rpDoors").innerHTML=`<table><thead><tr><th>Door</th><th>Entries</th><th>After hours</th><th>Denied</th><th>Busiest hour</th></tr></thead><tbody>${ids.map(d=>{const e=ok.filter(x=>x.d===d),hh=Array(24).fill(0);e.forEach(x=>hh[x.h]++);const bh=hh.indexOf(Math.max(...hh));
     return `<tr><td><b>${esc(doorName(d))}</b><br><span class="hint">${esc(d)}</span></td><td class="time">${e.length}</td><td class="time">${late.filter(x=>x.d===d).length}</td><td class="time">${denied.filter(x=>x.d===d).length}</td><td class="time">${e.length?fmt(bh*60):"none"}</td></tr>`}).join("")}</tbody></table>`;
-  $("#rpLate").innerHTML=late.length?`<table><thead><tr><th>When</th><th>Door</th><th>Card</th></tr></thead><tbody>${late.slice(-12).reverse().map(e=>`<tr><td>${esc(WSHORT[dow(e.s)])}, ${esc(shortDate(e.s).replace(/, \d{4}$/,""))}, ${fmt(e.h*60+17)}</td><td>${esc(doorName(e.d))}</td><td>${esc(e.card)}</td></tr>`).join("")}</tbody></table>${late.length>12?`<p class="hint">Showing the latest 12 of ${late.length}.</p>`:""}`:`<p class="none">None in this period.</p>`;
+  const at=e=>real?fmt(e.min):fmt(e.h*60+17);
+  const lateRows=[...late].sort((a,b)=>(a.t||0)-(b.t||0));
+  $("#rpLate").innerHTML=late.length?`<table><thead><tr><th>When</th><th>Door</th><th>${real?"Who":"Card"}</th></tr></thead><tbody>${lateRows.slice(-12).reverse().map(e=>`<tr><td>${esc(WSHORT[dow(e.s)])}, ${esc(shortDate(e.s).replace(/, \d{4}$/,""))}, ${at(e)}</td><td>${esc(doorName(e.d))}</td><td>${esc(e.card)}</td></tr>`).join("")}</tbody></table>${late.length>12?`<p class="hint">Showing the latest 12 of ${late.length}.</p>`:""}`:`<p class="none">None in this period.</p>`;
+  if(real){
+    // the box doesn't have the card list, so show who came most and the denied attempts instead
+    $("#rpUnusedH").textContent="Most frequent and denied";
+    const cnt={};ok.forEach(e=>cnt[e.card]=(cnt[e.card]||0)+1);const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,15);
+    const dn=[...denied].sort((a,b)=>b.t-a.t).slice(0,10);
+    $("#rpUnused").innerHTML=(top.length?top.map(([n,c])=>`<span class="tag" style="padding-right:9px">${esc(n)}: ${c}</span>`).join(""):`<span class="none">No entries in this period.</span>`)+
+      (dn.length?`<div style="flex-basis:100%;margin-top:10px"><b>Latest denied:</b> ${dn.map(e=>`${esc(e.card)} at ${esc(doorName(e.d))}, ${esc(WSHORT[dow(e.s)])} ${at(e)}`).join("; ")}</div>`:"");
+    $("#rpUnusedP").textContent="Denied attempts are worth a look: an expired card, a wrong PIN, or someone trying a door they shouldn't.";
+    return;
+  }
   const unused=CARDS.filter(c=>!used.has(c));
   $("#rpUnused").innerHTML=unused.map(c=>`<span class="tag" style="padding-right:9px">${esc(c)}</span>`).join("")||`<span class="none">Every card was used.</span>`;
 }

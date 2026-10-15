@@ -1,5 +1,5 @@
 name: Shul Doors
-version: "0.2.0"
+version: "0.2.1"
 slug: shul_doors
 description: Runs the shul's Protector.Net doors by zmanim, Jewish holidays, events and situations.
 url: https://github.com/bobovbhmd-gif/shul-doors-addon
@@ -14,6 +14,7 @@ ingress_port: 8099
 panel_icon: mdi:door
 panel_title: Shul Doors
 panel_admin: true
+homeassistant_api: true
 options:
   mode: practice
   protector_url: ""

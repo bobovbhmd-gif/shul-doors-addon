@@ -1,0 +1,91 @@
+"use strict";
+// Door activity for the Reports page. The Protector.Net integration in Home
+// Assistant already hears every card swipe and keeps a "Last Door Log" sensor per
+// door; Home Assistant records each change. This collects those changes into the
+// box's own log (kept a year, longer than Home Assistant keeps history) by asking
+// Home Assistant every minute what changed since the last time. Read only: it never
+// changes anything in Home Assistant or at the doors.
+const fs = require("fs");
+
+const KEEP_DAYS = 400;
+const ENTRY = /^(.*?)\s+(granted|denied)\s+access\b/i;
+
+function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.now(), fetchImpl = fetch }) {
+  let events = [], seen = new Set(), lastPoll = 0, sensors = [], status = { on: false, problem: "", sensors: 0, lastPoll: 0 };
+  // load what we already have
+  try {
+    for (const line of fs.readFileSync(file, "utf8").split("\n")) {
+      if (!line.trim()) continue;
+      try { const e = JSON.parse(line); events.push(e); seen.add(e.k); } catch { /* skip a damaged line */ }
+    }
+  } catch { /* first start */ }
+  if (events.length) lastPoll = Math.max(...events.map((e) => e.t));
+
+  const api = async (path) => {
+    const r = await fetchImpl(haUrl.replace(/\/$/, "") + path, { headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" } });
+    if (!r.ok) throw new Error(`Home Assistant answered ${r.status} for ${path.split("?")[0]}`);
+    return r.json();
+  };
+  const isLogSensor = (s) => s && typeof s.entity_id === "string" && s.entity_id.startsWith("sensor.") && s.attributes && "Door ID" in s.attributes && "Reader Message" in s.attributes;
+
+  function record(entity, st) {
+    const m = ENTRY.exec(String(st.state || ""));
+    if (!m) return false;   // locked/unlocked messages and one-time-run notes are not entries
+    const t = Date.parse(st.last_updated || st.last_changed);
+    if (!Number.isFinite(t)) return false;
+    const k = entity + "|" + (st.last_updated || st.last_changed);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    const a = st.attributes || {};
+    const e = { k, t, pid: a["Door ID"] != null ? Number(a["Door ID"]) : null, door: String(a.friendly_name || "").replace(/\s+Last Door Log.*$/i, ""), who: m[1].trim(), ok: m[2].toLowerCase() === "granted" };
+    events.push(e);
+    fs.appendFileSync(file, JSON.stringify(e) + "\n");
+    return true;
+  }
+
+  async function poll() {
+    if (!token || !haUrl) { status = { ...status, on: false, problem: "This box can't reach Home Assistant's records (no access token)." }; return status; }
+    try {
+      const states = await api("/states");
+      sensors = states.filter(isLogSensor).map((s) => s.entity_id);
+      if (!sensors.length) { status = { on: false, problem: "No \"Last Door Log\" sensors found. Check that the Protector.Net integration is set up and its door log sensors are turned on.", sensors: 0, lastPoll: now() }; return status; }
+      const t0 = now();
+      const from = new Date(lastPoll ? lastPoll - 5 * 60e3 : t0 - 10 * 864e5).toISOString();   // first time: what Home Assistant still remembers
+      let added = 0;
+      for (let i = 0; i < sensors.length; i += 20) {   // a few sensors per request keeps the address short
+        const ids = sensors.slice(i, i + 20).join(",");
+        const hist = await api(`/history/period/${encodeURIComponent(from)}?filter_entity_id=${encodeURIComponent(ids)}&end_time=${encodeURIComponent(new Date(t0).toISOString())}&significant_changes_only=0`);
+        for (const list of Array.isArray(hist) ? hist : []) for (const st of Array.isArray(list) ? list : []) if (record(st.entity_id, st)) added++;
+      }
+      lastPoll = t0;
+      if (added) log("info", `activity: ${added} new door entries`);
+      prune();
+      status = { on: true, problem: "", sensors: sensors.length, lastPoll: t0, since: events.length ? Math.min(...events.map((e) => e.t)) : null };
+    } catch (e) {
+      status = { ...status, on: status.on, problem: "Could not read door activity from Home Assistant: " + e.message, lastPoll: now() };
+      log("warn", "activity: " + e.message);
+    }
+    return status;
+  }
+
+  let pruned = "";
+  function prune() {
+    const day = new Date(now()).toISOString().slice(0, 10);
+    if (pruned === day) return;
+    pruned = day;
+    const cut = now() - KEEP_DAYS * 864e5;
+    if (!events.some((e) => e.t < cut)) return;
+    events = events.filter((e) => e.t >= cut);
+    seen = new Set(events.map((e) => e.k));
+    const tmp = file + ".tmp"; fs.writeFileSync(tmp, events.map((e) => JSON.stringify(e)).join("\n") + (events.length ? "\n" : "")); fs.renameSync(tmp, file);
+  }
+
+  // events for the Reports page, with the shul's door number (D301...) when known
+  function list(days, idOfPid, idOfName) {
+    const from = now() - days * 864e5;
+    return events.filter((e) => e.t >= from).map((e) => ({ t: e.t, door: (e.pid != null && idOfPid(e.pid)) || idOfName(e.door) || null, doorName: e.door, who: e.who, ok: e.ok }));
+  }
+  return { poll, list, status: () => ({ ...status, count: events.length }) };
+}
+
+module.exports = { createActivity };

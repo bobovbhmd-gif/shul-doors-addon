@@ -10,6 +10,7 @@ const { createEngine } = require("./engine/load");
 const { makeClient } = require("./lib/protector");
 const { sync } = require("./lib/sync");
 const { localDate } = require("./lib/time");
+const { createActivity } = require("./lib/activity");
 
 const DATA = process.env.SD_DATA || "/data";
 const PORT = +process.env.SD_PORT || 8099;
@@ -153,6 +154,25 @@ async function tick() {
 // ---------- web ----------
 let saveTimer = null;
 
+// ---------- door activity for Reports (read from Home Assistant's records) ----------
+const HA_TOKEN = process.env.SD_HA_TOKEN || process.env.SUPERVISOR_TOKEN || "";
+const HA_URL = process.env.SD_HA_URL || (process.env.SUPERVISOR_TOKEN ? "http://supervisor/core/api" : "");
+let activity = null;
+try { activity = createActivity({ file: file("activity.jsonl"), haUrl: HA_URL, token: HA_TOKEN, log }); }
+catch (e) { log("error", "activity: " + e.message); }
+if (activity) {
+  const every = +process.env.SD_ACTIVITY_MS || 60000;
+  setTimeout(() => activity.poll().catch(() => {}), Math.min(5000, every));
+  setInterval(() => activity.poll().catch(() => {}), every);
+}
+const { ourId } = require("./lib/sync");
+function activityFor(days) {
+  if (!activity) return { status: { on: false, problem: "Door activity is not available on this box." }, events: [] };
+  const byPid = new Map(Object.entries((store && store.pidOf) || {}).map(([id, pid]) => [Number(pid), id]));
+  const ids = new Set(((state && state.doors) || []).map((d) => d.id));
+  return { status: activity.status(), events: activity.list(days, (pid) => byPid.get(Number(pid)) || null, (name) => { const id = ourId(name); return ids.has(id) ? id : null; }) };
+}
+
 // ---------- speech to text: the page records, Whisper on this box listens ----------
 // Talks the Wyoming protocol to Home Assistant's Whisper add-on (port 10300):
 // one JSON header line per event, then its data and payload bytes.
@@ -282,6 +302,7 @@ const server = http.createServer((req, res) => {
       `${opts.mode === "practice" ? "Would do" : "Did"} (${(r.actions || []).length}):`, ...(r.actions || []).map((x) => "  " + x), "", "Special days loaded through:", ...Object.entries(r.loadedThrough || {}).map(([d, t]) => `  ${d}: ${t}`)];
     return send(res, 200, lines.join("\n"), "text/plain; charset=utf-8");
   }
+  if (req.method === "GET" && p === "/api/activity") { const d = Math.max(1, Math.min(400, +u.searchParams.get("days") || 30)); return send(res, 200, activityFor(d)); }
   if (req.method === "GET" && p === "/api/stt") { whisperUp().then((on) => send(res, 200, { on })); return; }
   if (req.method === "POST" && p === "/api/stt") {
     const chunks = []; let size = 0;
