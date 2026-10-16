@@ -2216,6 +2216,8 @@ function initials(n){return String(n||"?").replace(/[^A-Za-z ]/g,"").split(/\s+/
 let LAST_FOCUS=null;
 function openModal(id){const m=$("#"+id);if(!m)return;LAST_FOCUS=document.activeElement;m.hidden=false;document.body.classList.add("modal-open");
   requestAnimationFrame(()=>m.classList.add("show"));
+  // no typing box on open for touch screens (keyboard pops up) or when editing an existing rule
+  const touch=window.matchMedia&&matchMedia("(pointer:coarse)").matches;if(touch||(id==="mRule"&&E&&!E.isNew))return;
   const f=m.querySelector(".mbody input:not([type=checkbox]):not([type=file]),.mbody select,.mbody textarea");if(f)setTimeout(()=>f.focus({preventScroll:true}),80)}
 function closeModal(id){const list=id?[$("#"+id)]:[...document.querySelectorAll(".modal:not([hidden])")];
   list.forEach(m=>{if(!m||m.hidden)return;m.classList.remove("show");m.hidden=true});
@@ -2293,7 +2295,7 @@ function doorFilterOpts(sel){const visF=new Set(visDoors().map(d=>d.id)),grps=S.
   const opt=(v,t)=>`<option value="${esc(v)}"${sel===v?" selected":""}>${esc(t)}</option>`;
   return opt("","All doors")+(grps.length?`<optgroup label="Groups">${grps.map(g=>opt("g:"+g.id,g.name)).join("")}</optgroup>`:"")+`<optgroup label="Doors">${visDoors().map(d=>opt(d.id,d.name)).join("")}</optgroup>`}
 let PV_DOOR="";try{PV_DOOR=localStorage.getItem("shulPvDoor")||""}catch(e){}
-function pvDoors(){if(!PV_DOOR)return visDoors();const set=new Set(expandDoors([PV_DOOR]));const l=visDoors().filter(d=>set.has(d.id));return l.length?l:visDoors()}
+function pvDoors(){if(!PV_DOOR)return visDoors();const pvSet=new Set(expandDoors([PV_DOOR]));const l=visDoors().filter(d=>pvSet.has(d.id));return l.length?l:visDoors()}
 function renderPreview(){
   { const el=$("#pvDoorF");if(el){el.innerHTML=doorFilterOpts(PV_DOOR);if(el.value!==PV_DOOR){PV_DOOR="";}} }
   const today=todayNY(), start=$("#startDate").value||today, s0=addDays(start,-dow(start));
@@ -2483,7 +2485,8 @@ function drawEditor(){
     </div>
     <p class="gf">Times like havdalah come from the day it ends. If the end is earlier than the start on the same day, it runs past midnight.${e.until?` This rule runs through ${esc(longDate(e.until))}, then stops.`:""}</p>
     ${sched()==="temp"?`<p class="notice">You can make temporary schedules only: pick specific dates (leave Every year unticked) or one event.</p>`:""}
-    ${condBox("inc")}${condBox("exc")}${(E.yields||[]).length?`<h3 class="gh">Overridden by</h3><div class="glist form" id="yBox">${E.yields.map((y,i)=>{const W=S.rules.find(x=>String(x.id)===String(y.id));return `<div class="row"><div class="rt"><b>${esc(rn(W))}</b><span>${W?esc(condText(W.inc)):"No longer has any effect"}${y.doors&&y.doors.length?", at "+esc(y.doors.map(doorName).join(", ")):", on every door they share"}</span></div><button class="btn sm danger" type="button" data-yrm="${i}">Remove</button></div>`}).join("")}</div>`:""}
+    ${condBox("inc")}${condBox("exc")}${(E.yields||[]).length?`<h3 class="gh">Overridden by</h3><div class="glist form" id="yBox">${E.yields.map((y,i)=>{const W=S.rules.find(x=>String(x.id)===String(y.id));return `<div class="row"><div class="rt"><b>${esc(rn(W))}</b><span>${W?esc(condText(W.inc)):"No longer has any effect"}${y.doors&&y.doors.length?", at "+esc(y.doors.map(doorName).join(", ")):", on every door they share"}</span></div><button class="btn sm danger" type="button" data-yrm="${i}">Remove</button></div>`}).join("")}</div>`:""}${(()=>{if(E.isNew)return "";const drop=E.dropOv||[],L=S.rules.filter(x=>!drop.includes(String(x.id))&&(x.yields||[]).some(y=>String(y.id)===String(E.id)));if(!L.length)return "";
+      return `<h3 class="gh">Overrides</h3><div class="glist form" id="oBox">${L.map(x=>{const y=x.yields.find(v=>String(v.id)===String(E.id));return `<div class="row"><div class="rt"><b>${esc(rn(x))}</b><span>${esc(condText(x.inc))}${y.doors&&y.doors.length?", at "+esc(y.doors.map(doorName).join(", ")):", on every door they share"}</span></div><button class="btn sm danger" type="button" data-orm="${esc(String(x.id))}">Remove</button></div>`}).join("")}</div>`})()}
     <p class="gf">The rule runs on any day that matches Runs on, unless it also matches Except on.</p>
     <details class="more"${(!SIMPLE||e.sit||(e.rabbi&&e.rabbi!=="any")||e.year||(e.season&&e.season!=="any"))?" open":""}><summary class="gh">More options</summary>
     <div class="glist form">
@@ -2520,6 +2523,7 @@ function drawEditor(){
     $("#delYes").onclick=()=>{S.rules=S.rules.filter(x=>x.id!==e.id);S.rules.forEach(x=>{if(x.yields)x.yields=x.yields.filter(y=>String(y.id)!==String(e.id))});log(`Deleted rule "${e.name}"`);save();closeEditor();renderAll();toast("Rule deleted")};
     $("#dupRule").onclick=()=>{captureTop();const c={...structuredClone(E),id:Date.now(),name:(E.name||"Rule")+" (copy)"};delete c.no;delete c.isNew;openEditor(c,true)};
   }
+  $("#oBox")?.addEventListener("click",ev=>{const b=ev.target.closest("[data-orm]");if(!b)return;E.dropOv=(E.dropOv||[]).concat(b.dataset.orm);redraw()});
   $("#yBox")?.addEventListener("click",ev=>{const b=ev.target.closest("[data-yrm]");if(!b)return;E.yields.splice(+b.dataset.yrm,1);redraw()});
   document.querySelectorAll("[data-box]").forEach(box=>{
     const c=E[box.dataset.box];
@@ -2565,7 +2569,8 @@ function drawEditor(){
     showErr("");
     const isNew=E.isNew, old=S.rules.find(x=>x.id===r.id);
     const doors=[...new Set(expandDoors(r.doors).concat(old?expandDoors(old.doors):[]))];
-    attempt({change:()=>{if(isNew)S.rules.push(r);else S.rules=S.rules.map(x=>x.id===r.id?r:x)},doors,from:todayNY(),days:365,selfId:r.id,el:$("#formWarn"),
+    const dropOv=E.dropOv||[];
+    attempt({change:()=>{if(isNew)S.rules.push(r);else S.rules=S.rules.map(x=>x.id===r.id?r:dropOv.includes(String(x.id))?{...x,yields:(x.yields||[]).filter(y=>String(y.id)!==String(r.id))}:x)},doors,from:todayNY(),days:365,selfId:r.id,el:$("#formWarn"),
       done:sum=>{const t=`${isNew?"Added":"Changed"} rule "${r.name}"${sum}`;log(t);snap(t);save();closeEditor();renderAll();toast(isNew?"Rule added":"Rule saved")}});
     const fw=$("#formWarn");if(fw&&fw.innerHTML)fw.scrollIntoView({block:"nearest"});
   };
