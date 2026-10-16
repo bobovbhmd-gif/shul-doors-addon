@@ -1108,6 +1108,8 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
 .hn-off input.plain{color:var(--muted)}
 .dpick .frow{flex-wrap:wrap}
 .ovr{color:var(--ok);font-weight:500}
+.calbar .pvf{width:auto;max-width:240px;flex:0 1 240px}
+.secthead .pvf{width:auto;max-width:240px;margin-left:12px;height:34px;font-size:14px}
 .tpick{display:inline-flex;align-items:center;gap:4px}
 .tpick select{width:auto;min-width:58px;padding-right:22px}
 .tpick .tcolon{font-weight:600;color:var(--muted)}
@@ -1353,7 +1355,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
     </div>
     <div id="warnSum"></div>
     <div id="dayHead"></div>
-    <div class="secthead"><h2 class="gh">Doors</h2><span class="grow"></span>
+    <div class="secthead"><h2 class="gh">Doors</h2><select id="pvDoorF" class="pvf" aria-label="Show doors"></select><span class="grow"></span>
       <div class="legend" id="tlLegend"><span><i class="sw t-open"></i>Open</span><span><i class="sw t-card"></i>Card or PIN</span><span><i class="sw t-lock"></i>Lockdown</span><span><i class="sw t-man"></i>By hand</span><span><i class="sw t-shk"></i>Shkiah</span></div></div>
     <div id="tip" class="tip" hidden></div>
     <div class="glist dayrows" id="days"></div>
@@ -1419,6 +1421,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
   <section id="tab-sheet" hidden>
     <div class="calbar">
       <div class="seg" role="group" aria-label="Schedule view"><button type="button" data-go="preview">Day</button><button type="button" class="on" data-go="sheet">Week sheet</button></div>
+      <select id="shDoorF" class="pvf" aria-label="Show doors"></select>
       <span class="grow"></span>
       <div class="wknav"><button class="iconbtn" type="button" id="sheetPrev" aria-label="Previous week"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
       <input type="date" id="sheetDate" aria-label="Week of">
@@ -2282,12 +2285,19 @@ let SEL=null;
 const WSHORT=["Sun","Mon","Tue","Wed","Thu","Fri","Shab"];
 function dayChips(info){const out=[];[...info.keys].forEach(k=>{if(k.endsWith("_any")||k.startsWith("type:"))return;const own=/^(hd|ev|gd):/.test(k);if(FEST[k]||own)out.push({own,label:keyLabel(k)})});return out}
 function longDate(s){const {y,m,d}=parseIso(s);return new Date(Date.UTC(y,m-1,d)).toLocaleDateString("en-US",{timeZone:"UTC",weekday:"long",month:"long",day:"numeric"}).replace(/^Saturday/,"Shabbos")}
+// door / group choice for the schedule, shared by Day and Week sheet
+function doorFilterOpts(sel){const visF=new Set(visDoors().map(d=>d.id)),grps=S.groups.filter(g=>expandDoors(["g:"+g.id]).some(id=>visF.has(id)));
+  const opt=(v,t)=>`<option value="${esc(v)}"${sel===v?" selected":""}>${esc(t)}</option>`;
+  return opt("","All doors")+(grps.length?`<optgroup label="Groups">${grps.map(g=>opt("g:"+g.id,g.name)).join("")}</optgroup>`:"")+`<optgroup label="Doors">${visDoors().map(d=>opt(d.id,d.name)).join("")}</optgroup>`}
+let PV_DOOR="";try{PV_DOOR=localStorage.getItem("shulPvDoor")||""}catch(e){}
+function pvDoors(){if(!PV_DOOR)return visDoors();const set=new Set(expandDoors([PV_DOOR]));const l=visDoors().filter(d=>set.has(d.id));return l.length?l:visDoors()}
 function renderPreview(){
+  { const el=$("#pvDoorF");if(el){el.innerHTML=doorFilterOpts(PV_DOOR);if(el.value!==PV_DOOR){PV_DOOR="";}} }
   const today=todayNY(), start=$("#startDate").value||today, s0=addDays(start,-dow(start));
   if(!SEL||SEL<s0||SEL>addDays(s0,13)) SEL=start;
   const days=Array.from({length:14},(_,i)=>addDays(s0,i));
   const dayWarn={};let nWarn=0;
-  days.forEach(s=>{const info=dayInfo(s),w=[];visDoors().forEach(d=>w.push(...conflicts(d.id,info,resolve(d.id,info))));dayWarn[s]=w;nWarn+=w.length});
+  days.forEach(s=>{const info=dayInfo(s),w=[];pvDoors().forEach(d=>w.push(...conflicts(d.id,info,resolve(d.id,info))));dayWarn[s]=w;nWarn+=w.length});
   const sh=heb(SEL);
   const {y,m}=parseIso(SEL);
   $("#calMonth").innerHTML=`${esc(new Date(Date.UTC(y,m-1,1)).toLocaleDateString("en-US",{timeZone:"UTC",month:"long",year:"numeric"}))} <span>${sh?esc((sh.leap&&sh.m===12?"Adar I":HMN[sh.m])+" "+hebYear(SEL)):""}</span>`;
@@ -2308,7 +2318,7 @@ function renderPreview(){
   TIPS={};
   const pct=v=>(v/1440*100).toFixed(3)+"%", nowMin=nyMinutes(Date.now());
   const grid=[360,720,1080].map(t=>`<i class="hr" style="left:${pct(t)}"></i>`).join("")+`<i class="shk" style="left:${pct(z.sunset)}"></i>`+(SEL===today?`<i class="now" style="left:${pct(nowMin)}"></i>`:"");
-  const rows=visDoors().map(door=>{
+  const rows=pvDoors().map(door=>{
     const segs=daySegments(door.id,SEL);
     const bars=segs.map((g,j)=>{const id=`${SEL}|${door.id}|${j}`;TIPS[id]=segTip(door.id,SEL,g);
       const k=(g.c.ov?"man":modeKind(g.c.r.mode))+(g.c.isDef?" def":"");
@@ -2656,7 +2666,8 @@ function renderSheet(){
       <div class="wk-h">${esc(hebText(i.h))}</div>
       <div class="wk-z"><span>Netz ${nz(i.z.sunrise)}</span><span>Shkiah ${nz(i.z.sunset)}</span>${cz?`<span class="c">${cz[0]} ${cz[1]}</span>`:""}</div>
       ${ch.length?`<div class="wk-tags">${ch.map(c=>`<span class="${c.own?"e":""}">${esc(c.label)}</span>`).join("")}</div>`:""}</th>`}).join("");
-  const rows=visDoors().map(d=>`<tr><th scope="row"><b>${esc(d.name)}</b><span>${esc(d.id)}</span><span class="wk-def"><i class="dot" style="--c:${modeColor(doorDef(d.id))}"></i>Otherwise ${esc(modeLabel(doorDef(d.id)))}</span></th>${days.map(i=>{
+  { const el=$("#shDoorF");if(el)el.innerHTML=doorFilterOpts(PV_DOOR); }
+  const rows=pvDoors().map(d=>`<tr><th scope="row"><b>${esc(d.name)}</b><span>${esc(d.id)}</span><span class="wk-def"><i class="dot" style="--c:${modeColor(doorDef(d.id))}"></i>Otherwise ${esc(modeLabel(doorDef(d.id)))}</span></th>${days.map(i=>{
       const segs=daySegments(d.id,i.s).filter(g=>!g.c.isDef);
       return `<td class="${i.w===6?"shab":""}${i.s===today?" istoday":""}">${segs.map(g=>{const mode=g.c.ov?g.c.ov.mode:g.c.r.mode;
         return `<div class="wk-b" style="--c:${g.c.ov?"var(--p)":modeColor(mode)}">${g.a===0&&g.b<1440?`<b>Until ${fmt(g.b)}</b>`:g.a===0&&g.b>=1440?"<b>All day</b>":`<b>${fmt(g.a)}</b><b class="to">to ${g.b>=1440?"midnight":fmt(g.b)}</b>`}<span>${esc(modeLabel(mode))}${g.c.ov?", by hand":""}</span></div>`}).join("")||`<span class="wk-none">Default all day</span>`}</td>`}).join("")}</tr>`).join("");
@@ -3282,6 +3293,7 @@ $("#lockYes").onclick=()=>{$("#lockConfirm").hidden=true;S.overrides.push({id:"o
 $("#ovList").addEventListener("click",ev=>{const b=ev.target.closest("[data-ovend]");if(!b)return;const o=S.overrides.find(x=>x.id===b.dataset.ovend);o.to=Date.now();commit(`Ended override: ${o.mode} on ${doorsText(o.doors)}`)});
 // preview
 $("#startDate").addEventListener("change",renderPreview);
+["#pvDoorF","#shDoorF"].forEach(id=>{const el=$(id);if(el)el.addEventListener("change",ev=>{PV_DOOR=ev.target.value;try{localStorage.setItem("shulPvDoor",PV_DOOR)}catch(e){}renderPreview();renderSheet()})});
 $("#vList").onclick=()=>setView("list");
 $("#rqSearch").addEventListener("input",renderRules);$("#rqDoorF").addEventListener("change",renderRules);$("#rqModeF").addEventListener("change",renderRules);
 // situations
