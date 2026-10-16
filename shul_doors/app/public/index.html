@@ -163,8 +163,15 @@ th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mu
 .tbar .hr{position:absolute;top:0;bottom:0;width:1px;background:color-mix(in srgb,var(--fg) 12%,transparent);pointer-events:none}
 .tbar .shk{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--brass);pointer-events:none}
 .tbar .now{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--fg);pointer-events:none}
-.tip{position:fixed;z-index:20;max-width:300px;background:var(--fg);color:var(--bg);border-radius:6px;padding:8px 10px;font-size:13px;line-height:1.4;pointer-events:none;box-shadow:0 4px 14px rgb(0 0 0 / .2)}
+.tip{position:fixed;z-index:95;max-width:300px;background:var(--fg);color:var(--bg);border-radius:6px;padding:8px 10px;font-size:13px;line-height:1.4;pointer-events:none;box-shadow:0 4px 14px rgb(0 0 0 / .2)}
 .tip b{display:block}
+.segpop{position:fixed;z-index:90;width:max-content;max-width:min(320px,calc(100vw - 16px));background:var(--surface);color:var(--fg);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.45;box-shadow:0 12px 32px rgba(0,0,0,.2),0 0 0 .5px rgba(0,0,0,.08)}
+.segpop .sp-t b{display:block;font-size:15px;font-weight:600;margin-bottom:2px}
+.segpop .sp-t{color:var(--muted)}
+.segpop .sp-a{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.wk-b[data-tip]{cursor:pointer;border-radius:6px;transition:background .15s}
+.wk-b[data-tip]:hover,.wk-b[data-tip]:focus-visible{background:var(--fill2);outline:0}
+@media print{.segpop{display:none!important}}
 @media (max-width:640px){.tlgrid{grid-template-columns:70px 1fr}.tlgrid .lab small{display:none}}
 .board{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
 .dc{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;min-width:0}
@@ -1383,7 +1390,6 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
     <div id="dayHead"></div>
     <div class="secthead"><h2 class="gh">Doors</h2><select id="pvDoorF" class="pvf" aria-label="Show doors"></select><span class="grow"></span>
       <div class="legend" id="tlLegend"><span><i class="sw t-open"></i>Open</span><span><i class="sw t-card"></i>Card or PIN</span><span><i class="sw t-lock"></i>Lockdown</span><span><i class="sw t-man"></i>By hand</span><span><i class="sw t-shk"></i>Shkiah</span></div></div>
-    <div id="tip" class="tip" hidden></div>
     <div class="glist dayrows" id="days"></div>
     <p class="gf">Tap a colored bar for details. Faded color means no rule is running and the door is on its default.</p>
     <div hidden><button type="button" id="vList"></button><button type="button" id="vBars"></button></div>
@@ -1747,6 +1753,8 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
   <div class="toast" id="toast" role="status" hidden></div>
 </div>
 
+<div id="tip" class="tip" hidden></div>
+<div id="segPop" class="segpop" role="dialog" aria-label="Schedule details" hidden></div>
 <script>
 /*ENGINE:BEGIN*/
 const CAL = __CAL__;
@@ -2277,10 +2285,10 @@ function daySegments(door,s){
 function segTip(door,s,g){
   const c=g.c, d=S.doors.find(x=>x.id===door);
   const head=`${door} ${d?d.name:""}`;
-  if(c.isDef) return `<b>${esc(head)}</b>${esc(c.r.mode==="Unlock"?"Open":c.r.mode)} · ${fmt(g.a)} to ${g.b>=1440?"midnight":fmt(g.b)}<br>Door default (no rule at this time)`;
-  if(c.ov) return `<b>${esc(head)}</b>${esc(c.ov.mode)} · manual override by ${esc(c.ov.by)}<br>${fmt(g.a)} to ${g.b>=1440?"midnight":fmt(g.b)}${c.ov.why?"<br>"+esc(c.ov.why):""}`;
+  if(c.isDef) return `<b>${esc(head)}</b>${esc(modeLabel(c.r.mode))} · ${fmt(g.a)} to ${g.b>=1440?"midnight":fmt(g.b)}<br>Door default (no rule at this time)`;
+  if(c.ov) return `<b>${esc(head)}</b>${esc(modeLabel(c.ov.mode))} · set by hand by ${esc(c.ov.by)}<br>${fmt(g.a)} to ${g.b>=1440?"midnight":fmt(g.b)}${c.ov.why?"<br>"+esc(c.ov.why):""}`;
   const full=c.end&&c.end.b>1440&&g.b>=1440?` (runs to ${esc(endLabel(c.end))})`:"";
-  return `<b>${esc(head)}</b>${esc(c.r.mode==="Unlock"?"Open":c.r.mode)} · ${fmt(g.a)} to ${g.b>=1440?"midnight":fmt(g.b)}${full}<br>Rule "${esc(c.r.name)}" · ${esc(c.src)}`;
+  return `<b>${esc(head)}</b>${esc(modeLabel(c.r.mode))} · ${fmt(g.a)} to ${g.b>=1440?"midnight":fmt(g.b)}${full}<br>Rule ${c.r.no?"#"+c.r.no+" ":""}"${esc(c.r.name)}" · ${esc(c.src)}<i data-rid="${esc(String(c.r.id))}" hidden></i>`;
 }
 let TIPS={};
 function renderTimeline(start){
@@ -2716,9 +2724,9 @@ function renderSheet(){
       ${ch.length?`<div class="wk-tags">${ch.map(c=>`<span class="${c.own?"e":""}">${esc(c.label)}</span>`).join("")}</div>`:""}</th>`}).join("");
   { const el=$("#shDoorF");if(el)el.innerHTML=doorFilterOpts(PV_DOOR); }
   const rows=pvDoors().map(d=>`<tr><th scope="row"><b>${esc(d.name)}</b><span>${esc(d.id)}</span><span class="wk-def"><i class="dot" style="--c:${modeColor(doorDef(d.id))}"></i>Otherwise ${esc(modeLabel(doorDef(d.id)))}</span></th>${days.map(i=>{
-      const segs=daySegments(d.id,i.s).filter(g=>!g.c.isDef);
-      return `<td class="${i.w===6?"shab":""}${i.s===today?" istoday":""}">${segs.map(g=>{const mode=g.c.ov?g.c.ov.mode:g.c.r.mode;
-        return `<div class="wk-b" style="--c:${g.c.ov?"var(--p)":modeColor(mode)}">${g.a===0&&g.b<1440?`<b>Until ${fmt(g.b)}</b>`:g.a===0&&g.b>=1440?"<b>All day</b>":`<b>${fmt(g.a)}</b><b class="to">to ${g.b>=1440?"midnight":fmt(g.b)}</b>`}<span>${esc(modeLabel(mode))}${g.c.ov?", by hand":""}</span></div>`}).join("")||`<span class="wk-none">Default all day</span>`}</td>`}).join("")}</tr>`).join("");
+      const all=daySegments(d.id,i.s),segs=all.filter(g=>!g.c.isDef);
+      return `<td class="${i.w===6?"shab":""}${i.s===today?" istoday":""}">${segs.map(g=>{const mode=g.c.ov?g.c.ov.mode:g.c.r.mode,k=`wk|${d.id}|${i.s}|${all.indexOf(g)}`;TIPS[k]=segTip(d.id,i.s,g);
+        return `<div class="wk-b" data-tip="${esc(k)}" tabindex="0" role="button" aria-label="${esc(TIPS[k].replace(/<[^>]+>/g," "))}" style="--c:${g.c.ov?"var(--p)":modeColor(mode)}">${g.a===0&&g.b<1440?`<b>Until ${fmt(g.b)}</b>`:g.a===0&&g.b>=1440?"<b>All day</b>":`<b>${fmt(g.a)}</b><b class="to">to ${g.b>=1440?"midnight":fmt(g.b)}</b>`}<span>${esc(modeLabel(mode))}${g.c.ov?", by hand":""}</span></div>`}).join("")||`<span class="wk-none">Default all day</span>`}</td>`}).join("")}</tr>`).join("");
   $("#sheet").innerHTML=`<header class="wk-head"><div><h2>Door schedule</h2><p>${esc(range)}</p><p class="heb">${esc(hrange)}</p></div>${par?`<div class="wk-par"><span>Parshas</span><b>${esc(par)}</b></div>`:""}</header>
     <div class="tw wk-scroll"><table class="wk-t"><thead><tr><th class="corner" scope="col"><span>Door</span></th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
     <footer class="wk-foot"><div class="legend"><span><i class="sw" style="background:var(--g)"></i>Open</span><span><i class="sw" style="background:var(--b)"></i>Card or PIN</span><span><i class="sw" style="background:var(--r)"></i>Lockdown</span><span><i class="sw" style="background:var(--p)"></i>Changed by hand</span></div>
@@ -3464,18 +3472,37 @@ $("#tcList").addEventListener("click",ev=>{const t=ev.target.closest("button");i
     try{navigator.clipboard.writeText(txt).then(()=>{out.textContent="Copied. Paste it into a text or WhatsApp."},()=>{out.textContent=txt})}catch(e){out.textContent=txt}return}
   if(d.cext||d.cext1){c.to+=d.cext?2*3600e3:864e5;commit(`Extended code for "${c.name}" to ${whenText(c.to)}`);return}
   if(d.cdel){c.to=Math.min(c.to,Date.now());c.from=Math.min(c.from,c.to);commit(`Cancelled code for "${c.name}"`)}});$("#vBars").onclick=()=>setView("bars");
-function showTip(el,x,y){const t=TIPS[el.dataset.tip];if(!t)return;const tip=$("#tip");tip.innerHTML=t;tip.hidden=false;
+function showTip(el,x,y){const t=TIPS[el.dataset.tip];if(!t||!$("#segPop").hidden)return;const tip=$("#tip");tip.innerHTML=t;tip.hidden=false;
   const r=tip.getBoundingClientRect();let L=x+12,T=y+14;if(L+r.width>innerWidth-8)L=Math.max(8,x-r.width-12);if(T+r.height>innerHeight-8)T=Math.max(8,y-r.height-14);tip.style.left=L+"px";tip.style.top=T+"px"}
 function hideTip(){$("#tip").hidden=true}
+function pinSeg(el,x,y){let t=TIPS[el.dataset.tip];
+  if(!t){const m=el.dataset.tip.match(/^wk\|([^|]+)\|([^|]+)\|(\d+)$/);if(m){const g=daySegments(m[1],m[2])[+m[3]];if(g)t=TIPS[el.dataset.tip]=segTip(m[1],m[2],g)}}
+  if(!t)return;hideTip();
+  const pop=$("#segPop"),rid=(t.match(/data-rid="([^"]+)"/)||[])[1],R=rid&&S.rules.find(r=>String(r.id)===rid);
+  const lbl=R?`${canEditRule(R)?"Edit rule":"Show rule"}${R.no?" #"+R.no:""}`:"";
+  pop.innerHTML=`<div class="sp-t">${t}</div><div class="sp-a">${R?`<button type="button" class="btn sm pri" data-sp-go="${esc(rid)}">${esc(lbl)}</button>`:""}<button type="button" class="btn sm" data-sp-x>Close</button></div>`;
+  pop.hidden=false;PIN_AT=Date.now();const r=pop.getBoundingClientRect();let L=x-r.width/2,T=y+14;
+  L=Math.max(8,Math.min(L,innerWidth-r.width-8));if(T+r.height>innerHeight-8)T=Math.max(8,y-r.height-14);pop.style.left=L+"px";pop.style.top=T+"px";
+  const b=pop.querySelector("[data-sp-go]")||pop.querySelector("[data-sp-x]");if(b&&!(window.matchMedia&&matchMedia("(pointer:coarse)").matches))b.focus({preventScroll:true})}
+let PIN_AT=0;
+function unpinSeg(){const p=$("#segPop");if(p&&!p.hidden)p.hidden=true}
+$("#segPop").addEventListener("click",ev=>{const g=ev.target.closest("[data-sp-go]");if(g){unpinSeg();const R=S.rules.find(r=>String(r.id)===g.dataset.spGo);
+    if(R&&canEditRule(R)&&!$("#mDoor")?.hidden)closeModal("mDoor");goRule(g.dataset.spGo);return}
+  if(ev.target.closest("[data-sp-x]"))unpinSeg()});
+document.addEventListener("click",ev=>{if(!ev.target.closest("#segPop")&&!ev.target.closest("[data-tip]"))unpinSeg()},true);
+document.addEventListener("keydown",ev=>{if(ev.key==="Escape")unpinSeg()});
+addEventListener("scroll",()=>{if(Date.now()-PIN_AT>500)unpinSeg()},{capture:true,passive:true});addEventListener("resize",unpinSeg);
 $("#days").addEventListener("mousemove",ev=>{const el=ev.target.closest("[data-tip]");el?showTip(el,ev.clientX,ev.clientY):hideTip()});
 $("#days").addEventListener("mouseleave",hideTip);
 $("#days").addEventListener("focusin",ev=>{const el=ev.target.closest("[data-tip]");if(el){const r=el.getBoundingClientRect();showTip(el,r.left+r.width/2,r.bottom)}});
 $("#days").addEventListener("focusout",hideTip);
-$("#days").addEventListener("click",ev=>{const el=ev.target.closest("[data-tip]");if(el){const r=el.getBoundingClientRect();showTip(el,ev.clientX||r.left,ev.clientY||r.bottom)}});
+$("#days").addEventListener("click",ev=>{const el=ev.target.closest("[data-tip]");if(el){const r=el.getBoundingClientRect();pinSeg(el,ev.clientX||r.left+r.width/2,ev.clientY||r.bottom)}});
+$("#days").addEventListener("keydown",ev=>{const el=ev.target.closest("[data-tip]");if(el&&(ev.key==="Enter"||ev.key===" ")){ev.preventDefault();const r=el.getBoundingClientRect();pinSeg(el,r.left+r.width/2,r.bottom)}});
+$("#sheet").addEventListener("click",ev=>{const el=ev.target.closest("[data-tip]");if(el){const r=el.getBoundingClientRect();pinSeg(el,r.left+r.width/2,r.bottom-8)}});
+$("#sheet").addEventListener("keydown",ev=>{const el=ev.target.closest("[data-tip]");if(el&&(ev.key==="Enter"||ev.key===" ")){ev.preventDefault();const r=el.getBoundingClientRect();pinSeg(el,r.left+r.width/2,r.bottom-8)}});
 addEventListener("scroll",hideTip,{passive:true});
 $("#jumpSel").addEventListener("change",ev=>{const v=ev.target.value;if(!v)return;$("#startDate").value=v==="today"?todayNY():v;ev.target.value="";renderPreview()});
-$("#days").addEventListener("click",ev=>{const a=ev.target.closest("[data-rule]");if(!a)return;
-  showTab("rules");const el=$("#rule-"+a.dataset.rule);if(el){el.scrollIntoView({block:"center"});el.classList.add("flash");setTimeout(()=>el.classList.remove("flash"),1600)}});
+$("#days").addEventListener("click",ev=>{const a=ev.target.closest("[data-rule]");if(!a)return;goRule(a.dataset.rule)});
 // rules
 $("#addRule").onclick=()=>openEditor({id:Date.now(),name:"",doors:[],rabbi:"any",season:"any",stop:true,inc:C(),exc:C(),start:{a:"clock",t:"18:00",o:0},end:{a:"clock",t:"22:00",o:0},mode:"Unlock"},true);
 $("#rules").addEventListener("click",ev=>{if(ev.target.closest("[data-pick]"))return;const gt=ev.target.closest("[data-goto]");if(gt){ev.preventDefault();ev.stopPropagation();goRule(gt.dataset.goto);return}const rq=ev.target.closest("[data-reqrule]");if(rq){openEditor(S.rules.find(r=>r.id==rq.dataset.reqrule),false);return}
@@ -3560,7 +3587,7 @@ $("#doorBody").addEventListener("mousemove",ev=>{const el=ev.target.closest("[da
 $("#doorBody").addEventListener("mouseleave",hideTip);
 $("#doorBody").addEventListener("click",ev=>{
   const mb=ev.target.closest("#dSegMore");if(mb){const ul=$("#dSegs"),c=ul.classList.toggle("clip");mb.textContent=c?`Show all ${ul.children.length} times`:"Show less";return}
-  const el=ev.target.closest("[data-tip]");if(el){const r=el.getBoundingClientRect();showTip(el,ev.clientX||r.left,ev.clientY||r.bottom);
+  const el=ev.target.closest("[data-tip]");if(el){const r=el.getBoundingClientRect();pinSeg(el,ev.clientX||r.left+r.width/2,ev.clientY||r.bottom);
     const j=(el.dataset.tip.match(/\|(\d+)$/)||[])[1],li=j!=null&&document.querySelector(`#dSegs [data-seg="${j}"]`);
     if(li){const ul=$("#dSegs");if(ul.classList.contains("clip")&&+j>=6){ul.classList.remove("clip");const mb2=$("#dSegMore");if(mb2)mb2.textContent="Show less"}
       document.querySelectorAll("#dSegs .hl").forEach(x=>x.classList.remove("hl"));li.classList.add("hl");setTimeout(()=>li.classList.remove("hl"),1800)}}});
