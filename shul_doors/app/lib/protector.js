@@ -48,17 +48,27 @@ function makeClient({ baseUrl, username, password, partitionId = null, log = () 
   }
   const results = (d) => (Array.isArray(d) ? d : (d && d.Results) || []);
 
+  // Reads every page. A server may send fewer per page than asked (a cap), so a short
+  // first page doesn't mean the end: keep going until a page is empty, repeats, or
+  // the total it reports is reached.
   async function pages(path, query = {}) {
-    const all = [];
+    const all = [], seen = new Set(), per = query.PerPage || 100;
+    let first = 0;
     for (let p = 1; p < 200; p++) {
-      const per = query.PerPage || 100;
-      const got = results(await call("GET", path, { query: { ...query, PageNumber: p, PerPage: per } }));
-      all.push(...got);
-      if (got.length < per) break;
+      const d = await call("GET", path, { query: { ...query, PageNumber: p, PerPage: per } });
+      const got = results(d);
+      if (!got.length) break;
+      const fresh = got.filter((x) => !(x && x.Id != null && seen.has(x.Id)));
+      if (!fresh.length) break;                       // the server ignores PageNumber
+      for (const x of fresh) if (x && x.Id != null) seen.add(x.Id);
+      all.push(...fresh);
+      const total = d && !Array.isArray(d) ? (d.Total ?? d.TotalCount ?? d.TotalResults) : null;
+      if (total != null && Number.isFinite(+total) && all.length >= +total) break;
+      if (p === 1) first = got.length;
+      else if (got.length < first) break;             // a short page after full ones: the last
     }
     return all;
   }
-
   const api = {
     login,
     async partitions() { return results(await call("GET", "/api/Partitions/ByPrivilege/Manage_Doors", { query: { PageNumber: 1, PerPage: 500 } })); },

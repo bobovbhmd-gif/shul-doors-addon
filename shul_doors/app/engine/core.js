@@ -98,7 +98,9 @@ const DEF_RULE=id=>({id:"def:"+id,name:"Default",mode:doorDef(id),isDef:true});
 function ensureNos(){if(!S||!S.rules)return;let m=Math.max(0,...S.rules.map(r=>+r.no||0),+S.ruleNoMax||0);S.rules.forEach(r=>{if(!r.no)r.no=++m});S.ruleNoMax=m}
 function rn(r){return r?(r.no?`#${r.no} `:"")+`"${r.name}"`:'"(deleted rule)"'}
 function save(){ensureNos();if(ON_BOX){boxSave();return}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
-let BOX_T=null;function boxSave(){clearTimeout(BOX_T);BOX_T=setTimeout(()=>{fetch("api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({version:window.__SD_VERSION,state:S})}).then(r=>r.json()).then(j=>{if(j.version)window.__SD_VERSION=j.version;if(j.conflict){toast("Someone else just made a change. Loading the latest.");setTimeout(()=>location.reload(),1500)}}).catch(()=>toast("Could not save. Check the connection to the box."))},400)}
+let BOX_T=null,SAVING=false;function boxSave(){clearTimeout(BOX_T);SAVING=true;BOX_T=setTimeout(()=>{fetch("api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({version:window.__SD_VERSION,state:S})}).then(r=>r.json()).then(j=>{if(j.version)window.__SD_VERSION=j.version;
+    if(j.conflict){toast("Not saved: someone else changed something at the same time. Loading the latest, then please make your change again.");setTimeout(()=>location.reload(),3500);return}
+    if(j.error){toast("Not saved: "+j.error);setTimeout(()=>location.reload(),4000)}}).catch(()=>toast("Could not save. Check the connection to the box.")).finally(()=>{SAVING=false})},400)}
 function log(text){
   const e={t:Date.now(),u:S.me,text,push:"pending"};S.log.unshift(e);S.log=S.log.slice(0,500);
   // prototype: pretend the push and the read-back check take a few seconds
@@ -107,7 +109,7 @@ function log(text){
 }
 // roles: "Super admin" sees and changes everything; "Restricted" gets Edit / View / Hidden per door plus a few switches
 S.users.forEach(u=>{if(u.role==="Admin")u.role="Super admin";if(u.role==="Editor"){u.role="Restricted";u.perm=u.perm||{};u.can=u.can||{rules:false,override:true,events:true,rabbi:true}}});
-if(!S.users.some(u=>u.name==="Mikva attendant")&&S.users.length===2)S.users.push(structuredClone(SAMPLE.users[2]));
+if(!ON_BOX&&!S.users.some(u=>u.name==="Mikva attendant")&&S.users.length===2)S.users.push(structuredClone(SAMPLE.users[2]));
 function me(){return S.users.find(x=>x.name===S.me)||{role:"Super admin"}}
 function isAdmin(){return me().role==="Super admin"}
 S.users.forEach(u=>{if(u.role==="Restricted"&&!u.sched)u.sched=(u.can||{}).rules?"both":"none"});

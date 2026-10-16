@@ -23,7 +23,7 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
   // entries from the first version counted one card swipe up to 3 times (Home Assistant also records
   // the door relocking as a change). Drop them and read Home Assistant's history again.
   if (stale) { try { fs.writeFileSync(file, events.map((e) => JSON.stringify(e)).join("\n") + (events.length ? "\n" : "")); } catch { /* next poll retries */ } }
-  if (events.length) lastPoll = Math.max(...events.map((e) => e.t));
+  if (events.length) lastPoll = events.reduce((m, e) => (e.t > m ? e.t : m), 0);   // no spread: a year of entries is too many arguments
 
   const api = async (path) => {
     const r = await fetchImpl(haUrl.replace(/\/$/, "") + path, { headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" } });
@@ -74,7 +74,7 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
       lastPoll = t0;
       if (added) log("info", `activity: ${added} new door entries`);
       prune();
-      status = { on: true, problem: "", sensors: sensors.length, lastPoll: t0, since: events.length ? Math.min(...events.map((e) => e.t)) : null };
+      status = { on: true, problem: "", sensors: sensors.length, lastPoll: t0, since: events.length ? events.reduce((m, e) => (e.t < m ? e.t : m), Infinity) : null };
     } catch (e) {
       status = { ...status, on: status.on, problem: "Could not read door activity from Home Assistant: " + e.message, lastPoll: now() };
     }

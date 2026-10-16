@@ -391,10 +391,12 @@ const server = http.createServer((req, res) => {
         for (const d of body.state.doors) { engine.day(d.id, t); engine.day(d.id, t2); engine.day(d.id, t2, { plain: true }); }
       }
       catch (e) { engine.setState(state); return send(res, 400, { error: "rules failed to run: " + e.message }); }
-      const urgent = JSON.stringify(state.overrides || []) !== JSON.stringify(body.state.overrides || []);   // "open now" should not wait
+      // "open now", a situation switched on or off, or the rabbi leaving should reach the doors right away
+      const pick = (x) => JSON.stringify([x.overrides || [], (x.situations || []).map((t) => [t.id, t.on, t.ranges || []]), x.rabbiAwayNow || false, x.away || []]);
+      const urgent = pick(state) !== pick(body.state);
       state = body.state; version++;
       writeJson("state.json", state); writeJson("version.json", { v: version }); backup();
-      clearTimeout(saveTimer); saveTimer = setTimeout(() => runSync(urgent ? "opened or locked by hand" : "change saved"), urgent ? 1500 : 15000);
+      clearTimeout(saveTimer); saveTimer = setTimeout(() => runSync(urgent ? "urgent change" : "change saved"), urgent ? 1500 : 15000);
       send(res, 200, { ok: true, version });
     }); return;
   }

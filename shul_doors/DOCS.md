@@ -22,13 +22,14 @@ Use restore, or take doors off one or two at a time.
 - Holidays, fasts, events, rabbi away and situations are loaded ahead as one-time overrides (up to `horizon_days` ahead,
   at most `budget` per door, whole days only). They are stored on the panels, so the doors keep following them even if this box is off.
 - Overrides people make in Protector.Net are never touched, and they count toward the panel's limit of 32 per door.
-- Opening or locking a door by hand in the portal reaches the door within a few seconds; other changes within about 20 seconds.
+- Opening or locking a door by hand, switching a situation, or setting the rabbi away reaches the doors within a few seconds; other changes within about 20 seconds.
+- **Buzz open** (super admins) unlocks a door for a few seconds, like the release button. It doesn't change any schedule and is written to the history.
 - Every run reads everything back and compares it with the rules minute by minute.
 - If the box is off: holidays stay exact for as long as they were loaded (about a month); ordinary days slowly drift by the zmanim
   (about a minute a day), because the weekly schedule is not being rewritten.
 
 ## Not connected yet
-Guest codes and vendor access, badge access rules, alerts (texts and emails), door activity reports, power and UPS status.
+Guest codes and vendor access, badge access rules, alerts (texts and emails), door contact sensors, power and UPS status.
 The portal says so where they appear.
 
 ## Settings
@@ -36,6 +37,9 @@ The portal says so where they appear.
 - `protector_username` / `protector_password`: a Protector.Net System Administrator. Type these here yourself.
 - `partition`: leave empty to use the first partition.
 - `sync_time`: nightly run, New York time.
+
+## Door activity
+Reports read the card swipes from the Protector.Net integration's "Last Door Log" sensors in Home Assistant (read only) and keep them for about a year.
 
 ## Your data
 Rules and settings are in the add-on's data folder, with a copy every day for 60 days (`backups`).

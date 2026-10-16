@@ -1,7 +1,9 @@
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Shul Door Scheduler</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: control-room tool. Status strip, manual override, then tabs: preview, rules, events, activity, settings. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* no "font boosting" on Android tablets */
 :root{
   --bg:#f3f4f7; --surface:#ffffff; --surface2:#e9ecf2; --line:#d5dae4;
   --fg:#1b2333; --muted:#5d6779; --accent:#2a4a8a; --accent-fg:#ffffff;
@@ -978,7 +980,9 @@ details.row .permgrid{padding-bottom:14px}
 @media (max-width:899px){.homecols{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:699px){
   .pagehead{margin-bottom:16px}
-  .pact .btn{padding:8px 14px}
+  .pact .btn{padding:8px 14px;white-space:nowrap;flex:none}
+  .pact{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;max-width:100%;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .pact::-webkit-scrollbar{display:none}
   .modal{align-items:flex-end;padding:0}
   .mbox,.mbox.wide{width:100%;max-height:94vh;border-radius:14px 14px 0 0;transform:translateY(100%)}
   .mbody{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
@@ -1114,7 +1118,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
 .up-h h2{margin:0;font-size:17px;font-weight:650;letter-spacing:-.01em}
 .up-h span{font-size:12.5px;color:var(--muted)}
 .up-list{list-style:none;margin:0;padding:0}
-.up-list li{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:14.5px;line-height:1.35}
+.up-list li{display:grid;grid-template-columns:118px 1fr;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:14.5px;line-height:1.35}
 .up-list li:first-child{border-top:0;padding-top:2px}
 .up-list .tm{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
 .up-list small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
@@ -1369,10 +1373,10 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
       <div class="sb-acts">
         <button type="button" class="btn pri" data-sa id="saChange"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>Change now</button>
         <button type="button" class="btn" data-sa id="saRule"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>New schedule</button>
-        <button type="button" class="btn" data-sa id="saCode"><svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg>Guest code</button>
+        <button type="button" class="cap-codes btn" data-sa id="saCode"><svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg>Guest code</button>
       </div>
     </div>
-    <p class="gf">Tap a door to see why it's set that way and to change it. To change several at once, press and hold a door (or Ctrl-click on a computer), or use Select. Lock and sensor readings are examples in the prototype; the live board reads each panel. <span id="bTime"></span><span id="bSum" hidden></span></p>
+    <p class="gf">Tap a door to see why it's set that way and to change it. To change several at once, press and hold a door (or Ctrl-click on a computer), or use Select. <span id="bProto">Lock and sensor readings are examples in the prototype; the live board reads each panel.</span> <span id="bTime"></span><span id="bSum" hidden></span></p>
   </section>
 
   <section id="tab-preview" hidden>
@@ -1855,7 +1859,9 @@ const DEF_RULE=id=>({id:"def:"+id,name:"Default",mode:doorDef(id),isDef:true});
 function ensureNos(){if(!S||!S.rules)return;let m=Math.max(0,...S.rules.map(r=>+r.no||0),+S.ruleNoMax||0);S.rules.forEach(r=>{if(!r.no)r.no=++m});S.ruleNoMax=m}
 function rn(r){return r?(r.no?`#${r.no} `:"")+`"${r.name}"`:'"(deleted rule)"'}
 function save(){ensureNos();if(ON_BOX){boxSave();return}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
-let BOX_T=null;function boxSave(){clearTimeout(BOX_T);BOX_T=setTimeout(()=>{fetch("api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({version:window.__SD_VERSION,state:S})}).then(r=>r.json()).then(j=>{if(j.version)window.__SD_VERSION=j.version;if(j.conflict){toast("Someone else just made a change. Loading the latest.");setTimeout(()=>location.reload(),1500)}}).catch(()=>toast("Could not save. Check the connection to the box."))},400)}
+let BOX_T=null,SAVING=false;function boxSave(){clearTimeout(BOX_T);SAVING=true;BOX_T=setTimeout(()=>{fetch("api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({version:window.__SD_VERSION,state:S})}).then(r=>r.json()).then(j=>{if(j.version)window.__SD_VERSION=j.version;
+    if(j.conflict){toast("Not saved: someone else changed something at the same time. Loading the latest, then please make your change again.");setTimeout(()=>location.reload(),3500);return}
+    if(j.error){toast("Not saved: "+j.error);setTimeout(()=>location.reload(),4000)}}).catch(()=>toast("Could not save. Check the connection to the box.")).finally(()=>{SAVING=false})},400)}
 function log(text){
   const e={t:Date.now(),u:S.me,text,push:"pending"};S.log.unshift(e);S.log=S.log.slice(0,500);
   // prototype: pretend the push and the read-back check take a few seconds
@@ -1864,7 +1870,7 @@ function log(text){
 }
 // roles: "Super admin" sees and changes everything; "Restricted" gets Edit / View / Hidden per door plus a few switches
 S.users.forEach(u=>{if(u.role==="Admin")u.role="Super admin";if(u.role==="Editor"){u.role="Restricted";u.perm=u.perm||{};u.can=u.can||{rules:false,override:true,events:true,rabbi:true}}});
-if(!S.users.some(u=>u.name==="Mikva attendant")&&S.users.length===2)S.users.push(structuredClone(SAMPLE.users[2]));
+if(!ON_BOX&&!S.users.some(u=>u.name==="Mikva attendant")&&S.users.length===2)S.users.push(structuredClone(SAMPLE.users[2]));
 function me(){return S.users.find(x=>x.name===S.me)||{role:"Super admin"}}
 function isAdmin(){return me().role==="Super admin"}
 S.users.forEach(u=>{if(u.role==="Restricted"&&!u.sched)u.sched=(u.can||{}).rules?"both":"none"});
@@ -2858,13 +2864,15 @@ function renderDoorSheet(){
     <div class="glist">
       <div class="row"><div class="rt"><span>Set by</span><b class="lw">${by}</b></div></div>
       <div class="row"><div class="rt"><span>Next</span><b class="lw">${esc(f.nx)}</b></div></div>
-      <div class="row"><div class="rt"><span>Door sensor</span><b class="lw"${f.attn?' style="color:var(--warn)"':""}>${f.attn?`Propped open for ${st.sensor.propped} minutes`:"Closed"}</b></div></div>
+      ${st.sensor?`<div class="row"><div class="rt"><span>Door sensor</span><b class="lw"${f.attn?' style="color:var(--warn)"':""}>${f.attn?`Propped open for ${st.sensor.propped} minutes`:"Closed"}</b></div></div>`:""}
       <div class="row"><div class="rt"><span>When no rule is running</span><b class="lw">${esc(modeLabel(doorDef(id)))}</b></div><span class="hint">${esc(d.id)}</span></div>
     </div>
     ${st.by&&st.by.ov&&can_?`<div class="glist acts"><button type="button" class="row tap" id="dBack">Back to the schedule now</button></div>`:""}
     ${isAdmin()?`<div class="glist acts buzz"><button type="button" class="row tap" id="dBuzz"><span class="ic" style="--c:var(--g)">${ico("open")}</span><span class="rt"><b>Buzz open</b><span>Unlocks for a few seconds, like the release button. The schedule doesn't change.</span></span></button></div>
     <p id="buzzConfirm" class="confirm" hidden>Buzz ${esc(d.name)} open now? <button class="btn sm pri" type="button" id="buzzYes">Buzz open</button> <button class="btn sm" type="button" id="buzzNo">Cancel</button></p>`:""}
-    ${can_?`<h3 class="gh">Change now</h3>
+    ${can_?`<h3 class="gh">Change now</h3>${(()=>{const b=typeof BOX_ST!=="undefined"&&BOX_ST;if(!ON_BOX||!b||b.mode==="live")return "";
+      if(b.mode==="pilot"&&(b.pilotDoors||[]).includes(id))return "";
+      return `<p class="notice">${b.mode==="pilot"?"This door isn't in the pilot yet. A change here is saved, but it isn't sent to the door.":"Practice mode: a change here is saved, but it isn't sent to the door."}</p>`})()}
     <div class="mchoice" role="radiogroup" aria-label="Set the door to">${choices.map(([v,l,ic])=>`<button type="button" role="radio" aria-checked="${DM_PICK===v}" class="mc${DM_PICK===v?" on":""}" data-dm="${v}" style="--c:${modeColor(v)}"><span class="ic">${ico(ic)}</span><b>${l}</b></button>`).join("")}</div>
     <div class="glist form" style="margin-top:12px">
       <div class="frow adv"><label for="dmOther">Other mode</label><select id="dmOther"><option value="">None</option>${MODES.filter(m=>!["Unlock","Card or Pin","Lockdown"].includes(m)).map(m=>`<option value="${m}"${DM_PICK===m?" selected":""}>${esc(modeLabel(m))}</option>`).join("")}</select></div>
@@ -2884,7 +2892,7 @@ function renderDoorSheet(){
       <p class="gf dsh">Tap the bar to see the time of each part.</p></div>
     <div class="glist acts">
       <button type="button" class="row tap" id="dSched">See the full schedule</button>
-      ${can("codes")||isAdmin()?`<button type="button" class="row tap" id="dCode">Give a guest code for this door</button>`:""}
+      ${can("codes")||isAdmin()?`<button type="button" class="row tap cap-codes" id="dCode">Give a guest code for this door</button>`:""}
     </div>`;
   const dmFor=$("#dmFor");
   if(dmFor){dmFor.onchange=()=>{$("#dmUntilRow").hidden=dmFor.value!=="until"};
@@ -3174,7 +3182,8 @@ function boxHealth(){
   return [
     {k:"Mode",v:{practice:"Practice (doors not changed)",pilot:"Pilot doors only",live:"Live",restore:"Restoring doors"}[b.mode]||"…",st:b.mode==="live"?"ok":"na"},
     {k:"Protector.Net",v:reach,st:reach==="Reachable"?"ok":noLogin||!r.at?"warn":"bad"},
-    {k:"Last check",v:err?`${when}, ${err} problem${err>1?"s":""}`:when,st:!r.at?"na":err?"bad":"ok"},
+    // the box checks every hour; much longer means it stopped checking
+    ...(()=>{const late=r.at&&Date.now()-r.at>3*3600e3;return [{k:"Last check",v:(err?`${when}, ${err} problem${err>1?"s":""}`:when)+(late?" (late: the box checks every hour)":""),st:!r.at?"na":err?"bad":late?"warn":"ok"}]})(),
     ...(b.problem?[{k:"Rules file",v:b.problem,st:"bad"}]:[]),
     ...(lt?[{k:"Special days loaded through",v:longDate(lt),st:"ok"}]:[]),
     ...(r.compare&&r.compare.skipped&&r.compare.skipped.length?[{k:"Reading door schedules",v:`${r.compare.skipped.length} door${r.compare.skipped.length>1?"s":""} could not be read`,st:"warn"}]:[]),
@@ -3514,29 +3523,36 @@ $("#addEv").onclick=()=>{const n=$("#evName").value.trim(),f=$("#evFrom").value,
   const ev={id:"e"+Date.now(),name:n,type:$("#evType").value,from:f,to:t};
   attempt({change:()=>S.events.push(ev),doors:S.doors.map(d=>d.id),from:addDays(f,-1),days:daysBetween(f,t)+3,el:$("#evMsg"),done:sum=>{$("#evName").value="";$("#evFrom").value="";$("#evTo").value="";$("#evMsg").innerHTML="";commit(`Added event "${n}"${sum}`);closeModal("mEvent");toast("Event added")}})};
 
-$("#evRows").addEventListener("click",ev=>{const b=ev.target.closest("[data-evdel]");if(!b)return;const e=S.events.find(x=>x.id===b.dataset.evdel);S.events=S.events.filter(x=>x!==e);commit(`Removed event "${e.name}"`)});
+$("#evRows").addEventListener("click",ev=>{const b=ev.target.closest("[data-evdel]");if(!b)return;if(inUse(b,"ev:"+b.dataset.evdel))return;const e=S.events.find(x=>x.id===b.dataset.evdel);S.events=S.events.filter(x=>x!==e);commit(`Removed event "${e.name}"`)});
 $("#addType").onclick=()=>{const t=$("#newType").value.trim();if(!t||S.types.includes(t))return;S.types.push(t);$("#newType").value="";commit(`Added event type "${t}"`)};
-$("#typeTags").addEventListener("click",ev=>{const b=ev.target.closest("[data-tdel]");if(!b)return;S.types=S.types.filter(t=>t!==b.dataset.tdel);commit(`Removed event type "${b.dataset.tdel}"`)});
+// a date, type or event that a rule uses can't be removed: the rule would quietly stop working
+function inUse(b,k,extra){const n=holUses(k)+(extra||0);if(!n)return false;const r=holUses(k);b.textContent=r?`Used by ${r} rule${r===1?"":"s"}`:`Used by ${extra} event${extra===1?"":"s"}`;b.disabled=true;return true}
+$("#typeTags").addEventListener("click",ev=>{const b=ev.target.closest("[data-tdel]");if(!b)return;if(inUse(b,"type:"+b.dataset.tdel,S.events.filter(e=>e.type===b.dataset.tdel).length))return;S.types=S.types.filter(t=>t!==b.dataset.tdel);commit(`Removed event type "${b.dataset.tdel}"`)});
 $("#hdMonth").innerHTML=monOpts();$("#hdDay").innerHTML=dayOpts();
 $("#gdMonth").innerHTML=GMON.map((m,i)=>`<option value="${i+1}">${m}</option>`).join("");
 $("#gdDay").innerHTML=Array.from({length:31},(_,i)=>`<option>${i+1}</option>`).join("");
 $("#addGd").onclick=()=>{const n=$("#gdName").value.trim();if(!n)return;const g={id:"c"+Date.now(),name:n,m:+$("#gdMonth").value,d:+$("#gdDay").value};
   attempt({change:()=>S.gdates.push(g),doors:S.doors.map(d=>d.id),from:todayNY(),days:366,el:$("#gdMsg"),done:sum=>{$("#gdName").value="";commit(`Added yearly date "${n}"${sum}`)}})};
-$("#gdRows").addEventListener("click",ev=>{const b=ev.target.closest("[data-gddel]");if(!b)return;const g=S.gdates.find(x=>x.id===b.dataset.gddel);S.gdates=S.gdates.filter(x=>x!==g);commit(`Removed yearly date "${g.name}"`)});
+$("#gdRows").addEventListener("click",ev=>{const b=ev.target.closest("[data-gddel]");if(!b)return;if(inUse(b,"gd:"+b.dataset.gddel))return;const g=S.gdates.find(x=>x.id===b.dataset.gddel);S.gdates=S.gdates.filter(x=>x!==g);commit(`Removed yearly date "${g.name}"`)});
 $("#addHd").onclick=()=>{const n=$("#hdName").value.trim();if(!n)return;const h={id:"h"+Date.now(),name:n,m:+$("#hdMonth").value,d:+$("#hdDay").value};
   attempt({change:()=>S.hdates.push(h),doors:S.doors.map(d=>d.id),from:todayNY(),days:400,el:$("#hdMsg"),done:sum=>{$("#hdName").value="";commit(`Added Hebrew date "${n}"${sum}`)}})};
-$("#hdRows").addEventListener("click",ev=>{const b=ev.target.closest("[data-hddel]");if(!b)return;const h=S.hdates.find(x=>x.id===b.dataset.hddel);S.hdates=S.hdates.filter(x=>x!==h);commit(`Removed Hebrew date "${h.name}"`)});
+$("#hdRows").addEventListener("click",ev=>{const b=ev.target.closest("[data-hddel]");if(!b)return;if(inUse(b,"hd:"+b.dataset.hddel))return;const h=S.hdates.find(x=>x.id===b.dataset.hddel);S.hdates=S.hdates.filter(x=>x!==h);commit(`Removed Hebrew date "${h.name}"`)});
 // settings
 $("#doorRows").addEventListener("change",ev=>{const j=ev.target.dataset.ddef;if(j!==undefined){S.doors[j].def=ev.target.value;commit(`${S.doors[j].id} default set to ${ev.target.value}`);return}
   const i=ev.target.dataset.dname;if(i!==undefined){S.doors[i].name=ev.target.value;commit(`Renamed ${S.doors[i].id} to "${ev.target.value}"`)}});
-$("#doorRows").addEventListener("click",ev=>{const i=ev.target.dataset.ddel;if(i!==undefined){const id=S.doors[i].id;S.doors.splice(i,1);S.rules.forEach(r=>r.doors=r.doors.filter(d=>d!==id));S.groups.forEach(g=>g.doors=g.doors.filter(d=>d!==id));commit(`Removed door ${id}`)}});
+// removing a door or group takes a second tap, so a slip of the finger can't do it
+function armed(b){if(b.dataset.armed)return true;b.dataset.armed="1";const t=b.textContent;b.textContent="Tap again to remove";setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent=t}},4000);return false}
+$("#doorRows").addEventListener("click",ev=>{const i=ev.target.dataset.ddel;if(i!==undefined){if(!armed(ev.target))return;const id=S.doors[i].id;S.doors.splice(i,1);S.rules.forEach(r=>r.doors=r.doors.filter(d=>d!==id));S.groups.forEach(g=>g.doors=g.doors.filter(d=>d!==id));commit(`Removed door ${id}`)}});
 $("#addDoor").onclick=()=>{const id=$("#newDoorId").value.trim().toUpperCase(),n=$("#newDoorName").value.trim();if(!id||S.doors.some(d=>d.id===id))return;
   S.doors.push({id,name:n||id,def:"Card or Pin"});$("#newDoorId").value="";$("#newDoorName").value="";commit(`Added door ${id}`)};
 $("#addGroup").onclick=()=>{const n=$("#newGroup").value.trim();if(!n)return;S.groups.push({id:"g"+Date.now(),name:n,doors:[]});$("#newGroup").value="";commit(`Added door group "${n}"`)};
 $("#groupRows").addEventListener("change",ev=>{const id=ev.target.dataset.gid;if(!id)return;const g=S.groups.find(x=>x.id===id);const d=ev.target.value;
   g.doors=ev.target.checked?[...g.doors,d]:g.doors.filter(x=>x!==d);commit(`${ev.target.checked?"Added":"Removed"} ${d} ${ev.target.checked?"to":"from"} "${g.name}"`)});
 $("#groupRows").addEventListener("click",ev=>{const gd=ev.target.closest("[data-gdef]");if(gd){const g=S.groups.find(x=>x.id===gd.dataset.gdef),m=document.querySelector(`[data-gdefsel="${g.id}"]`).value;
-  g.doors.forEach(id=>{const d=S.doors.find(x=>x.id===id);if(d)d.def=m});commit(`Default set to ${m} for every door in "${g.name}" (${g.doors.length} doors)`);return}const b=ev.target.closest("[data-gdel]");if(!b)return;const g=S.groups.find(x=>x.id===b.dataset.gdel);S.groups=S.groups.filter(x=>x!==g);
+  g.doors.forEach(id=>{const d=S.doors.find(x=>x.id===id);if(d)d.def=m});commit(`Default set to ${m} for every door in "${g.name}" (${g.doors.length} doors)`);return}const b=ev.target.closest("[data-gdel]");if(!b)return;const g=S.groups.find(x=>x.id===b.dataset.gdel);
+  {const n=S.rules.filter(r=>r.doors.includes("g:"+g.id)).length;if(n){b.textContent=`Used by ${n} rule${n===1?"":"s"}`;b.disabled=true;return}}   // removing it would leave those rules without doors
+  if(!armed(b))return;
+  S.groups=S.groups.filter(x=>x!==g);
   S.rules.forEach(r=>r.doors=r.doors.filter(d=>d!=="g:"+g.id));commit(`Removed door group "${g.name}"`)});
 $("#candleOff").addEventListener("change",e=>{S.candleOff=+e.target.value||0;commit(`Candle lighting set to ${S.candleOff} min`)});
 $("#havOff").addEventListener("change",e=>{S.havOff=+e.target.value||0;commit(`Havdalah set to ${S.havOff} min`)});
@@ -3917,7 +3933,7 @@ async function boxSampler(){
           check:{change:()=>S.events.push(ev),doors:S.doors.map(x=>x.id),from:addDays(d.from,-1),days:daysBetween(d.from,d.to)+3},apply:()=>S.events.push(ev),logText:`Added event "${ev.name}"`})}},
     {name:"propose_temp_code",description:"Prepare a temporary PIN for a service person or guest on given doors between two times (YYYY-MM-DD HH:MM New York time), shown for confirmation. For a saved vendor, pass vendor with their name: their mobile number, usual doors, hours and PIN are filled in from their record. Otherwise a random PIN is generated and you must already have asked the user for the person's mobile number: pass it as phone so the system texts them the code. Only if the user said there is no number, pass no_phone true instead.",
       inputSchema:{type:"object",properties:{vendor:{type:"string",description:"Name of a saved vendor, if this is one"},name:{type:"string"},doors:{type:"array",items:{type:"string"}},from:{type:"string"},to:{type:"string"},phone:{type:"string",description:"Mobile number to text the code to, like 718-555-0100"},no_phone:{type:"boolean",description:"True only when the user said not to text anyone"}},required:["from","to"]},
-      execute(i){if(!can("codes"))throw new Error(S.me+" may not give codes.");
+      execute(i){if(ON_BOX)throw new Error("Guest codes are not connected to the doors yet, so a code can't be made here. Say so plainly.");if(!can("codes"))throw new Error(S.me+" may not give codes.");
         const q=String(i.vendor||"").trim().toLowerCase(), vn=q?(S.vendors.find(v=>v.name.toLowerCase()===q)||S.vendors.find(v=>v.name.toLowerCase().includes(q)||q.includes(v.name.toLowerCase()))):null;
         if(q&&!vn)throw new Error(`No saved vendor matches "${i.vendor}". Saved vendors: ${S.vendors.map(v=>v.name).join(", ")||"none"}.`);
         if(!i.name&&!vn)throw new Error("Who is the code for?");
@@ -3980,6 +3996,7 @@ if(ON_BOX){
   document.body.classList.add("onbox");
   { const ms=$("#meSel"); if(ms){ ms.disabled=true; ms.title="Signed in through Home Assistant"; } }   // no switching people on the real system
   document.querySelector('[data-sp="reset"]')?.remove();      // "load sample data" must never reach the real doors
+  { const bp=$("#bProto"); if(bp) bp.textContent="Each door shows what its rules say it is doing now."; }
   document.getElementById("testAlert")?.closest(".tline")?.remove();
   const bk=document.querySelector('[data-sp="backup"] .gf'); if(bk) bk.textContent="The box keeps a copy of the rules and settings every day for 60 days. You can also copy everything here and keep it somewhere safe, or paste a copy back to restore it.";
   CATS[5][1]="Whose cards work, and when. Saved here, not sent to the doors yet";
@@ -3989,13 +4006,23 @@ if(ON_BOX){
   toast=(t)=>{ if(/^Done\.|All doors locked| is now | set to | back on its schedule/.test(t)&&BOX_ST&&BOX_ST.mode!=="live") t+=BOX_ST.mode==="pilot"?" (only pilot doors are changed)":" (practice mode: the doors were not changed)"; _toast(t) };
   const MODE_TXT={practice:"Practice mode: the doors are not changed.",pilot:"Pilot: only the pilot doors are run by this system.",live:"Live: this system runs the doors.",restore:"Restore: putting every door back on its old schedule."};
   async function boxStatus(){
-    try{const j=await (await fetch("api/status")).json();const b=$("#sdBanner");
+    let j;
+    try{const r=await fetch("api/status");if(!r.ok)throw new Error(r.status);j=await r.json();BOX_DOWN=0}
+    catch(e){if(++BOX_DOWN>=2){const b=$("#sdBanner");b.className="sdbanner bad";b.innerHTML=`<b>Can't reach the box right now.</b><span>This screen shows what was loaded earlier. The doors keep running on what is stored in the panels.</span>`;b.hidden=false}return}
+    try{const b=$("#sdBanner");
       const r=j.last||{};const when=!r.at?"not yet":nyDate(r.at)===todayNY()?new Date(r.at).toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"}):whenText(r.at);
       const err=(r.errors||[]).length, warn=(r.warnings||[]).length;
       b.className="sdbanner "+(err?"bad":j.mode==="live"?"ok":"info");
       b.innerHTML=`<b>${esc(MODE_TXT[j.mode]||j.mode)}</b><span>Checked ${esc(when)} · ${r.actions?r.actions.length:0} ${j.mode==="practice"?"changes it would make":"changes made"}${err?`, ${err} problem${err>1?"s":""}`:""}${warn?`, ${warn} note${warn>1?"s":""}`:""}${r.compare&&r.compare.differ?` · ${r.compare.differ.length?`rules and doors differ on ${r.compare.differ.length} door${r.compare.differ.length>1?"s":""}`:r.compare.checked?`rules and doors match on ${r.compare.checked} door${r.compare.checked>1?"s":""}`:"could not read the doors' schedules yet"}${r.compare.checked&&r.compare.skipped&&r.compare.skipped.length?`, ${r.compare.skipped.length} could not be read`:""}`:""}.</span>${(r.warnings||[]).some(x=>/login not set/i.test(x))?`<span><b>Next step:</b> enter the Protector.Net login in the add-on's Configuration tab (Settings, Apps, Shul Doors, Configuration).</span>`:""}<a href="api/report" target="_blank">See details</a>`;
-      b.hidden=false;BOX_ST=j;renderHealth();renderHero()}catch(e){}
+      b.hidden=false;BOX_ST=j;renderHealth();renderHero();
+      // a screen left open (like the tablet in the shul) stays current: new day, or a change made on another device
+      const calm=!document.querySelector(".modal:not([hidden])")&&!SAVING&&!(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
+      if(calm&&j.version&&window.__SD_VERSION&&+j.version!==+window.__SD_VERSION){try{sessionStorage.setItem("shulTab",CUR_TAB);sessionStorage.setItem("shulY",String(scrollY))}catch(e){}location.reload();return}
+      if(calm&&LAST_DAY!==todayNY()){LAST_DAY=todayNY();renderAll()}
+    }catch(e){}
   }
+  let LAST_DAY=todayNY(),BOX_DOWN=0;
+  try{const t=sessionStorage.getItem("shulTab"),y=+sessionStorage.getItem("shulY")||0;sessionStorage.removeItem("shulTab");sessionStorage.removeItem("shulY");if(t&&document.getElementById("tab-"+t)){showTab(t);setTimeout(()=>scrollTo({top:y}),50)}}catch(e){}
   // check often until the first run is done, then once a minute
   (async function loop(){await boxStatus();setTimeout(loop,BOX_ST&&BOX_ST.last&&BOX_ST.last.at?60000:5000)})();
 }
