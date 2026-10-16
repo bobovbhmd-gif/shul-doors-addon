@@ -1112,6 +1112,20 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
 .glist.buzz .rt{display:flex;flex-direction:column}
 .glist.buzz .rt span{font-size:13px;color:var(--muted);font-weight:400}
 .calbar .pvf{width:auto;max-width:240px;flex:0 1 240px}
+.spk{position:relative;display:inline-flex;min-width:0}
+.spk>select{position:absolute;inset:0;opacity:0;pointer-events:none}
+.spk-btn{width:100%;min-width:0;border:0;background:var(--fill) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238e8e93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;border-radius:10px;padding:9px 30px 9px 12px;font:inherit;font-size:15px;color:var(--fg);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.secthead .spk .spk-btn{padding-top:6px;padding-bottom:6px;font-size:14px}
+.spk-pop{position:absolute;top:calc(100% + 6px);left:0;z-index:60;width:300px;max-width:calc(100vw - 32px);background:var(--surface);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.08);padding:8px}
+.spk-pop.right{left:auto;right:0}
+.spk-pop input{width:100%;margin-bottom:6px}
+.spk-list{max-height:min(340px,55vh);overflow:auto;-webkit-overflow-scrolling:touch}
+.spk-h{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;padding:10px 10px 4px}
+.spk-o{display:block;width:100%;border:0;background:none;text-align:left;font:inherit;font-size:15px;color:var(--fg);padding:10px;border-radius:8px;cursor:pointer}
+.spk-o:hover,.spk-o:focus-visible{background:var(--fill);outline:0}
+.spk-o.on{color:var(--accent);font-weight:600}
+.spk-none{padding:12px 10px;color:var(--muted);font-size:14px}
+.rlink{color:inherit;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
 .secthead .pvf{width:auto;max-width:240px;margin-left:12px;height:34px;font-size:14px}
 .tpick{display:inline-flex;align-items:center;gap:4px}
 .tpick select{width:auto;min-width:58px;padding-right:22px}
@@ -2348,6 +2362,18 @@ function condText(c){
 const CATS=[["Every week","Regular weekday and Shabbos times"],["Holidays and special days","Yom tov, fasts, Rosh Chodesh, the shul's own dates"],["Events","Weddings, sheva brachos and other events you add"],["Situations","Take over only while a situation is switched on"],["One-time and temporary","Specific dates; they archive themselves when past"],["Badge access","Whose cards work, and when"]];
 function ruleCat(r){if(r.kind==="access")return 5;if(isTempRule(r))return 4;if(r.sit)return 3;const f=r.inc.fest;if(f.some(k=>k.startsWith("ev:")||k.startsWith("type:")))return 2;if(f.length||r.inc.hr.length||r.inc.dates.length)return 1;return 0}
 function ruleTime(r){if(r.start.a==="clock"&&r.end.a==="clock"&&(r.start.t||"")==="00:00"&&["23:59","24:00"].includes(r.end.t)&&!r.end.days)return "All day";return `${anchorText(r.start)} to ${anchorText(r.end)}${r.end.days?(r.end.days==1?", next day":`, ${r.end.days} days later`):""}`}
+function rlink(W,attr){return `<a href="#" class="rlink" ${attr||"data-goto"}="${esc(String(W.id))}">${esc(rn(W))}</a>`}
+function yieldsHtml(r){
+  return (r.yields||[]).map(y=>{const W=S.rules.find(x=>String(x.id)===String(y.id));if(!W)return "";
+    const all=expandDoors(r.doors);return `Overridden by ${rlink(W)}${y.doors&&y.doors.length&&y.doors.length<all.length?" at "+esc(y.doors.map(doorName).join(", ")):""}`}).filter(Boolean).join("; ");
+}
+function overridesHtml(r){
+  return S.rules.filter(L=>(L.yields||[]).some(y=>String(y.id)===String(r.id))).map(L=>{const y=L.yields.find(v=>String(v.id)===String(r.id)),all=expandDoors(L.doors);
+    return `Overrides ${rlink(L)}${y.doors&&y.doors.length&&y.doors.length<all.length?" at "+esc(y.doors.map(doorName).join(", ")):""}`}).join("; ");
+}
+function goRule(id){const W=S.rules.find(r=>String(r.id)===String(id));if(!W)return;
+  if(canEditRule(W)){openEditor(W,false);return}
+  showTab("rules");const el=$("#rule-"+W.id);if(el){el.scrollIntoView({block:"center"});el.classList.add("flash");setTimeout(()=>el.classList.remove("flash"),1600)}}
 function ruleRow(r){
   const ed=canEditRule(r), acc=r.kind==="access", col=acc?"var(--o)":modeColor(r.mode);
   const cond=[]; if(r.rabbi!=="any") cond.push(r.rabbi==="away"?"the rabbi is away":"the rabbi is local");
@@ -2360,7 +2386,7 @@ function ruleRow(r){
     <div class="rt"><b>${r.no?`<span class="rno">#${r.no}</span> `:""}${esc(r.name)}${tags.map(t=>` <span class="mini">${esc(t)}</span>`).join("")}</b>
       <span><span class="mtag" style="--c:${col}">${esc(acc?r.group+" cards":modeLabel(r.mode))}</span> ${esc(ruleTime(r))}</span>
       <span>${esc(shownDoorsText(r.doors))}</span>
-      ${(()=>{let inc=condText(r.inc),exc=r.exc;if(!r.inc.wd.length&&r.exc.wd.length>=4){const keep=[0,1,2,3,4,5,6].filter(x=>!r.exc.wd.includes(x));inc+=`, only on ${keep.map(x=>WDN[x]).join(" and ")}`;exc={...r.exc,wd:[]}}const et=condText(exc),yt=yieldsText(r),ot=overridesText(r);return `<span>${esc(inc)||"No days yet"}${et?` <span class="x">except ${esc(et)}</span>`:""}${ot?`<br><span class="rovr">${esc(ot)}</span>`:""}${yt?`<br><span class="x">${esc(yt)}</span>`:""}`})()}${cond.length?`, only when ${esc(cond.join(" and "))}`:""}</span>
+      ${(()=>{let inc=condText(r.inc),exc=r.exc;if(!r.inc.wd.length&&r.exc.wd.length>=4){const keep=[0,1,2,3,4,5,6].filter(x=>!r.exc.wd.includes(x));inc+=`, only on ${keep.map(x=>WDN[x]).join(" and ")}`;exc={...r.exc,wd:[]}}const et=condText(exc),yt=yieldsHtml(r),ot=overridesHtml(r);return `<span>${esc(inc)||"No days yet"}${et?` <span class="x">except ${esc(et)}</span>`:""}${ot?`<br><span class="rovr">${ot}</span>`:""}${yt?`<br><span class="x">${yt}</span>`:""}`})()}${cond.length?`, only when ${esc(cond.join(" and "))}`:""}</span>
       ${r.note?`<span class="note">${esc(r.note)}</span>`:""}</div>
     ${ed?'<span class="chev"></span>':isAdmin()?'<span class="hint">View only</span>':`<button class="btn sm" type="button" data-reqrule="${r.id}">Ask to change</button>`}</div>`;
 }
@@ -2393,7 +2419,7 @@ function festOptions(){
 const dayOpts=()=>Array.from({length:30},(_,i)=>`<option>${i+1}</option>`).join("");
 const monOpts=()=>HMONTHS.map(([v,n])=>`<option value="${v}">${n}</option>`).join("");
 
-let E=null;
+let E=null,E_ORIG=null;
 const HOPEN=new Set(), HQ={};
 function holUses(k){return S.rules.filter(r=>r.inc.fest.includes(k)||r.exc.fest.includes(k)).length}
 function holHidden(k){return !!(S.holHide&&S.holHide.includes(k))}
@@ -2485,8 +2511,8 @@ function drawEditor(){
     </div>
     <p class="gf">Times like havdalah come from the day it ends. If the end is earlier than the start on the same day, it runs past midnight.${e.until?` This rule runs through ${esc(longDate(e.until))}, then stops.`:""}</p>
     ${sched()==="temp"?`<p class="notice">You can make temporary schedules only: pick specific dates (leave Every year unticked) or one event.</p>`:""}
-    ${condBox("inc")}${condBox("exc")}${(E.yields||[]).length?`<h3 class="gh">Overridden by</h3><div class="glist form" id="yBox">${E.yields.map((y,i)=>{const W=S.rules.find(x=>String(x.id)===String(y.id));return `<div class="row"><div class="rt"><b>${esc(rn(W))}</b><span>${W?esc(condText(W.inc)):"No longer has any effect"}${y.doors&&y.doors.length?", at "+esc(y.doors.map(doorName).join(", ")):", on every door they share"}</span></div><button class="btn sm danger" type="button" data-yrm="${i}">Remove</button></div>`}).join("")}</div>`:""}${(()=>{if(E.isNew)return "";const drop=E.dropOv||[],L=S.rules.filter(x=>!drop.includes(String(x.id))&&(x.yields||[]).some(y=>String(y.id)===String(E.id)));if(!L.length)return "";
-      return `<h3 class="gh">Overrides</h3><div class="glist form" id="oBox">${L.map(x=>{const y=x.yields.find(v=>String(v.id)===String(E.id));return `<div class="row"><div class="rt"><b>${esc(rn(x))}</b><span>${esc(condText(x.inc))}${y.doors&&y.doors.length?", at "+esc(y.doors.map(doorName).join(", ")):", on every door they share"}</span></div><button class="btn sm danger" type="button" data-orm="${esc(String(x.id))}">Remove</button></div>`}).join("")}</div>`})()}
+    ${condBox("inc")}${condBox("exc")}${(E.yields||[]).length?`<h3 class="gh">Overridden by</h3><div class="glist form" id="yBox">${E.yields.map((y,i)=>{const W=S.rules.find(x=>String(x.id)===String(y.id));return `<div class="row"><div class="rt"><b>${W?rlink(W,"data-ropen"):esc(rn(W))}</b><span>${W?esc(condText(W.inc)):"No longer has any effect"}${y.doors&&y.doors.length?", at "+esc(y.doors.map(doorName).join(", ")):", on every door they share"}</span></div><button class="btn sm danger" type="button" data-yrm="${i}">Remove</button></div>`}).join("")}</div>`:""}${(()=>{if(E.isNew)return "";const drop=E.dropOv||[],L=S.rules.filter(x=>!drop.includes(String(x.id))&&(x.yields||[]).some(y=>String(y.id)===String(E.id)));if(!L.length)return "";
+      return `<h3 class="gh">Overrides</h3><div class="glist form" id="oBox">${L.map(x=>{const y=x.yields.find(v=>String(v.id)===String(E.id));return `<div class="row"><div class="rt"><b>${rlink(x,"data-ropen")}</b><span>${esc(condText(x.inc))}${y.doors&&y.doors.length?", at "+esc(y.doors.map(doorName).join(", ")):", on every door they share"}</span></div><button class="btn sm danger" type="button" data-orm="${esc(String(x.id))}">Remove</button></div>`}).join("")}</div>`})()}
     <p class="gf">The rule runs on any day that matches Runs on, unless it also matches Except on.</p>
     <details class="more"${(!SIMPLE||e.sit||(e.rabbi&&e.rabbi!=="any")||e.year||(e.season&&e.season!=="any"))?" open":""}><summary class="gh">More options</summary>
     <div class="glist form">
@@ -2523,6 +2549,10 @@ function drawEditor(){
     $("#delYes").onclick=()=>{S.rules=S.rules.filter(x=>x.id!==e.id);S.rules.forEach(x=>{if(x.yields)x.yields=x.yields.filter(y=>String(y.id)!==String(e.id))});log(`Deleted rule "${e.name}"`);save();closeEditor();renderAll();toast("Rule deleted")};
     $("#dupRule").onclick=()=>{captureTop();const c={...structuredClone(E),id:Date.now(),name:(E.name||"Rule")+" (copy)"};delete c.no;delete c.isNew;openEditor(c,true)};
   }
+  ["#yBox","#oBox"].forEach(b=>$(b)?.addEventListener("click",ev=>{const a=ev.target.closest("[data-ropen]");if(!a)return;ev.preventDefault();ev.stopImmediatePropagation();
+    captureTop();const dirty=E.isNew||JSON.stringify([build(),E.dropOv||[]])!==E_ORIG;
+    if(dirty&&!confirm("This rule has changes that are not saved. Open the other rule anyway? Your changes will be lost."))return;
+    const W=S.rules.find(x=>String(x.id)===a.dataset.ropen);if(W)openEditor(W,false)},true));
   $("#oBox")?.addEventListener("click",ev=>{const b=ev.target.closest("[data-orm]");if(!b)return;E.dropOv=(E.dropOv||[]).concat(b.dataset.orm);redraw()});
   $("#yBox")?.addEventListener("click",ev=>{const b=ev.target.closest("[data-yrm]");if(!b)return;E.yields.splice(+b.dataset.yrm,1);redraw()});
   document.querySelectorAll("[data-box]").forEach(box=>{
@@ -2556,6 +2586,7 @@ function drawEditor(){
     $("#reqBox").scrollIntoView({block:"nearest"});
     $("#rbGo").onclick=()=>{const q=newRequest($("#rbTo").value,`${E.isNew?"New rule":"Change rule"}: ${r.name}`,$("#rbText").value.trim()||"Please review and approve this change.",{type:"rule",isNew:E.isNew,rule:structuredClone(r)});
       closeEditor();commit(`Sent request "${q.subject}" to ${recipName(q.to)}`);showTab("msgs");toast("Request sent")}};
+  if(E_ORIG===null){captureTop();E_ORIG=JSON.stringify([build(),E.dropOv||[]])}
   $("#ruleForm").onsubmit=ev=>{ev.preventDefault();
     const cg=document.querySelector("#formWarn [data-cgo]");
     if(cg){if(!cg.disabled){cg.click();return}
@@ -2576,7 +2607,7 @@ function drawEditor(){
   };
 }
 let DPQ="",DPOPEN=false;
-function openEditor(r,isNew){DPQ="";DPOPEN=false;E={...structuredClone(r),isNew};E.inc=Object.assign(C(),E.inc);E.exc=Object.assign(C(),E.exc);drawEditor();openModal("mRule");$("#editorSlot").scrollTop=0}
+function openEditor(r,isNew){DPQ="";DPOPEN=false;E_ORIG=null;E={...structuredClone(r),isNew};E.inc=Object.assign(C(),E.inc);E.exc=Object.assign(C(),E.exc);drawEditor();openModal("mRule");$("#editorSlot").scrollTop=0}
 function closeEditor(){E=null;$("#editorSlot").innerHTML="";closeModal("mRule")}
 
 function nextGreg(g){const t=todayNY();let y=+t.slice(0,4);let s=iso(y,g.m,g.d);if(s<t)s=iso(y+1,g.m,g.d);return shortDate(s)}
@@ -3312,6 +3343,31 @@ $("#lockYes").onclick=()=>{$("#lockConfirm").hidden=true;S.overrides.push({id:"o
 $("#ovList").addEventListener("click",ev=>{const b=ev.target.closest("[data-ovend]");if(!b)return;const o=S.overrides.find(x=>x.id===b.dataset.ovend);o.to=Date.now();commit(`Ended override: ${o.mode} on ${doorsText(o.doors)}`)});
 // preview
 $("#startDate").addEventListener("change",renderPreview);
+// a dropdown with a search box inside; the real select stays underneath and keeps its change events
+function searchSel(sel){if(!sel||sel.dataset.spk)return;sel.dataset.spk="1";
+  const w=document.createElement("span");w.className="spk "+sel.className;sel.parentNode.insertBefore(w,sel);w.appendChild(sel);sel.tabIndex=-1;
+  const btn=document.createElement("button");btn.type="button";btn.className="spk-btn";btn.setAttribute("aria-haspopup","listbox");btn.setAttribute("aria-label",sel.getAttribute("aria-label")||"Choose");w.appendChild(btn);
+  const sync=()=>{const o=sel.options[sel.selectedIndex];btn.textContent=o?o.textContent:""};
+  new MutationObserver(sync).observe(sel,{childList:true,subtree:true});sel.addEventListener("change",sync);sync();
+  let pop=null;
+  const close=()=>{if(pop){pop.remove();pop=null;btn.setAttribute("aria-expanded","false")}};
+  const draw=q=>{q=q.trim().toLowerCase();let h="",n=0;
+    const item=o=>{if(q&&!(o.textContent+" "+o.value).toLowerCase().includes(q))return "";n++;return `<button type="button" class="spk-o${o.value===sel.value?" on":""}" role="option" data-v="${esc(o.value)}">${esc(o.textContent)}</button>`};
+    [...sel.children].forEach(c=>{if(c.tagName==="OPTGROUP"){const it=[...c.children].map(item).join("");if(it)h+=`<div class="spk-h">${esc(c.label)}</div>`+it}else h+=item(c)});
+    pop.querySelector(".spk-list").innerHTML=n?h:`<div class="spk-none">Nothing matches</div>`};
+  btn.addEventListener("click",()=>{if(pop){close();return}
+    pop=document.createElement("div");pop.className="spk-pop";pop.innerHTML=`<input type="search" placeholder="Search doors and groups" aria-label="Search"><div class="spk-list" role="listbox"></div>`;w.appendChild(pop);
+    const r=w.getBoundingClientRect();if(r.left+300>window.innerWidth-16)pop.classList.add("right");
+    btn.setAttribute("aria-expanded","true");const inp=pop.querySelector("input");draw("");
+    inp.addEventListener("input",()=>draw(inp.value));
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter"){const f=pop.querySelector(".spk-o");if(f)f.click()}});
+    pop.addEventListener("click",e=>{const o=e.target.closest("[data-v]");if(!o)return;sel.value=o.dataset.v;close();sync();sel.dispatchEvent(new Event("change",{bubbles:true}));btn.focus()});
+    const coarse=window.matchMedia&&matchMedia("(pointer:coarse)").matches;if(!coarse)inp.focus();
+    const on=pop.querySelector(".spk-o.on");if(on)on.scrollIntoView({block:"nearest"})});
+  document.addEventListener("click",e=>{if(pop&&!w.contains(e.target))close()});
+  w.addEventListener("keydown",e=>{if(e.key==="Escape"&&pop){close();btn.focus()}});
+}
+["#rqDoorF","#pvDoorF","#shDoorF"].forEach(id=>searchSel($(id)));
 ["#pvDoorF","#shDoorF"].forEach(id=>{const el=$(id);if(el)el.addEventListener("change",ev=>{PV_DOOR=ev.target.value;try{localStorage.setItem("shulPvDoor",PV_DOOR)}catch(e){}renderPreview();renderSheet()})});
 $("#vList").onclick=()=>setView("list");
 $("#rqSearch").addEventListener("input",renderRules);$("#rqDoorF").addEventListener("change",renderRules);$("#rqModeF").addEventListener("change",renderRules);
@@ -3409,7 +3465,7 @@ $("#days").addEventListener("click",ev=>{const a=ev.target.closest("[data-rule]"
   showTab("rules");const el=$("#rule-"+a.dataset.rule);if(el){el.scrollIntoView({block:"center"});el.classList.add("flash");setTimeout(()=>el.classList.remove("flash"),1600)}});
 // rules
 $("#addRule").onclick=()=>openEditor({id:Date.now(),name:"",doors:[],rabbi:"any",season:"any",stop:true,inc:C(),exc:C(),start:{a:"clock",t:"18:00",o:0},end:{a:"clock",t:"22:00",o:0},mode:"Unlock"},true);
-$("#rules").addEventListener("click",ev=>{if(ev.target.closest("[data-pick]"))return;const rq=ev.target.closest("[data-reqrule]");if(rq){openEditor(S.rules.find(r=>r.id==rq.dataset.reqrule),false);return}
+$("#rules").addEventListener("click",ev=>{if(ev.target.closest("[data-pick]"))return;const gt=ev.target.closest("[data-goto]");if(gt){ev.preventDefault();ev.stopPropagation();goRule(gt.dataset.goto);return}const rq=ev.target.closest("[data-reqrule]");if(rq){openEditor(S.rules.find(r=>r.id==rq.dataset.reqrule),false);return}
   const ed=ev.target.closest("[data-edit]"),dp=ev.target.closest("[data-dup]");
   if(ed) openEditor(S.rules.find(r=>r.id==ed.dataset.edit),false);
   if(dp){const src=S.rules.find(r=>r.id==dp.dataset.dup);openEditor({...structuredClone(src),id:Date.now(),name:src.name+" (copy)"},true)}});
