@@ -1108,6 +1108,9 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
 .hn-off input.plain{color:var(--muted)}
 .dpick .frow{flex-wrap:wrap}
 .ovr{color:var(--ok);font-weight:500}
+.glist.buzz .row{display:flex;align-items:center;gap:12px;text-align:left}
+.glist.buzz .rt{display:flex;flex-direction:column}
+.glist.buzz .rt span{font-size:13px;color:var(--muted);font-weight:400}
 .calbar .pvf{width:auto;max-width:240px;flex:0 1 240px}
 .secthead .pvf{width:auto;max-width:240px;margin-left:12px;height:34px;font-size:14px}
 .tpick{display:inline-flex;align-items:center;gap:4px}
@@ -2804,6 +2807,8 @@ function renderDoorSheet(){
       <div class="row"><div class="rt"><span>When no rule is running</span><b class="lw">${esc(modeLabel(doorDef(id)))}</b></div><span class="hint">${esc(d.id)}</span></div>
     </div>
     ${st.by&&st.by.ov&&can_?`<div class="glist acts"><button type="button" class="row tap" id="dBack">Back to the schedule now</button></div>`:""}
+    ${isAdmin()?`<div class="glist acts buzz"><button type="button" class="row tap" id="dBuzz"><span class="ic" style="--c:var(--g)">${ico("open")}</span><span class="rt"><b>Buzz open</b><span>Unlocks for a few seconds, like the release button. The schedule doesn't change.</span></span></button></div>
+    <p id="buzzConfirm" class="confirm" hidden>Buzz ${esc(d.name)} open now? <button class="btn sm pri" type="button" id="buzzYes">Buzz open</button> <button class="btn sm" type="button" id="buzzNo">Cancel</button></p>`:""}
     ${can_?`<h3 class="gh">Change now</h3>
     <div class="mchoice" role="radiogroup" aria-label="Set the door to">${choices.map(([v,l,ic])=>`<button type="button" role="radio" aria-checked="${DM_PICK===v}" class="mc${DM_PICK===v?" on":""}" data-dm="${v}" style="--c:${modeColor(v)}"><span class="ic">${ico(ic)}</span><b>${l}</b></button>`).join("")}</div>
     <div class="glist form" style="margin-top:12px">
@@ -2833,6 +2838,15 @@ function renderDoorSheet(){
       else if(dur!=="cancel")to=now2+(+dur)*60e3;
       const o={id:"o"+now2,doors:[id],mode:DM_PICK,from:now2,to,by:S.me,why:$("#dmWhy").value.trim()};S.overrides.push(o);DM_PICK=null;
       commit(`Override: ${o.mode} on ${d.name} ${to?"until "+whenText(to):"until cancelled"}${o.why?" ("+o.why+")":""}`);toast(`${d.name} is now ${modeLabel(o.mode).toLowerCase()}`)}}
+  const bz=$("#dBuzz");if(bz){
+    bz.onclick=()=>{$("#buzzConfirm").hidden=false;$("#buzzConfirm").scrollIntoView({block:"nearest"})};
+    $("#buzzNo").onclick=()=>{$("#buzzConfirm").hidden=true};
+    $("#buzzYes").onclick=async()=>{const yes=$("#buzzYes");yes.disabled=true;
+      if(!ON_BOX){$("#buzzConfirm").hidden=true;yes.disabled=false;toast("Prototype: nothing was sent");return}
+      let j=null;try{j=await (await fetch("api/pulse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({door:id})})).json()}catch(e){j={sent:false,message:"Couldn't reach the box. Try again."}}
+      yes.disabled=false;$("#buzzConfirm").hidden=true;
+      if(j&&j.sent){commit(`Buzzed ${d.name} open`);toast(`${d.name} buzzed open`)}else toast((j&&(j.message||j.error))||"Not sent")};
+  }
   const back=$("#dBack");if(back)back.onclick=()=>{endOverridesFor(id);DM_PICK=null;commit(`${d.name}: back to the schedule`);toast(`${d.name} is back on its schedule`)};
   $("#dSched").onclick=()=>{closeModal("mDoor");showTab("preview")};
   const dc=$("#dCode");if(dc)dc.onclick=()=>{closeModal("mDoor");TC_VENDOR=null;TC_NOPHONE=false;$("#tcWarn").innerHTML="";$("#tcPhoneAsk").innerHTML="";$("#mTcT").textContent="New guest code";showTab("codes");renderCodeForm();document.querySelectorAll("#tcDoors input[name=tcDoor]").forEach(x=>x.checked=x.value===id);openModal("mCode")};

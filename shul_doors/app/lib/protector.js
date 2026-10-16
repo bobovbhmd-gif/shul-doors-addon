@@ -104,6 +104,8 @@ function makeClient({ baseUrl, username, password, partitionId = null, log = () 
       for (const x of (Array.isArray(d) ? d : (d && d.Results) || [])) if (x && x.index !== undefined) out[Number(x.index)] = x.name || x.Name;
       return out;
     },
+    // buzz doors open for their normal unlock time (like the release button); not a schedule change
+    async pulseDoors(ids) { return call("POST", "/api/PanelCommands/PulseDoor", { json: { DoorIds: ids.map(Number) } }); },
     async updatePanels() { return call("POST", "/api/PanelCommands/UpdateAll", { json: {} }); },
   };
   return api;

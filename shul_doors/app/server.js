@@ -92,6 +92,36 @@ function loadStore() {   // what the box remembers about the doors (original sch
 }
 
 // ---------- syncing with the doors ----------
+// "Buzz open": a pulse unlock, the same as pressing the door's release button. Super admins only;
+// in practice mode nothing is sent. Every buzz is written to the history.
+async function pulse(door, user) {
+  const d = (state.doors || []).find((x) => x.id === door);
+  if (!d) return { code: 404, body: { error: "No such door." } };
+  if (user) {
+    const u = (state.users || []).find((x) => x.name.toLowerCase() === user.toLowerCase()) || (state.users || []).find((x) => user.toLowerCase().startsWith(x.name.toLowerCase() + " "));
+    if (u && u.role !== "Super admin") return { code: 403, body: { error: "Only a super admin can buzz a door open." } };
+  }
+  const by = user || "someone";
+  if (opts.mode === "practice") return { code: 200, body: { sent: false, message: "Practice mode: the doors are not changed, so nothing was sent." } };
+  if (!opts.protector_url || !opts.protector_username || !opts.protector_password) return { code: 200, body: { sent: false, message: "The Protector.Net login isn't set yet." } };
+  try {
+    const client = makeClient({ baseUrl: opts.protector_url, username: opts.protector_username, password: opts.protector_password, log });
+    const parts = await client.partitions();
+    const part = opts.partition ? parts.find((x) => x.Name === opts.partition) : parts[0];
+    if (!part) throw new Error("partition not found");
+    await client.setPartition(part.Id);
+    let pid = store.pidOf && store.pidOf[door];
+    if (pid == null) { const pd = (await client.doors()).find((x) => ourId(x.Name) === door); pid = pd && pd.Id; }
+    if (pid == null) return { code: 200, body: { sent: false, message: `${d.name} wasn't found in Protector.Net.` } };
+    await client.pulseDoors([pid]);
+    fs.appendFileSync(file("history.jsonl"), JSON.stringify({ at: Date.now(), reason: "buzz", door, by, mode: opts.mode, actions: 1, errors: [], warnings: 0 }) + "\n");
+    log("info", `buzz: ${door} ${d.name} buzzed open by ${by}`);
+    return { code: 200, body: { sent: true } };
+  } catch (e) {
+    log("warn", `buzz ${door} failed: ${e.message}`);
+    return { code: 200, body: { sent: false, message: "Protector.Net didn't accept it: " + e.message } };
+  }
+}
 async function runSync(reason) {
   if (halted) return (lastReport = { at: Date.now(), mode: opts.mode, reason, actions: [], warnings: [], errors: [stateProblem], ok: false });
   if (syncing) { pendingSync = true; return lastReport; }
@@ -338,6 +368,14 @@ const server = http.createServer((req, res) => {
       let body; try { body = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { return send(res, 400, { code: "error" }); }
       if (!Array.isArray(body.messages) || !body.messages.length) return send(res, 400, { code: "error" });
       const r = await aiAsk(body); send(res, r.status, r.body);
+    });
+    return;
+  }
+  if (req.method === "POST" && p === "/api/pulse") {
+    const chunks = []; req.on("data", (c) => chunks.push(c)); req.on("end", async () => {
+      let body; try { body = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}"); } catch { return send(res, 400, { error: "bad json" }); }
+      const r = await pulse(String(body.door || ""), req.headers["x-remote-user-display-name"] || req.headers["x-remote-user-name"] || "");
+      send(res, r.code, r.body);
     });
     return;
   }
