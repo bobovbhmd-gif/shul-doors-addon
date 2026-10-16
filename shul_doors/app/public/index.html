@@ -1107,6 +1107,14 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
 @media (max-width:899px){.herorow{grid-template-columns:minmax(0,1fr)}}
 .hn-off input.plain{color:var(--muted)}
 .dpick .frow{flex-wrap:wrap}
+.ovr{color:var(--ok);font-weight:500}
+.tpick{display:inline-flex;align-items:center;gap:4px}
+.tpick select{width:auto;min-width:58px;padding-right:22px}
+.tpick .tcolon{font-weight:600;color:var(--muted)}
+.tpick .seg{display:inline-flex;margin-left:6px;background:var(--fill2);border-radius:10px;padding:3px}
+.tpick .seg button{border:0;background:transparent;font:inherit;font-weight:600;font-size:14px;padding:6px 12px;border-radius:8px;color:var(--muted);cursor:pointer;min-width:46px}
+.tpick .seg button.on{background:var(--accent);color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.rno{color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums;margin-right:2px}
 .cpair.need{outline:2px solid var(--warn);outline-offset:4px;border-radius:12px}
 [data-cgo].pulse{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 35%,transparent)}
 .checks label.via{background:color-mix(in srgb,var(--accent) 22%,var(--fill2));color:var(--accent);pointer-events:none}
@@ -1356,11 +1364,12 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
   <section id="tab-rules" hidden>
     <p class="notice editor-note">You see rules for your doors. You can change a rule only if you may edit every door in it.</p>
     <div class="searchbar">
-      <label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="rqSearch" type="search" placeholder="Search by name, door or holiday" aria-label="Search rules"></label>
+      <label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="rqSearch" type="search" placeholder="Search by name, number, door or holiday" aria-label="Search rules"></label>
       <select id="rqDoorF" aria-label="Filter by door or group"></select>
+      <select id="rqModeF" aria-label="Filter by door state"></select>
     </div>
     <details class="how"><summary>How rules work together</summary>
-      <p><b>The schedule</b> is every rule for weekdays, holidays, dates and the rabbi. Two of these may never run on the same door at the same time. When you save one that overlaps another, the system asks which one runs. The other rule then gives way to it, only on the doors they share and only on the days it runs, and you see that on both rules.</p>
+      <p><b>The schedule</b> is every rule for weekdays, holidays, dates and the rabbi. Two of these may never run on the same door at the same time. When you save one that overlaps another, the system asks which one the door should follow. The one you pick <b>overrides</b> the other, only on the doors they share and only on the days it runs. Each rule shows it: "Overrides …" on the one that wins and "Overridden by …" on the other.</p>
       <p><b>Events</b> (wedding, kiddush, sheva brachos) take over from the schedule during their hours, then the schedule continues. <b>Situations</b> that are switched on take over the same way; one marked "beats everything" also beats events. <b>Open or lock now</b> by hand beats everything. Outside every rule, a door is on its default.</p></details>
     <div class="card admin-only adv bulk" id="bulkBar" hidden>
       <div class="secthead" style="margin:0 0 10px"><b id="pickCount"></b><span class="grow"></span><button class="btn sm" type="button" id="pickNone">Clear selection</button></div>
@@ -1805,7 +1814,10 @@ if(!S.accessGroups) S.accessGroups=structuredClone(SAMPLE.accessGroups);
 S.doors.forEach(d=>{if(!d.def)d.def="Card or Pin"});
 function doorDef(id){const d=S.doors.find(x=>x.id===id);return d&&d.def||"Card or Pin"}
 const DEF_RULE=id=>({id:"def:"+id,name:"Default",mode:doorDef(id),isDef:true});
-function save(){if(ON_BOX){boxSave();return}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+// every rule keeps a permanent number (#1, #2...): new rules get the next one, numbers are never reused
+function ensureNos(){if(!S||!S.rules)return;let m=Math.max(0,...S.rules.map(r=>+r.no||0),+S.ruleNoMax||0);S.rules.forEach(r=>{if(!r.no)r.no=++m});S.ruleNoMax=m}
+function rn(r){return r?(r.no?`#${r.no} `:"")+`"${r.name}"`:'"(deleted rule)"'}
+function save(){ensureNos();if(ON_BOX){boxSave();return}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 let BOX_T=null;function boxSave(){clearTimeout(BOX_T);BOX_T=setTimeout(()=>{fetch("api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({version:window.__SD_VERSION,state:S})}).then(r=>r.json()).then(j=>{if(j.version)window.__SD_VERSION=j.version;if(j.conflict){toast("Someone else just made a change. Loading the latest.");setTimeout(()=>location.reload(),1500)}}).catch(()=>toast("Could not save. Check the connection to the box."))},400)}
 function log(text){
   const e={t:Date.now(),u:S.me,text,push:"pending"};S.log.unshift(e);S.log=S.log.slice(0,500);
@@ -2077,14 +2089,15 @@ function trial(change,doors,from,days){
   const pairs=Object.values(g).map(p=>({...p,doors:[...p.doors],n:p.days.size}));
   return {pairs,clashes:pairs.map(clashLine)};
 }
-function clashLine(p){return `"${p.a.name}" and "${p.b.name}" both set ${p.doors.length>3?p.doors.length+" doors":p.doors.map(doorName).join(", ")} on ${p.n} day${p.n===1?"":"s"} in the coming year, first ${WDN[dow(p.first)]}, ${shortDate(p.first)}, ${fmt(p.st)} to ${fmt(p.en)}`}
+function clashLine(p){return `${rn(p.a)} and ${rn(p.b)} both control ${p.doors.length>3?p.doors.length+" doors":p.doors.map(doorName).join(", ")} at the same time, ${p.n} day${p.n===1?"":"s"} a year. First time: ${WDN[dow(p.first)]}, ${shortDate(p.first)}, ${fmt(p.st)} to ${fmt(p.en)}`}
 // how the losing rule steps aside when the other one runs: it gives way to that rule
 // on the doors they share, on the days it runs there
 function exceptionFor(L,W,doors){
   const all=expandDoors(L.doors),on=(doors||[]).filter(d=>all.includes(d));
   const scoped=on.length&&on.length<all.length;
   const ct=typeof condText==="function"?condText:null, days=ct?ct(W.inc):"";   // the wording lives with the screens; the box only needs the exception
-  return {yields:{id:W.id,doors:scoped?on:[]},text:`gives way to "${W.name}"${days?` (${days})`:""}${scoped?" on "+on.map(doorName).join(", "):""}`};
+  const where=scoped?on.map(doorName).join(", "):"";
+  return {yields:{id:W.id,doors:scoped?on:[]},days,where,text:`is overridden by "${W.name}"${days?` on ${days}`:""}${where?`, at ${where}`:""}`};
 }
 function applyException(loserId,x){
   const L=S.rules.find(r=>String(r.id)===String(loserId));if(!L||!x||!x.yields)return;
@@ -2096,7 +2109,12 @@ function applyException(loserId,x){
 }
 function yieldsText(r){
   return (r.yields||[]).map(y=>{const W=S.rules.find(x=>String(x.id)===String(y.id));if(!W)return "";
-    const all=expandDoors(r.doors);return `gives way to "${W.name}"${y.doors&&y.doors.length&&y.doors.length<all.length?" on "+y.doors.map(doorName).join(", "):""}`}).filter(Boolean).join("; ");
+    const all=expandDoors(r.doors);return `Overridden by ${rn(W)}${y.doors&&y.doors.length&&y.doors.length<all.length?" at "+y.doors.map(doorName).join(", "):""}`}).filter(Boolean).join("; ");
+}
+// the other side: rules this one overrides
+function overridesText(r){
+  return S.rules.filter(L=>(L.yields||[]).some(y=>String(y.id)===String(r.id))).map(L=>{const y=L.yields.find(v=>String(v.id)===String(r.id)),all=expandDoors(L.doors);
+    return `Overrides ${rn(L)}${y.doors&&y.doors.length&&y.doors.length<all.length?" at "+y.doors.map(doorName).join(", "):""}`}).join("; ");
 }
 function conflicts(door,info,w){
   const out=[];
@@ -2130,9 +2148,9 @@ function overridesFor(door,s){
 function clashChooser(el,pairs,onDone,onCancel){
   const pick={};
   const mayEdit=r=>typeof canEditRule!=="function"||canEditRule(S.rules.find(x=>String(x.id)===String(r.id))||r);
-  el.innerHTML=`<div class="warnbox clashbox"><b>These rules would overlap. Only one can run at a time on a door, so choose which one runs on those days.</b>
+  el.innerHTML=`<div class="warnbox clashbox"><b>These rules overlap. A door can follow only one rule at a time. Which one should it follow?</b>
     ${pairs.map((p,i)=>{const xa=exceptionFor(p.b,p.a,p.doors),xb=exceptionFor(p.a,p.b,p.doors);
-      const opt=(w,l,x,k)=>x&&mayEdit(l)?`<label class="cpick"><input type="radio" name="cp${i}" value="${k}"> <span><b>"${esc(w.name)}" runs.</b> "${esc(l.name)}" ${esc(x.text)}.</span></label>`:`<div class="cpick off"><span><b>"${esc(w.name)}" can't win here</b>${x?`: you may not change "${esc(l.name)}"`:""}.</span></div>`;
+      const opt=(w,l,x,k)=>x&&mayEdit(l)?`<label class="cpick"><input type="radio" name="cp${i}" value="${k}"> <span><b>Follow ${esc(rn(w))}</b><br>It overrides ${esc(rn(l))}${x.days?` on ${esc(x.days)}`:""}${x.where?` at ${esc(x.where)}`:""}. ${esc(rn(l))} keeps working everywhere else.</span></label>`:`<div class="cpick off"><span><b>"${esc(w.name)}" can't be chosen here</b>${x?`: you may not change "${esc(l.name)}"`:""}.</span></div>`;
       return `<div class="cpair"><p>${esc(clashLine(p))}.</p>${opt(p.a,p.b,xa,"a")}${opt(p.b,p.a,xb,"b")}</div>`}).join("")}
     <p class="hint" style="margin:6px 0">${pairs.length>1?`Choose for all ${pairs.length}, then save.`:"Choose one, then save."} Or cancel and change the times or doors so they don't overlap.</p>
     <div class="tline"><button class="btn sm pri" type="button" data-cgo disabled>Save with these choices</button><button class="btn sm" type="button" data-cno>Cancel</button></div></div>`;
@@ -2324,22 +2342,25 @@ function ruleRow(r){
   return `<div class="row rrow${ed?" tap":""}" id="rule-${r.id}"${ed?` data-edit="${r.id}" tabindex="0" role="button" aria-label="Edit ${esc(r.name)}"`:""}>
     <input type="checkbox" class="admin-only adv" data-pick="${r.id}"${PICK.has(r.id)?" checked":""} aria-label="Select ${esc(r.name)}">
     <span class="ic" style="--c:${col}">${ico(acc?"badge":modeIco(r.mode))}</span>
-    <div class="rt"><b>${esc(r.name)}${tags.map(t=>` <span class="mini">${esc(t)}</span>`).join("")}</b>
+    <div class="rt"><b>${r.no?`<span class="rno">#${r.no}</span> `:""}${esc(r.name)}${tags.map(t=>` <span class="mini">${esc(t)}</span>`).join("")}</b>
       <span><span class="mtag" style="--c:${col}">${esc(acc?r.group+" cards":modeLabel(r.mode))}</span> ${esc(ruleTime(r))}</span>
       <span>${esc(shownDoorsText(r.doors))}</span>
-      ${(()=>{let inc=condText(r.inc),exc=r.exc;if(!r.inc.wd.length&&r.exc.wd.length>=4){const keep=[0,1,2,3,4,5,6].filter(x=>!r.exc.wd.includes(x));inc+=`, only on ${keep.map(x=>WDN[x]).join(" and ")}`;exc={...r.exc,wd:[]}}const et=condText(exc),yt=yieldsText(r);return `<span>${esc(inc)||"No days yet"}${et?` <span class="x">except ${esc(et)}</span>`:""}${yt?` <span class="x">${esc(yt)}</span>`:""}`})()}${cond.length?`, only when ${esc(cond.join(" and "))}`:""}</span>
+      ${(()=>{let inc=condText(r.inc),exc=r.exc;if(!r.inc.wd.length&&r.exc.wd.length>=4){const keep=[0,1,2,3,4,5,6].filter(x=>!r.exc.wd.includes(x));inc+=`, only on ${keep.map(x=>WDN[x]).join(" and ")}`;exc={...r.exc,wd:[]}}const et=condText(exc),yt=yieldsText(r),ot=overridesText(r);return `<span>${esc(inc)||"No days yet"}${et?` <span class="x">except ${esc(et)}</span>`:""}${ot?`<br><span class="ovr">${esc(ot)}</span>`:""}${yt?`<br><span class="x">${esc(yt)}</span>`:""}`})()}${cond.length?`, only when ${esc(cond.join(" and "))}`:""}</span>
       ${r.note?`<span class="note">${esc(r.note)}</span>`:""}</div>
     ${ed?'<span class="chev"></span>':isAdmin()?'<span class="hint">View only</span>':`<button class="btn sm" type="button" data-reqrule="${r.id}">Ask to change</button>`}</div>`;
 }
 function renderRules(){
   const vis=[...S.rules].filter(canSeeRule);
-  const fd=$("#rqDoorF").value, q=$("#rqSearch").value.trim().toLowerCase();
+  const fd=$("#rqDoorF").value, fm=$("#rqModeF").value, q=$("#rqSearch").value.trim().toLowerCase();
+  $("#rqModeF").innerHTML=`<option value="">Any door state</option>`+MODES.map(m=>`<option value="${esc(m)}"${fm===m?" selected":""}>${esc(modeLabel(m))}</option>`).join("");
   const visF=new Set(visDoors().map(d=>d.id)),grps=S.groups.filter(g=>expandDoors(["g:"+g.id]).some(id=>visF.has(id)));
   const opt=(v,t)=>`<option value="${esc(v)}"${fd===v?" selected":""}>${esc(t)}</option>`;
   $("#rqDoorF").innerHTML=opt("","All doors and groups")+(grps.length?`<optgroup label="Groups">${grps.map(g=>opt("g:"+g.id,g.name)).join("")}</optgroup>`:"")+`<optgroup label="Doors">${visDoors().map(d=>opt(d.id,d.name)).join("")}</optgroup>`;
   const fset=!fd?null:new Set(expandDoors([fd]));
-  const match=r=>(!fset||expandDoors(r.doors).some(id=>fset.has(id)))&&(!q||[r.name,doorsText(r.doors),condText(r.inc),condText(r.exc),r.note||"",r.mode,modeLabel(r.mode)].join(" ").toLowerCase().includes(q));
-  const old=vis.filter(isArchived), list=vis.filter(r=>!isArchived(r)&&match(r)).sort((a,b)=>ruleLayer(a)-ruleLayer(b)||String(a.name).localeCompare(String(b.name)));
+  const match=r=>(!fm||((r.kind||"door")==="door"&&r.mode===fm))&&(!fset||expandDoors(r.doors).some(id=>fset.has(id)))&&(!q||[r.name,doorsText(r.doors),condText(r.inc),condText(r.exc),r.note||"",r.mode,modeLabel(r.mode)].join(" ").toLowerCase().includes(q));
+  ensureNos();
+  const qn=q.replace(/^#/,"");
+  const old=vis.filter(isArchived), list=vis.filter(r=>!isArchived(r)&&(match(r)||(/^\d+$/.test(qn)&&String(r.no)===qn&&(!fm||r.mode===fm)&&(!fset||expandDoors(r.doors).some(id=>fset.has(id)))))).sort((a,b)=>ruleLayer(a)-ruleLayer(b)||(+a.no||0)-(+b.no||0));
   $("#archived").innerHTML=old.length?`<details class="arch"><summary class="gh">Archived (${old.length})</summary><div class="glist">${old.map(r=>`<div class="row" style="opacity:.8"><span class="ic" style="--c:var(--gray)">${ico("clock")}</span><div class="rt"><b>${esc(r.name)}</b><span>${esc(shownDoorsText(r.doors))}, ${esc(condText(r.inc))}, ${esc(ruleTime(r))}</span></div>${canEditRule(r)?`<button class="btn sm" type="button" data-dup="${r.id}">Use again</button><button class="btn sm danger" type="button" data-purge="${r.id}">Delete</button>`:""}</div>`).join("")}</div><p class="gf">These ran on dates that are past. They stay for history. Use one again with new dates.</p></details>`:"";
   if(!list.length){$("#rules").innerHTML=q||fd?emptyState("tag","No rules match","Try a different word, door or group."):emptyState("tag","No rules yet","A rule tells doors what to do on certain days, like opening for Maariv every weekday.",(can("rules")||isAdmin())?`<button class="btn pri" type="button" onclick="$('#addRule').click()">New rule</button>`:"");return}
   $("#rules").innerHTML=CATS.map(([t,sub],i)=>{const rs=list.filter(r=>ruleCat(r)===i);return rs.length?`<h2 class="gh">${esc(t)}<span>${esc(sub)}</span></h2><div class="glist">${rs.map(ruleRow).join("")}</div>`:""}).join("");
@@ -2397,10 +2418,22 @@ function condBox(kind){
       <div class="tline"><input type="date" data-df aria-label="From date"><span class="hint">to</span><input type="date" data-dt aria-label="To date"><label class="hint inl"><input type="checkbox" data-yearly> Every year</label><button class="btn sm" type="button" data-adddate>Add</button></div>
     </details></div>`;
 }
+function tpick(id,val,label,hide){
+  const [h,m]=(val||"").split(":").map(Number),has=Number.isFinite(h),H=has?h:18,M=Number.isFinite(m)?m:0,pm=H>=12,h12=(H%12)||12;
+  return `<span class="tpick" id="${id}W"${hide?" hidden":""} role="group" aria-label="${esc(label)}">
+    <select data-tph aria-label="Hour">${Array.from({length:12},(_,i)=>i+1).map(n=>`<option value="${n}"${n===h12?" selected":""}>${n}</option>`).join("")}</select><b class="tcolon">:</b>
+    <select data-tpm aria-label="Minute">${Array.from({length:60},(_,i)=>i).map(n=>`<option value="${n}"${n===M?" selected":""}>${String(n).padStart(2,"0")}</option>`).join("")}</select>
+    <span class="seg tap-ap" role="radiogroup" aria-label="AM or PM"><button type="button" data-tpap="am" aria-pressed="${!pm}" class="${pm?"":"on"}">AM</button><button type="button" data-tpap="pm" aria-pressed="${pm}" class="${pm?"on":""}">PM</button></span>
+    <input type="hidden" id="${id}" value="${has?String(H).padStart(2,"0")+":"+String(M).padStart(2,"0"):"18:00"}"></span>`;
+}
+function tpSync(w){const h=+w.querySelector("[data-tph]").value,m=+w.querySelector("[data-tpm]").value,pm=w.querySelector('[data-tpap="pm"]').classList.contains("on");
+  const H=(h%12)+(pm?12:0);w.querySelector("input[type=hidden]").value=String(H).padStart(2,"0")+":"+String(m).padStart(2,"0")}
+document.addEventListener("change",ev=>{const w=ev.target.closest&&ev.target.closest(".tpick");if(w&&(ev.target.matches("[data-tph],[data-tpm]")))tpSync(w)});
+document.addEventListener("click",ev=>{const b=ev.target.closest&&ev.target.closest("[data-tpap]");if(!b)return;const w=b.closest(".tpick");w.querySelectorAll("[data-tpap]").forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-pressed",on)});tpSync(w)});
 function anchorFields(p,x){
   return `<div class="tline"><select id="${p}A" aria-label="${p==="s"?"Start":"End"} anchor">${Object.entries(ANCHORS).map(([k,v])=>`<option value="${k}"${x.a===k?" selected":""}>${v}</option>`).join("")}</select>
-    <input type="time" id="${p}T" value="${esc(x.t||"")}" ${x.a!=="clock"?"hidden":""} aria-label="Time">
-    <span id="${p}OW" class="offw" ${x.a==="clock"?"hidden":""}><input type="number" id="${p}O" value="${Math.abs(+x.o||0)}" min="0" step="5" aria-label="Minutes"><select id="${p}S" aria-label="Before or after"><option value="-1"${(+x.o<0||(!+x.o&&p==="s"))?" selected":""}>min before</option><option value="1"${(+x.o>0||(!+x.o&&p!=="s"))?" selected":""}>min after</option></select></span></div>`;
+    ${tpick(p+"T",x.t||(p==="s"?"18:00":"22:00"),p==="s"?"Start time":"End time",x.a!=="clock")}
+    <span id="${p}OW" class="offw" ${x.a==="clock"?"hidden":""}><input type="number" id="${p}O" value="${Math.abs(+x.o||0)||""}" placeholder="0" min="0" step="5" inputmode="numeric" aria-label="Minutes" onfocus="this.select()"><select id="${p}S" aria-label="Before or after"><option value="-1"${(+x.o<0||(!+x.o&&p==="s"))?" selected":""}>min before</option><option value="1"${(+x.o>0||(!+x.o&&p!=="s"))?" selected":""}>min after</option></select></span></div>`;
 }
 function captureTop(){
   if(!$("#ruleForm")) return;
@@ -2412,7 +2445,7 @@ function captureTop(){
 function drawEditor(){
   const e=E, canSave=can("rules")||isAdmin();
   $("#editorSlot").innerHTML=`<form id="ruleForm" class="mform">
-   <header class="mhead"><button type="button" class="mbtn" id="cancelEdit">Cancel</button><b>${e.isNew?"New rule":"Edit rule"}</b>${canSave?`<button type="submit" class="mbtn pri">Save</button>`:`<button type="button" class="mbtn pri" id="asReq">Request</button>`}</header>
+   <header class="mhead"><button type="button" class="mbtn" id="cancelEdit">Cancel</button><b>${e.isNew?"New rule":`Edit rule${e.no?" #"+e.no:""}`}</b>${canSave?`<button type="submit" class="mbtn pri">Save</button>`:`<button type="button" class="mbtn pri" id="asReq">Request</button>`}</header>
    <div class="mbody">
     <div class="glist form">
       <div class="frow"><input id="rName" class="big" value="${esc(e.name)}" placeholder="Rule name, like Weekday Maariv" aria-label="Name"></div>
@@ -2437,7 +2470,7 @@ function drawEditor(){
     </div>
     <p class="gf">Times like havdalah come from the day it ends. If the end is earlier than the start on the same day, it runs past midnight.${e.until?` This rule runs through ${esc(longDate(e.until))}, then stops.`:""}</p>
     ${sched()==="temp"?`<p class="notice">You can make temporary schedules only: pick specific dates (leave Every year unticked) or one event.</p>`:""}
-    ${condBox("inc")}${condBox("exc")}${(E.yields||[]).length?`<h3 class="gh">Gives way to</h3><div class="glist form" id="yBox">${E.yields.map((y,i)=>{const W=S.rules.find(x=>String(x.id)===String(y.id));return `<div class="row"><div class="rt"><b>${esc(W?W.name:"(deleted rule)")}</b><span>${W?esc(condText(W.inc)):"No longer has any effect"}${y.doors&&y.doors.length?", on "+esc(y.doors.map(doorName).join(", ")):", on all shared doors"}</span></div><button class="btn sm danger" type="button" data-yrm="${i}">Remove</button></div>`}).join("")}</div>`:""}
+    ${condBox("inc")}${condBox("exc")}${(E.yields||[]).length?`<h3 class="gh">Overridden by</h3><div class="glist form" id="yBox">${E.yields.map((y,i)=>{const W=S.rules.find(x=>String(x.id)===String(y.id));return `<div class="row"><div class="rt"><b>${esc(rn(W))}</b><span>${W?esc(condText(W.inc)):"No longer has any effect"}${y.doors&&y.doors.length?", at "+esc(y.doors.map(doorName).join(", ")):", on every door they share"}</span></div><button class="btn sm danger" type="button" data-yrm="${i}">Remove</button></div>`}).join("")}</div>`:""}
     <p class="gf">The rule runs on any day that matches Runs on, unless it also matches Except on.</p>
     <details class="more"${(!SIMPLE||e.sit||(e.rabbi&&e.rabbi!=="any")||e.year||(e.season&&e.season!=="any"))?" open":""}><summary class="gh">More options</summary>
     <div class="glist form">
@@ -2465,14 +2498,14 @@ function drawEditor(){
     $("#rDoorMore").addEventListener("toggle",ev=>{DPOPEN=ev.target.open});
     document.querySelectorAll("input[name=rDoor]").forEach(x=>x.addEventListener("change",sum));sum();filt(); }
   $("#rUntilK").addEventListener("change",ev=>{const d=ev.target.value==="date";$("#rUntil").hidden=!d;if(d&&!$("#rUntil").value)$("#rUntil").value=addDays(todayNY(),29)});
-  ["s","e"].forEach(p=>$(`#${p}A`).addEventListener("change",ev=>{const c=ev.target.value==="clock";$(`#${p}T`).hidden=!c;$(`#${p}OW`).hidden=c}));
+  ["s","e"].forEach(p=>$(`#${p}A`).addEventListener("change",ev=>{const c=ev.target.value==="clock";$(`#${p}TW`).hidden=!c;$(`#${p}OW`).hidden=c}));
   $("#rKind").addEventListener("change",ev=>{const a=ev.target.value==="access";$("#modeField").hidden=a;$("#agField").hidden=!a});
   $("#cancelEdit").onclick=closeEditor;
   if(!e.isNew){
     $("#delRule").onclick=()=>{$("#delConfirm").hidden=false;$("#delConfirm").scrollIntoView({block:"nearest"})};
     $("#delNo").onclick=()=>{$("#delConfirm").hidden=true};
     $("#delYes").onclick=()=>{S.rules=S.rules.filter(x=>x.id!==e.id);S.rules.forEach(x=>{if(x.yields)x.yields=x.yields.filter(y=>String(y.id)!==String(e.id))});log(`Deleted rule "${e.name}"`);save();closeEditor();renderAll();toast("Rule deleted")};
-    $("#dupRule").onclick=()=>{captureTop();const c={...structuredClone(E),id:Date.now(),name:(E.name||"Rule")+" (copy)"};delete c.isNew;openEditor(c,true)};
+    $("#dupRule").onclick=()=>{captureTop();const c={...structuredClone(E),id:Date.now(),name:(E.name||"Rule")+" (copy)"};delete c.no;delete c.isNew;openEditor(c,true)};
   }
   $("#yBox")?.addEventListener("click",ev=>{const b=ev.target.closest("[data-yrm]");if(!b)return;E.yields.splice(+b.dataset.yrm,1);redraw()});
   document.querySelectorAll("[data-box]").forEach(box=>{
@@ -2495,7 +2528,7 @@ function drawEditor(){
     const hs=box.querySelector("[data-hsearch]");if(hs){hs.addEventListener("input",()=>{HQ[box.dataset.box]=hs.value;hpFilter(box,box.dataset.box)});hpFilter(box,box.dataset.box)}
   });
   function redraw(){const sc=$("#ruleForm .mbody").scrollTop;captureTop();drawEditor();$("#ruleForm .mbody").scrollTop=sc}
-  const build=()=>({id:E.id,kind:E.kind||"door",group:E.group||"",note:(E.note||"").trim(),year:E.year||"",name:(E.name||"").trim()||"Untitled rule",until:E.until||"",mode:E.mode,doors:E.doors,rabbi:E.rabbi,sit:E.sit||"",season:E.season,inc:E.inc,exc:E.exc,yields:E.yields||[],start:E.start,end:E.end});
+  const build=()=>({id:E.id,no:E.no,kind:E.kind||"door",group:E.group||"",note:(E.note||"").trim(),year:E.year||"",name:(E.name||"").trim()||"Untitled rule",until:E.until||"",mode:E.mode,doors:E.doors,rabbi:E.rabbi,sit:E.sit||"",season:E.season,inc:E.inc,exc:E.exc,yields:E.yields||[],start:E.start,end:E.end});
   const check=r=>{const has=r.inc.wd.length||r.inc.fest.length||r.inc.dates.length||r.inc.hr.length;
     return !r.doors.length?"Pick at least one door or group.":!has?"Add at least one day under Runs on.":(r.start.a==="clock"&&!r.start.t)||(r.end.a==="clock"&&!r.end.t)?"Enter a clock time for the start and the end.":""};
   const showErr=t=>{$("#formErr").textContent=t;$("#formErr").hidden=!t;if(t)$("#formErr").scrollIntoView({block:"nearest"})};
@@ -3250,7 +3283,7 @@ $("#ovList").addEventListener("click",ev=>{const b=ev.target.closest("[data-oven
 // preview
 $("#startDate").addEventListener("change",renderPreview);
 $("#vList").onclick=()=>setView("list");
-$("#rqSearch").addEventListener("input",renderRules);$("#rqDoorF").addEventListener("change",renderRules);
+$("#rqSearch").addEventListener("input",renderRules);$("#rqDoorF").addEventListener("change",renderRules);$("#rqModeF").addEventListener("change",renderRules);
 // situations
 $("#sitChips").addEventListener("click",ev=>{const b=ev.target.closest("[data-sit]");if(!b)return;const x=sitOf(b.dataset.sit);const t=todayNY();
   if(x.ranges.some(r=>t<=r.to&&t>=r.from)&&!x.on){$("#sitChips").title=`"${x.name}" is on by its dates. Edit them in Settings.`;return}
@@ -3707,7 +3740,7 @@ async function boxSampler(){
           zmanim:Object.fromEntries(["alos","sunrise","plag","sunset","candles","tzeis","havdalah"].map(k=>[k,fmt(info.z[k])])),
           doors:ids.map(d=>({door:d,name:doorName(d),windows:daySegments(d,s).map(g=>({from:fmt(g.a),to:g.b>=1440?"midnight":fmt(g.b),mode:g.c.ov?g.c.ov.mode:g.c.r.mode,set_by:g.c.ov?"manual override by "+g.c.ov.by:g.c.isDef?"door default":`rule "${g.c.r.name}" (${g.c.src})`}))}))}}},
     {name:"list_rules",description:"All rules this person can see: id, name, doors, when it runs and its exceptions, start and end, mode, layer (schedule, event or situation), notes.",
-      execute(){return S.rules.filter(canSeeRule).map(r=>({id:r.id,name:r.name,kind:r.kind||"door",doors:shownDoorsText(r.doors),runs_on:condText(r.inc),except:condText(r.exc),gives_way:yieldsText(r),start:anchorText(r.start),end:anchorText(r.end)+(r.end.days?` (+${r.end.days} days)`:""),mode:r.kind==="access"?r.group+" cards":r.mode,layer:["schedule","event (overrides the schedule during its hours)","situation (overrides while switched on)","situation that beats everything"][ruleLayer(r)],only_when:[r.rabbi!=="any"?"rabbi "+r.rabbi:"",r.season!=="any"?(r.season==="dst"?"summer clock only":"winter clock only"):""].filter(Boolean).join(", "),note:r.note||""}))}},
+      execute(){return S.rules.filter(canSeeRule).map(r=>({id:r.id,name:r.name,kind:r.kind||"door",doors:shownDoorsText(r.doors),runs_on:condText(r.inc),except:condText(r.exc),number:r.no||null,overridden_by:yieldsText(r),overrides:overridesText(r),start:anchorText(r.start),end:anchorText(r.end)+(r.end.days?` (+${r.end.days} days)`:""),mode:r.kind==="access"?r.group+" cards":r.mode,layer:["schedule","event (overrides the schedule during its hours)","situation (overrides while switched on)","situation that beats everything"][ruleLayer(r)],only_when:[r.rabbi!=="any"?"rabbi "+r.rabbi:"",r.season!=="any"?(r.season==="dst"?"summer clock only":"winter clock only"):""].filter(Boolean).join(", "),note:r.note||""}))}},
     {name:"find_dates",description:"Find the next dates (up to 12) in the coming 2 years that match a day key such as rc_any, succos1, shovavim, or a weekday name. Returns YYYY-MM-DD with Hebrew date.",
       inputSchema:{type:"object",properties:{key:{type:"string"},from:{type:"string"}},required:["key"]},
       execute(i){const k=String(i.key),w=WDN.findIndex(n=>n.toLowerCase().startsWith(k.toLowerCase().slice(0,3)));const out=[];let s=/^\d{4}-\d{2}-\d{2}$/.test(i.from||"")?i.from:todayNY();
@@ -3784,7 +3817,7 @@ Now: ${todayNY()} ${WDN[t.w]}, ${hebText(t.h)}, ${fmt(nyMinutes(Date.now()))} Ne
 Doors this person can see: ${visDoors().map(d=>`${d.id} "${d.name}" (${perm(d.id)==="edit"?"can edit":"view only"}, default ${d.def})`).join("; ")}.
 Groups: ${S.groups.map(g=>`"${g.name}" = ${g.doors.join(",")}`).join("; ")}.
 Modes: ${MODES.join(", ")}. Time anchors: ${Object.entries(ANCHORS).map(([k,v])=>k+"="+v).join(", ")}; use offset_minutes (negative = before). For clock use 24-hour HH:MM.
-How rules combine: the schedule is every rule for weekdays, holidays, dates and the rabbi; two schedule rules may never run on the same door at the same time. If a new rule would overlap one, the card asks the person which runs; the other rule then gives way to it on the shared doors on the days it runs, so don't try to avoid it with tricks; just propose the rule. Event rules (with event-type keys) override the schedule during their hours, situations override while switched on (one marked "beats everything" also beats events), and Open or lock now by hand beats everything. Outside all rules a door is on its default. There are no scores.
+How rules combine: the schedule is every rule for weekdays, holidays, dates and the rabbi; two schedule rules may never run on the same door at the same time. If a new rule would overlap one, the card asks the person which runs; the chosen rule then overrides the other one on the shared doors on the days it runs (the screens say "Overrides" / "Overridden by"), so don't try to avoid it with tricks; just propose the rule. Event rules (with event-type keys) override the schedule during their hours, situations override while switched on (one marked "beats everything" also beats events), and Open or lock now by hand beats everything. Outside all rules a door is on its default. There are no scores.
 Day keys for day_keys: ${Object.entries(FEST).map(([k,v])=>k+"="+festName(k)+(festName(k)!==v.label?" (also called "+v.label+")":"")).join("; ")}${S.hdates.length?"; "+S.hdates.map(h=>"hd:"+h.id+"="+h.name).join("; "):""}${S.gdates.length?"; "+S.gdates.map(g=>"gd:"+g.id+"="+g.name).join("; "):""}; event types: ${S.types.map(x=>"type:"+x).join(", ")}.
 Use the tools to look things up rather than guessing. To change anything, call a propose_ tool: it shows the person a card with Save and Discard, and nothing is saved until they press Save. Never say a change was saved; say it is ready for them to confirm. If the person lacks permission for a change, offer to send it as a request to a super admin or another user with send_request. If a request is ambiguous (which doors, which date), ask one short question first. If a tool returns an error, fix the input or explain.`;
   }

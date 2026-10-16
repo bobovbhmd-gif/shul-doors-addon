@@ -94,7 +94,10 @@ if(!S.accessGroups) S.accessGroups=structuredClone(SAMPLE.accessGroups);
 S.doors.forEach(d=>{if(!d.def)d.def="Card or Pin"});
 function doorDef(id){const d=S.doors.find(x=>x.id===id);return d&&d.def||"Card or Pin"}
 const DEF_RULE=id=>({id:"def:"+id,name:"Default",mode:doorDef(id),isDef:true});
-function save(){if(ON_BOX){boxSave();return}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+// every rule keeps a permanent number (#1, #2...): new rules get the next one, numbers are never reused
+function ensureNos(){if(!S||!S.rules)return;let m=Math.max(0,...S.rules.map(r=>+r.no||0),+S.ruleNoMax||0);S.rules.forEach(r=>{if(!r.no)r.no=++m});S.ruleNoMax=m}
+function rn(r){return r?(r.no?`#${r.no} `:"")+`"${r.name}"`:'"(deleted rule)"'}
+function save(){ensureNos();if(ON_BOX){boxSave();return}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 let BOX_T=null;function boxSave(){clearTimeout(BOX_T);BOX_T=setTimeout(()=>{fetch("api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({version:window.__SD_VERSION,state:S})}).then(r=>r.json()).then(j=>{if(j.version)window.__SD_VERSION=j.version;if(j.conflict){toast("Someone else just made a change. Loading the latest.");setTimeout(()=>location.reload(),1500)}}).catch(()=>toast("Could not save. Check the connection to the box."))},400)}
 function log(text){
   const e={t:Date.now(),u:S.me,text,push:"pending"};S.log.unshift(e);S.log=S.log.slice(0,500);
@@ -366,14 +369,15 @@ function trial(change,doors,from,days){
   const pairs=Object.values(g).map(p=>({...p,doors:[...p.doors],n:p.days.size}));
   return {pairs,clashes:pairs.map(clashLine)};
 }
-function clashLine(p){return `"${p.a.name}" and "${p.b.name}" both set ${p.doors.length>3?p.doors.length+" doors":p.doors.map(doorName).join(", ")} on ${p.n} day${p.n===1?"":"s"} in the coming year, first ${WDN[dow(p.first)]}, ${shortDate(p.first)}, ${fmt(p.st)} to ${fmt(p.en)}`}
+function clashLine(p){return `${rn(p.a)} and ${rn(p.b)} both control ${p.doors.length>3?p.doors.length+" doors":p.doors.map(doorName).join(", ")} at the same time, ${p.n} day${p.n===1?"":"s"} a year. First time: ${WDN[dow(p.first)]}, ${shortDate(p.first)}, ${fmt(p.st)} to ${fmt(p.en)}`}
 // how the losing rule steps aside when the other one runs: it gives way to that rule
 // on the doors they share, on the days it runs there
 function exceptionFor(L,W,doors){
   const all=expandDoors(L.doors),on=(doors||[]).filter(d=>all.includes(d));
   const scoped=on.length&&on.length<all.length;
   const ct=typeof condText==="function"?condText:null, days=ct?ct(W.inc):"";   // the wording lives with the screens; the box only needs the exception
-  return {yields:{id:W.id,doors:scoped?on:[]},text:`gives way to "${W.name}"${days?` (${days})`:""}${scoped?" on "+on.map(doorName).join(", "):""}`};
+  const where=scoped?on.map(doorName).join(", "):"";
+  return {yields:{id:W.id,doors:scoped?on:[]},days,where,text:`is overridden by "${W.name}"${days?` on ${days}`:""}${where?`, at ${where}`:""}`};
 }
 function applyException(loserId,x){
   const L=S.rules.find(r=>String(r.id)===String(loserId));if(!L||!x||!x.yields)return;
@@ -385,7 +389,12 @@ function applyException(loserId,x){
 }
 function yieldsText(r){
   return (r.yields||[]).map(y=>{const W=S.rules.find(x=>String(x.id)===String(y.id));if(!W)return "";
-    const all=expandDoors(r.doors);return `gives way to "${W.name}"${y.doors&&y.doors.length&&y.doors.length<all.length?" on "+y.doors.map(doorName).join(", "):""}`}).filter(Boolean).join("; ");
+    const all=expandDoors(r.doors);return `Overridden by ${rn(W)}${y.doors&&y.doors.length&&y.doors.length<all.length?" at "+y.doors.map(doorName).join(", "):""}`}).filter(Boolean).join("; ");
+}
+// the other side: rules this one overrides
+function overridesText(r){
+  return S.rules.filter(L=>(L.yields||[]).some(y=>String(y.id)===String(r.id))).map(L=>{const y=L.yields.find(v=>String(v.id)===String(r.id)),all=expandDoors(L.doors);
+    return `Overrides ${rn(L)}${y.doors&&y.doors.length&&y.doors.length<all.length?" at "+y.doors.map(doorName).join(", "):""}`}).join("; ");
 }
 function conflicts(door,info,w){
   const out=[];
