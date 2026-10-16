@@ -842,6 +842,15 @@ details.more>summary.gh{color:var(--accent)}
 .wl li{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;font-size:14px}
 .wl .dot{width:8px;height:8px}
 .wl .tm{font-weight:600;font-variant-numeric:tabular-nums}
+.wl.dsl{gap:0}
+.wl.dsl li{padding:7px 8px;margin:0 -8px;border-radius:8px;transition:background .3s}
+.wl.dsl li+li{border-top:.5px solid var(--line)}
+.wl.dsl li.cur{background:var(--fill2)}
+.wl.dsl li.hl{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.wl.dsl.clip li:nth-child(n+7){display:none}
+.wl .nowtag{margin-left:auto;font-size:12px;font-weight:600;color:var(--accent)}
+.dtl .linkbtn{margin-top:6px}
+.dtl .dsh{margin:8px 0 0}
 .wl .by{color:var(--muted);font-size:13px}
 .wl a{color:var(--muted);text-decoration:none;cursor:pointer}
 .wl a:hover{color:var(--accent);text-decoration:underline}
@@ -2830,7 +2839,9 @@ function renderDoorSheet(){
   TIPS=TIPS||{};
   const segs=daySegments(id,today);
   const bars=segs.map((g,j)=>{const k=`ds|${id}|${j}`;TIPS[k]=segTip(id,today,g);return `<span class="seg2 ${(g.c.ov?"man":modeKind(g.c.r.mode))+(g.c.isDef?" def":"")}" data-tip="${esc(k)}" tabindex="0" style="left:${pct(g.a)};width:${pct(g.b-g.a)}" aria-label="${esc(TIPS[k].replace(/<[^>]+>/g," "))}"></span>`}).join("");
-  const items=segs.filter(g=>!g.c.isDef).map(g=>{const m=g.c.ov?g.c.ov.mode:g.c.r.mode;return `<li><i class="dot" style="--c:${g.c.ov?"var(--p)":modeColor(m)}"></i><span class="tm">${g.a===0?"12:00 AM":fmt(g.a)} to ${g.b>=1440?"midnight":fmt(g.b)}</span><span class="md">${esc(modeLabel(m))}</span><span class="by">${g.c.ov?"By hand":esc(g.c.r.name)}</span></li>`}).join("");
+  // every part of the day in plain words, default parts included; the part running now is marked
+  const items=segs.map((g,j)=>{const m=g.c.ov?g.c.ov.mode:g.c.r.mode,cur=now>=g.a&&now<g.b;return `<li data-seg="${j}"${cur?' class="cur"':""}><i class="dot" style="--c:${g.c.ov?"var(--p)":modeColor(m)}"></i><span class="tm">${g.a===0?"12:00 AM":fmt(g.a)} to ${g.b>=1440?"midnight":fmt(g.b)}</span><span class="md">${esc(modeLabel(m))}</span><span class="by">${g.c.ov?"By hand":g.c.isDef?"When no rule is running":esc(g.c.r.name)}</span>${cur?'<span class="nowtag">Now</span>':""}</li>`}).join("");
+  const SEG_MAX=6, many=segs.length>SEG_MAX;
   const can_=canChangeDoor(id);
   const choices=[["Unlock","Open","open"],["Card or Pin","Card or PIN","lock"],["Lockdown","Lockdown","lockdown"]];
   if(!DM_PICK)DM_PICK=st.mode==="Unlock"?"Card or Pin":"Unlock";
@@ -2860,7 +2871,9 @@ function renderDoorSheet(){
     <h3 class="gh">Today</h3>
     <div class="card dtl"><div class="axis">${["12 AM","6 AM","Noon","6 PM","12 AM"].map((l,k)=>`<span style="left:${k*25}%">${l}</span>`).join("")}</div>
       <div class="tbar">${bars}${[360,720,1080].map(t=>`<i class="hr" style="left:${pct(t)}"></i>`).join("")}<i class="shk" style="left:${pct(info.z.sunset)}"></i><i class="now" style="left:${pct(now)}"></i></div>
-      <ul class="wl">${items||`<li class="hint">No rules today. ${esc(modeLabel(doorDef(id)))} all day.</li>`}</ul></div>
+      <ul class="wl dsl${many?" clip":""}" id="dSegs">${segs.length===1&&segs[0].c.isDef?`<li class="hint">No rules today. ${esc(modeLabel(doorDef(id)))} all day.</li>`:items}</ul>
+      ${many?`<button type="button" class="linkbtn" id="dSegMore">Show all ${segs.length} times</button>`:""}
+      <p class="gf dsh">Tap the bar to see the time of each part.</p></div>
     <div class="glist acts">
       <button type="button" class="row tap" id="dSched">See the full schedule</button>
       ${can("codes")||isAdmin()?`<button type="button" class="row tap" id="dCode">Give a guest code for this door</button>`:""}
@@ -3545,7 +3558,12 @@ $("#dSearch").addEventListener("input",renderBoard);
 document.querySelectorAll("#dView [data-dv]").forEach(b=>b.onclick=()=>{DV=b.dataset.dv;try{localStorage.setItem("shulDoorView2",DV)}catch(e){}renderBoard()});
 $("#doorBody").addEventListener("mousemove",ev=>{const el=ev.target.closest("[data-tip]");el?showTip(el,ev.clientX,ev.clientY):hideTip()});
 $("#doorBody").addEventListener("mouseleave",hideTip);
-$("#doorBody").addEventListener("click",ev=>{const el=ev.target.closest("[data-tip]");if(el){const r=el.getBoundingClientRect();showTip(el,ev.clientX||r.left,ev.clientY||r.bottom)}});
+$("#doorBody").addEventListener("click",ev=>{
+  const mb=ev.target.closest("#dSegMore");if(mb){const ul=$("#dSegs"),c=ul.classList.toggle("clip");mb.textContent=c?`Show all ${ul.children.length} times`:"Show less";return}
+  const el=ev.target.closest("[data-tip]");if(el){const r=el.getBoundingClientRect();showTip(el,ev.clientX||r.left,ev.clientY||r.bottom);
+    const j=(el.dataset.tip.match(/\|(\d+)$/)||[])[1],li=j!=null&&document.querySelector(`#dSegs [data-seg="${j}"]`);
+    if(li){const ul=$("#dSegs");if(ul.classList.contains("clip")&&+j>=6){ul.classList.remove("clip");const mb2=$("#dSegMore");if(mb2)mb2.textContent="Show less"}
+      document.querySelectorAll("#dSegs .hl").forEach(x=>x.classList.remove("hl"));li.classList.add("hl");setTimeout(()=>li.classList.remove("hl"),1800)}}});
 $("#hero").addEventListener("click",ev=>{const hd=ev.target.closest("[data-hdoor]");if(hd){openDoor(hd.dataset.hdoor);return}const b=ev.target.closest("[data-hf]");if(!b)return;DF=b.dataset.hf;showTab("doors")});
 /* select several doors wiring */
 $("#dSelBtn").onclick=()=>{SELMODE=!SELMODE;if(!SELMODE)DSEL.clear();renderBoard()};
