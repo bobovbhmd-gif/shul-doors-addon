@@ -1107,7 +1107,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
 @media (max-width:899px){.herorow{grid-template-columns:minmax(0,1fr)}}
 .hn-off input.plain{color:var(--muted)}
 .dpick .frow{flex-wrap:wrap}
-.ovr{color:var(--ok);font-weight:500}
+.rovr{color:var(--ok);font-weight:500}
 .glist.buzz .row{display:flex;align-items:center;gap:12px;text-align:left}
 .glist.buzz .rt{display:flex;flex-direction:column}
 .glist.buzz .rt span{font-size:13px;color:var(--muted);font-weight:400}
@@ -2358,7 +2358,7 @@ function ruleRow(r){
     <div class="rt"><b>${r.no?`<span class="rno">#${r.no}</span> `:""}${esc(r.name)}${tags.map(t=>` <span class="mini">${esc(t)}</span>`).join("")}</b>
       <span><span class="mtag" style="--c:${col}">${esc(acc?r.group+" cards":modeLabel(r.mode))}</span> ${esc(ruleTime(r))}</span>
       <span>${esc(shownDoorsText(r.doors))}</span>
-      ${(()=>{let inc=condText(r.inc),exc=r.exc;if(!r.inc.wd.length&&r.exc.wd.length>=4){const keep=[0,1,2,3,4,5,6].filter(x=>!r.exc.wd.includes(x));inc+=`, only on ${keep.map(x=>WDN[x]).join(" and ")}`;exc={...r.exc,wd:[]}}const et=condText(exc),yt=yieldsText(r),ot=overridesText(r);return `<span>${esc(inc)||"No days yet"}${et?` <span class="x">except ${esc(et)}</span>`:""}${ot?`<br><span class="ovr">${esc(ot)}</span>`:""}${yt?`<br><span class="x">${esc(yt)}</span>`:""}`})()}${cond.length?`, only when ${esc(cond.join(" and "))}`:""}</span>
+      ${(()=>{let inc=condText(r.inc),exc=r.exc;if(!r.inc.wd.length&&r.exc.wd.length>=4){const keep=[0,1,2,3,4,5,6].filter(x=>!r.exc.wd.includes(x));inc+=`, only on ${keep.map(x=>WDN[x]).join(" and ")}`;exc={...r.exc,wd:[]}}const et=condText(exc),yt=yieldsText(r),ot=overridesText(r);return `<span>${esc(inc)||"No days yet"}${et?` <span class="x">except ${esc(et)}</span>`:""}${ot?`<br><span class="rovr">${esc(ot)}</span>`:""}${yt?`<br><span class="x">${esc(yt)}</span>`:""}`})()}${cond.length?`, only when ${esc(cond.join(" and "))}`:""}</span>
       ${r.note?`<span class="note">${esc(r.note)}</span>`:""}</div>
     ${ed?'<span class="chev"></span>':isAdmin()?'<span class="hint">View only</span>':`<button class="btn sm" type="button" data-reqrule="${r.id}">Ask to change</button>`}</div>`;
 }
