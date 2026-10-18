@@ -1146,6 +1146,63 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
 .spk-o.on{color:var(--accent);font-weight:600}
 .spk-none{padding:12px 10px;color:var(--muted);font-size:14px}
 .rlink{color:inherit;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
+/* reports and history */
+.rp-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.rp-bar>select,.rp-bar .spk{width:auto;max-width:240px}
+.rp-bar .seg{max-width:100%;overflow-x:auto;scrollbar-width:none}.rp-bar .seg button{white-space:nowrap;flex:none}
+.rp-dates{display:inline-flex;gap:6px;align-items:center}.rp-dates input{width:auto}
+.rp-who{flex:0 1 200px;min-width:150px}
+.rp-src{margin:0 4px 12px}
+.rp-kpis .kpi .lab{font-size:13px;color:var(--muted)}
+.rp-kpis .kpi .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp-kpis .kpi .ks{margin-top:4px;line-height:1.3}
+.dl{font-size:12.5px;color:var(--muted)}.dl.bad{color:var(--lock)}
+.rp-card{margin-bottom:16px}
+.rp-ch{display:flex;align-items:baseline;justify-content:space-between;gap:4px 12px;flex-wrap:wrap}
+.rp-ch .ch{margin-bottom:12px}
+.rp-two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:0 16px}
+.rp-cols{position:relative;height:190px;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));align-items:end;border-bottom:1px solid var(--line);padding-top:12px;margin-right:30px}
+.rp-col{height:100%;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;border-radius:4px 4px 0 0;outline:none}
+.rp-col.shab{background:var(--fill2)}
+.rp-col i{display:block;width:min(64%,24px);background:var(--accent);border-radius:4px 4px 0 0}
+.rp-col:hover i,.rp-col:focus-visible i{background:color-mix(in srgb,var(--accent) 78%,var(--fg))}
+.rp-cols .gl{position:absolute;left:0;right:-30px;border-top:1px solid color-mix(in srgb,var(--fg) 8%,transparent);pointer-events:none}
+.rp-cols .gl span{position:absolute;right:0;bottom:2px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rp-axis{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));font-size:11px;color:var(--muted);margin:5px 30px 0 0}
+.rp-axis span{text-align:center;white-space:nowrap;overflow:visible}
+.rp-key{display:flex;align-items:center;gap:6px;margin:10px 0 0}
+.shabkey{width:14px;height:10px;border-radius:3px;background:var(--fill2);display:inline-block;border:1px solid var(--line)}
+.rp-heat{display:grid;grid-template-columns:36px repeat(24,minmax(0,1fr));gap:2px;align-items:center}
+.rp-heat .hl{font-size:12px;color:var(--muted)}
+.rp-heat .hx{font-size:11px;color:var(--muted);white-space:nowrap}
+.hc{display:block;height:20px;border-radius:4px;background:var(--fill2);cursor:pointer}
+.hc.l1{background:color-mix(in srgb,var(--accent) 18%,var(--surface))}.hc.l2{background:color-mix(in srgb,var(--accent) 36%,var(--surface))}
+.hc.l3{background:color-mix(in srgb,var(--accent) 56%,var(--surface))}.hc.l4{background:color-mix(in srgb,var(--accent) 78%,var(--surface))}.hc.l5{background:var(--accent)}
+.rp-hkey{display:flex;align-items:center;gap:3px;margin-top:12px;justify-content:flex-end}.rp-hkey .hc{width:16px;height:12px;cursor:default}.rp-hkey .hint{margin:0 4px}
+.rp-ah{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin:-4px 0 10px;flex-wrap:wrap}.rp-ah select{width:auto;padding:4px 28px 4px 10px;font-size:13px}
+.rp-t td,.rp-t th{padding:8px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:14px;vertical-align:middle}
+.rp-t tr:last-child td{border-bottom:0}
+.rp-t th{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+.rp-t .time,.rp-t .nw{white-space:nowrap}
+.rp-click{cursor:pointer}.rp-click:hover td{background:var(--fill2)}
+.rp-bar1{display:inline-block;width:64px;height:6px;border-radius:3px;background:var(--fill);margin-right:8px;vertical-align:middle;overflow:hidden}.rp-bar1 i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.rp-p{color:var(--accent);cursor:pointer;text-decoration:none;white-space:nowrap}
+.kpi .ktxt{display:block;font-size:18px;line-height:1.25;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.rp-two{align-items:start}
+.mo-card{margin-top:12px}.mo-card .gf.top{margin:0 0 10px}
+.mo-sum{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:15px;font-weight:500}.mo-c{display:inline-flex;align-items:center;gap:7px}
+.mo-det{margin-top:12px}.mo-det>summary{cursor:pointer;color:var(--accent);font-size:14px;font-weight:500}.mo-det table{margin-top:8px}.rp-p:hover{text-decoration:underline}
+.okm{color:var(--ok);font-size:13px;font-weight:500;white-space:nowrap}.warnm{color:var(--warn);font-size:13px;font-weight:500;white-space:nowrap}
+.rp-more{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 8px 2px}
+.rp-logh{align-items:center}
+.hs-day{display:flex;align-items:baseline;justify-content:space-between;gap:4px 12px;flex-wrap:wrap}
+.hs-row{align-items:flex-start}
+.hs-row .hs-t{flex:none;width:62px;color:var(--muted);font-size:13px;padding-top:8px}
+.hs-row>.okm,.hs-row>.warnm{padding-top:8px}
+.hs-det summary{cursor:pointer;color:var(--accent);font-size:13px;margin-top:4px}
+.hs-det ul{margin:6px 0 0;padding-left:18px;font-size:13px;color:var(--muted)}
+@media (max-width:699px){.rp-cols,.rp-axis{margin-right:24px}.rp-cols .gl{right:-24px}.hc{height:16px}.hs-row .hs-t{width:54px}}
+@media print{.rp-bar,.hs-bar,#rpCsv,.rp-more .btn{display:none!important}}
 .secthead .pvf{width:auto;max-width:240px;margin-left:12px;height:34px;font-size:14px}
 .tpick{display:inline-flex;align-items:center;gap:4px}
 .tpick select{width:auto;min-width:58px;padding-right:22px}
@@ -1467,21 +1524,30 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
   </section>
 
   <section id="tab-reports" hidden>
-    <div class="calbar">
-      <select id="rpDays" aria-label="Period"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select>
+    <div class="rp-bar">
+      <div class="seg" role="group" aria-label="Period" id="rpPer"><button type="button" data-per="0">Today</button><button type="button" data-per="7">7 days</button><button type="button" data-per="30">30 days</button><button type="button" data-per="90">90 days</button><button type="button" data-per="c">Dates</button></div>
+      <span class="rp-dates" id="rpDates" hidden><input type="date" id="rpFrom" aria-label="From"><span class="hint">to</span><input type="date" id="rpTo" aria-label="To"></span>
       <select id="rpDoor" aria-label="Doors"></select>
-      <label class="gf" style="display:flex;align-items:center;gap:6px">After hours from <select id="rpAhFrom" aria-label="After hours start"></select> to <select id="rpAhTo" aria-label="After hours end"></select></label>
-      </div>
-    <div class="kpis" id="rpKpi"></div>
-    <p class="gf" style="margin:-4px 4px 16px" id="rpSrc">Sample numbers in the prototype. The live system reads each panel's door log.</p>
-    <div class="card"><h2 class="ch">Entries by hour</h2><div id="rpHours"></div></div>
-    <div class="homecols">
-      <div><h2 class="gh">By door</h2><div class="card tw" id="rpDoors"></div></div>
-      <div><h2 class="gh" id="rpLateH">After hours</h2><div class="card tw" id="rpLate"></div></div>
+      <label class="search sm rp-who"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="rpWho" placeholder="Person" aria-label="Person"></label>
+      <select id="rpRes" aria-label="Result"><option value="all">Granted and denied</option><option value="ok">Granted only</option><option value="no">Denied only</option></select>
     </div>
-    <h2 class="gh" id="rpUnusedH">Cards not used in this period</h2>
-    <div class="card"><div class="tags" id="rpUnused"></div></div>
-    <p class="gf" id="rpUnusedP">Worth checking: lost cards, people who moved, or cards to cancel.</p>
+    <p class="gf rp-src" id="rpSrc">Loading…</p>
+    <div class="kpis rp-kpis" id="rpKpi"></div>
+    <div class="card rp-card"><div class="rp-ch"><h2 class="ch" id="rpTrendH">Entries per day</h2><span class="hint" id="rpTrendS"></span></div><div id="rpTrend"></div></div>
+    <div class="rp-two">
+      <div class="card rp-card"><div class="rp-ch"><h2 class="ch">Busy times</h2><span class="hint">Entries by day and hour</span></div><div id="rpHeat"></div></div>
+      <div class="card rp-card"><div class="rp-ch"><h2 class="ch" id="rpLateH">After hours</h2></div>
+        <div class="rp-ah">From <select id="rpAhFrom" aria-label="After hours start"></select> to <select id="rpAhTo" aria-label="After hours end"></select></div>
+        <div id="rpLate"></div></div>
+    </div>
+    <h2 class="gh">By door</h2><div class="card tw rp-card" id="rpDoors"></div>
+    <div class="rp-two">
+      <div><h2 class="gh">People</h2><div class="card tw rp-card" id="rpPeople"></div></div>
+      <div><h2 class="gh">Denied attempts</h2><div class="card tw rp-card" id="rpDenied"></div></div>
+    </div>
+    <h2 class="gh">Door changes</h2><div class="card tw rp-card" id="rpModes"></div>
+    <div class="rp-ch rp-logh"><h2 class="gh">Every entry</h2><button class="btn sm" type="button" id="rpCsv">Download</button></div>
+    <div class="card tw rp-card" id="rpLog"></div>
   </section>
 
   <section id="tab-msgs" hidden>
@@ -1497,9 +1563,16 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
         <input type="date" id="hDate" aria-label="Date"><input type="time" id="hTime" aria-label="Time"><button class="btn sm pri" type="button" id="hGo">Show</button></div>
     </div>
     <div id="hOut"></div>
-    <h2 class="gh">Changes</h2>
+    <div class="hs-head"><h2 class="gh">What happened</h2></div>
+    <div class="rp-bar hs-bar">
+      <div class="seg" role="group" aria-label="Show" id="hsKind"><button type="button" data-k="all">All</button><button type="button" data-k="people">People</button><button type="button" data-k="box">Box</button><button type="button" data-k="doors">Doors</button></div>
+      <select id="hsDays" aria-label="Period"><option value="1">Today</option><option value="7">7 days</option><option value="30">30 days</option><option value="90">90 days</option></select>
+      <select id="hsWho" aria-label="Who"></select>
+      <label class="search sm rp-who"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="hsQ" placeholder="Search" aria-label="Search history"></label>
+    </div>
+    <div class="kpis rp-kpis" id="hsKpi"></div>
     <div id="logRows"></div>
-    <p class="gf">Every change, who made it and when. A check means the new schedule reached the doors and was read back to confirm.</p>
+    <p class="gf">People: every change someone made, and who. Box: each time the box sent changes to the doors, or had a problem. Doors: when each door's mode really changed, read from the door panels, and whether that matched the rules.</p>
   </section>
   <section id="tab-setup" hidden>
     <p class="notice editor-note">Most settings are managed by a super admin.</p>
@@ -2694,12 +2767,6 @@ function renderSetup(){
         <div class="permgrid">${S.doors.map(d=>{const v=(u.perm||{})[d.id]||"hidden";return `<label class="${v==="hidden"?"p-hidden":""}">${esc(d.name)}<select data-uperm="${i}" data-door="${esc(d.id)}" aria-label="${esc(u.name)} on ${esc(d.name)}"><option value="edit"${v==="edit"?" selected":""}>Edit</option><option value="view"${v==="view"?" selected":""}>View only</option><option value="hidden"${v==="hidden"?" selected":""}>Hidden</option></select></label>`}).join("")}</div></details>`:""}</div>`}).join("");
 }
 function dayLabel(ms){const d=nyDate(ms),t=todayNY();return d===t?"Today":d===addDays(t,-1)?"Yesterday":longDate(d)}
-function renderLog(){
-  const logs=isAdmin()?S.log:S.log.filter(l=>l.u===S.me);
-  if(!logs.length){$("#logRows").innerHTML=emptyState("clock","Nothing yet","Changes show up here as soon as anyone makes one.");return}
-  const groups=[];logs.forEach(l=>{const k=dayLabel(l.t);let g=groups.find(x=>x.k===k);if(!g){g={k,items:[]};groups.push(g)}g.items.push(l)});
-  $("#logRows").innerHTML=groups.slice(0,30).map(g=>`<h3 class="gh">${esc(g.k)}</h3><div class="glist">${g.items.map(l=>`<div class="row"><span class="avatar">${esc(initials(l.u))}</span><div class="rt"><b class="lw">${esc(l.text)}</b><span>${esc(l.u)}, ${esc(new Date(l.t).toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"}))}</span></div>${l.push==="box"?"":l.push==="pending"?'<span class="pill">Sending</span>':`<span class="sent" title="Sent to doors">${ico("check")}</span>`}</div>`).join("")}</div>`).join("");
-}
 function renderStatus(){
   const t=dayInfo(todayNY());
   $("#hebNow").textContent=hebText(t.h);
@@ -3214,82 +3281,206 @@ function renderHealth(){
   if(bad.length)$("#health").open=true;
   $("#simPower").textContent=POWER_OUT?"End power outage":"Simulate power outage";
 }
-/* ---------- reports (sample data, seeded so it stays stable) ---------- */
+/* ---------- reports and history ---------- */
 function rng(seed){let x=0;for(const c of seed)x=(x*31+c.charCodeAt(0))|0;return()=>{x^=x<<13;x^=x>>17;x^=x<<5;return((x>>>0)%10000)/10000}}
-const CARDS=Array.from({length:48},(_,i)=>"Card "+(1001+i));
-function activity(days,doorIds){
-  const ev=[];const end=todayNY();
-  for(let i=1;i<=days;i++){const s=addDays(end,-i);
-    for(const d of doorIds){const segs=daySegments(d,s),R2=rng(s+d);
-      for(let h=0;h<24;h++){const m=h*60+30,g=segs.find(x=>x.a<=m&&m<x.b);const mode=g?(g.c.ov?g.c.ov.mode:g.c.r.mode):"Card or Pin";
-        if(mode==="Lockdown")continue;
-        const busy=g&&!g.c.isDef?(mode==="Unlock"?0.35:1.6):0.25;
-        const n=(h>=5&&h<23)?Math.floor(R2()*busy*3):(R2()<(g&&!g.c.isDef?0.3:0.05)?1:0);
-        for(let k=0;k<n;k++){const card=CARDS[Math.floor(Math.pow(R2(),1.7)*40)];ev.push({s,d,h,card,ok:R2()>0.03})}}}}
-  return ev;
+// prototype only: invented people, so the pages have something to show
+const SAMPLE_NAMES=["A. Berger","M. Gold","Y. Klein","S. Weiss","D. Stern","C. Roth","B. Fried","L. Adler","E. Katz","N. Engel","Z. Blum","P. Hirsch","R. Lowy","T. Jacobs","H. Mandel","J. Neuman","K. Pollak","F. Rubin","G. Schick","I. Unger","O. Vogel","U. Wolf","V. Zucker","Maintenance","Cleaning crew","Office"];
+let SAMPLE_ACT=null;
+function sampleActivity(){
+  if(SAMPLE_ACT&&SAMPLE_ACT.day===todayNY())return SAMPLE_ACT.ev;
+  const ev=[],end=todayNY(),nowMs=Date.now();DI_CACHE=new Map();
+  try{for(let i=0;i<120;i++){const s=addDays(end,-i),info=dayInfo(s);
+    for(const d of S.doors){const segs=daySegments(d.id,s),R=rng(s+d.id);let prev=null;
+      segs.forEach(g=>{const m=g.c.ov?g.c.ov.mode:g.c.r.mode;if(prev!==null&&m!==prev){const t=nyToMs(s,g.a);if(t<nowMs)ev.push({t,kind:"mode",door:d.id,mode:m})}prev=m});
+      for(let h=0;h<24;h++){const mm=h*60+30,g=segs.find(x=>x.a<=mm&&mm<x.b),mode=g?(g.c.ov?g.c.ov.mode:g.c.r.mode):doorDef(d.id);
+        if(mode==="Unlock"||mode==="Lockdown")continue;
+        const base=(h>=6&&h<23)?(info.w===6?0.15:0.9):0.06,n=Math.floor(R()*base*2.4+(R()<0.15?1:0));
+        for(let k=0;k<n;k++){const t=nyToMs(s,h*60+Math.floor(R()*60));if(t>nowMs)continue;
+          ev.push({t,door:d.id,who:SAMPLE_NAMES[Math.floor(Math.pow(R(),1.5)*SAMPLE_NAMES.length)],ok:R()>0.04})}}}}}
+  finally{DI_CACHE=null}
+  SAMPLE_ACT={day:todayNY(),ev};return ev;
 }
-// On the box: real card swipes, collected from Home Assistant's records of the
-// Protector.Net door log sensors. Fetched once a minute at most per period.
-let RP_CACHE={days:0,at:0,data:null,busy:false};
-async function boxActivity(days){
-  if(RP_CACHE.data&&RP_CACHE.days===days&&Date.now()-RP_CACHE.at<60000) return RP_CACHE.data;
-  const r=await fetch("api/activity?days="+days);const j=await r.json();
-  RP_CACHE={days,at:Date.now(),data:j,busy:false};return j;
+let ACT_CACHE={};
+async function getActivity(days,kind){
+  const key=days+"|"+(kind||""),c=ACT_CACHE[key];if(c&&Date.now()-c.at<60000)return c.data;
+  let data;
+  if(!ON_BOX){const all=sampleActivity(),from=Date.now()-days*864e5;data={status:{on:true,sample:true},events:all.filter(e=>e.t>=from&&(!kind||(e.kind||"entry")===kind))}}
+  else data=await (await fetch(`api/activity?days=${days}${kind?"&kind="+kind:""}`)).json();
+  ACT_CACHE[key]={at:Date.now(),data};return data;
 }
-function renderReports(){
-  if($("#tab-reports").hidden) return;
-  const sel=$("#rpDoor").value||"all";
-  $("#rpDoor").innerHTML=`<option value="all">All doors</option>`+S.groups.map(g=>`<option value="g:${esc(g.id)}">${esc(g.name)}</option>`).join("")+S.doors.map(d=>`<option value="${esc(d.id)}">${esc(d.id)} ${esc(d.name)}</option>`).join("");
-  $("#rpDoor").value=sel;
-  const ids=sel==="all"?S.doors.map(d=>d.id):expandDoors([sel]);
-  const days=+$("#rpDays").value;
-  if(!ON_BOX){drawReports(activity(days,ids),days,ids,false);return}
-  boxActivity(days).then(j=>{
-    if($("#tab-reports").hidden) return;
-    const st=j.status||{};
-    if(!st.on&&!(j.events||[]).length){
-      $("#rpKpi").innerHTML="";["#rpHours","#rpDoors","#rpLate","#rpUnused"].forEach(x=>$(x).innerHTML="");
-      $("#rpSrc").innerHTML=`<b>No door activity yet.</b> ${esc(st.problem||"The box is still reading Home Assistant's records. Check again in a minute.")}`;return}
-    const want=new Set(ids);
-    const ev=(j.events||[]).filter(e=>e.door&&want.has(e.door)).map(e=>{const m=nyMinutes(e.t);return {t:e.t,s:nyDate(e.t),d:e.door,h:Math.floor(m/60),min:m,card:e.who,ok:e.ok}});
-    $("#rpSrc").textContent=`Real card and PIN activity from Protector.Net, collected through Home Assistant.${st.since?" Collected since "+whenText(st.since)+".":""}${st.problem?" Note: "+st.problem:""}`;
-    drawReports(ev,days,ids,true);
-  }).catch(()=>{$("#rpSrc").textContent="Could not load door activity from the box. Try again in a minute."});
+// what the box did (on the prototype: a believable nightly update)
+async function getRuns(days){
+  const key="runs|"+days,c=ACT_CACHE[key];if(c&&Date.now()-c.at<60000)return c.data;
+  let runs;
+  if(ON_BOX)runs=(await (await fetch("api/runs?days="+days)).json()).runs||[];
+  else{runs=[];for(let i=0;i<Math.min(days,120);i++){const s=addDays(todayNY(),-i),t=nyToMs(s,30);if(t>Date.now())continue;
+      runs.push({at:t,reason:"nightly",mode:"live",actions:2,errors:[],list:["rewrite weekly schedule for 15th Main Ent Left","update panels"]});
+      for(let h=1;h<24;h++){const t2=nyToMs(s,h*60+30);if(t2<Date.now())runs.push({at:t2,reason:"hourly check",mode:"live",actions:0,errors:[]})}}}
+  ACT_CACHE[key]={at:Date.now(),data:runs};return runs;
 }
 // after hours is the viewer's choice, kept in this browser (default 11 PM to 5 AM)
 function ahGet(){let v=null;try{v=JSON.parse(localStorage.getItem("shulAfterHours")||"null")}catch(e){}return v&&Number.isInteger(v.a)&&Number.isInteger(v.b)?v:{a:23,b:5}}
 function ahSet(v){try{localStorage.setItem("shulAfterHours",JSON.stringify(v))}catch(e){}}
 function ahIn(h,v){return v.a===v.b?false:v.a<v.b?(h>=v.a&&h<v.b):(h>=v.a||h<v.b)}
 function ahFill(){const v=ahGet(),o=Array.from({length:24},(_,h)=>`<option value="${h}">${fmt(h*60)}</option>`).join("");
-  for(const [id,k] of [["#rpAhFrom","a"],["#rpAhTo","b"]]){const el=$(id);if(!el)continue;if(!el.options.length)el.innerHTML=o;el.value=String(v[k])}
-  const h=$("#rpLateH");if(h)h.textContent=`After hours, ${fmt(v.a*60)} to ${fmt(v.b*60)}`}
-function drawReports(ev,days,ids,real){
-  const AH=ahGet();ahFill();
-  const ok=ev.filter(e=>e.ok), late=ok.filter(e=>ahIn(e.h,AH)), denied=ev.filter(e=>!e.ok);
-  const used=new Set(ok.map(e=>e.card));
-  $("#rpKpi").innerHTML=[["Card and PIN entries",ok.length],["Per day, average",ok.length/days<10?Math.round(ok.length/days*10)/10:Math.round(ok.length/days)],["After hours",late.length],["Denied attempts",denied.length]].map(([l,n])=>`<div class="kpi"><div class="lab">${l}</div><div class="n">${n.toLocaleString()}</div></div>`).join("");
-  const byH=Array(24).fill(0);ok.forEach(e=>byH[e.h]++);const mx=Math.max(1,...byH);
-  const step=Math.max(1,Math.ceil(mx/4/10)*10),lines=[];for(let v=step;v<=mx;v+=step)lines.push(v);
-  TIPS={...TIPS};byH.forEach((n,h)=>TIPS["h"+h]=`<b>${fmt(h*60)} to ${fmt((h+1)*60)}</b>${n.toLocaleString()} entries · ${Math.round(n/days*10)/10} a day`);
-  $("#rpHours").innerHTML=`<div class="hchart">${lines.map(v=>`<i class="gl" style="bottom:${v/mx*100}%"><span>${v}</span></i>`).join("")}${byH.map((n,h)=>`<span class="hb" tabindex="0" data-tip="h${h}" style="height:${n/mx*100}%" aria-label="${fmt(h*60)}: ${n} entries"></span>`).join("")}</div>
-    <div class="haxis">${byH.map((_,h)=>`<span>${h%3===0?["12a","3a","6a","9a","12p","3p","6p","9p"][h/3]:""}</span>`).join("")}</div>`;
-  $("#rpDoors").innerHTML=`<table><thead><tr><th>Door</th><th>Entries</th><th>After hours</th><th>Denied</th><th>Busiest hour</th></tr></thead><tbody>${ids.map(d=>{const e=ok.filter(x=>x.d===d),hh=Array(24).fill(0);e.forEach(x=>hh[x.h]++);const bh=hh.indexOf(Math.max(...hh));
-    return `<tr><td><b>${esc(doorName(d))}</b><br><span class="hint">${esc(d)}</span></td><td class="time">${e.length}</td><td class="time">${late.filter(x=>x.d===d).length}</td><td class="time">${denied.filter(x=>x.d===d).length}</td><td class="time">${e.length?fmt(bh*60):"none"}</td></tr>`}).join("")}</tbody></table>`;
-  const at=e=>real?fmt(e.min):fmt(e.h*60+17);
-  const lateRows=[...late].sort((a,b)=>(a.t||0)-(b.t||0));
-  $("#rpLate").innerHTML=late.length?`<table><thead><tr><th>When</th><th>Door</th><th>${real?"Who":"Card"}</th></tr></thead><tbody>${lateRows.slice(-12).reverse().map(e=>`<tr><td>${esc(WSHORT[dow(e.s)])}, ${esc(shortDate(e.s).replace(/, \d{4}$/,""))}, ${at(e)}</td><td><b>${esc(doorName(e.d))}</b><br><span class="hint">${esc(e.d)}</span></td><td>${esc(e.card)}</td></tr>`).join("")}</tbody></table>${late.length>12?`<p class="hint">Showing the latest 12 of ${late.length}.</p>`:""}`:`<p class="none">None in this period.</p>`;
-  if(real){
-    // the box doesn't have the card list, so show who came most and the denied attempts instead
-    $("#rpUnusedH").textContent="Most frequent and denied";
-    const cnt={};ok.forEach(e=>cnt[e.card]=(cnt[e.card]||0)+1);const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,15);
-    const dn=[...denied].sort((a,b)=>b.t-a.t).slice(0,10);
-    $("#rpUnused").innerHTML=(top.length?top.map(([n,c])=>`<span class="tag" style="padding-right:9px">${esc(n)}: ${c}</span>`).join(""):`<span class="none">No entries in this period.</span>`)+
-      (dn.length?`<div style="flex-basis:100%;margin-top:10px"><b>Latest denied:</b> ${dn.map(e=>`${esc(e.card)} at ${esc(doorName(e.d))}, ${esc(WSHORT[dow(e.s)])} ${at(e)}`).join("; ")}</div>`:"");
-    $("#rpUnusedP").textContent="Denied attempts are worth a look: an expired card, a wrong PIN, or someone trying a door they shouldn't.";
-    return;
-  }
-  const unused=CARDS.filter(c=>!used.has(c));
-  $("#rpUnused").innerHTML=unused.map(c=>`<span class="tag" style="padding-right:9px">${esc(c)}</span>`).join("")||`<span class="none">Every card was used.</span>`;
+  for(const [id,k] of [["#rpAhFrom","a"],["#rpAhTo","b"]]){const el=$(id);if(!el)continue;if(!el.options.length)el.innerHTML=o;el.value=String(v[k])}}
+// was a real door change what the rules said at that minute?
+function onSchedule(door,t,mode){const s=nyDate(t),m=nyMinutes(t);if(!S.doors.some(d=>d.id===door))return null;
+  const segs=daySegments(door,s),at=x=>{const g=segs.find(g=>g.a<=x&&x<g.b);return g?(g.c.ov?g.c.ov.mode:g.c.r.mode):null};
+  return [m,m+1,m-1,m+2].some(x=>x>=0&&x<1440&&at(x)===mode)}
+const fmtN=n=>n>=10000?(Math.round(n/100)/10)+"K":n.toLocaleString();
+function delta(cur,prev,upBad){if(!prev&&!cur)return "";if(!prev)return `<span class="dl">new this period</span>`;
+  const p=Math.round((cur-prev)/prev*100);if(!p)return `<span class="dl">same as before</span>`;
+  const bad=upBad?p>0:false;return `<span class="dl${bad?" bad":""}">${p>0?"▲":"▼"} ${Math.abs(p)}% vs the period before</span>`}
+function kpi(label,value,sub){return `<div class="kpi"><div class="lab">${esc(label)}</div><div class="n">${value}</div>${sub?`<div class="ks">${sub}</div>`:""}</div>`}
+const tm=t=>new Date(t).toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"});
+const dshort=t=>{const s=nyDate(t);return `${WSHORT[dow(s)]}, ${shortDate(s).replace(/, \d{4}$/,"")}`};
+
+/* Reports */
+let RP={per:"30",from:"",to:"",door:"",who:"",res:"all",page:1};
+try{const v=localStorage.getItem("shulRpPer");if(v)RP.per=v}catch(e){}
+function rpRange(){const now=Date.now(),today=todayNY();let a,b=now,label;
+  if(RP.per==="0"){a=nyToMs(today,0);label="today"}
+  else if(RP.per==="c"&&RP.from){const to=RP.to&&RP.to>=RP.from?RP.to:RP.from;a=nyToMs(RP.from,0);b=Math.min(now,nyToMs(addDays(to,1),0));label="these dates"}
+  else{const n=+RP.per||30;a=nyToMs(addDays(today,-(n-1)),0);label=`${n} days`}
+  const len=Math.max(b-a,60000),pa=a-len,days=Math.min(400,Math.ceil((now-pa)/864e5)+1);
+  return {a,b,pa,pb:a,days,label}}
+function renderReports(){
+  if($("#tab-reports").hidden)return;
+  $("#rpDoor").innerHTML=doorFilterOpts(RP.door);
+  document.querySelectorAll("#rpPer [data-per]").forEach(x=>x.classList.toggle("on",x.dataset.per===RP.per));
+  $("#rpDates").hidden=RP.per!=="c";
+  if(RP.per==="c"&&!RP.from){RP.from=addDays(todayNY(),-6);RP.to=todayNY()}
+  $("#rpFrom").value=RP.from;$("#rpTo").value=RP.to;ahFill();
+  const r=rpRange();
+  getActivity(r.days).then(j=>{if(!$("#tab-reports").hidden)drawReports(j,r)}).catch(()=>{$("#rpSrc").textContent="Could not load door activity from the box. Try again in a minute."});
+}
+function drawReports(j,r){
+  const st=j.status||{},all=j.events||[];
+  const ids=RP.door?new Set(expandDoors([RP.door])):null,q=RP.who.trim().toLowerCase();
+  const inDoor=e=>e.door&&(!ids||ids.has(e.door))&&perm(e.door)!=="hidden";
+  const E=all.filter(e=>(e.kind||"entry")==="entry"&&inDoor(e)&&(!q||String(e.who||"").toLowerCase().includes(q)));
+  const cur=E.filter(e=>e.t>=r.a&&e.t<r.b),prev=E.filter(e=>e.t>=r.pa&&e.t<r.pb);
+  const M=all.filter(e=>e.kind==="mode"&&inDoor(e)&&e.t>=r.a&&e.t<r.b);
+  const ok=cur.filter(e=>e.ok),den=cur.filter(e=>!e.ok),AH=ahGet(),hr=e=>Math.floor(nyMinutes(e.t)/60);
+  const late=ok.filter(e=>ahIn(hr(e),AH)),plate=prev.filter(e=>e.ok&&ahIn(hr(e),AH));
+  const src=ON_BOX?(!st.on&&!all.length?`<b>No door activity yet.</b> ${esc(st.problem||"The box is still reading Home Assistant's records. Check again in a minute.")}`
+      :`Real card and PIN activity from Protector.Net, collected through Home Assistant.${st.since?" Collected since "+esc(whenText(st.since))+".":""}${st.problem?" Note: "+esc(st.problem):""}`)
+    :"Sample activity in the prototype. The live system reads each panel's door log.";
+  $("#rpSrc").innerHTML=src;
+  // headline numbers
+  const people=new Set(ok.map(e=>e.who)),ppeople=new Set(prev.filter(e=>e.ok).map(e=>e.who));
+  const byDoor={};ok.forEach(e=>byDoor[e.door]=(byDoor[e.door]||0)+1);const top=Object.entries(byDoor).sort((x,y)=>y[1]-x[1])[0];
+  const tries=ok.length+den.length,onS=M.filter(e=>onSchedule(e.door,e.t,e.mode)!==false).length;
+  $("#rpKpi").innerHTML=kpi("Entries",fmtN(ok.length),delta(ok.length,prev.filter(e=>e.ok).length))
+    +kpi("People",fmtN(people.size),delta(people.size,ppeople.size))
+    +kpi("Denied",fmtN(den.length),`<span class="dl${den.length?" bad":""}">${tries?Math.round(den.length/tries*1000)/10:0}% of tries</span>`)
+    +kpi("After hours",fmtN(late.length),delta(late.length,plate.length,true))
+    +(top&&!(RP.door&&!RP.door.startsWith("g:"))?kpi("Busiest door",`<span class="ktxt">${esc(doorName(top[0]))}</span>`,`<span class="dl">${fmtN(top[1])} entries</span>`):"")
+    +(M.length?kpi("Door changes",fmtN(M.length),`<span class="dl${onS<M.length?" bad":""}">${onS===M.length?"all on schedule":`${M.length-onS} not from the rules`}</span>`):"");
+  TIPS={...TIPS};
+  drawTrend(ok,den,r);drawHeat(ok,r);
+  // after hours
+  $("#rpLateH").textContent=`After hours · ${fmtN(late.length)}`;
+  const lr=[...late].sort((x,y)=>y.t-x.t).slice(0,10);
+  $("#rpLate").innerHTML=lr.length?`<table class="rp-t"><tbody>${lr.map(e=>`<tr><td class="time">${esc(dshort(e.t))}, ${tm(e.t)}</td><td><b>${esc(doorName(e.door))}</b></td><td><a class="rp-p" data-who="${esc(e.who)}">${esc(e.who)}</a></td></tr>`).join("")}</tbody></table>${late.length>10?`<p class="gf">and ${fmtN(late.length-10)} more in Every entry below.</p>`:""}`
+    :`<p class="none">No entries between ${fmt(AH.a*60)} and ${fmt(AH.b*60)} in this period.</p>`;
+  // by door
+  const doors=[...new Set(cur.map(e=>e.door))];
+  const drow=d=>{const e=cur.filter(x=>x.door===d),o=e.filter(x=>x.ok),hh=Array(24).fill(0);o.forEach(x=>hh[hr(x)]++);const bh=hh.indexOf(Math.max(...hh));const last=e.reduce((m,x)=>x.t>m?x.t:m,0);
+    return {d,n:o.length,p:new Set(o.map(x=>x.who)).size,den:e.length-o.length,late:o.filter(x=>ahIn(hr(x),AH)).length,bh:o.length?bh:-1,last}};
+  const allRows=doors.map(drow).sort((x,y)=>y.n-x.n),rows=RP.allDoors?allRows:allRows.slice(0,12),mx=Math.max(1,...rows.map(x=>x.n));
+  $("#rpDoors").innerHTML=rows.length?`<table class="rp-t"><thead><tr><th>Door</th><th class="w40">Entries</th><th>People</th><th>Denied</th><th>After hours</th><th>Busiest hour</th><th>Last</th></tr></thead><tbody>${rows.map(x=>`<tr class="rp-click" data-door="${esc(x.d)}" title="Show only this door"><td><b>${esc(doorName(x.d))}</b><br><span class="hint">${esc(x.d)}</span></td><td class="nw"><span class="rp-bar1"><i style="width:${(x.n/mx*100).toFixed(1)}%"></i></span><span class="time">${fmtN(x.n)}</span></td><td class="time">${x.p}</td><td class="time">${x.den||"–"}</td><td class="time">${x.late||"–"}</td><td class="time">${x.bh<0?"–":fmt(x.bh*60)}</td><td class="time">${x.last?esc(dshort(x.last)):"–"}</td></tr>`).join("")}</tbody></table>${allRows.length>12?`<div class="rp-more"><span class="hint">${RP.allDoors?`All ${allRows.length} doors`:`Top 12 of ${allRows.length} doors`}. Tap a door to see only that door.</span><button class="btn sm" type="button" id="rpAllDoors">${RP.allDoors?"Show fewer":"Show all"}</button></div>`:""}`
+    :`<p class="none">No entries in this period.</p>`;
+  // people
+  const pm={};cur.forEach(e=>{const p=pm[e.who]||(pm[e.who]={n:0,den:0,doors:new Set(),last:0});e.ok?p.n++:p.den++;p.doors.add(e.door);if(e.t>p.last)p.last=e.t});
+  const pr=Object.entries(pm).sort((x,y)=>y[1].n-x[1].n).slice(0,15);
+  $("#rpPeople").innerHTML=pr.length?`<table class="rp-t"><thead><tr><th>Person</th><th>Entries</th><th>Doors</th><th>Last seen</th></tr></thead><tbody>${pr.map(([n,p])=>`<tr><td><a class="rp-p" data-who="${esc(n)}">${esc(n)}</a>${p.den?` <span class="mini warnm">${p.den} denied</span>`:""}</td><td class="time">${fmtN(p.n)}</td><td class="time" title="${esc([...p.doors].map(doorName).join(", "))}">${p.doors.size}</td><td class="time">${esc(dshort(p.last))}, ${tm(p.last)}</td></tr>`).join("")}</tbody></table>${Object.keys(pm).length>15?`<p class="gf">Top 15 of ${Object.keys(pm).length}. Search a name above to see anyone.</p>`:""}`
+    :`<p class="none">No one in this period.</p>`;
+  // denied
+  const dc={};den.forEach(e=>dc[e.who]=(dc[e.who]||0)+1);
+  const dr=[...den].sort((x,y)=>y.t-x.t).slice(0,12);
+  $("#rpDenied").innerHTML=dr.length?`<table class="rp-t"><thead><tr><th>When</th><th>Door</th><th>Who</th></tr></thead><tbody>${dr.map(e=>`<tr><td class="time">${esc(dshort(e.t))}, ${tm(e.t)}</td><td>${esc(doorName(e.door))}</td><td><a class="rp-p" data-who="${esc(e.who)}">${esc(e.who)}</a>${dc[e.who]>=3?` <span class="mini warnm">${dc[e.who]} times</span>`:""}</td></tr>`).join("")}</tbody></table><p class="gf">Worth a look: an expired card, a wrong PIN, or someone trying a door they shouldn't.</p>`
+    :`<p class="none">No denied attempts in this period.</p>`;
+  // door changes, read from the panels
+  const mr=[...M].sort((x,y)=>y.t-x.t).slice(0,15);
+  $("#rpModes").innerHTML=mr.length?`<table class="rp-t"><thead><tr><th>When</th><th>Door</th><th>Changed to</th><th>Rules</th></tr></thead><tbody>${mr.map(e=>{const o=onSchedule(e.door,e.t,e.mode);
+      return `<tr><td class="time">${esc(dshort(e.t))}, ${tm(e.t)}</td><td>${esc(doorName(e.door))}</td><td><i class="dot" style="--c:${modeColor(e.mode)}"></i> ${esc(modeLabel(e.mode))}</td><td>${o===null?"–":o?`<span class="okm">On schedule</span>`:`<span class="warnm">Not from the rules</span>`}</td></tr>`}).join("")}</tbody></table>${M.length>15?`<p class="gf">Latest 15 of ${fmtN(M.length)}. Every change is in History, under Doors.</p>`:""}`
+    :`<p class="none">${ON_BOX?"No door changes recorded in this period yet. The box reads them from each panel's reader mode.":"No door changes in this period."}</p>`;
+  // every entry
+  const shown=cur.filter(e=>RP.res==="all"||(RP.res==="ok")===e.ok).sort((x,y)=>y.t-x.t),lim=RP.page*25;
+  RP_SHOWN=shown;
+  $("#rpLog").innerHTML=shown.length?`<table class="rp-t"><thead><tr><th>When</th><th>Door</th><th>Who</th><th>Result</th></tr></thead><tbody>${shown.slice(0,lim).map(e=>`<tr><td class="time">${esc(dshort(e.t))}, ${tm(e.t)}</td><td>${esc(doorName(e.door))}</td><td><a class="rp-p" data-who="${esc(e.who)}">${esc(e.who)}</a></td><td>${e.ok?"Granted":`<span class="warnm">Denied</span>`}</td></tr>`).join("")}</tbody></table>
+      <div class="rp-more"><span class="hint">Showing ${fmtN(Math.min(lim,shown.length))} of ${fmtN(shown.length)}</span>${shown.length>lim?`<button class="btn sm" type="button" id="rpMore">Show more</button>`:""}</div>`
+    :`<p class="none">No entries match.</p>`;
+  $("#rpCsv").disabled=!shown.length;
+}
+let RP_SHOWN=[];
+function drawTrend(ok,den,r){
+  const today=RP.per==="0",cols=[];
+  if(today){for(let h=0;h<24;h++)cols.push({k:h,label:h%3===0?["12a","3a","6a","9a","12p","3p","6p","9p"][h/3]:"",tip:`${fmt(h*60)} to ${fmt((h+1)*60)}`,n:0,d:0})}
+  else{const s0=nyDate(r.a),s1=nyDate(r.b-1);for(let s=s0,i=0;s<=s1&&i<400;s=addDays(s,1),i++){const info=dayInfo(s),hol=dayChips(info).map(c=>c.label)[0];cols.push({k:s,shab:info.w===6||info.keys.has("yt_any"),label:"",tip:`${WDN[info.w]}, ${shortDate(s)}${hol?" · "+hol:""}`,n:0,d:0})}
+    const step=Math.ceil(cols.length/(innerWidth<600?5:10));cols.forEach((c,i)=>{if(i%step===0||i===cols.length-1)c.label=`${+c.k.slice(5,7)}/${+c.k.slice(8)}`})}
+  const idx=new Map(cols.map((c,i)=>[c.k,i])),key=e=>today?Math.floor(nyMinutes(e.t)/60):nyDate(e.t);
+  ok.forEach(e=>{const i=idx.get(key(e));if(i!=null)cols[i].n++});den.forEach(e=>{const i=idx.get(key(e));if(i!=null)cols[i].d++});
+  const mx=Math.max(1,...cols.map(c=>c.n)),stepV=niceStep(mx),lines=[];for(let v=stepV;v<=mx;v+=stepV)lines.push(v);
+  $("#rpTrendH").textContent=today?"Entries by hour, today":"Entries per day";
+  const busiest=cols.reduce((m,c)=>c.n>m.n?c:m,cols[0]||{n:0});
+  $("#rpTrendS").textContent=busiest&&busiest.n?`Busiest: ${busiest.tip.split(" · ")[0]} (${fmtN(busiest.n)})`:"";
+  $("#rpTrend").innerHTML=`<div class="rp-cols" style="--n:${cols.length}">${lines.map(v=>`<i class="gl" style="bottom:${v/mx*100}%"><span>${fmtN(v)}</span></i>`).join("")}${cols.map((c,i)=>{const k="rt"+i;TIPS[k]=`<b>${esc(c.tip)}</b>${fmtN(c.n)} entr${c.n===1?"y":"ies"}${c.d?` · ${c.d} denied`:""}`;
+      return `<span class="rp-col${c.shab?" shab":""}" data-tip="${k}" tabindex="0" aria-label="${esc(c.tip)}: ${c.n} entries"><i style="height:${(c.n/mx*100).toFixed(1)}%"></i></span>`}).join("")}</div>
+    <div class="rp-axis" style="--n:${cols.length}">${cols.map(c=>`<span>${c.label}</span>`).join("")}</div>${today?"":`<p class="gf rp-key"><span class="shabkey"></span>Shabbos and yom tov</p>`}`;
+}
+function niceStep(mx){const raw=mx/4,p=Math.pow(10,Math.floor(Math.log10(Math.max(1,raw)))),f=raw/p;return Math.max(1,(f<=1?1:f<=2?2:f<=5?5:10)*p)}
+function drawHeat(ok,r){
+  const g=Array.from({length:7},()=>Array(24).fill(0));ok.forEach(e=>{const s=nyDate(e.t);g[dow(s)][Math.floor(nyMinutes(e.t)/60)]++});
+  const weeks=Math.max(1,(r.b-r.a)/(7*864e5)),mx=Math.max(1,...g.flat());
+  const lvl=n=>!n?0:Math.min(5,1+Math.floor(n/mx*4.999));
+  $("#rpHeat").innerHTML=`<div class="rp-heat">${g.map((row,w)=>`<span class="hl">${WSHORT[w]}</span>${row.map((n,h)=>{const k=`hm${w}-${h}`;TIPS[k]=`<b>${WDN[w]}, ${fmt(h*60)} to ${fmt((h+1)*60)}</b>${fmtN(n)} entr${n===1?"y":"ies"}${weeks>1.5?` · about ${Math.round(n/weeks*10)/10} a week`:""}`;return `<span class="hc l${lvl(n)}" data-tip="${k}"></span>`}).join("")}`).join("")}
+    <span></span>${Array.from({length:24},(_,h)=>`<span class="hx">${h%6===0?["12a","6a","12p","6p"][h/6]:""}</span>`).join("")}</div>
+    <div class="rp-hkey"><span class="hint">Fewer</span>${[0,1,2,3,4,5].map(l=>`<span class="hc l${l}"></span>`).join("")}<span class="hint">More</span></div>`;
+}
+function rpCsv(){const q=v=>`"${String(v).replace(/"/g,'""')}"`;
+  const lines=[["When","Door","Door number","Person","Result"].map(q).join(",")].concat(RP_SHOWN.map(e=>[new Date(e.t).toLocaleString("en-US",{timeZone:TZ}),doorName(e.door),e.door,e.who,e.ok?"Granted":"Denied"].map(q).join(",")));
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([lines.join("\r\n")],{type:"text/csv"}));a.download=`door-activity-${todayNY()}.csv`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+
+/* History: people's changes, what the box did, and what the doors really did */
+let HS={k:"all",days:"7",who:"",q:"",lim:150};
+const REASON={nightly:"nightly update","hourly check":"hourly check","change saved":"after a change was saved","urgent change":"right after a change by hand","opened or locked by hand":"right after a change by hand",start:"when the box started","by hand":"asked by hand",retry:"retry after a problem","queued change":"after a change was saved",buzz:"buzz"};
+function renderLog(){
+  if(!$("#logRows"))return;
+  document.querySelectorAll("#hsKind [data-k]").forEach(b=>b.classList.toggle("on",b.dataset.k===HS.k));
+  $("#hsDays").value=HS.days;
+  const names=[...new Set([...S.users.map(u=>u.name),...S.log.map(l=>l.u)].filter(Boolean))];
+  $("#hsWho").innerHTML=`<option value="">Everyone</option>`+names.map(n=>`<option${n===HS.who?" selected":""}>${esc(n)}</option>`).join("");
+  $("#hsWho").hidden=HS.k!=="people"&&HS.k!=="all";
+  const days=+HS.days,from=days===1?nyToMs(todayNY(),0):Date.now()-days*864e5;
+  const want=k=>HS.k==="all"||HS.k===k;
+  Promise.all([want("box")?getRuns(days).catch(()=>[]):[],want("doors")?getActivity(days,"mode").catch(()=>({events:[]})):{events:[]}]).then(([runs,act])=>{
+    if(!$("#logRows"))return;
+    const items=[],q=HS.q.trim().toLowerCase();
+    if(want("people"))(isAdmin()?S.log:S.log.filter(l=>l.u===S.me)).forEach(l=>{if(l.t>=from&&(!HS.who||l.u===HS.who))items.push({t:l.t,k:"people",u:l.u,title:l.text,sub:l.u})});
+    const quiet={};
+    runs.forEach(x=>{if(x.at<from||x.reason==="buzz")return;const dk=nyDate(x.at),n=x.actions||0,er=(x.errors||[]).length;
+      const qd=quiet[dk]||(quiet[dk]={n:0,bad:0});qd.n++;if(er)qd.bad++;
+      if(!n&&!er)return;
+      items.push({t:x.at,k:"box",bad:!!er,title:er?`The box had ${er===1?"a problem":er+" problems"}`:`The box sent ${n} change${n===1?"":"s"} to the doors`,sub:`${REASON[x.reason]||x.reason}${x.mode&&x.mode!=="live"?" · "+x.mode+" mode":""}${x.differ?` · ${x.differ} door${x.differ===1?"":"s"} still differed`:""}`,list:[...(x.errors||[]),...(x.list||[])]})});
+    const md=(act.events||[]).filter(e=>e.t>=from&&e.door&&perm(e.door)!=="hidden"),grp=new Map();
+    md.forEach(e=>{const k=Math.floor(e.t/60000)+"|"+e.mode;const g=grp.get(k)||{t:e.t,mode:e.mode,doors:[],off:0};g.doors.push(e.door);if(onSchedule(e.door,e.t,e.mode)===false)g.off++;grp.set(k,g)});
+    grp.forEach(g=>{const verb=g.mode==="Unlock"?"opened":g.mode==="Lockdown"?"went into lockdown":`changed to ${MODE_WORD[g.mode]||modeLabel(g.mode).toLowerCase()}`;
+      items.push({t:g.t,k:"doors",mode:g.mode,bad:g.off>0,title:`${g.doors.length>1?g.doors.length+" doors":doorName(g.doors[0])} ${verb}`,sub:g.doors.length>1?g.doors.map(doorName).join(", "):"",tag:g.off?`${g.off===g.doors.length?"Not":g.off+" not"} from the rules`:"On schedule"})});
+    const list=items.filter(x=>!q||[x.title,x.sub,...(x.list||[])].join(" ").toLowerCase().includes(q)).sort((a,b)=>b.t-a.t);
+    // numbers for the period
+    const cnt=k=>list.filter(x=>x.k===k).length,runsN=Object.values(quiet).reduce((t,x)=>t+x.n,0),runsBad=Object.values(quiet).reduce((t,x)=>t+x.bad,0);
+    $("#hsKpi").innerHTML=(want("people")?kpi("Changes by people",fmtN(cnt("people")),""):"")+(want("box")?kpi("Box checks",fmtN(runsN),`<span class="dl${runsBad?" bad":""}">${runsBad?runsBad+" with a problem":"no problems"}</span>`):"")
+      +(want("doors")?kpi("Door changes",fmtN(md.length),md.length?`<span class="dl${list.some(x=>x.k==="doors"&&x.bad)?" bad":""}">${list.some(x=>x.k==="doors"&&x.bad)?"some not from the rules":"all on schedule"}</span>`:""):"");
+    if(!list.length){$("#logRows").innerHTML=emptyState("clock","Nothing here",q?"Nothing matches that search.":"Nothing happened in this period, or nothing that matches.");return}
+    const groups=[];list.slice(0,HS.lim).forEach(x=>{const k=nyDate(x.t);let g=groups[groups.length-1];if(!g||g.k!==k){g={k,items:[]};groups.push(g)}g.items.push(x)});
+    const icon=x=>x.k==="people"?`<span class="avatar">${esc(initials(x.u))}</span>`:x.k==="box"?`<span class="ic" style="--c:${x.bad?"var(--r)":"var(--b)"}">${ico(x.bad?"warn":"check")}</span>`:`<span class="ic" style="--c:${modeColor(x.mode)}">${ico(modeIco(x.mode))}</span>`;
+    $("#logRows").innerHTML=groups.map(g=>{const qd=quiet[g.k];return `<div class="hs-day"><h3 class="gh">${esc(dayLabel(nyToMs(g.k,720)))}</h3>${qd&&want("box")?`<span class="hint">Box checked ${qd.n} time${qd.n===1?"":"s"}${qd.bad?`, ${qd.bad} with a problem`:", all fine"}</span>`:""}</div>
+      <div class="glist">${g.items.map(x=>`<div class="row hs-row"><span class="hs-t time">${tm(x.t)}</span>${icon(x)}<div class="rt"><b class="lw">${esc(x.title)}</b>${x.sub?`<span>${esc(x.sub)}</span>`:""}${x.list&&x.list.length?`<details class="hs-det"><summary>Show what it did</summary><ul>${x.list.map(a=>`<li>${esc(a)}</li>`).join("")}</ul></details>`:""}</div>${x.tag?`<span class="${x.bad?"warnm":"okm"}">${esc(x.tag)}</span>`:""}</div>`).join("")}</div>`}).join("")
+      +(list.length>HS.lim?`<div class="rp-more"><span class="hint">Showing ${HS.lim} of ${fmtN(list.length)}</span><button class="btn sm" type="button" id="hsMore">Show more</button></div>`:"");
+  });
 }
 function renderAll(){renderView();renderSituations();renderHealth();renderReports();renderRequests();renderCodes();renderVendors();renderNotes();renderStatus();renderOverride();renderBoard();renderHero();renderPreview();renderRules();renderBulk();renderEvents();renderSheet();renderSetup();renderAg();renderLog()}
 /* ---------- history: every change saves a dated copy of the settings ---------- */
@@ -3308,20 +3499,33 @@ function lookBack(s,min){
   const v=(S.versions||[]).filter(x=>x.t<=at).pop();
   if(!v) return `<p class="gf">No saved settings that early. History starts ${esc(whenText(S.versions[0].t))}.</p>`;
   return withConfig(v.cfg,()=>{
-    const info=dayInfo(s);
-    const row=(door,mode,col,ic,title,sub)=>`<div class="row"><span class="ic" style="--c:${col}">${ico(ic)}</span><div class="rt"><b>${esc(door.name)}: ${esc(modeLabel(mode))}</b><span>${title}</span>${sub?`<span>${sub}</span>`:""}</div></div>`;
-    const rows=visDoors().map(door=>{
+    const info=dayInfo(s),rows=[];
+    visDoors().forEach(door=>{
       const ov=S.overrides.filter(o=>expandDoors(o.doors).includes(door.id)&&o.from<=at&&(!o.to||o.to>at));
-      if(ov.length) return row(door,ov[0].mode,"var(--p)","hand",`Changed by hand by ${esc(ov[0].by)}${ov[0].why?`, ${esc(ov[0].why)}`:""}`,`${esc(whenText(ov[0].from))} to ${ov[0].to?esc(whenText(ov[0].to)):"ended later"}`);
+      if(ov.length){rows.push({door,mode:ov[0].mode,why:`By hand, ${ov[0].by}${ov[0].why?" ("+ov[0].why+")":""}`});return}
       const hits=[];
       for(let k=0;k<=maxDays();k++){const t=min+k*1440;resolve(door.id,k?dayInfo(addDays(s,-k)):info).filter(x=>x.a<=t&&t<x.b).forEach(x=>hits.push(x))}
-      if(!hits.length) return row(door,doorDef(door.id),modeColor(doorDef(door.id)),modeIco(doorDef(door.id)),"No rule running, so the door was on its default","");
-      return hits.map(x=>row(door,x.r.mode,modeColor(x.r.mode),modeIco(x.r.mode),`Set by the rule "${esc(x.r.name)}"`,`${fmt(x.a)} to ${esc(endLabel(x))}`)).join("");
-    }).join("");
-    return `<p class="gf top">${esc(longDate(s))}, ${esc(hebText(info.h))}, at ${fmt(min)}. Using the settings saved ${esc(whenText(v.t))} by ${esc(v.u)}.</p><div class="glist">${rows}</div>`;
+      if(!hits.length){rows.push({door,mode:doorDef(door.id),why:"No rule running, so its default"});return}
+      const x=hits[0];rows.push({door,mode:x.r.mode,why:`${rn(x.r)}, ${fmt(x.a)} to ${endLabel(x)}`});
+    });
+    const cnt={};rows.forEach(r=>cnt[r.mode]=(cnt[r.mode]||0)+1);
+    const sum=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([m,n])=>`<span class="mo-c"><i class="dot" style="--c:${modeColor(m)}"></i>${n} ${esc(MODE_WORD[m]||modeLabel(m).toLowerCase())}</span>`).join("");
+    return `<div class="card mo-card"><p class="gf top">${esc(longDate(s))}, ${esc(hebText(info.h))}, at ${fmt(min)}. Using the settings saved ${esc(whenText(v.t))} by ${esc(v.u)}.</p>
+      <div class="mo-sum">${sum}</div>
+      <details class="mo-det"><summary>Show each door</summary><table class="rp-t"><thead><tr><th>Door</th><th>The rules said</th><th>Why</th>${ON_BOX?"<th>The door panel</th>":""}</tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.door.name)}</b></td><td><i class="dot" style="--c:${modeColor(r.mode)}"></i> ${esc(modeLabel(r.mode))}</td><td class="hint">${esc(r.why)}</td>${ON_BOX?`<td data-actual="${esc(r.door.id)}" data-want="${esc(r.mode)}" class="hint">…</td>`:""}</tr>`).join("")}</tbody></table></details></div>`;
   });
 }
-
+// on the box: what each door's panel really was at that moment, from the recorded mode changes
+async function showMoment(s,min){
+  $("#hOut").innerHTML=lookBack(s,min);
+  if(!ON_BOX)return;
+  const at=nyToMs(s,min),days=Math.min(400,Math.ceil((Date.now()-at)/864e5)+2);
+  let ev=[];try{ev=(await getActivity(days,"mode")).events||[]}catch(e){}
+  const last={};ev.forEach(e=>{if(e.door&&e.t<=at&&(!last[e.door]||e.t>last[e.door].t))last[e.door]=e});
+  document.querySelectorAll("#hOut [data-actual]").forEach(td=>{const e=last[td.dataset.actual];
+    if(!e){td.textContent="Not recorded";return}
+    const same=e.mode===td.dataset.want;td.className=same?"okm":"warnm";td.textContent=`${modeLabel(e.mode)}${same?"":" (differs)"}`;td.title=`Since ${whenText(e.t)}`});
+}
 /* ---------- wiring ---------- */
 const TITLES={board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules",events:"Events",codes:"Guest codes",msgs:"Messages",reports:"Reports",activity:"History",setup:"Settings"};
 document.querySelectorAll(".navbtn[data-tab]").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
@@ -3341,7 +3545,7 @@ function showTab(t){CUR_TAB=t;if(t!=="doors"&&typeof SELMODE!=="undefined"&&SELM
   document.querySelectorAll("#pageAct [data-for]").forEach(b=>b.hidden=b.dataset.for!==t||(b.dataset.tcv&&b.dataset.tcv!==TCV));
   setDrawer(false);hideTip();
   ["board","doors","preview","rules","events","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);if(t==="doors")renderBoard();
-  if(t==="codes")setTCV(TCV);if(t==="reports")renderReports();if(t==="setup"){$("#split").classList.remove("detail");renderSetupIndex()}
+  if(t==="codes")setTCV(TCV);if(t==="reports")renderReports();if(t==="activity")renderLog();if(t==="setup"){$("#split").classList.remove("detail");renderSetupIndex()}
   scrollTo({top:0})}
 let SP=null;
 function spAvailable(p){if(p.classList.contains("admin-only")&&!isAdmin())return false;if(p.classList.contains("adv")&&SIMPLE)return false;if(p.classList.contains("cap-rabbi")&&!can("rabbi"))return false;return true}
@@ -3397,7 +3601,7 @@ function searchSel(sel){if(!sel||sel.dataset.spk)return;sel.dataset.spk="1";
   document.addEventListener("click",e=>{if(pop&&!w.contains(e.target))close()});
   w.addEventListener("keydown",e=>{if(e.key==="Escape"&&pop){close();btn.focus()}});
 }
-["#rqDoorF","#pvDoorF","#shDoorF"].forEach(id=>searchSel($(id)));
+["#rqDoorF","#pvDoorF","#shDoorF","#rpDoor"].forEach(id=>searchSel($(id)));
 ["#pvDoorF","#shDoorF"].forEach(id=>{const el=$(id);if(el)el.addEventListener("change",ev=>{PV_DOOR=ev.target.value;try{localStorage.setItem("shulPvDoor",PV_DOOR)}catch(e){}renderPreview();renderSheet()})});
 $("#vList").onclick=()=>setView("list");
 $("#rqSearch").addEventListener("input",renderRules);$("#rqDoorF").addEventListener("change",renderRules);$("#rqModeF").addEventListener("change",renderRules);
@@ -3420,12 +3624,28 @@ $("#archived").addEventListener("click",ev=>{const dp=ev.target.closest("[data-d
 $("#simPower").onclick=()=>{POWER_OUT=POWER_OUT?false:Date.now();renderHealth()};
 setInterval(()=>{if(POWER_OUT)renderHealth()},30000);
 // reports
-$("#rpDays").addEventListener("change",renderReports);$("#rpDoor").addEventListener("change",renderReports);
-["#rpAhFrom","#rpAhTo"].forEach(id=>{const el=$(id);if(el)el.addEventListener("change",()=>{ahSet({a:+$("#rpAhFrom").value,b:+$("#rpAhTo").value});renderReports()})});
-$("#rpHours").addEventListener("mousemove",ev=>{const el=ev.target.closest("[data-tip]");el?showTip(el,ev.clientX,ev.clientY):hideTip()});
-$("#rpHours").addEventListener("mouseleave",hideTip);
-$("#rpHours").addEventListener("focusin",ev=>{const el=ev.target.closest("[data-tip]");if(el){const r=el.getBoundingClientRect();showTip(el,r.left,r.top-40)}});
-$("#rpHours").addEventListener("focusout",hideTip);
+// reports
+document.querySelectorAll("#rpPer [data-per]").forEach(b=>b.onclick=()=>{RP.per=b.dataset.per;RP.page=1;try{localStorage.setItem("shulRpPer",RP.per)}catch(e){}renderReports()});
+$("#rpFrom").addEventListener("change",e=>{RP.from=e.target.value;RP.page=1;renderReports()});$("#rpTo").addEventListener("change",e=>{RP.to=e.target.value;RP.page=1;renderReports()});
+$("#rpDoor").addEventListener("change",e=>{RP.door=e.target.value;RP.page=1;renderReports()});
+$("#rpRes").addEventListener("change",e=>{RP.res=e.target.value;RP.page=1;renderReports()});
+{let t=null;$("#rpWho").addEventListener("input",e=>{clearTimeout(t);t=setTimeout(()=>{RP.who=e.target.value;RP.page=1;renderReports()},250)})}
+["#rpAhFrom","#rpAhTo"].forEach(id=>$(id).addEventListener("change",()=>{ahSet({a:+$("#rpAhFrom").value,b:+$("#rpAhTo").value});renderReports()}));
+$("#rpCsv").onclick=rpCsv;
+$("#tab-reports").addEventListener("click",ev=>{
+  const w=ev.target.closest("[data-who]");if(w){RP.who=w.dataset.who;$("#rpWho").value=RP.who;RP.page=1;renderReports();scrollTo({top:0,behavior:"smooth"});return}
+  const d=ev.target.closest("tr[data-door]");if(d){RP.door=d.dataset.door;RP.page=1;renderReports();scrollTo({top:0,behavior:"smooth"});return}
+  if(ev.target.closest("#rpMore")){RP.page++;renderReports();return}
+  if(ev.target.closest("#rpAllDoors")){RP.allDoors=!RP.allDoors;renderReports();return}
+  const el=ev.target.closest("[data-tip]");if(el){const r=el.getBoundingClientRect();showTip(el,r.left+r.width/2,r.bottom)}});
+$("#tab-reports").addEventListener("mousemove",ev=>{const el=ev.target.closest("[data-tip]");el?showTip(el,ev.clientX,ev.clientY):hideTip()});
+$("#tab-reports").addEventListener("mouseleave",hideTip);
+// history
+document.querySelectorAll("#hsKind [data-k]").forEach(b=>b.onclick=()=>{HS.k=b.dataset.k;HS.lim=150;renderLog()});
+$("#hsDays").addEventListener("change",e=>{HS.days=e.target.value;HS.lim=150;renderLog()});
+$("#hsWho").addEventListener("change",e=>{HS.who=e.target.value;renderLog()});
+{let t=null;$("#hsQ").addEventListener("input",e=>{clearTimeout(t);t=setTimeout(()=>{HS.q=e.target.value;HS.lim=150;renderLog()},250)})}
+$("#logRows").addEventListener("click",ev=>{if(ev.target.closest("#hsMore")){HS.lim+=150;renderLog()}});
 // requests
 $("#rqOpen").onclick=()=>{RQ_ALL=false;renderRequests()};$("#rqAll").onclick=()=>{RQ_ALL=true;renderRequests()};
 $("#rqSend").onclick=()=>{const subj=$("#rqSubj").value.trim(),txt=$("#rqText").value.trim();if(!subj&&!txt){$("#rqMsg").textContent="Write a subject or a message.";return}
@@ -3590,7 +3810,7 @@ $("#resetYes").onclick=()=>{S=structuredClone(SAMPLE);$("#resetConfirm").hidden=
 $("#sheetDate").addEventListener("change",renderSheet);
 $("#sheetPrev").onclick=()=>{$("#sheetDate").value=addDays($("#sheetDate").value||todayNY(),-7);renderSheet()};
 $("#sheetNext").onclick=()=>{$("#sheetDate").value=addDays($("#sheetDate").value||todayNY(),7);renderSheet()};
-$("#hGo").onclick=()=>{const s=$("#hDate").value,t=$("#hTime").value;if(!s||!t)return;const [h,m]=t.split(":").map(Number);$("#hOut").innerHTML=lookBack(s,h*60+m)};
+$("#hGo").onclick=()=>{const s=$("#hDate").value,t=$("#hTime").value;if(!s||!t)return;const [h,m]=t.split(":").map(Number);showMoment(s,h*60+m).then(()=>{const d=document.querySelector("#hOut .mo-det");if(d)d.open=true})};
 if(!S.versions||!S.versions.length){S.versions=[{t:Date.UTC(2026,9,1,4,0),u:"Hershy",text:"Example: first settings saved",cfg:snapshot()}];save()}
 S.overrides.forEach(o=>{if(o.to===undefined)o.to=null});
 /* doors page wiring */
@@ -3722,7 +3942,7 @@ $("#sysCell").onclick=()=>{showTab("board");$("#health").open=true;$("#health").
 $("#startDate").value=todayNY();
 $("#hDate").value=todayNY();$("#sheetDate").value=todayNY();$("#hTime").value="19:00";
 renderAll();
-$("#hOut").innerHTML=lookBack(todayNY(),19*60);
+{const n=nyMinutes(Date.now());$("#hTime").value=`${String(Math.floor(n/60)).padStart(2,"0")}:${String(n%60).padStart(2,"0")}`;showMoment(todayNY(),n)}
 setInterval(()=>{renderOverride();renderBoard()},30000);
 $("#bGroup").addEventListener("change",renderBoard);
 $("#board").addEventListener("click",ev=>{const a=ev.target.closest("[data-rule]");if(!a)return;showTab("rules");const el=$("#rule-"+a.dataset.rule);if(el){el.scrollIntoView({block:"center"});el.classList.add("flash");setTimeout(()=>el.classList.remove("flash"),1600)}});

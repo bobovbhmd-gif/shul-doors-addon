@@ -32,6 +32,23 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
   };
   const isLogSensor = (s) => s && typeof s.entity_id === "string" && s.entity_id.startsWith("sensor.") && s.attributes && "Door ID" in s.attributes && "Reader Message" in s.attributes;
 
+  // a door's reader mode changing (the schedule opening it, locking it, or someone changing it by hand)
+  const isModeSensor = (s) => s && typeof s.entity_id === "string" && /^sensor\..+_reader_mode$/.test(s.entity_id);
+  function recordMode(entity, st, fromMs) {
+    const mode = String(st.state || "");
+    if (!mode || /^(unknown|unavailable|none)$/i.test(mode)) return false;
+    const when = st.last_changed || st.last_updated; const t = Date.parse(when);
+    if (!Number.isFinite(t) || t <= fromMs + 1000) return false;   // the first row is only the state at the start of the window
+    const k = entity + "|" + when;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    const a = st.attributes || {};
+    const e = { v: 2, k, t, kind: "mode", door: String(a.friendly_name || entity.replace(/^sensor\./, "").replace(/_/g, " ")).replace(/\s+Reader Mode.*$/i, ""), mode };
+    events.push(e);
+    fs.appendFileSync(file, JSON.stringify(e) + "\n");
+    return true;
+  }
+
   function record(entity, st) {
     const m = ENTRY.exec(String(st.state || ""));
     if (!m) return false;   // locked/unlocked messages and one-time-run notes are not entries
@@ -62,6 +79,7 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
     try {
       const states = await api("/states");
       sensors = states.filter(isLogSensor).map((s) => s.entity_id);
+      const modeSensors = states.filter(isModeSensor).map((s) => s.entity_id);
       if (!sensors.length) { status = { on: false, problem: "No \"Last Door Log\" sensors found. Check that the Protector.Net integration is set up and its door log sensors are turned on.", sensors: 0, lastPoll: now() }; return status; }
       const t0 = now();
       const from = new Date(lastPoll ? lastPoll - 5 * 60e3 : t0 - 10 * 864e5).toISOString();   // first time: what Home Assistant still remembers
@@ -70,6 +88,13 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
         const ids = sensors.slice(i, i + 20).join(",");
         const hist = await api(`/history/period/${encodeURIComponent(from)}?filter_entity_id=${encodeURIComponent(ids)}&end_time=${encodeURIComponent(new Date(t0).toISOString())}&significant_changes_only=0`);
         for (const list of Array.isArray(hist) ? hist : []) for (const st of Array.isArray(list) ? list : []) if (record(st.entity_id, st)) added++;
+      }
+      // reader modes: the first time, go back as far as Home Assistant remembers
+      const mFrom = events.some((e) => e.kind === "mode") ? from : new Date(t0 - 10 * 864e5).toISOString();
+      for (let i = 0; i < modeSensors.length; i += 20) {
+        const ids = modeSensors.slice(i, i + 20).join(",");
+        const hist = await api(`/history/period/${encodeURIComponent(mFrom)}?filter_entity_id=${encodeURIComponent(ids)}&end_time=${encodeURIComponent(new Date(t0).toISOString())}&significant_changes_only=0`);
+        for (const list of Array.isArray(hist) ? hist : []) for (const st of Array.isArray(list) ? list : []) if (recordMode(st.entity_id, st, Date.parse(mFrom))) added++;
       }
       lastPoll = t0;
       if (added) log("info", `activity: ${added} new door entries`);
@@ -94,9 +119,11 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
   }
 
   // events for the Reports page, with the shul's door number (D301...) when known
-  function list(days, idOfPid, idOfName) {
+  function list(days, idOfPid, idOfName, kind) {
     const from = now() - days * 864e5;
-    return events.filter((e) => e.t >= from).map((e) => ({ t: e.t, door: idOfName(e.door) || (e.pid != null && idOfPid(e.pid)) || null, doorName: e.door, who: e.who, ok: e.ok }));
+    return events.filter((e) => e.t >= from && (!kind || (e.kind || "entry") === kind)).map((e) => e.kind === "mode"
+      ? { t: e.t, kind: "mode", door: idOfName(e.door) || null, doorName: e.door, mode: e.mode }
+      : { t: e.t, door: idOfName(e.door) || (e.pid != null && idOfPid(e.pid)) || null, doorName: e.door, who: e.who, ok: e.ok });
   }
   return { poll, list, status: () => ({ ...status, count: events.length }) };
 }

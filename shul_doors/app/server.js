@@ -142,7 +142,9 @@ async function runSync(reason) {
     lastReport = r;
     writeJson("store.json", store);
     writeJson("last-report.json", r);
-    fs.appendFileSync(file("history.jsonl"), JSON.stringify({ at: r.at, reason, mode: r.mode, actions: r.actions.length, errors: r.errors, warnings: r.warnings.length }) + "\n");
+    fs.appendFileSync(file("history.jsonl"), JSON.stringify({ at: r.at, reason, mode: r.mode, actions: r.actions.length, errors: r.errors, warnings: r.warnings.length,
+      ...(r.actions.length ? { list: r.actions.slice(0, 40) } : {}), ...(r.warnings.length ? { notes: r.warnings.slice(0, 10) } : {}),
+      ...(r.compare && r.compare.differ ? { differ: r.compare.differ.length, checked: r.compare.checked } : {}) }) + "\n");
     log(r.ok ? "info" : "warn", `sync (${reason}): ${r.actions.length} ${opts.mode === "practice" ? "would-do" : "done"} actions, ${r.errors.length} errors`);
     return r;
   } catch (e) {
@@ -209,11 +211,11 @@ if (activity) {
   setInterval(() => activity.poll().catch(() => {}), every);
 }
 const { ourId } = require("./lib/sync");
-function activityFor(days) {
+function activityFor(days, kind) {
   if (!activity) return { status: { on: false, problem: "Door activity is not available on this box." }, events: [] };
   const byPid = new Map(Object.entries((store && store.pidOf) || {}).map(([id, pid]) => [Number(pid), id]));
   const ids = new Set(((state && state.doors) || []).map((d) => d.id));
-  return { status: activity.status(), events: activity.list(days, (pid) => byPid.get(Number(pid)) || null, (name) => { const id = ourId(name); return ids.has(id) ? id : null; }) };
+  return { status: activity.status(), events: activity.list(days, (pid) => byPid.get(Number(pid)) || null, (name) => { const id = ourId(name); return ids.has(id) ? id : null; }, kind) };
 }
 
 // ---------- speech to text: the page records, Whisper on this box listens ----------
@@ -345,7 +347,13 @@ const server = http.createServer((req, res) => {
       `${opts.mode === "practice" ? "Would do" : "Did"} (${(r.actions || []).length}):`, ...(r.actions || []).map((x) => "  " + x), "", "Special days loaded through:", ...Object.entries(r.loadedThrough || {}).map(([d, t]) => `  ${d}: ${t}`)];
     return send(res, 200, lines.join("\n"), "text/plain; charset=utf-8");
   }
-  if (req.method === "GET" && p === "/api/activity") { const d = Math.max(1, Math.min(400, +u.searchParams.get("days") || 30)); return send(res, 200, activityFor(d)); }
+  if (req.method === "GET" && p === "/api/activity") { const d = Math.max(1, Math.min(400, +u.searchParams.get("days") || 30)); const k = u.searchParams.get("kind"); return send(res, 200, activityFor(d, k === "mode" || k === "entry" ? k : null)); }
+  if (req.method === "GET" && p === "/api/runs") {   // what the box did, for the History page
+    const d = Math.max(1, Math.min(400, +u.searchParams.get("days") || 30)), from = Date.now() - d * 864e5, out = [];
+    let text = ""; try { text = fs.readFileSync(file("history.jsonl"), "utf8"); } catch { /* none yet */ }
+    for (const line of text.split("\n")) { if (!line) continue; try { const x = JSON.parse(line); if (x.at >= from) out.push(x); } catch { /* skip */ } }
+    return send(res, 200, { runs: out.slice(-5000) });
+  }
   if (req.method === "GET" && p === "/api/stt") { whisperUp().then((on) => send(res, 200, { on })); return; }
   if (req.method === "POST" && p === "/api/stt") {
     const chunks = []; let size = 0;
