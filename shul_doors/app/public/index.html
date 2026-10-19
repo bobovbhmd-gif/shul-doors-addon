@@ -515,6 +515,24 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 
 /* quick actions */
 .quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.buzzcard{margin-bottom:16px;padding:16px 18px}
+.bz-h{display:flex;align-items:center;gap:12px;margin-bottom:12px}.bz-h>div{flex:1;min-width:0}.bz-h b{display:block;font-size:17px;font-weight:650}.bz-h>div>span{font-size:13px;color:var(--muted)}
+.bz-q{margin-bottom:10px;max-width:360px}
+.bz-doors{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.bz-d{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:0;border-radius:14px;padding:12px 14px;background:var(--fill2);color:var(--fg);font:inherit;cursor:pointer;min-height:64px;transition:background .15s,transform .1s}
+.bz-d b{font-size:15px;font-weight:600;line-height:1.25}.bz-d span{font-size:12.5px;color:var(--muted)}
+.bz-d:active{transform:scale(.97)}
+.bz-d span{display:inline-flex;align-items:center;gap:6px}.bz-d span .dot{width:7px;height:7px}
+.bz-d.on{background:var(--surface);box-shadow:0 0 0 2px var(--accent) inset}
+.bz-acts{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.bz-now b{display:block;font-size:15px}.bz-now span{font-size:13px;color:var(--muted)}
+.bz-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.bz-a{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:12px;padding:11px 16px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;background:color-mix(in srgb,var(--g) 14%,var(--surface));color:var(--ok)}
+.bz-a svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.bz-a.buzz{background:var(--g);color:#fff}.bz-a.back{background:var(--fill);color:var(--fg)}
+.bz-a:active{transform:scale(.97)}.bz-a:disabled{opacity:.6}
+.bz-note{margin:10px 0 0}
+@media (max-width:699px){.bz-doors{grid-template-columns:1fr 1fr}}
 .qa{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:12px;align-items:center;text-align:left;border:0;background:var(--surface);box-shadow:var(--shadow);border-radius:18px;padding:16px;font:inherit;color:var(--fg);cursor:pointer;transition:transform .12s,box-shadow .2s}
 .qa:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(0,0,0,.05),0 12px 28px rgba(0,0,0,.08)}
 .qa:active{transform:scale(.98)}
@@ -1377,6 +1395,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
   </div>
 
   <section id="tab-board">
+    <section class="card buzzcard" id="buzzCard" aria-label="Buzz a door open"></section>
     <div class="herorow"><section class="hero" id="hero" aria-live="polite"></section><section class="upcard" id="upcard" aria-label="Coming up"></section></div>
     <div class="quick" id="quick">
       <button type="button" class="qa cap-override" data-q="override"><i><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg></i><b>Open or lock now</b><span>Change a door right away</span></button>
@@ -2974,15 +2993,59 @@ function renderDoorSheet(){
     bz.onclick=()=>{$("#buzzConfirm").hidden=false;$("#buzzConfirm").scrollIntoView({block:"nearest"})};
     $("#buzzNo").onclick=()=>{$("#buzzConfirm").hidden=true};
     $("#buzzYes").onclick=async()=>{const yes=$("#buzzYes");yes.disabled=true;
-      if(!ON_BOX){$("#buzzConfirm").hidden=true;yes.disabled=false;toast("Prototype: nothing was sent");return}
-      let j=null;try{j=await (await fetch("api/pulse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({door:id})})).json()}catch(e){j={sent:false,message:"Couldn't reach the box. Try again."}}
-      yes.disabled=false;$("#buzzConfirm").hidden=true;
-      if(j&&j.sent){commit(`Buzzed ${d.name} open`);toast(`${d.name} buzzed open`)}else toast((j&&(j.message||j.error))||"Not sent")};
+      const j=await buzzDoor(id);yes.disabled=false;$("#buzzConfirm").hidden=true;
+      if(j&&j.sent){buzzRemember(id);commit(`Buzzed ${d.name} open`);toast(`${d.name} buzzed open`)}else toast((j&&(j.message||j.error))||"Not sent")};
   }
   const back=$("#dBack");if(back)back.onclick=()=>{endOverridesFor(id);DM_PICK=null;commit(`${d.name}: back to the schedule`);toast(`${d.name} is back on its schedule`)};
   $("#dSched").onclick=()=>{closeModal("mDoor");showTab("preview")};
   const dc=$("#dCode");if(dc)dc.onclick=()=>{closeModal("mDoor");TC_VENDOR=null;TC_NOPHONE=false;$("#tcWarn").innerHTML="";$("#tcPhoneAsk").innerHTML="";$("#mTcT").textContent="New guest code";showTab("codes");renderCodeForm();document.querySelectorAll("#tcDoors input[name=tcDoor]").forEach(x=>x.checked=x.value===id);openModal("mCode")};
 }
+// "Buzz open": shared by the Home card and the door window
+async function buzzDoor(id){
+  if(!ON_BOX)return {sent:false,message:"Prototype: nothing was sent"};
+  try{return await (await fetch("api/pulse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({door:id})})).json()}
+  catch(e){return {sent:false,message:"Couldn't reach the box. Try again."}}
+}
+function buzzRecent(){let r=[];try{r=JSON.parse(localStorage.getItem("shulBuzzRecent")||"[]")}catch(e){}return r.filter(id=>S.doors.some(d=>d.id===id))}
+function buzzRemember(id){const r=[id,...buzzRecent().filter(x=>x!==id)].slice(0,12);try{localStorage.setItem("shulBuzzRecent",JSON.stringify(r))}catch(e){}}
+let BUZZ_ALL=false,BUZZ_Q="",BZ_SEL=null;
+// Home: pick a door, then buzz it or open it for a few minutes
+function renderBuzzCard(){
+  const el=$("#buzzCard");if(!el)return;
+  const mayBuzz=isAdmin(),mayOpen=d=>canChangeDoor(d);
+  const doors=S.doors.filter(d=>mayBuzz||mayOpen(d.id));
+  if(!doors.length){el.hidden=true;el.innerHTML="";return}el.hidden=false;
+  const rec=buzzRecent(),defs=[...doors.filter(d=>/main ent/i.test(d.name)),...doors.filter(d=>/entrance/i.test(d.name))].map(d=>d.id);
+  const top=[...new Set([...rec,...defs,...doors.map(d=>d.id)])].filter(id=>doors.some(d=>d.id===id)).slice(0,6);
+  if(BZ_SEL&&!top.includes(BZ_SEL)&&!BUZZ_ALL)top.unshift(BZ_SEL);
+  const q=BUZZ_Q.trim().toLowerCase(),list=BUZZ_ALL?doors.filter(d=>!q||(d.name+" "+d.id).toLowerCase().includes(q)).map(d=>d.id):top.slice(0,6);
+  const sel=BZ_SEL&&doors.some(d=>d.id===BZ_SEL)?BZ_SEL:null;
+  let acts="";
+  if(sel){const f=doorFacts(sel),b=typeof BOX_ST!=="undefined"&&BOX_ST;
+    const notSent=ON_BOX&&b&&b.mode!=="live"&&!(b.mode==="pilot"&&(b.pilotDoors||[]).includes(sel));
+    acts=`<div class="bz-acts"><div class="bz-now"><b>${esc(doorName(sel))}</b><span>${esc(f.label)} now · ${esc(f.nx)}</span></div>
+      <div class="bz-btns">${mayBuzz?`<button type="button" class="bz-a buzz" data-bza="buzz">${ico("open")}Buzz open</button>`:""}
+      ${mayOpen(sel)?[10,20,30,60].map(m=>`<button type="button" class="bz-a" data-bza="${m}">Open ${m} min</button>`).join("")+(f.hand?`<button type="button" class="bz-a back" data-bza="back">Back to schedule</button>`:""):""}</div>
+      ${notSent?`<p class="hint bz-note">This door isn't run by the box yet${b.mode==="pilot"?" (not in the pilot)":""}, so "Open" is saved but not sent. Buzz open still works.</p>`:""}</div>`}
+  el.innerHTML=`<div class="bz-h"><span class="ic" style="--c:var(--g)">${ico("open")}</span><div><b>Quick door actions</b><span>${sel?"Choose what to do":"Tap a door"}</span></div>
+      <button type="button" class="linkbtn" id="bzAll">${BUZZ_ALL?"Fewer doors":"All doors"}</button></div>
+    ${BUZZ_ALL?`<label class="search sm bz-q"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="bzQ" placeholder="Find a door" aria-label="Find a door" value="${esc(BUZZ_Q)}"></label>`:""}
+    <div class="bz-doors">${list.map(id=>{const f=doorFacts(id);return `<button type="button" class="bz-d${id===sel?" on":""}" data-bz="${esc(id)}" aria-pressed="${id===sel}"><b>${esc(doorName(id))}</b><span><i class="dot" style="--c:${modeColor(f.st.mode)}"></i>${esc(f.label)}${f.hand?" · by hand":""}</span></button>`}).join("")||`<p class="none">No door matches.</p>`}</div>${acts}`;
+  const qi=$("#bzQ");if(qi)qi.addEventListener("input",e=>{BUZZ_Q=e.target.value;const pos=e.target.selectionStart;renderBuzzCard();const n=$("#bzQ");n.focus();n.setSelectionRange(pos,pos)});
+}
+document.addEventListener("click",async ev=>{
+  if(ev.target.closest("#bzAll")){BUZZ_ALL=!BUZZ_ALL;BUZZ_Q="";renderBuzzCard();return}
+  const d=ev.target.closest("[data-bz]");if(d){BZ_SEL=BZ_SEL===d.dataset.bz?null:d.dataset.bz;renderBuzzCard();return}
+  const a=ev.target.closest("[data-bza]");if(!a||!BZ_SEL||a.disabled)return;
+  const id=BZ_SEL,name=doorName(id),k=a.dataset.bza;
+  if(k==="buzz"){a.disabled=true;const t=a.innerHTML;a.textContent="Buzzing…";const j=await buzzDoor(id);a.disabled=false;
+    if(j&&j.sent){buzzRemember(id);commit(`Buzzed ${name} open`);toast(`${name} buzzed open`);a.textContent="Buzzed";setTimeout(()=>{a.innerHTML=t},2000)}
+    else{a.innerHTML=t;toast((j&&(j.message||j.error))||"Not sent")}return}
+  if(k==="back"){endOverridesFor(id);buzzRemember(id);commit(`${name}: back to the schedule`);toast(`${name} is back on its schedule`);return}
+  const mins=+k,now=Date.now(),o={id:"o"+now,doors:[id],mode:"Unlock",from:now,to:now+mins*60e3,by:S.me,why:"Quick open from Home"};
+  endOverridesFor(id);S.overrides.push(o);buzzRemember(id);
+  commit(`Override: Unlock on ${name} until ${whenText(o.to)} (quick open, ${mins} min)`);toast(`${name} is now open for ${mins} minutes`);
+});
 function endOverridesFor(id){const now=Date.now();
   S.overrides.filter(o=>o.from<=now&&(!o.to||o.to>now)&&expandDoors(o.doors).includes(id)).forEach(o=>{
     const rest=expandDoors(o.doors).filter(x=>x!==id);
@@ -3482,7 +3545,7 @@ function renderLog(){
       +(list.length>HS.lim?`<div class="rp-more"><span class="hint">Showing ${HS.lim} of ${fmtN(list.length)}</span><button class="btn sm" type="button" id="hsMore">Show more</button></div>`:"");
   });
 }
-function renderAll(){renderView();renderSituations();renderHealth();renderReports();renderRequests();renderCodes();renderVendors();renderNotes();renderStatus();renderOverride();renderBoard();renderHero();renderPreview();renderRules();renderBulk();renderEvents();renderSheet();renderSetup();renderAg();renderLog()}
+function renderAll(){renderView();renderSituations();renderHealth();renderReports();renderRequests();renderCodes();renderVendors();renderNotes();renderStatus();renderOverride();renderBoard();renderHero();renderBuzzCard();renderPreview();renderRules();renderBulk();renderEvents();renderSheet();renderSetup();renderAg();renderLog()}
 /* ---------- history: every change saves a dated copy of the settings ---------- */
 const CFG=["situations","rules","doors","groups","accessGroups","types","events","hdates","gdates","away","rabbiAwayNow","rabbiAwaySince","candleOff","havOff","rtOff"];
 function snapshot(){const c={};CFG.forEach(k=>c[k]=structuredClone(S[k]));return c}
@@ -3943,7 +4006,7 @@ $("#startDate").value=todayNY();
 $("#hDate").value=todayNY();$("#sheetDate").value=todayNY();$("#hTime").value="19:00";
 renderAll();
 {const n=nyMinutes(Date.now());$("#hTime").value=`${String(Math.floor(n/60)).padStart(2,"0")}:${String(n%60).padStart(2,"0")}`;showMoment(todayNY(),n)}
-setInterval(()=>{renderOverride();renderBoard()},30000);
+setInterval(()=>{renderOverride();renderBoard();if(document.activeElement?.id!=="bzQ")renderBuzzCard()},30000);
 $("#bGroup").addEventListener("change",renderBoard);
 $("#board").addEventListener("click",ev=>{const a=ev.target.closest("[data-rule]");if(!a)return;showTab("rules");const el=$("#rule-"+a.dataset.rule);if(el){el.scrollIntoView({block:"center"});el.classList.add("flash");setTimeout(()=>el.classList.remove("flash"),1600)}});
 // badge groups
