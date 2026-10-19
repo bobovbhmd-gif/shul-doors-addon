@@ -210,6 +210,9 @@ if (activity) {
   setTimeout(() => activity.poll().catch(() => {}), Math.min(5000, every));
   setInterval(() => activity.poll().catch(() => {}), every);
 }
+// Live page: read the doors every few seconds, only while someone has it open
+let liveUntil = 0;
+setInterval(() => { if (activity && Date.now() < liveUntil) activity.quick().catch(() => {}); }, +process.env.SD_LIVE_MS || 4000);
 const { ourId } = require("./lib/sync");
 function activityFor(days, kind) {
   if (!activity) return { status: { on: false, problem: "Door activity is not available on this box." }, events: [] };
@@ -346,6 +349,14 @@ const server = http.createServer((req, res) => {
       ...compareLines(r.compare), "",
       `${opts.mode === "practice" ? "Would do" : "Did"} (${(r.actions || []).length}):`, ...(r.actions || []).map((x) => "  " + x), "", "Special days loaded through:", ...Object.entries(r.loadedThrough || {}).map(([d, t]) => `  ${d}: ${t}`)];
     return send(res, 200, lines.join("\n"), "text/plain; charset=utf-8");
+  }
+  if (req.method === "GET" && p === "/api/live") {
+    const n = Math.max(1, Math.min(300, +u.searchParams.get("n") || 100));
+    const idle = Date.now() >= liveUntil;
+    liveUntil = Date.now() + 30000;
+    const answer = () => { const a = activityFor(30); a.events = a.events.sort((x, y) => y.t - x.t).slice(0, n); send(res, 200, a); };
+    if (idle && activity) { activity.quick().catch(() => {}).then(answer); return; }   // just opened: read the doors first
+    return answer();
   }
   if (req.method === "GET" && p === "/api/activity") { const d = Math.max(1, Math.min(400, +u.searchParams.get("days") || 30)); const k = u.searchParams.get("kind"); return send(res, 200, activityFor(d, k === "mode" || k === "entry" ? k : null)); }
   if (req.method === "GET" && p === "/api/runs") {   // what the box did, for the History page

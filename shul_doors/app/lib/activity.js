@@ -106,6 +106,22 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
     return status;
   }
 
+  // Live view: while someone watches, read every door's current "Last Door Log" every few seconds
+  // (one cheap request). The minute-by-minute history read still fills in anything missed.
+  let quickBusy = false;
+  async function quick() {
+    if (!token || !haUrl || quickBusy) return 0;
+    quickBusy = true;
+    try {
+      const states = await api("/states"); let added = 0; const cut = now() - 10 * 60e3;
+      for (const st of states) {
+        if (isLogSensor(st)) { if (record(st.entity_id, st)) added++; }
+        else if (isModeSensor(st) && Date.parse(st.last_changed || "") > cut) { if (recordMode(st.entity_id, st, 0)) added++; }
+      }
+      return added;
+    } catch { return 0; } finally { quickBusy = false; }
+  }
+
   let pruned = "";
   function prune() {
     const day = new Date(now()).toISOString().slice(0, 10);
@@ -125,7 +141,7 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
       ? { t: e.t, kind: "mode", door: idOfName(e.door) || null, doorName: e.door, mode: e.mode }
       : { t: e.t, door: idOfName(e.door) || (e.pid != null && idOfPid(e.pid)) || null, doorName: e.door, who: e.who, ok: e.ok });
   }
-  return { poll, list, status: () => ({ ...status, count: events.length }) };
+  return { poll, quick, list, status: () => ({ ...status, count: events.length }) };
 }
 
 module.exports = { createActivity };

@@ -518,6 +518,29 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .buzzcard{margin-bottom:16px;padding:16px 18px}
 .bz-h{display:flex;align-items:center;gap:12px;margin-bottom:12px}.bz-h>div{flex:1;min-width:0}.bz-h b{display:block;font-size:17px;font-weight:650}.bz-h>div>span{font-size:13px;color:var(--muted)}
 .bz-q{margin-bottom:10px;max-width:360px}
+.buzzcard.closed{padding:0;overflow:hidden}
+.bz-open{display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;color:var(--fg);font:inherit;text-align:left;padding:14px 18px;cursor:pointer;min-height:64px}
+.bz-open:active{background:var(--fill2)}
+.bz-open .rt{flex:1;min-width:0}.bz-open .rt b{display:block;font-size:17px;font-weight:650}.bz-open .rt span{font-size:13px;color:var(--muted)}
+.bz-open .chev{width:18px;height:18px;fill:none;stroke:var(--muted);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.bz-h .linkbtn+.linkbtn{margin-left:4px}
+/* live entries */
+.lv-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px}
+.lv-on{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:15px}
+.lv-dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 60%,transparent);animation:lvp 1.8s infinite}
+.lv-on.paused .lv-dot{background:var(--muted);animation:none}
+@keyframes lvp{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 55%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.lv-bar .sp{flex:1}
+.lv-list{padding:0;overflow:hidden}
+.lv-r{display:flex;align-items:center;gap:12px;padding:11px 16px;border-top:1px solid var(--line)}
+.lv-r:first-child{border-top:0}
+.lv-r .ic{flex:none}
+.lv-r .rt{flex:1;min-width:0}.lv-r .rt b{display:block;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lv-r .rt span{display:block;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lv-r .tm{flex:none;text-align:right;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.lv-r .tm b{display:block;color:var(--fg);font-weight:600;font-size:14px}
+.lv-r.new{animation:lvn 2.5s ease-out}
+@keyframes lvn{from{background:color-mix(in srgb,var(--b) 16%,transparent)}to{background:transparent}}
+.lv-day{padding:8px 16px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:var(--fill2)}
 .bz-doors{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .bz-d{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:0;border-radius:14px;padding:12px 14px;background:var(--fill2);color:var(--fg);font:inherit;cursor:pointer;min-height:64px;transition:background .15s,transform .1s}
 .bz-d b{font-size:15px;font-weight:600;line-height:1.25}.bz-d span{font-size:12.5px;color:var(--muted)}
@@ -1357,6 +1380,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
   <nav class="side" id="sideNav" aria-label="Sections">
     <button type="button" class="navbtn on" data-tab="board"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></i>Home</button>
     <button type="button" class="navbtn" data-tab="doors"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4.5L14 3v18M14 21h5V6h-5M3 21h18"/><circle cx="11" cy="12.5" r=".9"/></svg></i>Doors</button>
+    <button type="button" class="navbtn admin-only" data-tab="live"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.2"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg></i>Live entries</button>
     <div class="ng">Schedule</div>
     <button type="button" class="navbtn" data-tab="preview"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></i>Schedule</button>
     <button type="button" class="navbtn" data-tab="sheet"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16M15 4v16"/></svg></i>Week sheet</button>
@@ -1542,6 +1566,17 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
     <div class="wk" id="sheet"></div>
   </section>
 
+  <section id="tab-live" hidden>
+    <div class="lv-bar">
+      <span class="lv-on" id="lvOn"><i class="lv-dot"></i><span id="lvOnT">Live</span></span>
+      <div class="seg" role="group" aria-label="Show" id="lvKind"><button type="button" data-k="all">All</button><button type="button" data-k="ok">Came in</button><button type="button" data-k="no">Denied</button><button type="button" data-k="mode">Door changes</button></div>
+      <select id="lvDoor" aria-label="Door"></select>
+      <span class="sp"></span>
+      <button class="btn sm" type="button" id="lvPause">Pause</button>
+    </div>
+    <div class="card lv-list" id="lvList"></div>
+    <p class="gf" id="lvFoot">The last 100, newest first. Updates every few seconds while this page is open.</p>
+  </section>
   <section id="tab-reports" hidden>
     <div class="rp-bar">
       <div class="seg" role="group" aria-label="Period" id="rpPer"><button type="button" data-per="0">Today</button><button type="button" data-per="7">7 days</button><button type="button" data-per="30">30 days</button><button type="button" data-per="90">90 days</button><button type="button" data-per="c">Dates</button></div>
@@ -3008,13 +3043,15 @@ async function buzzDoor(id){
 }
 function buzzRecent(){let r=[];try{r=JSON.parse(localStorage.getItem("shulBuzzRecent")||"[]")}catch(e){}return r.filter(id=>S.doors.some(d=>d.id===id))}
 function buzzRemember(id){const r=[id,...buzzRecent().filter(x=>x!==id)].slice(0,12);try{localStorage.setItem("shulBuzzRecent",JSON.stringify(r))}catch(e){}}
-let BUZZ_ALL=false,BUZZ_Q="",BZ_SEL=null;
+let BUZZ_ALL=false,BUZZ_Q="",BZ_SEL=null,BZ_OPEN=false;
 // Home: pick a door, then buzz it or open it for a few minutes
 function renderBuzzCard(){
   const el=$("#buzzCard");if(!el)return;
   const mayBuzz=isAdmin(),mayOpen=d=>canChangeDoor(d);
   const doors=S.doors.filter(d=>mayBuzz||mayOpen(d.id));
   if(!doors.length){el.hidden=true;el.innerHTML="";return}el.hidden=false;
+  el.classList.toggle("closed",!BZ_OPEN);
+  if(!BZ_OPEN){el.innerHTML=`<button type="button" class="bz-open" id="bzOpen" aria-expanded="false"><span class="ic" style="--c:var(--g)">${ico("open")}</span><span class="rt"><b>Open or buzz a door</b><span>Buzz open, or open for 5 to 60 minutes</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>`;return}
   const rec=buzzRecent(),defs=[...doors.filter(d=>/main ent/i.test(d.name)),...doors.filter(d=>/entrance/i.test(d.name))].map(d=>d.id);
   const top=[...new Set([...rec,...defs,...doors.map(d=>d.id)])].filter(id=>doors.some(d=>d.id===id)).slice(0,6);
   if(BZ_SEL&&!top.includes(BZ_SEL)&&!BUZZ_ALL)top.unshift(BZ_SEL);
@@ -3025,15 +3062,17 @@ function renderBuzzCard(){
     const notSent=ON_BOX&&b&&b.mode!=="live"&&!(b.mode==="pilot"&&(b.pilotDoors||[]).includes(sel));
     acts=`<div class="bz-acts"><div class="bz-now"><b>${esc(doorName(sel))}</b><span>${esc(f.label)} now · ${esc(f.nx)}</span></div>
       <div class="bz-btns">${mayBuzz?`<button type="button" class="bz-a buzz" data-bza="buzz">${ico("open")}Buzz open</button>`:""}
-      ${mayOpen(sel)?[10,20,30,60].map(m=>`<button type="button" class="bz-a" data-bza="${m}">Open ${m} min</button>`).join("")+(f.hand?`<button type="button" class="bz-a back" data-bza="back">Back to schedule</button>`:""):""}</div>
+      ${mayOpen(sel)?[5,10,20,30,60].map(m=>`<button type="button" class="bz-a" data-bza="${m}">Open ${m} min</button>`).join("")+(f.hand?`<button type="button" class="bz-a back" data-bza="back">Back to schedule</button>`:""):""}</div>
       ${notSent?`<p class="hint bz-note">This door isn't run by the box yet${b.mode==="pilot"?" (not in the pilot)":""}, so "Open" is saved but not sent. Buzz open still works.</p>`:""}</div>`}
-  el.innerHTML=`<div class="bz-h"><span class="ic" style="--c:var(--g)">${ico("open")}</span><div><b>Quick door actions</b><span>${sel?"Choose what to do":"Tap a door"}</span></div>
-      <button type="button" class="linkbtn" id="bzAll">${BUZZ_ALL?"Fewer doors":"All doors"}</button></div>
+  el.innerHTML=`<div class="bz-h"><span class="ic" style="--c:var(--g)">${ico("open")}</span><div><b>Open a door</b><span>${sel?"Choose what to do":"Tap a door"}</span></div>
+      <button type="button" class="linkbtn" id="bzAll">${BUZZ_ALL?"Fewer doors":"All doors"}</button><button type="button" class="linkbtn" id="bzClose">Close</button></div>
     ${BUZZ_ALL?`<label class="search sm bz-q"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="bzQ" placeholder="Find a door" aria-label="Find a door" value="${esc(BUZZ_Q)}"></label>`:""}
     <div class="bz-doors">${list.map(id=>{const f=doorFacts(id);return `<button type="button" class="bz-d${id===sel?" on":""}" data-bz="${esc(id)}" aria-pressed="${id===sel}"><b>${esc(doorName(id))}</b><span><i class="dot" style="--c:${modeColor(f.st.mode)}"></i>${esc(f.label)}${f.hand?" · by hand":""}</span></button>`}).join("")||`<p class="none">No door matches.</p>`}</div>${acts}`;
   const qi=$("#bzQ");if(qi)qi.addEventListener("input",e=>{BUZZ_Q=e.target.value;const pos=e.target.selectionStart;renderBuzzCard();const n=$("#bzQ");n.focus();n.setSelectionRange(pos,pos)});
 }
 document.addEventListener("click",async ev=>{
+  if(ev.target.closest("#bzOpen")){BZ_OPEN=true;renderBuzzCard();return}
+  if(ev.target.closest("#bzClose")){BZ_OPEN=false;BZ_SEL=null;BUZZ_ALL=false;BUZZ_Q="";renderBuzzCard();return}
   if(ev.target.closest("#bzAll")){BUZZ_ALL=!BUZZ_ALL;BUZZ_Q="";renderBuzzCard();return}
   const d=ev.target.closest("[data-bz]");if(d){BZ_SEL=BZ_SEL===d.dataset.bz?null:d.dataset.bz;renderBuzzCard();return}
   const a=ev.target.closest("[data-bza]");if(!a||!BZ_SEL||a.disabled)return;
@@ -3041,9 +3080,9 @@ document.addEventListener("click",async ev=>{
   if(k==="buzz"){a.disabled=true;const t=a.innerHTML;a.textContent="Buzzing…";const j=await buzzDoor(id);a.disabled=false;
     if(j&&j.sent){buzzRemember(id);commit(`Buzzed ${name} open`);toast(`${name} buzzed open`);a.textContent="Buzzed";setTimeout(()=>{a.innerHTML=t},2000)}
     else{a.innerHTML=t;toast((j&&(j.message||j.error))||"Not sent")}return}
-  if(k==="back"){endOverridesFor(id);buzzRemember(id);commit(`${name}: back to the schedule`);toast(`${name} is back on its schedule`);return}
+  if(k==="back"){endOverridesFor(id);buzzRemember(id);BZ_OPEN=false;BZ_SEL=null;commit(`${name}: back to the schedule`);toast(`${name} is back on its schedule`);return}
   const mins=+k,now=Date.now(),o={id:"o"+now,doors:[id],mode:"Unlock",from:now,to:now+mins*60e3,by:S.me,why:"Quick open from Home"};
-  endOverridesFor(id);S.overrides.push(o);buzzRemember(id);
+  endOverridesFor(id);S.overrides.push(o);buzzRemember(id);BZ_OPEN=false;BZ_SEL=null;
   commit(`Override: Unlock on ${name} until ${whenText(o.to)} (quick open, ${mins} min)`);toast(`${name} is now open for ${mins} minutes`);
 });
 function endOverridesFor(id){const now=Date.now();
@@ -3371,6 +3410,44 @@ async function getActivity(days,kind){
   else data=await (await fetch(`api/activity?days=${days}${kind?"&kind="+kind:""}`)).json();
   ACT_CACHE[key]={at:Date.now(),data};return data;
 }
+/* ---------- Live entries: the last 100, refreshed every few seconds while open ---------- */
+let LV_ON=false,LV_PAUSED=false,LV_TIMER=null,LV_EV=[],LV_SEEN=null,LV_KIND="all",LV_ERR="",LV_AT=0;
+const lvKey=e=>e.t+"|"+(e.door||e.doorName)+"|"+(e.who||e.mode||"");
+async function lvFetch(){
+  if(!ON_BOX){LV_EV=sampleActivity().slice().sort((a,b)=>b.t-a.t).slice(0,100);LV_ERR="";LV_AT=Date.now();return}
+  try{const j=await (await fetch("api/live?n=100")).json();LV_EV=j.events||[];LV_ERR=j.status&&!j.status.on&&j.status.problem||"";LV_AT=Date.now()}
+  catch(e){LV_ERR="Can't reach the box right now. Trying again."}
+}
+async function lvTick(){if(!LV_ON)return;if(!LV_PAUSED&&document.visibilityState!=="hidden"){await lvFetch();renderLive()}LV_TIMER=setTimeout(lvTick,4000)}
+function liveRun(on){if(on===LV_ON)return;LV_ON=on;clearTimeout(LV_TIMER);if(on){LV_SEEN=null;renderLive();lvTick()}}
+function lvAgo(t){const m=Math.round((Date.now()-t)/60000);return m<1?"just now":m<60?m+" min ago":m<1440?Math.round(m/60)+" h ago":""}
+function renderLive(){
+  const sel=$("#lvDoor");if(!sel)return;
+  const keep=sel.value||"";
+  sel.innerHTML=`<option value="">All doors</option>`+S.doors.slice().sort((a,b)=>doorName(a.id).localeCompare(doorName(b.id))).map(d=>`<option value="${esc(d.id)}">${esc(doorName(d.id))}</option>`).join("");
+  sel.value=keep;
+  document.querySelectorAll("#lvKind button").forEach(b=>b.classList.toggle("on",b.dataset.k===LV_KIND));
+  $("#lvOn").classList.toggle("paused",LV_PAUSED);$("#lvOnT").textContent=LV_PAUSED?"Paused":"Live";$("#lvPause").textContent=LV_PAUSED?"Resume":"Pause";
+  const door=sel.value;
+  const list=LV_EV.filter(e=>(!door||e.door===door)&&(LV_KIND==="all"||(LV_KIND==="mode"?e.kind==="mode":e.kind!=="mode"&&(LV_KIND==="ok"?e.ok:!e.ok))));
+  const prev=LV_SEEN;LV_SEEN=new Set(LV_EV.map(lvKey));
+  const nm=e=>e.door?doorName(e.door):(e.doorName||"A door");
+  let lvD="",h="";
+  for(const e of list){const d=nyDate(e.t);
+    if(d!==lvD){lvD=d;h+=`<div class="lv-day">${d===todayNY()?"Today":d===addDays(todayNY(),-1)?"Yesterday":esc(dshort(e.t))}</div>`}
+    const isNew=prev&&!prev.has(lvKey(e))?" new":"";
+    const tt=new Date(e.t).toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit",second:"2-digit"});
+    if(e.kind==="mode")h+=`<div class="lv-r${isNew}"><span class="ic" style="--c:var(--b)">${ico("door")}</span><div class="rt"><b>${esc(nm(e))}</b><span>Door is now ${esc(plainMode(e.mode==="Card or PIN"?"Card or Pin":e.mode))}</span></div><div class="tm"><b>${tt}</b>${lvAgo(e.t)}</div></div>`;
+    else h+=`<div class="lv-r${isNew}"><span class="ic" style="--c:${e.ok?"var(--g)":"var(--r)"}">${ico(e.ok?"open":"lock")}</span><div class="rt"><b>${esc(e.who||"Someone")}</b><span>${e.ok?"":"Denied · "}${esc(nm(e))}</span></div><div class="tm"><b>${tt}</b>${lvAgo(e.t)}</div></div>`;
+  }
+  $("#lvList").innerHTML=h||`<p class="none" style="padding:18px">${LV_ERR?esc(LV_ERR):LV_AT?"Nothing yet for this choice.":"Loading…"}</p>`;
+  $("#lvFoot").textContent=(LV_ERR&&h?LV_ERR+" ":"")+(ON_BOX?"The last 100, newest first. Updates every few seconds while this page is open.":"Prototype: sample entries.");
+}
+document.addEventListener("click",ev=>{
+  const k=ev.target.closest("#lvKind button");if(k){LV_KIND=k.dataset.k;renderLive();return}
+  if(ev.target.closest("#lvPause")){LV_PAUSED=!LV_PAUSED;if(!LV_PAUSED)lvFetch().then(renderLive);else renderLive()}
+});
+document.addEventListener("change",ev=>{if(ev.target.id==="lvDoor")renderLive()});
 // what the box did (on the prototype: a believable nightly update)
 async function getRuns(days){
   const key="runs|"+days,c=ACT_CACHE[key];if(c&&Date.now()-c.at<60000)return c.data;
@@ -3590,7 +3667,7 @@ async function showMoment(s,min){
     const same=e.mode===td.dataset.want;td.className=same?"okm":"warnm";td.textContent=`${modeLabel(e.mode)}${same?"":" (differs)"}`;td.title=`Since ${whenText(e.t)}`});
 }
 /* ---------- wiring ---------- */
-const TITLES={board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules",events:"Events",codes:"Guest codes",msgs:"Messages",reports:"Reports",activity:"History",setup:"Settings"};
+const TITLES={live:"Live entries",board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules",events:"Events",codes:"Guest codes",msgs:"Messages",reports:"Reports",activity:"History",setup:"Settings"};
 document.querySelectorAll(".navbtn[data-tab]").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 function setDrawer(open){document.body.classList.toggle("drawer",open);$("#scrim").hidden=!open;$("#menuBtn").setAttribute("aria-expanded",open)}
 document.querySelectorAll(".viewseg button").forEach(b=>b.onclick=()=>{SIMPLE=b.dataset.view==="simple";try{localStorage.setItem("shulDoorSimple",SIMPLE?"1":"0")}catch(e){}renderView();if(SIMPLE&&["reports","activity"].includes(CUR_TAB))showTab("board");if(CUR_TAB==="setup")renderSetupIndex()});
@@ -3600,14 +3677,14 @@ $("#moreBtn").onclick=()=>setDrawer(true);
 $("#scrim").onclick=()=>setDrawer(false);
 document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab(b.dataset.go));
 addEventListener("keydown",ev=>{if(ev.key==="Escape")setDrawer(false)});
-const SUBS={board:"",doors:"Live status of every door. Tap one to change it.",preview:"What every door does, hour by hour",sheet:"One week on one page, ready to print or email",rules:"The standing instructions the doors follow",events:"Weddings, sheva brachos and the shul's own dates",codes:"PINs for visitors that expire on their own",msgs:"Ask a teammate to make a change",reports:"How the doors are used",activity:"What changed, and what the doors were doing at any moment",setup:""};
+const SUBS={live:"Who is coming in, at every door, as it happens",board:"",doors:"Live status of every door. Tap one to change it.",preview:"What every door does, hour by hour",sheet:"One week on one page, ready to print or email",rules:"The standing instructions the doors follow",events:"Weddings, sheva brachos and the shul's own dates",codes:"PINs for visitors that expire on their own",msgs:"Ask a teammate to make a change",reports:"How the doors are used",activity:"What changed, and what the doors were doing at any moment",setup:""};
 function showTab(t){CUR_TAB=t;if(t!=="doors"&&typeof SELMODE!=="undefined"&&SELMODE){SELMODE=false;DSEL.clear();document.body.classList.remove("selmode")}document.querySelectorAll(".navbtn[data-tab]").forEach(x=>x.classList.toggle("on",x.dataset.tab===t));
   const inBar=[...document.querySelectorAll(".bnav [data-tab]")].some(x=>x.dataset.tab===t||(t==="sheet"&&x.dataset.tab==="preview"));
   $("#moreBtn").classList.toggle("on",!inBar);
   $("#pageTitle").textContent=TITLES[t]||"";$("#pageSub").textContent=SUBS[t]||"";$("#pageSub").hidden=!SUBS[t];
   document.querySelectorAll("#pageAct [data-for]").forEach(b=>b.hidden=b.dataset.for!==t||(b.dataset.tcv&&b.dataset.tcv!==TCV));
   setDrawer(false);hideTip();
-  ["board","doors","preview","rules","events","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);if(t==="doors")renderBoard();
+  ["board","doors","live","preview","rules","events","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);liveRun(t==="live");if(t==="doors")renderBoard();
   if(t==="codes")setTCV(TCV);if(t==="reports")renderReports();if(t==="activity")renderLog();if(t==="setup"){$("#split").classList.remove("detail");renderSetupIndex()}
   scrollTo({top:0})}
 let SP=null;
@@ -3664,7 +3741,7 @@ function searchSel(sel){if(!sel||sel.dataset.spk)return;sel.dataset.spk="1";
   document.addEventListener("click",e=>{if(pop&&!w.contains(e.target))close()});
   w.addEventListener("keydown",e=>{if(e.key==="Escape"&&pop){close();btn.focus()}});
 }
-["#rqDoorF","#pvDoorF","#shDoorF","#rpDoor"].forEach(id=>searchSel($(id)));
+["#rqDoorF","#pvDoorF","#shDoorF","#rpDoor","#lvDoor"].forEach(id=>searchSel($(id)));
 ["#pvDoorF","#shDoorF"].forEach(id=>{const el=$(id);if(el)el.addEventListener("change",ev=>{PV_DOOR=ev.target.value;try{localStorage.setItem("shulPvDoor",PV_DOOR)}catch(e){}renderPreview();renderSheet()})});
 $("#vList").onclick=()=>setView("list");
 $("#rqSearch").addEventListener("input",renderRules);$("#rqDoorF").addEventListener("change",renderRules);$("#rqModeF").addEventListener("change",renderRules);
@@ -4083,10 +4160,29 @@ async function boxSampler(){
   $("#askSugg").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;$("#askIn").value=b.textContent;$("#askForm").requestSubmit()});
   $("#askIn").addEventListener("keydown",ev=>{if(ev.key==="Enter"&&!ev.shiftKey){ev.preventDefault();$("#askForm").requestSubmit()}});
 
-  /* speak instead of typing: record here, Whisper on the box writes it down */
+  /* speak instead of typing. First choice: the browser's own speech typing (Chrome, Edge, Safari),
+     which writes as you talk. If the browser can't, record here and Whisper on the box writes it down. */
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  let BOX_STT=false,SR_BAD=false,live=null;
+  if(SR&&ON_BOX)$("#askMic").hidden=false;
   if(ON_BOX){
-    fetch("api/stt").then(r=>r.json()).then(j=>{if(j&&j.on)$("#askMic").hidden=false}).catch(()=>{});
+    fetch("api/stt").then(r=>r.json()).then(j=>{if(j&&j.on){BOX_STT=true;$("#askMic").hidden=false}}).catch(()=>{});
     let rec=null,sending=false;const mic=$("#askMic");
+    const setMic=on=>{mic.classList.toggle("rec",on);mic.title=on?"Stop":"Speak instead of typing";mic.setAttribute("aria-label",mic.title)};
+    function startLive(){
+      const box=$("#askIn"),base=box.value.trim();let finalT="",gotAny=false;
+      const r=new SR();r.lang="en-US";r.interimResults=true;r.continuous=true;r.maxAlternatives=1;
+      r.onresult=e=>{let interim="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)finalT+=t;else interim+=t}
+        gotAny=true;box.value=((base?base+" ":"")+finalT+interim).replace(/\s+/g," ").trimStart();box.scrollTop=box.scrollHeight};
+      r.onerror=e=>{
+        if(e.error==="not-allowed"||e.error==="service-not-allowed"||e.error==="network"||e.error==="audio-capture"){
+          if(e.error==="not-allowed"&&window.top!==window&&!BOX_STT){const d=help(`The microphone is blocked inside Home Assistant's frame. <button class="btn sm" type="button">Open Shul Doors in its own window</button> and press Speak there.`);d.querySelector("button").onclick=()=>window.open(location.href,"_blank")}
+          else if(BOX_STT){SR_BAD=true;live=null;setMic(false);startRec();return}
+          else help(e.error==="network"?"Speech typing needs the internet. Check the connection and try again.":"The microphone was not allowed. Allow it in the browser's site settings and try again.")}
+        else if(e.error==="no-speech")add("sys","I didn't hear anything. Click the microphone and talk.")};
+      r.onend=()=>{if(live===r){live=null;setMic(false);if(gotAny){box.value=box.value.trim();box.focus();box.setSelectionRange(box.value.length,box.value.length)}}};
+      try{r.start();live=r;setMic(true)}catch(e){if(BOX_STT){SR_BAD=true;startRec()}}
+    }
     const help=(html)=>{const d=add("sys","");d.innerHTML=html;return d};
     async function startRec(){
       if(!window.isSecureContext||!navigator.mediaDevices){help(`Chrome only allows the microphone on a secure page. On this PC, once: open a new tab, go to <b>chrome://flags/#unsafely-treat-insecure-origin-as-secure</b>, type <b>${esc((()=>{try{return window.top.location.origin}catch(e){return location.origin}})())}</b> in the box (add it after a comma if something is already there), set it to <b>Enabled</b>, and click <b>Relaunch</b>.`);return}
@@ -4118,7 +4214,7 @@ async function boxSampler(){
       catch(e){add("sys",e.message)}
       finally{sending=false;mic.disabled=false;mic.classList.remove("busy");mic.title="Speak instead of typing"}
     }
-    mic.onclick=()=>{if(sending)return;rec?stopRec():startRec()};
+    mic.onclick=()=>{if(sending)return;if(live){live.stop();return}if(rec){stopRec();return}if(SR&&!SR_BAD)startLive();else if(BOX_STT)startRec()};
   }
 
   /* helpers the tools share */

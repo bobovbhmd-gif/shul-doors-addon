@@ -24,6 +24,9 @@ Use restore, or take doors off one or two at a time.
 - Overrides people make in Protector.Net are never touched, and they count toward the panel's limit of 32 per door.
 - Opening or locking a door by hand, switching a situation, or setting the rabbi away reaches the doors within a few seconds; other changes within about 20 seconds.
 - **Buzz open** (super admins) unlocks a door for a few seconds, like the release button. It doesn't change any schedule and is written to the history.
+- **Open a door** on Home: tap it, pick a door, then Buzz open or open it for 5, 10, 20, 30 or 60 minutes.
+- **Live entries** (admins) shows the last 100 entries and door changes, newest first. While it's open the box reads the doors every few seconds.
+- **Speak instead of typing** uses the browser's own speech typing when it can (fast, writes as you talk) and falls back to Whisper on the box.
 - Every run reads everything back and compares it with the rules minute by minute.
 - If the box is off: holidays stay exact for as long as they were loaded (about a month); ordinary days slowly drift by the zmanim
   (about a minute a day), because the weekly schedule is not being rewritten.
