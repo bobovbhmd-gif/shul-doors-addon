@@ -1579,7 +1579,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
   </section>
   <section id="tab-reports" hidden>
     <div class="rp-bar">
-      <div class="seg" role="group" aria-label="Period" id="rpPer"><button type="button" data-per="0">Today</button><button type="button" data-per="7">7 days</button><button type="button" data-per="30">30 days</button><button type="button" data-per="90">90 days</button><button type="button" data-per="c">Dates</button></div>
+      <div class="seg" role="group" aria-label="Period" id="rpPer"><button type="button" data-per="0">Today</button><button type="button" data-per="y">Yesterday</button><button type="button" data-per="7">7 days</button><button type="button" data-per="30">30 days</button><button type="button" data-per="90">90 days</button><button type="button" data-per="c">Dates</button></div>
       <span class="rp-dates" id="rpDates" hidden><input type="date" id="rpFrom" aria-label="From"><span class="hint">to</span><input type="date" id="rpTo" aria-label="To"></span>
       <select id="rpDoor" aria-label="Doors"></select>
       <label class="search sm rp-who"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="rpWho" placeholder="Person" aria-label="Person"></label>
@@ -3481,6 +3481,7 @@ let RP={per:"30",from:"",to:"",door:"",who:"",res:"all",page:1};
 try{const v=localStorage.getItem("shulRpPer");if(v)RP.per=v}catch(e){}
 function rpRange(){const now=Date.now(),today=todayNY();let a,b=now,label;
   if(RP.per==="0"){a=nyToMs(today,0);label="today"}
+  else if(RP.per==="y"){a=nyToMs(addDays(today,-1),0);b=nyToMs(today,0);label="yesterday"}
   else if(RP.per==="c"&&RP.from){const to=RP.to&&RP.to>=RP.from?RP.to:RP.from;a=nyToMs(RP.from,0);b=Math.min(now,nyToMs(addDays(to,1),0));label="these dates"}
   else{const n=+RP.per||30;a=nyToMs(addDays(today,-(n-1)),0);label=`${n} days`}
   const len=Math.max(b-a,60000),pa=a-len,days=Math.min(400,Math.ceil((now-pa)/864e5)+1);
@@ -3557,14 +3558,14 @@ function drawReports(j,r){
 }
 let RP_SHOWN=[];
 function drawTrend(ok,den,r){
-  const today=RP.per==="0",cols=[];
+  const today=nyDate(r.a)===nyDate(r.b-1),cols=[];
   if(today){for(let h=0;h<24;h++)cols.push({k:h,label:h%3===0?["12a","3a","6a","9a","12p","3p","6p","9p"][h/3]:"",tip:`${fmt(h*60)} to ${fmt((h+1)*60)}`,n:0,d:0})}
   else{const s0=nyDate(r.a),s1=nyDate(r.b-1);for(let s=s0,i=0;s<=s1&&i<400;s=addDays(s,1),i++){const info=dayInfo(s),hol=dayChips(info).map(c=>c.label)[0];cols.push({k:s,shab:info.w===6||info.keys.has("yt_any"),label:"",tip:`${WDN[info.w]}, ${shortDate(s)}${hol?" · "+hol:""}`,n:0,d:0})}
     const step=Math.ceil(cols.length/(innerWidth<600?5:10));cols.forEach((c,i)=>{if(i%step===0||i===cols.length-1)c.label=`${+c.k.slice(5,7)}/${+c.k.slice(8)}`})}
   const idx=new Map(cols.map((c,i)=>[c.k,i])),key=e=>today?Math.floor(nyMinutes(e.t)/60):nyDate(e.t);
   ok.forEach(e=>{const i=idx.get(key(e));if(i!=null)cols[i].n++});den.forEach(e=>{const i=idx.get(key(e));if(i!=null)cols[i].d++});
   const mx=Math.max(1,...cols.map(c=>c.n)),stepV=niceStep(mx),lines=[];for(let v=stepV;v<=mx;v+=stepV)lines.push(v);
-  $("#rpTrendH").textContent=today?"Entries by hour, today":"Entries per day";
+  $("#rpTrendH").textContent=today?`Entries by hour, ${RP.per==="0"?"today":RP.per==="y"?"yesterday":dshort(r.a)}`:"Entries per day";
   const busiest=cols.reduce((m,c)=>c.n>m.n?c:m,cols[0]||{n:0});
   $("#rpTrendS").textContent=busiest&&busiest.n?`Busiest: ${busiest.tip.split(" · ")[0]} (${fmtN(busiest.n)})`:"";
   $("#rpTrend").innerHTML=`<div class="rp-cols" style="--n:${cols.length}">${lines.map(v=>`<i class="gl" style="bottom:${v/mx*100}%"><span>${fmtN(v)}</span></i>`).join("")}${cols.map((c,i)=>{const k="rt"+i;TIPS[k]=`<b>${esc(c.tip)}</b>${fmtN(c.n)} entr${c.n===1?"y":"ies"}${c.d?` · ${c.d} denied`:""}`;
