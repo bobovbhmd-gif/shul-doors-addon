@@ -213,8 +213,8 @@ async function sync({ client, engine, state, store, now = Date.now(), mode = "pr
   if (write && report.compare && report.compare.differ && report.compare.differ.length && mode !== "restore")
     report.warnings.push(`After sending, ${report.compare.differ.length} door(s) still differ from the rules: ${report.compare.differ.slice(0, 5).map((d) => d.door).join(", ")}`);
   // outputs: read only for now, at most every 6 hours
-  if (typeof client.probeOutputs === "function" && (!store.outputsAt || now - store.outputsAt > 6 * 3600e3 || !store.outputs)) {
-    try { store.outputs = await client.probeOutputs(); store.outputsAt = now; } catch (e) { store.outputs = { error: e.message }; store.outputsAt = now; }
+  if (typeof client.probeOutputs === "function" && (!store.outputsAt || now - store.outputsAt > 6 * 3600e3 || !store.outputs || store.outputsV !== 2)) {
+    try { store.outputs = await client.probeOutputs(); store.outputsAt = now; store.outputsV = 2; } catch (e) { store.outputs = { error: e.message }; store.outputsAt = now; }
   }
   report.outputs = store.outputs || null;
   report.ok = report.errors.length === 0;
