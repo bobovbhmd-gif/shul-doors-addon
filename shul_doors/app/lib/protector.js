@@ -115,6 +115,26 @@ function makeClient({ baseUrl, username, password, partitionId = null, log = () 
       return out;
     },
     // buzz doors open for their normal unlock time (like the release button); not a schedule change
+    // Read only: what Protector.Net says about outputs (relays), so output scheduling can be built
+    // on exactly how this server stores them. Nothing is changed.
+    async probeOutputs() {
+      const out = { tried: [], ops: [] };
+      const get = async (path, query) => {
+        try { const d = await call("GET", path, { query }); out.tried.push({ p: path, ok: true, got: JSON.stringify(d).slice(0, 1500) }); return d; }
+        catch (e) { out.tried.push({ p: path, ok: false, got: String(e.message).slice(0, 160) }); return null; }
+      };
+      const list = await get("/api/Outputs", { PartitionId: partitionId, PageNumber: 1, PerPage: 50 });
+      await get("/api/OutputTimeZones", { PartitionId: partitionId, PageNumber: 1, PerPage: 50 });
+      await get("/api/TimeSpanStates/OutputTimeZoneMode");
+      await get("/api/OneTimeRunTimeZones/Outputs", { PageNumber: 1, PerPage: 20 });
+      // each output's own schedule
+      const zoneIds = new Set();
+      for (const o of results(list)) for (const [k, v] of Object.entries(o || {})) if (/TimeZoneId$/i.test(k) && v != null) zoneIds.add(v);
+      for (const id of [...zoneIds].slice(0, 3)) await get(`/api/OutputTimeZones/${id}`);
+      // the server's list of API operations about outputs
+      try { const r = await raw("GET", "/metadata"); if (typeof r.data === "string") out.ops = [...new Set((r.data.match(/[A-Za-z]*Output[A-Za-z]*/g) || []))].slice(0, 80); } catch { /* not offered */ }
+      return out;
+    },
     async pulseDoors(ids) { return call("POST", "/api/PanelCommands/PulseDoor", { json: { DoorIds: ids.map(Number) } }); },
     async updatePanels() { return call("POST", "/api/PanelCommands/UpdateAll", { json: {} }); },
   };

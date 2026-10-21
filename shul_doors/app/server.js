@@ -316,6 +316,12 @@ function compareLines(c) {
     ...currentLines(c.current),
     ...(c.sample ? ["", "How Protector.Net reports a schedule (for checking):", "  " + JSON.stringify(c.sample).slice(0, 900)] : [])];
 }
+function outputLines(o) {
+  if (!o) return [];
+  if (o.error) return [`Outputs (read only): could not read (${o.error})`, ""];
+  return ["Outputs in Protector.Net (read only, nothing changed):", ...o.tried.map((t) => `  ${t.ok ? "OK" : "--"} ${t.p}: ${t.got}`),
+    ...(o.ops.length ? ["  Operations: " + o.ops.join(", ")] : []), ""];
+}
 function send(res, code, body, type = "application/json") {
   res.writeHead(code, { "Content-Type": type, "Cache-Control": "no-store" });
   res.end(type === "application/json" ? JSON.stringify(body) : body);
@@ -346,7 +352,7 @@ const server = http.createServer((req, res) => {
   if (req.method === "GET" && p === "/api/report") {
     const r = lastReport || {}; const lines = [`Mode: ${opts.mode}`, `Checked: ${r.at ? new Date(r.at).toLocaleString("en-US", { timeZone: "America/New_York" }) : "not yet"} (${r.reason || ""})`, "",
       `Problems (${(r.errors || []).length}):`, ...(r.errors || []).map((x) => "  " + x), "", `Notes (${(r.warnings || []).length}):`, ...(r.warnings || []).map((x) => "  " + x), "",
-      ...compareLines(r.compare), "",
+      ...compareLines(r.compare), "", ...outputLines(r.outputs),
       `${opts.mode === "practice" ? "Would do" : "Did"} (${(r.actions || []).length}):`, ...(r.actions || []).map((x) => "  " + x), "", "Special days loaded through:", ...Object.entries(r.loadedThrough || {}).map(([d, t]) => `  ${d}: ${t}`)];
     return send(res, 200, lines.join("\n"), "text/plain; charset=utf-8");
   }
