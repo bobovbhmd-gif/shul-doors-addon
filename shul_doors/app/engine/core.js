@@ -352,24 +352,39 @@ function carried(door,s){ // windows that started on an earlier day and are stil
 // Schedule rules for weekdays, holidays, dates and the rabbi may not run on the same door at
 // the same time; neither may two events or two situations. Events and situations
 // override the schedule on purpose, so those are not clashes.
-function scanAll(doors,from,days){
-  const out=[];DI_CACHE=new Map();
+// Rules that only run when the rabbi is away (or here), or when a situation is on, are
+// checked as if that were so on every day: the away dates or the situation can be set
+// later, long after the rules were saved, and a clash must never appear silently then.
+// So each day is checked twice: rabbi away, and rabbi here, with every situation on.
+// real=true checks only what will really happen (used by the box's report).
+function scanAll(doors,from,days,real){
+  const out=[],seen=new Set();DI_CACHE=new Map();
+  const allSits=new Set((S.situations||[]).map(x=>x.id));
+  const scen=real?[i=>i]:[i=>({...i,away:true,sits:allSits}),i=>({...i,away:false,sits:allSits})];
   try{
-    for(const door of doors){
+    for(const door of doors)for(const sc of scen){
       const list=[];
-      for(let i=0;i<days;i++){const s=addDays(from,i);resolve(door,dayInfo(s)).forEach(x=>list.push({x,st:i*1440+x.a,en:i*1440+x.b,s}))}
+      for(let i=0;i<days;i++){const s=addDays(from,i);resolve(door,sc(dayInfo(s))).forEach(x=>list.push({x,st:i*1440+x.a,en:i*1440+x.b,s}))}
       list.sort((p,q)=>p.st-q.st);
       for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length&&list[j].st<list[i].en;j++){
         const A=list[i],B=list[j];
         if(A.x.r.id===B.x.r.id||A.x.sc!==B.x.sc) continue;
         const off=daysBetween(from,B.s)*1440;
-        const ids=[A.x.r.id,B.x.r.id].map(String).sort();
-        out.push({key:door+"|"+B.s+"|"+ids.join("-"),pair:ids.join("-"),door,s:B.s,a:A.x.r,b:B.x.r,layer:A.x.sc,st:Math.max(A.st,B.st)-off,en:Math.min(A.en,B.en)-off});
+        const ids=[A.x.r.id,B.x.r.id].map(String).sort(),key=door+"|"+B.s+"|"+ids.join("-");
+        if(seen.has(key))continue;seen.add(key);
+        out.push({key,pair:ids.join("-"),door,s:B.s,a:A.x.r,b:B.x.r,layer:A.x.sc,st:Math.max(A.st,B.st)-off,en:Math.min(A.en,B.en)-off});
       }
     }
   }finally{DI_CACHE=null}
   return out;
 }
+// clashes grouped by the two rules, with the rule that runs today when nobody chose
+// (the one higher in the list)
+function clashPairs(list){const g={};
+  list.forEach(c=>{const p=g[c.pair]||(g[c.pair]={a:c.a,b:c.b,layer:c.layer,doors:new Set(),days:new Set(),first:c.s,st:c.st,en:c.en});
+    p.doors.add(c.door);p.days.add(c.s);if(c.s<p.first){p.first=c.s;p.st=c.st;p.en=c.en}});
+  const idx=r=>S.rules.findIndex(x=>String(x.id)===String(r.id));
+  return Object.values(g).map(p=>({...p,doors:[...p.doors],n:p.days.size,runs:idx(p.a)<=idx(p.b)?p.a:p.b}))}
 // try a change without keeping it: which new clashes it would cause, grouped by the two rules
 function trial(change,doors,from,days){
   const keep={rules:structuredClone(S.rules),events:structuredClone(S.events),hdates:structuredClone(S.hdates),gdates:structuredClone(S.gdates),groups:structuredClone(S.groups),situations:structuredClone(S.situations||[])};
@@ -383,7 +398,7 @@ function trial(change,doors,from,days){
   const pairs=Object.values(g).map(p=>({...p,doors:[...p.doors],n:p.days.size}));
   return {pairs,clashes:pairs.map(clashLine)};
 }
-function clashLine(p){return `${rn(p.a)} and ${rn(p.b)} both control ${p.doors.length>3?p.doors.length+" doors":p.doors.map(doorName).join(", ")} at the same time, ${p.n} day${p.n===1?"":"s"} a year. First time: ${WDN[dow(p.first)]}, ${shortDate(p.first)}, ${fmt(p.st)} to ${fmt(p.en)}`}
+function clashLine(p){return `${rn(p.a)} and ${rn(p.b)} both control ${p.doors.length>3?p.doors.length+" doors":p.doors.map(doorName).join(", ")} at the same time, ${p.n===1?"1 day":"up to "+p.n+" days"} a year. First time: ${WDN[dow(p.first)]}, ${shortDate(p.first)}, ${fmt(p.st)} to ${fmt(p.en)}`}
 // how the losing rule steps aside when the other one runs: it gives way to that rule
 // on the doors they share, on the days it runs there
 function exceptionFor(L,W,doors){

@@ -52,6 +52,9 @@ function createEngine({ state, calendar, now }) {
     info(date) { ctx.__s = date; return run(`(() => { const i = dayInfoRaw(__s); return { s: i.s, w: i.w, h: i.h, keys: [...i.keys], z: i.z, dst: i.dst, away: i.away, sits: [...i.sits] }; })()`); },
     // the Shabbos magnet (or another output) on one date: [{a,b,mode:"On"|"Off"}]
     output(o, date) { ctx.__o = o; ctx.__s = date; return run("outputDay(__o, __s)"); },
+    // rules that overlap on the same doors at the same time (nobody chose which one runs)
+    clashes(doors, from, days, real) { ctx.__d = doors; ctx.__s = from; ctx.__n = days; ctx.__real = !!real;
+      return run(`clashPairs(scanAll(__d, __s, __n, __real)).map(p => ({ line: clashLine(p), runs: rn(p.runs), doors: p.doors }))`); },
     doors() { return run("S.doors.map(d => ({ id: d.id, name: d.name, def: d.def }))"); },
     today() { return run("todayNY()"); },
     addDays(s, n) { ctx.__s = s; ctx.__n = n; return run("addDays(__s, __n)"); },

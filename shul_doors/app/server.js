@@ -123,13 +123,18 @@ async function pulse(door, user) {
     return { code: 200, body: { sent: false, message: "Protector.Net didn't accept it: " + e.message } };
   }
 }
+// two rules on the same door at the same time with no choice made: say so in every report
+function clashNotes() {
+  try { engine.setState(state); return engine.clashes(state.doors.map((d) => d.id), engine.today(), 60, true).map((c) => `Rules clash: ${c.line}. ${c.runs} runs until someone chooses. Open Rules in the app to choose.`); }
+  catch (e) { return ["Could not check the rules for clashes: " + e.message]; }
+}
 async function runSync(reason) {
   if (halted) return (lastReport = { at: Date.now(), mode: opts.mode, reason, actions: [], warnings: [], errors: [stateProblem], ok: false });
   if (syncing) { pendingSync = true; return lastReport; }
   syncing = true;
   try {
     if (!opts.protector_url || !opts.protector_username || !opts.protector_password) {
-      lastReport = { at: Date.now(), mode: opts.mode, actions: [], warnings: ["Protector.Net login not set yet. Enter it in the add-on's Configuration tab."], errors: [], ok: false };
+      lastReport = { at: Date.now(), mode: opts.mode, actions: [], warnings: ["Protector.Net login not set yet. Enter it in the add-on's Configuration tab.", ...clashNotes()], errors: [], ok: false };
       return lastReport;
     }
     const client = makeClient({ baseUrl: opts.protector_url, username: opts.protector_username, password: opts.protector_password, log });
@@ -140,6 +145,7 @@ async function runSync(reason) {
     engine.setState(state);
     const r = await sync({ client, engine, state, store, mode: opts.mode, pilotDoors, horizonDays: +opts.horizon_days, budget: +opts.budget, log });
     r.reason = reason;
+    r.warnings.push(...clashNotes());
     lastReport = r;
     writeJson("store.json", store);
     writeJson("last-report.json", r);
@@ -149,7 +155,7 @@ async function runSync(reason) {
     log(r.ok ? "info" : "warn", `sync (${reason}): ${r.actions.length} ${opts.mode === "practice" ? "would-do" : "done"} actions, ${r.errors.length} errors`);
     return r;
   } catch (e) {
-    lastReport = { at: Date.now(), mode: opts.mode, reason, actions: [], warnings: [], errors: [e.message], ok: false };
+    lastReport = { at: Date.now(), mode: opts.mode, reason, actions: [], warnings: clashNotes(), errors: [e.message], ok: false };
     writeJson("last-report.json", lastReport);
     log("error", `sync (${reason}) failed: ${e.message}`);
     return lastReport;
