@@ -22,7 +22,7 @@ const log = (level, msg) => console.log(`${new Date().toISOString()} ${level.toU
 
 const opts = { mode: "practice", sync_time: "00:30", horizon_days: 30, budget: 24, pilot_doors: "", ...readJson("options.json", {}) };
 if (!["practice", "pilot", "live", "restore"].includes(opts.mode)) opts.mode = "practice";
-const pilotDoors = String(opts.pilot_doors || "").split(/[\s,]+/).filter(Boolean);
+const pilotDoors = String(opts.pilot_doors || "").split(/[\s,]+/).filter(Boolean).map((x) => x.toUpperCase());   // "mag" works as well as "MAG"
 
 // ---------- calendar: about a year back and three years ahead, rebuilt monthly ----------
 function buildCalendar() {
