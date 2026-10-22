@@ -518,6 +518,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .buzzcard{margin-bottom:16px;padding:16px 18px}
 .bz-h{display:flex;align-items:center;gap:12px;margin-bottom:12px}.bz-h>div{flex:1;min-width:0}.bz-h b{display:block;font-size:17px;font-weight:650}.bz-h>div>span{font-size:13px;color:var(--muted)}
 .bz-q{margin-bottom:10px;max-width:360px}
+.mgc{display:inline-flex;align-items:center;gap:8px;flex:none}.mgc input{width:64px}.mgc select{max-width:none}
+@media (max-width:640px){.mgrow{flex-wrap:wrap}.mgrow .rt{flex-basis:100%}.mgc{width:100%}.mgc select{flex:1;min-width:0}}
 .buzzcard.closed{padding:0;overflow:hidden}
 .bz-open{display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;color:var(--fg);font:inherit;text-align:left;padding:14px 18px;cursor:pointer;min-height:64px}
 .bz-open:active{background:var(--fill2)}
@@ -1712,6 +1714,19 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
           <p class="gf">Alos 16.1°, tzeis 8.5°, plag and chatzos by the GRA.</p>
         </div>
 
+        <div class="panel admin-only" data-sp="magnet" data-ic="lock" data-c="var(--o)">
+          <h2>Shabbos magnet</h2>
+          <p class="gf" id="mgWhere"></p>
+          <div class="glist">
+            <div class="row mgrow"><div class="rt"><b>Turns off</b><span>Erev Shabbos and erev yom tov</span></div><span class="mgc"><input type="number" id="mgOffN" min="0" max="180" aria-label="Minutes"><span class="hint">min</span><select id="mgOffDir" aria-label="Before or after"><option value="-1">before candle lighting</option><option value="1">after candle lighting</option></select></span></div>
+            <div class="row mgrow"><div class="rt"><b>Turns back on</b><span>After Shabbos and yom tov</span></div><span class="mgc"><input type="number" id="mgOnN" min="0" max="180" aria-label="Minutes"><span class="hint">min after</span><select id="mgOnA" aria-label="After"><option value="rt">Rabbeinu Tam</option><option value="havdalah">havdalah</option><option value="tzeis">tzeis</option></select></span></div>
+          </div>
+          <h3 class="gh">Also off every week</h3>
+          <div class="glist" id="mgExtra"></div>
+          <h3 class="gh">Coming up</h3>
+          <div class="glist" id="mgNext"></div>
+          <p class="gf">Off whenever it is Shabbos or yom tov, including two days of yom tov and yom tov next to Shabbos. Protector.Net has no one-time changes for outputs, so the box rewrites the magnet's weekly schedule every night for the coming 7 days.</p>
+        </div>
         <div class="panel admin-only" data-sp="alerts" data-ic="bell" data-c="var(--r)">
           <h2>Alerts</h2>
           <h3 class="gh">Send alerts to</h3>
@@ -2062,6 +2077,18 @@ function zmanim(s){
   return {alos:zm(sunUTCms(s,true,106.1)),sunrise:netz,chatzos:zm((R+T)/2),plag:zm(T-1.25*(T-R)/12),
     sunset:shkia,candles:shkia-S.candleOff,tzeis:zm(sunUTCms(s,false,98.5)),havdalah:shkia+S.havOff,rt:shkia+S.rtOff};
 }
+
+/* ---------- outputs (the Shabbos magnet): Off whenever it is Shabbos or yom tov ---------- */
+function outHoly(s){return dow(s)===6||(CAL[s]||[]).includes("yt_any")}
+function outAt(x,z){return (x.a==="candles"?z.candles:x.a==="havdalah"?z.havdalah:x.a==="tzeis"?z.tzeis:x.a==="sunset"?z.sunset:z.rt)+(+x.o||0)}
+function outputDay(o,s){
+  const z=zmanim(s),arr=new Array(1440).fill("On");
+  const off=(a,b)=>{a=Math.max(0,Math.round(a));b=Math.min(1440,Math.round(b));for(let m=a;m<b;m++)arr[m]="Off"};
+  if(outHoly(s))off(0,outHoly(addDays(s,1))?1440:outAt(o.on,z));
+  else if(outHoly(addDays(s,1)))off(outAt(o.off,z),1440);
+  (o.extra||[]).forEach(x=>{if(x.d===dow(s))off(x.a,x.b)});
+  const segs=[];let a=0;for(let m=1;m<=1440;m++)if(m===1440||arr[m]!==arr[a]){segs.push({a,b:m,mode:arr[a]});a=m}
+  return segs}
 
 /* ---------- what is this day ---------- */
 function hdMatches(hd,h){
@@ -2796,8 +2823,28 @@ function renderHolNames(){
     return `<details class="hngrp" data-hng="${esc(g)}"${q||HN_OPEN.has(g)?" open":""}><summary class="gh">${esc(g)}<span>${[ren?ren+" renamed":"",hid?hid+" hidden":""].filter(Boolean).join(" · ")}</span></summary><div class="glist">${it.map(([k,l])=>{const hd=holHidden(k),used=holUses(k);return `<div class="row${hd?" hn-off":""}"><div class="rt"><input class="plain" data-hn="${k}" value="${esc(H[k]||l)}" placeholder="${esc(l)}" aria-label="Name for ${esc(l)}">${H[k]||hd||used?`<span>${[H[k]?"Built-in name: "+esc(l):"",hd?"Hidden from the rule list":"",used?`Used by ${used} rule${used>1?"s":""}`:""].filter(Boolean).join(" · ")}</span>`:""}</div>${H[k]?`<button class="btn sm" type="button" data-hnreset="${k}">Reset</button>`:""}${hd||!used?`<button class="btn sm" type="button" data-hnhide="${k}" aria-pressed="${hd}">${hd?"Show":"Hide"}</button>`:""}</div>`}).join("")}</div></details>`}).join("");
   $("#hnRows").innerHTML=html||emptyState("cal","Nothing matches","Try a different word.");
 }
+const DEF_OUTPUTS=[{id:"MAG",name:"Shabbos magnet",zone:"MAG SHABBOS OFF",where:"Output 3, Panel 04",off:{a:"candles",o:0},on:{a:"rt",o:10},extra:[{d:3,a:180,b:361},{d:4,a:180,b:420}]}];
+function mag(){if(!Array.isArray(S.outputs))S.outputs=structuredClone(DEF_OUTPUTS);return S.outputs[0]}
+// Off stretches from today on, joined across midnight
+function magPeriods(o,days){const t0=todayNY(),off=[];
+  for(let k=0;k<days;k++){const s=addDays(t0,k);for(const g of outputDay(o,s))for(let m=g.a;m<g.b;m++)off.push(g.mode==="Off")}
+  const out=[];let i=0;const at=n=>({d:addDays(t0,Math.floor(n/1440)),m:n%1440});
+  while(i<off.length){if(!off[i]){i++;continue}let j=i;while(j<off.length&&off[j])j++;const A=at(i),B=at(j);out.push({from:A.d,a:A.m,to:B.d,b:B.m});i=j}
+  return out}
+function renderMagnet(){
+  const o=mag(),b=typeof BOX_ST!=="undefined"&&BOX_ST;
+  const run=b&&(b.mode==="live"||(b.mode==="pilot"&&(b.pilotDoors||[]).includes(o.id)));
+  $("#mgWhere").innerHTML=`${esc(o.where||"")} · Protector.Net schedule "${esc(o.zone)}". `+(!ON_BOX?"Prototype.":run?"<b>Run by the box.</b>":`<b>Not run by the box yet.</b> To start, add <b>${esc(o.id)}</b> to pilot_doors in the add-on settings.`);
+  $("#mgOffN").value=Math.abs(o.off.o||0);$("#mgOffDir").value=(o.off.o||0)>0?"1":"-1";
+  $("#mgOnN").value=o.on.o||0;$("#mgOnA").value=o.on.a;
+  $("#mgExtra").innerHTML=(o.extra||[]).map((x,i)=>`<div class="row"><span class="ic" style="--c:var(--gray)">${ico("clock")}</span><div class="rt"><b>${WDN[x.d]}, ${fmt(x.a)} to ${fmt(x.b)}</b><span>Copied from Protector.Net</span></div><button class="btn sm danger" type="button" data-mgx="${i}">Remove</button></div>`).join("")||`<div class="row"><span class="hint">Nothing else.</span></div>`;
+  const per=magPeriods(o,45).filter(p=>!(p.from===p.to&&(o.extra||[]).some(x=>x.d===dow(p.from)&&x.a===p.a&&x.b===p.b))).slice(0,6);
+  $("#mgNext").innerHTML=per.map(p=>{const hol=[p.from,addDays(p.from,1)].map(d=>dow(d)===6?"Shabbos":((CAL[d]||[]).find(k=>FEST[k]&&k!=="yt_any"&&(CAL[d]||[]).includes("yt_any"))||"")).find(Boolean)||"";
+    const name=hol==="Shabbos"||!hol?hol:festName(hol);
+    return `<div class="row"><span class="ic" style="--c:var(--o)">${ico("lock")}</span><div class="rt"><b>Off ${WDN[dow(p.from)]} ${esc(shortDate(p.from).replace(/, \d{4}$/,""))}, ${fmt(p.a)}</b><span>Back on ${WDN[dow(p.to)]} ${esc(shortDate(p.to).replace(/, \d{4}$/,""))}, ${fmt(p.b)}${name?" · "+esc(name):""}</span></div></div>`}).join("")||`<div class="row"><span class="hint">Nothing in the next weeks.</span></div>`;
+}
 function renderSetup(){
-  renderHolNames();
+  renderHolNames();renderMagnet();
   $("#doorRows").innerHTML=S.doors.map((d,i)=>`<div class="row"><span class="ic" style="--c:${modeColor(d.def)}">${ico(modeIco(d.def))}</span><div class="rt"><input class="plain" value="${esc(d.name)}" data-dname="${i}" aria-label="Name for ${esc(d.id)}"><span>${esc(d.id)}</span></div>
     <select data-ddef="${i}" aria-label="Default for ${esc(d.id)}">${MODES.map(m=>`<option value="${m}"${m===d.def?" selected":""}>${esc(modeLabel(m))}</option>`).join("")}</select><button class="btn sm danger" type="button" data-ddel="${i}">Remove</button></div>`).join("");
   $("#groupRows").innerHTML=S.groups.map(g=>`<div class="glist gblock"><div class="row"><span class="ic" style="--c:var(--teal)">${ico("grid")}</span><div class="rt"><b>${esc(g.name)}</b><span>${g.doors.length} door${g.doors.length===1?"":"s"}</span></div><button class="btn sm danger" type="button" data-gdel="${esc(g.id)}">Remove</button></div>
@@ -3625,7 +3672,7 @@ function renderLog(){
 }
 function renderAll(){renderView();renderSituations();renderHealth();renderReports();renderRequests();renderCodes();renderVendors();renderNotes();renderStatus();renderOverride();renderBoard();renderHero();renderBuzzCard();renderPreview();renderRules();renderBulk();renderEvents();renderSheet();renderSetup();renderAg();renderLog()}
 /* ---------- history: every change saves a dated copy of the settings ---------- */
-const CFG=["situations","rules","doors","groups","accessGroups","types","events","hdates","gdates","away","rabbiAwayNow","rabbiAwaySince","candleOff","havOff","rtOff"];
+const CFG=["outputs","situations","rules","doors","groups","accessGroups","types","events","hdates","gdates","away","rabbiAwayNow","rabbiAwaySince","candleOff","havOff","rtOff"];
 function snapshot(){const c={};CFG.forEach(k=>c[k]=structuredClone(S[k]));return c}
 function snap(text){if(!S.versions||!S.versions.length)S.versions=[{t:Date.UTC(2026,9,1,4,0),u:S.me,text:"Example: first settings saved",cfg:snapshot()}];S.versions.push({t:Date.now(),u:S.me,text,cfg:snapshot()});if(S.versions.length>200)S.versions.shift()}
 function commit(text){if(text){log(text);snap(text)}save();renderAll()}
@@ -3915,6 +3962,12 @@ $("#groupRows").addEventListener("click",ev=>{const gd=ev.target.closest("[data-
   if(!armed(b))return;
   S.groups=S.groups.filter(x=>x!==g);
   S.rules.forEach(r=>r.doors=r.doors.filter(d=>d!=="g:"+g.id));commit(`Removed door group "${g.name}"`)});
+$("#mgOffN").addEventListener("change",e=>{const o=mag(),n=Math.max(0,Math.min(180,+e.target.value||0));o.off={a:"candles",o:n*(+$("#mgOffDir").value)};commit(`Shabbos magnet turns off ${n?n+" min "+(o.off.o>0?"after":"before")+" ":"at "}candle lighting`)});
+$("#mgOffDir").addEventListener("change",()=>$("#mgOffN").dispatchEvent(new Event("change")));
+const MG_ON={rt:"Rabbeinu Tam",havdalah:"havdalah",tzeis:"tzeis"};
+$("#mgOnN").addEventListener("change",e=>{const o=mag(),n=Math.max(0,Math.min(180,+e.target.value||0));o.on={a:$("#mgOnA").value,o:n};commit(`Shabbos magnet turns back on ${n} min after ${MG_ON[o.on.a]}`)});
+$("#mgOnA").addEventListener("change",()=>$("#mgOnN").dispatchEvent(new Event("change")));
+$("#mgExtra").addEventListener("click",e=>{const b=e.target.closest("[data-mgx]");if(!b)return;if(!armed(b))return;const o=mag(),x=o.extra[+b.dataset.mgx];o.extra.splice(+b.dataset.mgx,1);commit(`Shabbos magnet: removed weekly off time ${WDN[x.d]} ${fmt(x.a)} to ${fmt(x.b)}`)});
 $("#candleOff").addEventListener("change",e=>{S.candleOff=+e.target.value||0;commit(`Candle lighting set to ${S.candleOff} min`)});
 $("#havOff").addEventListener("change",e=>{S.havOff=+e.target.value||0;commit(`Havdalah set to ${S.havOff} min`)});
 $("#rtOff").addEventListener("change",e=>{S.rtOff=+e.target.value||0;commit(`Rabbeinu Tam set to ${S.rtOff} min`)});

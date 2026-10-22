@@ -86,7 +86,7 @@ async function sync({ client, engine, state, store, now = Date.now(), mode = "pr
   }
   const known = state.doors.map((d) => d.id).filter((id) => byOur.has(id));
   if (missing.length) report.warnings.push(`Not found in Protector.Net: ${missing.join(", ")}`);
-  if (mode === "pilot") { const unknown = pilotDoors.filter((id) => !known.includes(id) && !dup.has(id)); if (unknown.length) report.warnings.push(`Pilot doors not found: ${unknown.join(", ")}. Check the spelling in the add-on settings.`); }
+  if (mode === "pilot") { const outIds = outputsOf(state).map((o) => o.id); const unknown = pilotDoors.filter((id) => !known.includes(id) && !dup.has(id) && !outIds.includes(id)); if (unknown.length) report.warnings.push(`Pilot doors not found: ${unknown.join(", ")}. Check the spelling in the add-on settings.`); }
   const managed = mode === "restore" ? [] : mode === "pilot" ? known.filter((id) => pilotDoors.includes(id)) : known;
 
   const tzs = await client.timeZones();
@@ -198,6 +198,10 @@ async function sync({ client, engine, state, store, now = Date.now(), mode = "pr
     if (n) report.actions.push(`removed ${n} old overrides that already ended`);
   }
 
+  // outputs (the Shabbos magnet)
+  try { if (await syncOutputs({ client, engine, state, store, mode, pilotDoors, report, act, write })) changed = true; }
+  catch (e) { report.warnings.push("Outputs: could not check (" + e.message + ")"); }
+
   // The push to the panels is remembered until it succeeds, so a failed push is
   // retried on the next run even if nothing else needs to change.
   if (changed && write) store.needUpdate = true;
@@ -212,16 +216,12 @@ async function sync({ client, engine, state, store, now = Date.now(), mode = "pr
   catch (e) { report.compare = { error: e.message }; }
   if (write && report.compare && report.compare.differ && report.compare.differ.length && mode !== "restore")
     report.warnings.push(`After sending, ${report.compare.differ.length} door(s) still differ from the rules: ${report.compare.differ.slice(0, 5).map((d) => d.door).join(", ")}`);
-  // outputs: read only for now, at most every 6 hours
-  if (typeof client.probeOutputs === "function" && (!store.outputsAt || now - store.outputsAt > 6 * 3600e3 || !store.outputs || store.outputsV !== 2)) {
-    try { store.outputs = await client.probeOutputs(); store.outputsAt = now; store.outputsV = 2; } catch (e) { store.outputs = { error: e.message }; store.outputsAt = now; }
-  }
-  report.outputs = store.outputs || null;
   report.ok = report.errors.length === 0;
   return report;
 }
 
 const { API_MODE, DOW } = require("./planner");
+const { syncOutputs, outputsOf } = require("./outputs");
 const { localMinute, dayInstants } = require("./time");
 const LABEL = { Unlock: "Open", CardOrPin: "Card or PIN", Card: "Card only", Pin: "PIN only", CardAndPin: "Card and PIN", UnlockWithFirstCardIn: "First credential in", Lockdown: "Lockdown", DualCard: "Dual card" };
 

@@ -26,6 +26,7 @@ Use restore, or take doors off one or two at a time.
 - **Buzz open** (super admins) unlocks a door for a few seconds, like the release button. It doesn't change any schedule and is written to the history.
 - **Open a door** on Home: tap it, pick a door, then Buzz open or open it for 5, 10, 20, 30 or 60 minutes.
 - **Live entries** (admins) shows the last 100 entries and door changes, newest first. While it's open the box reads the doors every few seconds.
+- **Shabbos magnet** (Settings): the magnet output is Off from candle lighting until a set time after Shabbos or yom tov ends, including two-day yom tov. Protector.Net has no one-time changes for outputs, so the box rewrites the output's weekly schedule every night for the coming 7 days. To let the box run it in pilot, add `MAG` to pilot_doors. Taking it off the list puts back the schedule it had before.
 - **Speak instead of typing** uses the browser's own speech typing when it can (fast, writes as you talk) and falls back to Whisper on the box.
 - Every run reads everything back and compares it with the rules minute by minute.
 - If the box is off: holidays stay exact for as long as they were loaded (about a month); ordinary days slowly drift by the zmanim

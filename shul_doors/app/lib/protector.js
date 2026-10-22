@@ -137,6 +137,9 @@ function makeClient({ baseUrl, username, password, partitionId = null, log = () 
       try { const r = await raw("GET", "/metadata"); if (typeof r.data === "string") out.ops = [...new Set((r.data.match(/[A-Za-z]*Output[A-Za-z]*/g) || []))].slice(0, 80); } catch { /* not offered */ }
       return out;
     },
+    async outputZones() { return pages("/api/OutputTimeZones", { PartitionId: partitionId, PerPage: 100 }); },
+    async outputZoneSpans(id) { const d = await call("GET", `/api/OutputTimeZones/${id}`); const r = (d && d.Result) || d; return (r && r.TimeSpans) || []; },
+    async setOutputZoneSpans(id, spans) { return call("PUT", `/api/OutputTimeZones/${id}/TimeSpans`, { json: { Id: Number(id), TimeSpans: spans } }); },
     async pulseDoors(ids) { return call("POST", "/api/PanelCommands/PulseDoor", { json: { DoorIds: ids.map(Number) } }); },
     async updatePanels() { return call("POST", "/api/PanelCommands/UpdateAll", { json: {} }); },
   };

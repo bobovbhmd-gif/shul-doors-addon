@@ -7,6 +7,7 @@ const fs = require("fs");
 const path = require("path");
 const { execFile } = require("child_process");
 const { createEngine } = require("./engine/load");
+const { outputReportLines } = require("./lib/outputs");
 const { makeClient } = require("./lib/protector");
 const { sync } = require("./lib/sync");
 const { localDate } = require("./lib/time");
@@ -352,7 +353,7 @@ const server = http.createServer((req, res) => {
   if (req.method === "GET" && p === "/api/report") {
     const r = lastReport || {}; const lines = [`Mode: ${opts.mode}`, `Checked: ${r.at ? new Date(r.at).toLocaleString("en-US", { timeZone: "America/New_York" }) : "not yet"} (${r.reason || ""})`, "",
       `Problems (${(r.errors || []).length}):`, ...(r.errors || []).map((x) => "  " + x), "", `Notes (${(r.warnings || []).length}):`, ...(r.warnings || []).map((x) => "  " + x), "",
-      ...compareLines(r.compare), "", ...outputLines(r.outputs),
+      ...compareLines(r.compare), "", ...outputReportLines(r.outputs2),
       `${opts.mode === "practice" ? "Would do" : "Did"} (${(r.actions || []).length}):`, ...(r.actions || []).map((x) => "  " + x), "", "Special days loaded through:", ...Object.entries(r.loadedThrough || {}).map(([d, t]) => `  ${d}: ${t}`)];
     return send(res, 200, lines.join("\n"), "text/plain; charset=utf-8");
   }

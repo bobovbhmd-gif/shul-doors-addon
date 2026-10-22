@@ -175,6 +175,18 @@ function zmanim(s){
     sunset:shkia,candles:shkia-S.candleOff,tzeis:zm(sunUTCms(s,false,98.5)),havdalah:shkia+S.havOff,rt:shkia+S.rtOff};
 }
 
+/* ---------- outputs (the Shabbos magnet): Off whenever it is Shabbos or yom tov ---------- */
+function outHoly(s){return dow(s)===6||(CAL[s]||[]).includes("yt_any")}
+function outAt(x,z){return (x.a==="candles"?z.candles:x.a==="havdalah"?z.havdalah:x.a==="tzeis"?z.tzeis:x.a==="sunset"?z.sunset:z.rt)+(+x.o||0)}
+function outputDay(o,s){
+  const z=zmanim(s),arr=new Array(1440).fill("On");
+  const off=(a,b)=>{a=Math.max(0,Math.round(a));b=Math.min(1440,Math.round(b));for(let m=a;m<b;m++)arr[m]="Off"};
+  if(outHoly(s))off(0,outHoly(addDays(s,1))?1440:outAt(o.on,z));
+  else if(outHoly(addDays(s,1)))off(outAt(o.off,z),1440);
+  (o.extra||[]).forEach(x=>{if(x.d===dow(s))off(x.a,x.b)});
+  const segs=[];let a=0;for(let m=1;m<=1440;m++)if(m===1440||arr[m]!==arr[a]){segs.push({a,b:m,mode:arr[a]});a=m}
+  return segs}
+
 /* ---------- what is this day ---------- */
 function hdMatches(hd,h){
   if(!h) return false;
