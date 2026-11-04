@@ -267,6 +267,35 @@ function whisper(pcm) {   // pcm: 16 kHz, 16-bit, mono
     });
   });
 }
+// Better speech to text: OpenAI's transcription, when a key is entered in the add-on settings.
+// It is told the shul's words (door names, zmanim, holidays) so it spells them right.
+const STT_URL = process.env.SD_STT_URL || "https://api.openai.com/v1/audio/transcriptions";
+const STT_MODEL = opts.stt_model || "gpt-4o-transcribe";
+function sttWords() {
+  const doors = ((state && state.doors) || []).map((d) => d.name).join(", ");
+  return `A gabbai is talking to a synagogue door system in Brooklyn. Words used: Shabbos, Yom Tov, Rabbeinu Tam, shkiah, candle lighting, havdalah, zmanim, Mikvah, Rov, Rabbi, sukkah, Shacharis, Mincha, Maariv, Rosh Chodesh, Chol Hamoed, Pesach, Shavuos, Sukkos, Rosh Hashana, Yom Kippur, kiddush, sheva brachos, bar mitzvah, levaya, Card or PIN, override, pilot. Doors: ${doors}.`.slice(0, 2000);
+}
+function wav(pcm) {   // 16 kHz, 16-bit, mono
+  const h = Buffer.alloc(44);
+  h.write("RIFF", 0); h.writeUInt32LE(36 + pcm.length, 4); h.write("WAVE", 8); h.write("fmt ", 12); h.writeUInt32LE(16, 16);
+  h.writeUInt16LE(1, 20); h.writeUInt16LE(1, 22); h.writeUInt32LE(16000, 24); h.writeUInt32LE(32000, 28); h.writeUInt16LE(2, 32); h.writeUInt16LE(16, 34);
+  h.write("data", 36); h.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([h, pcm]);
+}
+async function cloudStt(pcm) {
+  const b = "----sd" + Date.now().toString(36);
+  const part = (name, value) => Buffer.from(`--${b}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`);
+  const body = Buffer.concat([part("model", STT_MODEL), part("language", "en"), part("prompt", sttWords()),
+    Buffer.from(`--${b}\r\nContent-Disposition: form-data; name="file"; filename="speech.wav"\r\nContent-Type: audio/wav\r\n\r\n`), wav(pcm), Buffer.from(`\r\n--${b}--\r\n`)]);
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 45000);
+  try {
+    const r = await fetch(STT_URL, { method: "POST", headers: { Authorization: "Bearer " + opts.openai_api_key, "Content-Type": "multipart/form-data; boundary=" + b }, body, signal: ctl.signal });
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 401) throw new Error("The OpenAI key in the add-on settings was not accepted.");
+    if (!r.ok) throw new Error("OpenAI speech answered " + r.status + (j.error && j.error.message ? ": " + j.error.message.slice(0, 120) : ""));
+    return String(j.text || "").trim();
+  } finally { clearTimeout(t); }
+}
 function whisperUp() {
   return new Promise((resolve) => { const s = require("net").connect(WHISPER_PORT, WHISPER_HOST); const t = setTimeout(() => { s.destroy(); resolve(false); }, 1500);
     s.on("connect", () => { clearTimeout(t); s.destroy(); resolve(true); }); s.on("error", () => { clearTimeout(t); resolve(false); }); });
@@ -378,14 +407,22 @@ const server = http.createServer((req, res) => {
     for (const line of text.split("\n")) { if (!line) continue; try { const x = JSON.parse(line); if (x.at >= from) out.push(x); } catch { /* skip */ } }
     return send(res, 200, { runs: out.slice(-5000) });
   }
-  if (req.method === "GET" && p === "/api/stt") { whisperUp().then((on) => send(res, 200, { on })); return; }
+  if (req.method === "GET" && p === "/api/stt") {
+    if (opts.openai_api_key) return send(res, 200, { on: true, engine: "openai" });
+    whisperUp().then((on) => send(res, 200, { on, engine: on ? "whisper" : null })); return;
+  }
   if (req.method === "POST" && p === "/api/stt") {
     const chunks = []; let size = 0;
     req.on("data", (c) => { size += c.length; if (size <= 4e6) chunks.push(c); });
     req.on("end", async () => {
       if (size > 4e6) return send(res, 413, { error: "Recording too long. Keep it under two minutes." });
       if (size < 3200) return send(res, 400, { error: "Nothing was recorded." });
-      try { send(res, 200, { text: await whisper(Buffer.concat(chunks)) }); }
+      const pcm = Buffer.concat(chunks);
+      if (opts.openai_api_key) {
+        try { return send(res, 200, { text: await cloudStt(pcm), engine: "openai" }); }
+        catch (e) { log("warn", "speech (OpenAI): " + e.message); if (!(await whisperUp())) return send(res, 502, { error: e.message }); }
+      }
+      try { send(res, 200, { text: await whisper(pcm), engine: "whisper" }); }
       catch (e) { log("warn", "speech: " + e.message); send(res, 502, { error: "The speech engine (Whisper) did not answer. Check that it is installed and running in Home Assistant." }); }
     });
     return;
@@ -394,9 +431,9 @@ const server = http.createServer((req, res) => {
   if (req.method === "POST" && p === "/api/ai") {
     if (!opts.anthropic_api_key) return send(res, 503, { code: "not_declared" });
     const chunks = []; let size = 0;
-    req.on("data", (c) => { size += c.length; if (size < 600000) chunks.push(c); });
+    req.on("data", (c) => { size += c.length; if (size < 12e6) chunks.push(c); });   // room for a few screenshots
     req.on("end", async () => {
-      if (size >= 600000) return send(res, 413, { code: "too_long" });
+      if (size >= 12e6) return send(res, 413, { code: "too_long" });
       let body; try { body = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { return send(res, 400, { code: "error" }); }
       if (!Array.isArray(body.messages) || !body.messages.length) return send(res, 400, { code: "error" });
       const r = await aiAsk(body); send(res, r.status, r.body);

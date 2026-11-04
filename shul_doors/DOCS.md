@@ -27,7 +27,8 @@ Use restore, or take doors off one or two at a time.
 - **Open a door** on Home: tap it, pick a door, then Buzz open or open it for 5, 10, 20, 30 or 60 minutes.
 - **Live entries** (admins) shows the last 100 entries and door changes, newest first. While it's open the box reads the doors every few seconds.
 - **Shabbos magnet** (Settings): the magnet output is Off from candle lighting until a set time after Shabbos or yom tov ends, including two-day yom tov. Protector.Net has no one-time changes for outputs, so the box rewrites the output's weekly schedule every night for the coming 7 days. To let the box run it in pilot, add `MAG` to pilot_doors. Taking it off the list puts back the schedule it had before.
-- **Speak instead of typing** uses the browser's own speech typing when it can (fast, writes as you talk) and falls back to Whisper on the box.
+- **Speak instead of typing**: with an OpenAI key in `openai_api_key` (Configuration), speech goes to OpenAI's transcription (model in `stt_model`, about $0.006 a minute), which is told the shul's door names and words like Shabbos and Rabbeinu Tam so it spells them right. Without a key, the browser's own speech typing is used when it can, then Whisper on the box.
+- **Screenshots in the assistant**: tap the paperclip, paste (Ctrl+V) or drop up to 4 pictures. They are made smaller before sending.
 - Every run reads everything back and compares it with the rules minute by minute.
 - If the box is off: holidays stay exact for as long as they were loaded (about a month); ordinary days slowly drift by the zmanim
   (about a minute a day), because the weekly schedule is not being rewritten.
