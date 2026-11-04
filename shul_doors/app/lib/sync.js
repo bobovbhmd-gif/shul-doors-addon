@@ -260,7 +260,7 @@ async function compareDoors({ client, engine, ids, byOur, now, today }) {
     out.checked++;
     let minutes = 0, first = null;
     for (const date of [today, tomorrow]) {
-      const segs = engine.day(id, date), dow = DOW[engine.dow(date)];
+      const segs = engine.day(id, date, { withOverrides: true }), dow = DOW[engine.dow(date)];   // a door opened by hand is supposed to be open
       const daySp = sp.filter((x) => x.d === dow), inst = dayInstants(date);
       const from = date === today ? localMinute(now) + 1 : 0;
       for (let m = from; m < 1440; m++) {

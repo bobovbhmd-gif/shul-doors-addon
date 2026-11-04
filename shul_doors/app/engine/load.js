@@ -31,22 +31,22 @@ function createEngine({ state, calendar, now }) {
     // Minute-by-minute plan for one door on one date, as [{a,b,mode,rule,via}]
     // a,b are minutes from midnight (b exclusive). Manual overrides are left out:
     // the box sends those to the doors separately, right away.
-    day(door, date, { plain = false } = {}) {
+    day(door, date, { plain = false, withOverrides = false } = {}) {
       const today = run("todayNY()");
       if (today !== cacheDay) { cache = new Map(); cacheDay = today; }   // answers depend on "today"; keep only today's
-      const key = door + "|" + date + "|" + plain;
+      const key = door + "|" + date + "|" + plain + "|" + withOverrides;
       if (cache.has(key)) return cache.get(key);
-      const r = this._day(door, date, plain);
+      const r = this._day(door, date, plain, withOverrides);
       if (cache.size > 50000) cache = new Map();
       cache.set(key, r); return r;
     },
-    _day(door, date, plain) {
-      ctx.__d = door; ctx.__s = date; ctx.__plain = plain;
-      return run(`(() => { PLAIN = __plain; NO_OV = true; DI_CACHE = new Map();
+    _day(door, date, plain, withOverrides) {
+      ctx.__d = door; ctx.__s = date; ctx.__plain = plain; ctx.__ov = !!withOverrides;
+      return run(`(() => { PLAIN = __plain; NO_OV = !__ov; DI_CACHE = new Map();
         try {
           return daySegments(__d, __s).map(g => ({ a: g.a, b: g.b,
             mode: g.c.ov ? g.c.ov.mode : g.c.r.mode,
-            rule: g.c.isDef ? "Default" : g.c.r.name, via: g.c.src || "" }));
+            rule: g.c.ov ? "By hand" : g.c.isDef ? "Default" : g.c.r.name, via: g.c.src || "" }));
         } finally { PLAIN = false; NO_OV = false; DI_CACHE = null; } })()`);
     },
     info(date) { ctx.__s = date; return run(`(() => { const i = dayInfoRaw(__s); return { s: i.s, w: i.w, h: i.h, keys: [...i.keys], z: i.z, dst: i.dst, away: i.away, sits: [...i.sits] }; })()`); },
