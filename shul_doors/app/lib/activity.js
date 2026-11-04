@@ -33,7 +33,10 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
   const isLogSensor = (s) => s && typeof s.entity_id === "string" && s.entity_id.startsWith("sensor.") && s.attributes && "Door ID" in s.attributes && "Reader Message" in s.attributes;
 
   // a door's reader mode changing (the schedule opening it, locking it, or someone changing it by hand)
-  const isModeSensor = (s) => s && typeof s.entity_id === "string" && /^sensor\..+_reader_mode$/.test(s.entity_id);
+  // by its id (sensor.x_reader_mode, or _reader_mode_2 when Home Assistant had to add a number)
+  // or by its name ("... Reader Mode"), so a renamed door is still found
+  const isModeSensor = (s) => s && typeof s.entity_id === "string" && s.entity_id.startsWith("sensor.") &&
+    (/_reader_mode(_\d+)?$/.test(s.entity_id) || /\sReader Mode$/i.test(String((s.attributes || {}).friendly_name || "")));
   function recordMode(entity, st, fromMs) {
     const mode = String(st.state || "");
     if (!mode || /^(unknown|unavailable|none)$/i.test(mode)) return false;
@@ -67,6 +70,7 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
     return true;
   }
 
+  const backfilled = new Set();   // mode sensors already read back 10 days since this start
   let lastNote = "";
   const note = (lvl, msg) => { if (msg !== lastNote) { lastNote = msg; log(lvl, "activity: " + msg); } };
   async function poll() {
@@ -89,13 +93,15 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
         const hist = await api(`/history/period/${encodeURIComponent(from)}?filter_entity_id=${encodeURIComponent(ids)}&end_time=${encodeURIComponent(new Date(t0).toISOString())}&significant_changes_only=0`);
         for (const list of Array.isArray(hist) ? hist : []) for (const st of Array.isArray(list) ? list : []) if (record(st.entity_id, st)) added++;
       }
-      // reader modes: the first time, go back as far as Home Assistant remembers
-      const mFrom = events.some((e) => e.kind === "mode") ? from : new Date(t0 - 10 * 864e5).toISOString();
-      for (let i = 0; i < modeSensors.length; i += 20) {
-        const ids = modeSensors.slice(i, i + 20).join(",");
+      // reader modes: a sensor seen for the first time goes back as far as Home Assistant remembers
+      const known = new Set(events.filter((e) => e.kind === "mode").map((e) => e.k.split("|")[0]));
+      const old = modeSensors.filter((id) => known.has(id) || backfilled.has(id)), fresh = modeSensors.filter((id) => !known.has(id) && !backfilled.has(id));
+      for (const [group, mFrom] of [[old, from], [fresh, new Date(t0 - 10 * 864e5).toISOString()]]) for (let i = 0; i < group.length; i += 20) {
+        const ids = group.slice(i, i + 20).join(",");
         const hist = await api(`/history/period/${encodeURIComponent(mFrom)}?filter_entity_id=${encodeURIComponent(ids)}&end_time=${encodeURIComponent(new Date(t0).toISOString())}&significant_changes_only=0`);
         for (const list of Array.isArray(hist) ? hist : []) for (const st of Array.isArray(list) ? list : []) if (recordMode(st.entity_id, st, Date.parse(mFrom))) added++;
       }
+      fresh.forEach((id) => backfilled.add(id));
       lastPoll = t0;
       if (added) log("info", `activity: ${added} new door entries`);
       prune();
@@ -137,8 +143,11 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
   // events for the Reports page, with the shul's door number (D301...) when known
   function list(days, idOfPid, idOfName, kind) {
     const from = now() - days * 864e5;
+    // a door's mode sensor is matched by its name, or else by its id (sensor.9d604_..._reader_mode
+    // is 9D604), since Home Assistant may put the Protector.Net door name in front of it
+    const byEntity = (k) => { const m = /^sensor\.([a-z0-9]+)_/.exec(String(k).split("|")[0]); return m ? idOfName(m[1].toUpperCase()) : null; };
     return events.filter((e) => e.t >= from && (!kind || (e.kind || "entry") === kind)).map((e) => e.kind === "mode"
-      ? { t: e.t, kind: "mode", door: idOfName(e.door) || null, doorName: e.door, mode: e.mode }
+      ? { t: e.t, kind: "mode", door: idOfName(e.door) || byEntity(e.k) || null, doorName: e.door, mode: e.mode }
       : { t: e.t, door: idOfName(e.door) || (e.pid != null && idOfPid(e.pid)) || null, doorName: e.door, who: e.who, ok: e.ok });
   }
   return { poll, quick, list, status: () => ({ ...status, count: events.length }) };
