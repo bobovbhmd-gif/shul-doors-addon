@@ -519,6 +519,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .buzzcard{margin-bottom:16px;padding:16px 18px}
 .bz-h{display:flex;align-items:center;gap:12px;margin-bottom:12px}.bz-h>div{flex:1;min-width:0}.bz-h b{display:block;font-size:17px;font-weight:650}.bz-h>div>span{font-size:13px;color:var(--muted)}
 .bz-q{margin-bottom:10px;max-width:360px}
+@media (min-width:700px){.hero .chip.shk{display:none}}
+.bz-foot{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
 .mgc{display:inline-flex;align-items:center;gap:8px;flex:none}.mgc input{width:64px}.mgc select{max-width:none}
 @media (max-width:640px){.mgrow{flex-wrap:wrap}.mgrow .rt{flex-basis:100%}.mgc{width:100%}.mgc select{flex:1;min-width:0}}
 .buzzcard.closed{padding:0;overflow:hidden}
@@ -1006,6 +1008,12 @@ details.row .permgrid{padding-bottom:14px}
 #alertChecks .rt input[type=number]{width:60px;padding:2px 6px;text-align:center}
 /* home */
 .homecols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px}
+.homegrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+.homegrid .hcol{min-width:0;display:flex;flex-direction:column}
+.homegrid .hero,.homegrid .upcard,.homegrid .buzzcard{margin:0 0 16px}
+.homegrid .hcol>div>.gh:first-child{margin-top:8px}
+@media (max-width:899px){.homegrid{display:flex;flex-direction:column;align-items:stretch;gap:0}.homegrid .hcol>.hsys>.gh{margin-top:20px}.homegrid .hcol{display:contents}
+  .homegrid .hero{order:1}.homegrid .buzzcard{order:2}.homegrid #nowWrap{order:3}.homegrid .upcard{order:4}.homegrid .htoday{order:5}.homegrid .hsys{order:6}}
 .health>summary{list-style:none;cursor:pointer}
 .health>summary::-webkit-details-marker{display:none}
 .health summary::before{content:none!important}
@@ -1422,24 +1430,18 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
   </div>
 
   <section id="tab-board">
-    <section class="card buzzcard" id="buzzCard" aria-label="Buzz a door open"></section>
-    <div class="herorow"><section class="hero" id="hero" aria-live="polite"></section><section class="upcard" id="upcard" aria-label="Coming up"></section></div>
-    <div class="quick" id="quick">
-      <button type="button" class="qa cap-override" data-q="override"><i><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg></i><b>Open or lock now</b><span>Change a door right away</span></button>
-      <button type="button" class="qa cap-events" data-q="events"><i><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></i><b>Add an event</b><span>Wedding, kiddush, sheva brachos</span></button>
-      <button type="button" class="qa cap-codes" data-q="codes"><i><svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg></i><b>Give a code</b><span>For a plumber or a guest</span></button>
-      <button type="button" class="qa" data-q="ask" id="qaAsk" hidden><i><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg></i><b>Just ask</b><span>Type what you need in plain words</span></button>
-    </div>
-
-    <div id="nowWrap" hidden>
+    <div class="homegrid">
+      <div class="hcol">
+        <section class="hero" id="hero" aria-live="polite"></section>
+        <section class="card buzzcard" id="buzzCard" aria-label="Open or buzz a door"></section>
+        <div id="nowWrap" hidden>
       <h2 class="gh">Changed by hand</h2>
       <div class="glist" id="ovList"></div>
     </div>
 
 
 
-    <div class="homecols">
-      <div>
+      <div class="htoday">
         <h2 class="gh">Today</h2>
         <div class="glist">
           <div class="row"><span class="ic" style="--c:var(--p)"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span><div class="rt"><b>Rabbi</b><span class="hint" id="rabRO" hidden></span></div>
@@ -1448,7 +1450,10 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
         </div>
         <p class="gf">Turn a situation on and its rules take over. Set dates for them in Settings.</p>
       </div>
-      <div>
+      </div>
+      <div class="hcol">
+        <section class="upcard" id="upcard" aria-label="Coming up"></section>
+      <div class="hsys">
         <h2 class="gh">System</h2>
         <details class="glist health" id="health">
           <summary class="row"><span class="ic" id="hIc" style="--c:var(--g)"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span><div class="rt"><b id="hSum"></b><span class="hint" id="hChecked"></span></div><span class="chev"></span></summary>
@@ -1457,9 +1462,14 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
           <div class="row admin-only adv"><button class="btn sm" type="button" id="simPower">Simulate power outage</button></div>
         </details>
       </div>
+      </div>
     </div>
-
-
+    <div class="quick" id="quick" hidden>
+      <button type="button" class="qa cap-override" data-q="override"><i><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg></i><b>Open or lock now</b><span>Change a door right away</span></button>
+      <button type="button" class="qa cap-events" data-q="events"><i><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></i><b>Add an event</b><span>Wedding, kiddush, sheva brachos</span></button>
+      <button type="button" class="qa cap-codes" data-q="codes"><i><svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg></i><b>Give a code</b><span>For a plumber or a guest</span></button>
+      <button type="button" class="qa" data-q="ask" id="qaAsk" hidden><i><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg></i><b>Just ask</b><span>Type what you need in plain words</span></button>
+    </div>
   </section>
 
   <section id="tab-doors" hidden>
@@ -3151,11 +3161,12 @@ function renderBuzzCard(){
   el.innerHTML=`<div class="bz-h"><span class="ic" style="--c:var(--g)">${ico("open")}</span><div><b>Open a door</b><span>${sel?"Choose what to do":"Tap a door"}</span></div>
       <button type="button" class="linkbtn" id="bzAll">${BUZZ_ALL?"Fewer doors":"All doors"}</button><button type="button" class="linkbtn" id="bzClose">Close</button></div>
     ${BUZZ_ALL?`<label class="search sm bz-q"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="bzQ" placeholder="Find a door" aria-label="Find a door" value="${esc(BUZZ_Q)}"></label>`:""}
-    <div class="bz-doors">${list.map(id=>{const f=doorFacts(id);return `<button type="button" class="bz-d${id===sel?" on":""}" data-bz="${esc(id)}" aria-pressed="${id===sel}"><b>${esc(doorName(id))}</b><span><i class="dot" style="--c:${modeColor(f.st.mode)}"></i>${esc(f.label)}${f.hand?" · by hand":""}</span></button>`}).join("")||`<p class="none">No door matches.</p>`}</div>${acts}`;
+    <div class="bz-doors">${list.map(id=>{const f=doorFacts(id);return `<button type="button" class="bz-d${id===sel?" on":""}" data-bz="${esc(id)}" aria-pressed="${id===sel}"><b>${esc(doorName(id))}</b><span><i class="dot" style="--c:${modeColor(f.st.mode)}"></i>${esc(f.label)}${f.hand?" · by hand":""}</span></button>`}).join("")||`<p class="none">No door matches.</p>`}</div>${acts}${isAdmin()||can("override")?`<div class="bz-foot"><button type="button" class="linkbtn" id="bzMore">Lock a door, or open until a set time</button></div>`:""}`;
   const qi=$("#bzQ");if(qi)qi.addEventListener("input",e=>{BUZZ_Q=e.target.value;const pos=e.target.selectionStart;renderBuzzCard();const n=$("#bzQ");n.focus();n.setSelectionRange(pos,pos)});
 }
 document.addEventListener("click",async ev=>{
   if(ev.target.closest("#bzOpen")){BZ_OPEN=true;renderBuzzCard();return}
+  if(ev.target.closest("#bzMore")){document.querySelector('[data-q="override"]').click();return}
   if(ev.target.closest("#bzClose")){BZ_OPEN=false;BZ_SEL=null;BUZZ_ALL=false;BUZZ_Q="";renderBuzzCard();return}
   if(ev.target.closest("#bzAll")){BUZZ_ALL=!BUZZ_ALL;BUZZ_Q="";renderBuzzCard();return}
   const d=ev.target.closest("[data-bz]");if(d){BZ_SEL=BZ_SEL===d.dataset.bz?null:d.dataset.bz;renderBuzzCard();return}
@@ -3224,8 +3235,8 @@ function renderHero(){
   $("#hero").className="hero "+lvl;
   $("#hero").innerHTML=`<div class="hero-top"><span class="hero-ic" aria-hidden="true"><svg viewBox="0 0 24 24">${icon}</svg></span>
     <div class="hero-txt"><div class="hero-title">${esc(title)}</div>
-    <div class="hero-sub">${esc(longDate(todayNY()))}, ${esc(hebText(t.h))}</div>${ON_BOX&&BOX_ST&&BOX_ST.mode!=="live"?`<div class="hero-sub" style="color:var(--warn)">${BOX_ST.mode==="pilot"?"Only the pilot doors are run by this system. The others show what the rules say.":"This shows what the rules say. The doors are not run by this system yet."}</div>`:""}</div></div>
-    <div class="chips hero-chips">${ch.map(c=>`<span class="chip ${c.own?"e":"h"}">${esc(c.label)}</span>`).join("")}<span class="chip">Shkiah ${fmt(t.z.sunset)}</span>${t.dst?"":""}</div>
+    <div class="hero-sub">${esc(longDate(todayNY()))}, ${esc(hebText(t.h))}</div>${false&&ON_BOX&&BOX_ST&&BOX_ST.mode!=="live"?`<div class="hero-sub" style="color:var(--warn)">${BOX_ST.mode==="pilot"?"Only the pilot doors are run by this system. The others show what the rules say.":"This shows what the rules say. The doors are not run by this system yet."}</div>`:""}</div></div>
+    <div class="chips hero-chips">${ch.map(c=>`<span class="chip ${c.own?"e":"h"}">${esc(c.label)}</span>`).join("")}<span class="chip shk">Shkiah ${fmt(t.z.sunset)}</span>${t.dst?"":""}</div>
     ${issues.length?`<div class="hero-issues">${issues.map(x=>x.id?`<button type="button" class="hi tapx" data-hdoor="${esc(x.id)}">${ico("warn")}<span>${esc(x.t)}</span><span class="chev"></span></button>`:`<div class="hi">${ico("warn")}<span>${esc(x.t)}</span></div>`).join("")}</div>`:""}
     <div class="hero-stats"><button type="button" data-hf="open"><span class="n">${open}</span><span>Open</span></button><button type="button" data-hf="locked"><span class="n">${locked}</span><span>Locked</span></button><button type="button" data-hf="lockdown"><span class="n${ld?" r":""}">${ld}</span><span>Lockdown</span></button><button type="button" data-hf="hand"><span class="n">${ovs}</span><span>By hand</span></button></div>`;
   $("#upcard").innerHTML=`<div class="up-h"><h2>Coming up</h2><span>Next 24 hours</span></div>${soon?`<ul class="up-list">${soon}</ul>${more}`:`<p class="up-none">No changes in the next 24 hours.</p>`}`;
@@ -3464,7 +3475,6 @@ function renderHealth(){
   $("#sysCell").textContent=bad.length?(POWER_OUT?"Power out":`${bad.length} issue${bad.length>1?"s":""}`):"All systems OK";
   $("#sysSub").textContent="";$("#sysCell").classList.toggle("bad",bad.length>0);
   $("#hSum").textContent=bad.length?`${bad.length} ${bad.length>1?"things need":"thing needs"} attention`:`Everything is working`;
-  if(bad.length)$("#health").open=true;
   $("#simPower").textContent=POWER_OUT?"End power outage":"Simulate power outage";
 }
 /* ---------- reports and history ---------- */
@@ -4172,7 +4182,7 @@ $("#rqList").addEventListener("keydown",ev=>{if((ev.key==="Enter"||ev.key===" ")
 $("#sysCell").onclick=()=>{showTab("board");$("#health").open=true;$("#health").scrollIntoView({block:"center"})};
 $("#startDate").value=todayNY();
 $("#hDate").value=todayNY();$("#sheetDate").value=todayNY();$("#hTime").value="19:00";
-renderAll();
+renderAll();showTab("board");   // sets the page's own buttons (Home has none)
 {const n=nyMinutes(Date.now());$("#hTime").value=`${String(Math.floor(n/60)).padStart(2,"0")}:${String(n%60).padStart(2,"0")}`;showMoment(todayNY(),n)}
 setInterval(()=>{renderOverride();renderBoard();if(document.activeElement?.id!=="bzQ")renderBuzzCard()},30000);
 $("#bGroup").addEventListener("change",renderBoard);
