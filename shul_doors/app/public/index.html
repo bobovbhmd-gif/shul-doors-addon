@@ -954,6 +954,9 @@ details.more>summary.gh{color:var(--accent)}
 .pass dt{flex:none;width:52px;color:var(--muted)}
 .pass dd{margin:0}
 .pass .meta{font-size:13px;color:var(--muted);margin:12px 0 0}
+.savepill{position:fixed;top:calc(68px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:80;padding:6px 14px;border-radius:999px;font-size:13px;font-weight:600;
+  background:var(--surface);color:var(--muted);box-shadow:0 2px 12px rgba(0,0,0,.12);pointer-events:none}
+.savepill.saved{color:var(--ok)}.savepill.saved::before{content:"✓ "}.savepill.bad{background:var(--lock);color:#fff}
 #ppQ{flex:1 1 200px;max-width:320px}
 .pp-row{display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:0;border-top:.5px solid var(--line);background:none;text-align:left;font:inherit;color:inherit;cursor:pointer}
 .pp-row:first-child{border-top:0}.pp-row:hover{background:var(--fill)}
@@ -1955,6 +1958,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
   </div>
 
   <div class="toast" id="toast" role="status" hidden></div>
+  <div class="savepill" id="savePill" role="status" aria-live="polite" hidden></div>
 </div>
 
 <div id="tip" class="tip" hidden></div>
@@ -2059,9 +2063,13 @@ const DEF_RULE=id=>({id:"def:"+id,name:"Default",mode:doorDef(id),isDef:true});
 function ensureNos(){if(!S||!S.rules)return;let m=Math.max(0,...S.rules.map(r=>+r.no||0),+S.ruleNoMax||0);S.rules.forEach(r=>{if(!r.no)r.no=++m});S.ruleNoMax=m}
 function rn(r){return r?(r.no?`#${r.no} `:"")+`"${r.name}"`:'"(deleted rule)"'}
 function save(){ensureNos();if(ON_BOX){boxSave();return}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
-let BOX_T=null,SAVING=false;function boxSave(){clearTimeout(BOX_T);SAVING=true;BOX_T=setTimeout(()=>{fetch("api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({version:window.__SD_VERSION,state:S})}).then(r=>r.json()).then(j=>{if(j.version)window.__SD_VERSION=j.version;
+// a small pill that always says whether the last change reached the box
+let SP_T=null;function savePill(kind){const el=typeof document!=="undefined"&&document.getElementById("savePill");if(!el)return;clearTimeout(SP_T);
+  el.className="savepill "+kind;el.textContent=kind==="saving"?"Saving…":kind==="saved"?"Saved":"Not saved";el.hidden=false;
+  if(kind==="saved")SP_T=setTimeout(()=>{el.hidden=true},2500)}
+let BOX_T=null,SAVING=false;function boxSave(){clearTimeout(BOX_T);SAVING=true;savePill("saving");BOX_T=setTimeout(()=>{fetch("api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({version:window.__SD_VERSION,state:S})}).then(r=>r.json()).then(j=>{if(j.version)window.__SD_VERSION=j.version;savePill(j.version&&!j.error&&!j.conflict?"saved":"bad");
     if(j.conflict){toast("Not saved: someone else changed something at the same time. Loading the latest, then please make your change again.");setTimeout(()=>location.reload(),3500);return}
-    if(j.error){toast("Not saved: "+j.error);setTimeout(()=>location.reload(),4000)}}).catch(()=>toast("Could not save. Check the connection to the box.")).finally(()=>{SAVING=false})},400)}
+    if(j.error){toast("Not saved: "+j.error);setTimeout(()=>location.reload(),4000)}}).catch(()=>{savePill("bad");toast("Could not save. Check the connection to the box.")}).finally(()=>{SAVING=false})},400)}
 function log(text){
   const e={t:Date.now(),u:S.me,text,push:"pending"};S.log.unshift(e);S.log=S.log.slice(0,500);
   // prototype: pretend the push and the read-back check take a few seconds
@@ -3993,7 +4001,7 @@ $("#tcGo").onclick=()=>{
     {const v=TC_VENDOR&&(S.vendors||[]).find(x=>x.id===TC_VENDOR);if(v&&v.samePin&&!v.pin)v.pin=pin}   // "same PIN each visit": keep the first one
     TC_VENDOR=null;
     $("#tcName").value="";$("#tcPhone").value="";$("#tcPin").value="";$("#tcWarn").innerHTML="";document.querySelectorAll("#tcDoors input").forEach(x=>x.checked=false);
-    closeModal("mCode");toast(ON_BOX?"Code created. The box puts it on the doors in about a minute.":c.phone?`Code created. It will be texted to ${c.phone}.`:"Code created. Use Copy message to send it.");
+    closeModal("mCode");if(typeof setTCV==="function")setTCV("codes");toast(ON_BOX?"Code created. The box puts it on the doors in about a minute.":c.phone?`Code created. It will be texted to ${c.phone}.`:"Code created. Use Copy message to send it.");
     commit(`Temp code for "${name}" on ${expandDoors(doors).length===S.doors.length?"all doors":doorsText(doors)}, ${whenText(from)} to ${whenText(to)}`)};
   if(!warns.length){make();return}
   $("#tcWarn").innerHTML=`<div class="warnbox"><b>The code won't open every door the whole time.</b><ul>${warns.map(w=>`<li>${esc(w)}</li>`).join("")}</ul><p style="margin:6px 0 0">You can create it anyway, or add a Card or PIN rule for those times.</p>

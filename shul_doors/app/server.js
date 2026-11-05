@@ -204,9 +204,12 @@ function codeEntry(e) {
   if (!c || !first || Date.now() - e.t > 15 * 60e3) return;
   const v = c.vendorId && (state.vendors || []).find((x) => x.id === c.vendorId);
   if (!v || !v.arriveAlert || !(v.notifyUsers || []).length || !sms) return;
-  const who = new Set(v.notifyUsers.map((n) => n.toLowerCase()));
-  const sub = { ...state, contacts: (state.contacts || []).filter((x) => who.has(String(x.name || "").toLowerCase())) };
-  sms.toContacts(sub, `${v.name} just came in at ${e.door}.`, "arrive").then((r) => { if (!r.length) log("info", `${v.name} arrived; nobody to text (add ${v.notifyUsers.join(", ")} as an alert contact who agreed to texts)`); }).catch(() => {});
+  // the people picked on the vendor card, at the mobile number in their user (Settings, Users)
+  for (const n of v.notifyUsers) {
+    const u = (state.users || []).find((x) => String(x.name || "").toLowerCase() === String(n).toLowerCase());
+    if (!u || !u.phone) { log("info", `${v.name} arrived; ${n} has no mobile number to text`); continue; }
+    sms.sendOne(u.phone, `${v.name} just came in at ${e.door}.`, "arrive").catch(() => {});
+  }
 }
 // how each guest code stands on the doors, for the Guest codes page (no PINs here)
 function codeStatus() {

@@ -98,9 +98,13 @@ const DEF_RULE=id=>({id:"def:"+id,name:"Default",mode:doorDef(id),isDef:true});
 function ensureNos(){if(!S||!S.rules)return;let m=Math.max(0,...S.rules.map(r=>+r.no||0),+S.ruleNoMax||0);S.rules.forEach(r=>{if(!r.no)r.no=++m});S.ruleNoMax=m}
 function rn(r){return r?(r.no?`#${r.no} `:"")+`"${r.name}"`:'"(deleted rule)"'}
 function save(){ensureNos();if(ON_BOX){boxSave();return}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
-let BOX_T=null,SAVING=false;function boxSave(){clearTimeout(BOX_T);SAVING=true;BOX_T=setTimeout(()=>{fetch("api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({version:window.__SD_VERSION,state:S})}).then(r=>r.json()).then(j=>{if(j.version)window.__SD_VERSION=j.version;
+// a small pill that always says whether the last change reached the box
+let SP_T=null;function savePill(kind){const el=typeof document!=="undefined"&&document.getElementById("savePill");if(!el)return;clearTimeout(SP_T);
+  el.className="savepill "+kind;el.textContent=kind==="saving"?"Saving…":kind==="saved"?"Saved":"Not saved";el.hidden=false;
+  if(kind==="saved")SP_T=setTimeout(()=>{el.hidden=true},2500)}
+let BOX_T=null,SAVING=false;function boxSave(){clearTimeout(BOX_T);SAVING=true;savePill("saving");BOX_T=setTimeout(()=>{fetch("api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({version:window.__SD_VERSION,state:S})}).then(r=>r.json()).then(j=>{if(j.version)window.__SD_VERSION=j.version;savePill(j.version&&!j.error&&!j.conflict?"saved":"bad");
     if(j.conflict){toast("Not saved: someone else changed something at the same time. Loading the latest, then please make your change again.");setTimeout(()=>location.reload(),3500);return}
-    if(j.error){toast("Not saved: "+j.error);setTimeout(()=>location.reload(),4000)}}).catch(()=>toast("Could not save. Check the connection to the box.")).finally(()=>{SAVING=false})},400)}
+    if(j.error){toast("Not saved: "+j.error);setTimeout(()=>location.reload(),4000)}}).catch(()=>{savePill("bad");toast("Could not save. Check the connection to the box.")}).finally(()=>{SAVING=false})},400)}
 function log(text){
   const e={t:Date.now(),u:S.me,text,push:"pending"};S.log.unshift(e);S.log=S.log.slice(0,500);
   // prototype: pretend the push and the read-back check take a few seconds
