@@ -71,13 +71,15 @@ async function sync({ client, engine, state, store, now = Date.now(), mode = "pr
   for (const d of pdoors) nameToPid.set(d.Name, d.Id);
   store.pidOf = store.pidOf || {};
   const missing = [], dup = new Set();
-  for (const { id } of state.doors) {
+  for (const { id, name: ourName } of state.doors) {
     const remembered = pdoors.find((d) => d.Id === store.pidOf[id]);
     const byName = pdoors.filter((d) => ourId(d.Name) === id);
     let d = null;
     if (remembered) {
       d = remembered;
-      if (ourId(remembered.Name) !== id) report.warnings.push(`${id} is now called "${remembered.Name}" in Protector.Net. Still running it; rename it back or update the portal.`);
+      // a new number in front is fine as long as the name still says which door it is (D604 15th Main Ent Glass)
+      const sameDoor = ourName && String(remembered.Name).toLowerCase().includes(String(ourName).toLowerCase().trim());
+      if (ourId(remembered.Name) !== id && !sameDoor) report.warnings.push(`${id} is now called "${remembered.Name}" in Protector.Net. Still running it; rename it back or update the portal.`);
     } else if (byName.length === 1) d = byName[0];
     else if (byName.length > 1) { report.warnings.push(`${byName.length} doors in Protector.Net start with ${id} (${byName.map((x) => x.Name).join(", ")}). Not touching ${id} until only one does.`); dup.add(id); continue; }
     if (!d) { missing.push(id); continue; }
