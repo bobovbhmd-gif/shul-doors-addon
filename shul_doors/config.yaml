@@ -1,5 +1,5 @@
 name: Shul Doors
-version: "0.2.33"
+version: "0.2.34"
 slug: shul_doors
 description: Runs the shul's Protector.Net doors by zmanim, Jewish holidays, events and situations.
 url: https://github.com/bobovbhmd-gif/shul-doors-addon
@@ -31,6 +31,11 @@ options:
   whisper_port: 10300
   openai_api_key: ""
   stt_model: "gpt-4o-transcribe"
+  sms_mode: test
+  twilio_account_sid: ""
+  twilio_api_key_sid: ""
+  twilio_api_key_secret: ""
+  twilio_messaging_service_sid: ""
 schema:
   mode: list(practice|pilot|live|restore)
   protector_url: str?
@@ -47,3 +52,8 @@ schema:
   whisper_port: port?
   openai_api_key: password?
   stt_model: str?
+  sms_mode: list(off|test|live)
+  twilio_account_sid: str?
+  twilio_api_key_sid: str?
+  twilio_api_key_secret: password?
+  twilio_messaging_service_sid: str?

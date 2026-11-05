@@ -10,7 +10,7 @@ const fs = require("fs");
 const KEEP_DAYS = 400;
 const ENTRY = /^(.*?)\s+(granted|denied)\s+access\b/i;
 
-function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.now(), fetchImpl = fetch }) {
+function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.now(), fetchImpl = fetch, onStates = null }) {
   let stale = false;
   let events = [], seen = new Set(), lastPoll = 0, sensors = [], status = { on: false, problem: "", sensors: 0, lastPoll: 0 };
   // load what we already have
@@ -82,6 +82,7 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
     if (!token || !haUrl) { status = { ...status, on: false, problem: "This box can't reach Home Assistant's records (no access token)." }; return status; }
     try {
       const states = await api("/states");
+      if (onStates) { try { onStates(states); } catch (e) { log("warn", "activity: " + e.message); } }
       sensors = states.filter(isLogSensor).map((s) => s.entity_id);
       const modeSensors = states.filter(isModeSensor).map((s) => s.entity_id);
       if (!sensors.length) { status = { on: false, problem: "No \"Last Door Log\" sensors found. Check that the Protector.Net integration is set up and its door log sensors are turned on.", sensors: 0, lastPoll: now() }; return status; }

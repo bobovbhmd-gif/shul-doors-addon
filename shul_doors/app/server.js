@@ -8,6 +8,7 @@ const path = require("path");
 const { execFile } = require("child_process");
 const { createEngine } = require("./engine/load");
 const { outputReportLines } = require("./lib/outputs");
+const { createSms } = require("./lib/sms");
 const { makeClient } = require("./lib/protector");
 const { sync } = require("./lib/sync");
 const { localDate } = require("./lib/time");
@@ -32,6 +33,7 @@ function buildCalendar() {
     (err, out) => (err ? reject(err) : resolve(JSON.parse(out)))));
 }
 
+let sms = null;
 let calendar, engine, state, version, store, lastReport = null, syncing = false, pendingSync = false, halted = false;
 
 async function init() {
@@ -51,6 +53,7 @@ async function init() {
   }
   version = readJson("version.json", { v: 1 }).v;
   store = loadStore();
+  sms = createSms({ opts, file: file("sms.jsonl"), store, save: () => writeJson("store.json", store), log });
   lastReport = readJson("last-report.json", null);
   engine.setState(state);
   backup();
@@ -128,6 +131,25 @@ function clashNotes() {
   try { engine.setState(state); return engine.clashes(state.doors.map((d) => d.id), engine.today(), 60, true).map((c) => `Rules clash: ${c.line}. ${c.runs} runs until someone chooses. Open Rules in the app to choose.`); }
   catch (e) { return ["Could not check the rules for clashes: " + e.message]; }
 }
+// texts to the alert contacts, each problem once (again after 6 hours if it is still there)
+async function alertsAfterRun(r, clashes) {
+  const a = (state && state.alerts) || {};
+  if (!sms) return;
+  if (a.push && r.errors && r.errors.length) await sms.alertOnce(state, "err:" + r.errors[0].slice(0, 80), `Shul Doors could not finish updating the doors: ${r.errors[0].slice(0, 160)}. The doors keep running on their last schedule.`, "problem");
+  if (a.conflicts) for (const c of clashes.slice(0, 2)) await sms.alertOnce(state, "clash:" + c.slice(0, 120), "Two door rules overlap and need a choice in Shul Doors (Rules page).", "clash", 24 * 3600e3);
+}
+// a door held open: Home Assistant's door sensors (open = "on") are read every minute
+function checkHeld(states) {
+  const a = (state && state.alerts) || {};
+  if (!a.held || !sms) return;
+  const min = Math.max(1, +a.heldMin || 5), t = Date.now();
+  for (const s of states) {
+    if (!String(s.entity_id).startsWith("binary_sensor.") || (s.attributes || {}).device_class !== "door" || s.state !== "on") continue;
+    const since = Date.parse(s.last_changed || ""); if (!Number.isFinite(since) || t - since < min * 60e3) continue;
+    const name = String((s.attributes || {}).friendly_name || s.entity_id).replace(/^\d?D\d+\s+/i, "");
+    sms.alertOnce(state, "held:" + s.entity_id + "|" + s.last_changed, `${name} has been open for ${Math.round((t - since) / 60e3)} minutes.`, "held", 30 * 864e5).catch(() => {});
+  }
+}
 async function runSync(reason) {
   if (halted) return (lastReport = { at: Date.now(), mode: opts.mode, reason, actions: [], warnings: [], errors: [stateProblem], ok: false });
   if (syncing) { pendingSync = true; return lastReport; }
@@ -145,7 +167,9 @@ async function runSync(reason) {
     engine.setState(state);
     const r = await sync({ client, engine, state, store, mode: opts.mode, pilotDoors, horizonDays: +opts.horizon_days, budget: +opts.budget, log });
     r.reason = reason;
-    r.warnings.push(...clashNotes());
+    const clashes = clashNotes();
+    r.warnings.push(...clashes);
+    alertsAfterRun(r, clashes).catch((e) => log("warn", "alerts: " + e.message));
     lastReport = r;
     writeJson("store.json", store);
     writeJson("last-report.json", r);
@@ -156,6 +180,7 @@ async function runSync(reason) {
     return r;
   } catch (e) {
     lastReport = { at: Date.now(), mode: opts.mode, reason, actions: [], warnings: clashNotes(), errors: [e.message], ok: false };
+    alertsAfterRun(lastReport, []).catch((x) => log("warn", "alerts: " + x.message));
     writeJson("last-report.json", lastReport);
     log("error", `sync (${reason}) failed: ${e.message}`);
     return lastReport;
@@ -210,7 +235,7 @@ const HA_TOKEN = process.env.SD_HA_TOKEN || SUP_TOKEN;
 const HA_URL = process.env.SD_HA_URL || (SUP_TOKEN ? "http://supervisor/core/api" : "");
 log("info", HA_TOKEN ? "activity: Home Assistant access key found" : "activity: no Home Assistant access key found");
 let activity = null;
-try { activity = createActivity({ file: file("activity.jsonl"), haUrl: HA_URL, token: HA_TOKEN, log }); }
+try { activity = createActivity({ file: file("activity.jsonl"), haUrl: HA_URL, token: HA_TOKEN, log, onStates: (st) => checkHeld(st) }); }
 catch (e) { log("error", "activity: " + e.message); }
 if (activity) {
   const every = +process.env.SD_ACTIVITY_MS || 60000;
@@ -391,6 +416,12 @@ const server = http.createServer((req, res) => {
       ...compareLines(r.compare), "", ...outputReportLines(r.outputs2),
       `${opts.mode === "practice" ? "Would do" : "Did"} (${(r.actions || []).length}):`, ...(r.actions || []).map((x) => "  " + x), "", "Special days loaded through:", ...Object.entries(r.loadedThrough || {}).map(([d, t]) => `  ${d}: ${t}`)];
     return send(res, 200, lines.join("\n"), "text/plain; charset=utf-8");
+  }
+  if (req.method === "GET" && p === "/api/sms") return send(res, 200, sms ? { mode: sms.mode, configured: sms.configured, log: sms.list(30), optedOut: sms.optedOut() } : { mode: "off" });
+  if (req.method === "POST" && p === "/api/sms/test") {
+    if (!sms) return send(res, 503, { error: "not ready" });
+    sms.toContacts(state, "This is a test from Shul Doors. Door alerts will come from this number.", "test").then((out) => send(res, 200, { mode: sms.mode, out }));
+    return;
   }
   if (req.method === "GET" && p === "/api/live") {
     const n = Math.max(1, Math.min(300, +u.searchParams.get("n") || 100));

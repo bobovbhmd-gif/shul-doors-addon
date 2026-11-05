@@ -63,7 +63,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 input,select,textarea{font:inherit;font-size:14px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;max-width:100%}
 textarea{width:100%;min-height:90px;font-family:var(--f-mono);font-size:12px}
 input[type=number]{width:72px}
-.clashwarn p{margin:6px 0}.clashwarn .btn{margin-top:6px}
+.clashwarn p{margin:6px 0}
+.cagree{display:inline-flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap;flex:none}.clashwarn .btn{margin-top:6px}
 .warnbox{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:14px}
 .warnbox ul{margin:6px 0 0;padding-left:18px}
 .okbox{background:var(--ok-soft);color:var(--ok);border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:14px}
@@ -1750,10 +1751,13 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
           <h2>Alerts</h2>
           <h3 class="gh">Send alerts to</h3>
           <div class="glist" id="contactRows"></div>
-          <div class="glist addrow"><div class="row"><input id="cName" placeholder="Name" aria-label="Contact name" style="max-width:150px"><input id="cTo" placeholder="Phone or email" aria-label="Phone or email"><button class="btn sm pri" type="button" id="addContact">Add</button></div></div>
+          <div class="glist addrow"><div class="row"><input id="cName" placeholder="Name" aria-label="Contact name" style="max-width:150px"><input id="cTo" placeholder="Mobile number" aria-label="Mobile number" inputmode="tel"><label class="cagree"><input type="checkbox" id="cAgree"> Agreed to get texts</label><button class="btn sm pri" type="button" id="addContact">Add</button></div></div>
+          <p class="gf">Only add someone who agreed, in person or in writing, to get door texts. Anyone can reply STOP to stop them.</p>
           <h3 class="gh">Alert me when</h3>
           <div class="glist" id="alertChecks"></div>
-          <div class="tline" style="margin-top:12px"><button class="btn sm" type="button" id="testAlert">Send a test alert</button><span class="hint" id="testMsg"></span></div>
+          <div class="tline" style="margin-top:12px"><button class="btn sm" type="button" id="testAlert">Send a test text</button><span class="hint" id="testMsg"></span></div>
+          <h3 class="gh">Recent texts</h3>
+          <div class="glist" id="smsLog"><div class="row"><span class="hint">None yet.</span></div></div>
         </div>
 
         <div class="panel admin-only" data-sp="users" data-ic="people" data-c="var(--gray)">
@@ -2898,7 +2902,7 @@ function renderMagnet(){
     return `<div class="row"><span class="ic" style="--c:var(--o)">${ico("lock")}</span><div class="rt"><b>Off ${WDN[dow(p.from)]} ${esc(shortDate(p.from).replace(/, \d{4}$/,""))}, ${fmt(p.a)}</b><span>Back on ${WDN[dow(p.to)]} ${esc(shortDate(p.to).replace(/, \d{4}$/,""))}, ${fmt(p.b)}${name?" · "+esc(name):""}</span></div></div>`}).join("")||`<div class="row"><span class="hint">Nothing in the next weeks.</span></div>`;
 }
 function renderSetup(){
-  renderHolNames();renderMagnet();
+  renderHolNames();renderMagnet();if(typeof CUR_TAB!=="undefined"&&CUR_TAB==="setup")smsRefresh();
   $("#doorRows").innerHTML=S.doors.map((d,i)=>`<div class="row"><span class="ic" style="--c:${modeColor(d.def)}">${ico(modeIco(d.def))}</span><div class="rt"><input class="plain" value="${esc(d.name)}" data-dname="${i}" aria-label="Name for ${esc(d.id)}"><span>${esc(d.id)}</span></div>
     <select data-ddef="${i}" aria-label="Default for ${esc(d.id)}">${MODES.map(m=>`<option value="${m}"${m===d.def?" selected":""}>${esc(modeLabel(m))}</option>`).join("")}</select><button class="btn sm danger" type="button" data-ddel="${i}">Remove</button></div>`).join("");
   $("#groupRows").innerHTML=S.groups.map(g=>`<div class="glist gblock"><div class="row"><span class="ic" style="--c:var(--teal)">${ico("grid")}</span><div class="rt"><b>${esc(g.name)}</b><span>${g.doors.length} door${g.doors.length===1?"":"s"}</span></div><button class="btn sm danger" type="button" data-gdel="${esc(g.id)}">Remove</button></div>
@@ -2906,8 +2910,9 @@ function renderSetup(){
     <div class="row"><span class="rt"><span>Set the default for all of them</span></span><select data-gdefsel="${esc(g.id)}" aria-label="Default for ${esc(g.name)}">${MODES.map(m=>`<option value="${m}">${esc(modeLabel(m))}</option>`).join("")}</select><button class="btn sm" type="button" data-gdef="${esc(g.id)}">Apply</button></div></div>`).join("")||`<div class="glist"><div class="row"><span class="hint">No groups yet.</span></div></div>`;
   $("#candleOff").value=S.candleOff;$("#havOff").value=S.havOff;$("#rtOff").value=S.rtOff;
   $("#awayRows").innerHTML=S.away.length?S.away.map((a,i)=>`<div class="row"><span class="ic" style="--c:var(--p)">${ico("cal")}</span><div class="rt"><b>${esc(rangeText(a.from,a.to))}</b></div><button class="btn sm danger" type="button" data-adel="${i}">Remove</button></div>`).join(""):`<div class="row"><span class="hint">No away dates set.</span></div>`;
-  $("#contactRows").innerHTML=S.contacts.map((c,i)=>`<div class="row"><span class="avatar">${esc(initials(c.name))}</span><div class="rt"><b>${esc(c.name)}</b><span>${esc(c.to)}</span></div><button class="btn sm danger" type="button" data-cdel="${i}">Remove</button></div>`).join("")||`<div class="row"><span class="hint">No one gets alerts yet.</span></div>`;
-  $("#alertChecks").innerHTML=ALERTS.map(([k,l])=>`<label class="row swrow" for="al-${k}"><span class="rt"><b>${esc(l)}</b>${k==="held"?`<span>After <input type="number" id="heldMin" min="1" max="120" value="${S.alerts.heldMin}" aria-label="Minutes"> minutes</span>`:""}</span><input type="checkbox" class="switch" id="al-${k}" data-alert="${k}"${S.alerts[k]?" checked":""}></label>`).join("");
+  $("#contactRows").innerHTML=S.contacts.map((c,i)=>`<div class="row"><span class="avatar">${esc(initials(c.name))}</span><div class="rt"><b>${esc(c.name)}</b><span>${esc(c.to)} · ${c.sms&&c.consentAt?`gets texts, agreed ${esc(shortDate(nyDate(c.consentAt)))}`:`<span class="warnm">no texts until they agree</span>`}</span></div>${c.sms&&c.consentAt?`<button class="btn sm" type="button" data-cstop="${i}">Stop texts</button>`:`<button class="btn sm" type="button" data-cok="${i}">They agreed</button>`}<button class="btn sm danger" type="button" data-cdel="${i}">Remove</button></div>`).join("")||`<div class="row"><span class="hint">No one gets alerts yet.</span></div>`;
+  const NOTYET=ON_BOX?["offline","ups","batt","heartbeat"]:[];
+  $("#alertChecks").innerHTML=ALERTS.map(([k,l])=>`<label class="row swrow" for="al-${k}"><span class="rt"><b>${esc(l)}</b>${k==="held"?`<span>After <input type="number" id="heldMin" min="1" max="120" value="${S.alerts.heldMin}" aria-label="Minutes"> minutes</span>`:""}${NOTYET.includes(k)?`<span>Not connected yet</span>`:""}</span><input type="checkbox" class="switch" id="al-${k}" data-alert="${k}"${S.alerts[k]?" checked":""}></label>`).join("");
   const CAPS=[["codes","Give guest codes"],["override","Open or lock doors by hand"],["events","Add events"],["rabbi","Set the rabbi away and switch situations"]];
   $("#userRows").innerHTML=S.users.map((u,i)=>{
     const r=u.role==="Restricted";
@@ -4027,11 +4032,28 @@ $("#havOff").addEventListener("change",e=>{S.havOff=+e.target.value||0;commit(`H
 $("#rtOff").addEventListener("change",e=>{S.rtOff=+e.target.value||0;commit(`Rabbeinu Tam set to ${S.rtOff} min`)});
 $("#addAway").onclick=()=>{const f=$("#awayFrom").value,t=$("#awayTo").value||f;if(!f||t<f)return;S.away.push({from:f,to:t});commit(`Rabbi away ${shortDate(f)} to ${shortDate(t)}`)};
 $("#awayRows").addEventListener("click",ev=>{const i=ev.target.dataset.adel;if(i!==undefined){S.away.splice(i,1);commit("Removed rabbi away dates")}});
-$("#addContact").onclick=()=>{const n=$("#cName").value.trim(),t=$("#cTo").value.trim();if(!n||!t)return;S.contacts.push({name:n,to:t});$("#cName").value="";$("#cTo").value="";commit(`Added alert contact ${n}`)};
-$("#contactRows").addEventListener("click",ev=>{const i=ev.target.dataset.cdel;if(i!==undefined){const c=S.contacts.splice(i,1)[0];commit(`Removed alert contact ${c.name}`)}});
+$("#addContact").onclick=()=>{const n=$("#cName").value.trim(),t=$("#cTo").value.trim(),ok=$("#cAgree").checked;if(!n||!t)return;
+  const digits=t.replace(/\D/g,"");if(!(digits.length===10||(digits.length===11&&digits[0]==="1"))){toast("Enter a US mobile number, like 718-555-0142");return}
+  S.contacts.push({name:n,to:t,sms:ok,consentAt:ok?Date.now():null,consentBy:ok?S.me:null});$("#cName").value="";$("#cTo").value="";$("#cAgree").checked=false;
+  commit(`Added alert contact ${n}${ok?" (agreed to texts)":""}`)};
+$("#contactRows").addEventListener("click",ev=>{const d=ev.target.dataset;
+  if(d.cdel!==undefined){const c=S.contacts.splice(+d.cdel,1)[0];commit(`Removed alert contact ${c.name}`);return}
+  if(d.cok!==undefined){const b=ev.target;if(!b.dataset.armed){b.dataset.armed="1";b.textContent="Tap again to confirm they agreed";setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent="They agreed"}},4000);return}
+    const c=S.contacts[+d.cok];c.sms=true;c.consentAt=Date.now();c.consentBy=S.me;commit(`${c.name} agreed to get door texts (recorded by ${S.me})`);return}
+  if(d.cstop!==undefined){const c=S.contacts[+d.cstop];c.sms=false;commit(`Stopped door texts to ${c.name}`)}});
 $("#alertChecks").addEventListener("change",ev=>{const k=ev.target.dataset.alert;if(k){S.alerts[k]=ev.target.checked;commit(`Alert "${ALERTS.find(a=>a[0]===k)[1]}" turned ${ev.target.checked?"on":"off"}`)}
   else if(ev.target.id==="heldMin"){S.alerts.heldMin=+ev.target.value||5;commit(`Door held open alert set to ${S.alerts.heldMin} min`)}});
-$("#testAlert").onclick=()=>{$("#testMsg").textContent=S.contacts.length?`In the live system this goes to ${S.contacts.map(c=>c.name).join(", ")}.`:"Add someone to send alerts to first."};
+$("#testAlert").onclick=async()=>{const ok=S.contacts.filter(c=>c.sms&&c.consentAt);
+  if(!ok.length){$("#testMsg").textContent="Add someone who agreed to get texts first.";return}
+  if(!ON_BOX){$("#testMsg").textContent=`On the box this goes to ${ok.map(c=>c.name).join(", ")}.`;return}
+  $("#testMsg").textContent="Sending…";
+  try{const j=await (await fetch("api/sms/test",{method:"POST"})).json();
+    $("#testMsg").textContent=j.mode==="test"?"Test mode: nothing was sent. See Recent texts below.":j.mode==="off"?"Texting is off in the add-on settings.":(j.out||[]).map(o=>`${o.name}: ${o.status==="sent"?"sent":o.why||o.status}`).join(" · ");
+    smsRefresh()}catch(e){$("#testMsg").textContent="Couldn't reach the box."}};
+// texting status and the latest texts, from the box
+async function smsRefresh(){if(!ON_BOX)return;let j;try{j=await (await fetch("api/sms")).json()}catch(e){return}
+  const m=$("#smsMode");if(m){m.innerHTML=j.mode==="live"?(j.configured?"<b>Texting is on.</b> Alerts go by text to everyone below who agreed.":"<b>Texting is on, but the Twilio details are missing</b> in the add-on settings."):j.mode==="test"?"<b>Texting is in test mode.</b> Nothing is sent: each text that would go out is listed under Recent texts.":"<b>Texting is off</b> in the add-on settings.";m.style.color=j.mode==="live"&&j.configured?"":"var(--warn)"}
+  const L=$("#smsLog");if(L)L.innerHTML=(j.log||[]).slice(0,20).map(e=>`<div class="row"><span class="ic" style="--c:${e.status==="sent"?"var(--g)":e.status==="test"?"var(--b)":"var(--o)"}">${ico("chat")}</span><div class="rt"><b>${esc(e.to)}</b><span>${esc(e.body)}</span><span>${esc(whenText(e.at))} · ${esc(e.status==="test"?"test, not sent":e.status==="sent"?"sent":(e.status+(e.why?": "+e.why:"")))}</span></div></div>`).join("")||`<div class="row"><span class="hint">None yet.</span></div>`}
 $("#userRows").addEventListener("change",ev=>{const t=ev.target,d=t.dataset;
   if(d.urole!==undefined){const u=S.users[d.urole];
     if(u.name===S.me&&t.value!=="Super admin"&&S.users.filter(x=>x.role==="Super admin").length<2){t.value="Super admin";return} // keep at least one super admin
@@ -4540,11 +4562,11 @@ if(ON_BOX){
   { const ms=$("#meSel"); if(ms){ ms.disabled=true; ms.title="Signed in through Home Assistant"; } }   // no switching people on the real system
   document.querySelector('[data-sp="reset"]')?.remove();      // "load sample data" must never reach the real doors
   { const bp=$("#bProto"); if(bp) bp.textContent="Each door shows what its rules say it is doing now."; }
-  document.getElementById("testAlert")?.closest(".tline")?.remove();
   const bk=document.querySelector('[data-sp="backup"] .gf'); if(bk) bk.textContent="The box keeps a copy of the rules and settings every day for 60 days. You can also copy everything here and keep it somewhere safe, or paste a copy back to restore it.";
   CATS[5][1]="Whose cards work, and when. Saved here, not sent to the doors yet";
   $("#tab-codes").insertAdjacentHTML("afterbegin",`<div class="sdbanner info" style="display:block">Guest codes and vendor access are not connected to the doors yet. A code made here would not open anything, so making codes is turned off for now.</div>`);
-  const ap=document.querySelector('[data-sp="alerts"] h2'); if(ap) ap.insertAdjacentHTML("afterend",`<p class="gf top" style="color:var(--warn)">Alerts are not connected yet. These settings are saved for later.</p>`);
+  const ap=document.querySelector('[data-sp="alerts"] h2'); if(ap) ap.insertAdjacentHTML("afterend",`<p class="gf top" id="smsMode">Checking texting…</p>`);
+  smsRefresh();
   const _toast=toast;
   toast=(t)=>{ if(/^Done\.|All doors locked| is now | set to | back on its schedule/.test(t)&&BOX_ST&&BOX_ST.mode!=="live") t+=BOX_ST.mode==="pilot"?" (only pilot doors are changed)":" (practice mode: the doors were not changed)"; _toast(t) };
   const MODE_TXT={practice:"Practice mode: the doors are not changed.",pilot:"Pilot: only the pilot doors are run by this system.",live:"Live: this system runs the doors.",restore:"Restore: putting every door back on its old schedule."};
