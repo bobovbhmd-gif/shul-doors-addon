@@ -418,12 +418,27 @@ let sttProblem = "";   // the last OpenAI speech error, shown in the app
 // Live typing: the box asks OpenAI for a short-lived key (a minute or so) set up for
 // transcription only, and the page talks to OpenAI with it directly over WebRTC. The
 // real key never leaves the box.
+const LIVE_WORDS = "Shabbos, Yom Tov, Rabbeinu Tam, shkiah, havdalah, zmanim, Mikvah, Rov, sukkah, Shacharis, Mincha, Maariv, Rosh Chodesh, Chol Hamoed, kiddush, sheva brachos, Card or PIN.";
+// The speech engine sometimes "hears" its own word list in a pause and writes it out.
+// Any run of 5 or more words copied from the list is taken out.
+function dropLeak(text, list) {
+  const norm = (w) => w.toLowerCase().replace(/[^a-z0-9']/g, "");
+  const L = String(list || "").split(/\s+/).map(norm).filter(Boolean), T = String(text || "").split(/(\s+)/);
+  const words = T.map((x, i) => ({ x, i, n: /\s/.test(x) ? null : norm(x) })).filter((w) => w.n !== null && w.n !== "");
+  const kill = new Set();
+  for (let a = 0; a < words.length; a++) {
+    let best = 0;
+    for (let s = 0; s < L.length; s++) { let k = 0; while (a + k < words.length && s + k < L.length && words[a + k].n === L[s + k]) k++; if (k > best) best = k; }
+    if (best >= 5) { for (let k = 0; k < best; k++) kill.add(words[a + k].i); a += best - 1; }
+  }
+  return T.filter((x, i) => !kill.has(i)).join("").replace(/\s+/g, " ").trim();
+}
 const RT_URL = process.env.SD_RT_URL || "https://api.openai.com/v1/realtime/client_secrets";
 async function liveSttKey() {
   const r = await fetch(RT_URL, { method: "POST", headers: { Authorization: "Bearer " + opts.openai_api_key, "Content-Type": "application/json" },
     body: JSON.stringify({ expires_after: { anchor: "created_at", seconds: 120 }, session: { type: "transcription", audio: { input: {
       format: { type: "audio/pcm", rate: 24000 }, noise_reduction: { type: "near_field" },
-      transcription: { model: STT_MODEL, language: "en", prompt: sttWords(1000) },
+      transcription: { model: STT_MODEL, language: "en", prompt: LIVE_WORDS },
       turn_detection: { type: "server_vad", threshold: 0.5, prefix_padding_ms: 300, silence_duration_ms: 450 } } } } }) });
   const j = await r.json().catch(() => ({}));
   if (r.status === 401) throw new Error("The OpenAI key in the add-on settings was not accepted.");
@@ -551,7 +566,7 @@ const server = http.createServer((req, res) => {
   }
   if (req.method === "GET" && p === "/api/stt/live") {
     if (!opts.openai_api_key || opts.stt_live === false) return send(res, 200, { on: false });
-    liveSttKey().then((key) => send(res, 200, { on: true, key, url: process.env.SD_RT_CALLS || "https://api.openai.com/v1/realtime/calls" }))
+    liveSttKey().then((key) => send(res, 200, { on: true, key, words: LIVE_WORDS, url: process.env.SD_RT_CALLS || "https://api.openai.com/v1/realtime/calls" }))
       .catch((e) => { sttProblem = e.message; log("warn", "live speech: " + e.message); send(res, 200, { on: false, error: e.message }); });
     return;
   }
@@ -568,7 +583,7 @@ const server = http.createServer((req, res) => {
       const pcm = Buffer.concat(chunks);
       const t0 = Date.now(); let warn = "";
       if (opts.openai_api_key) {
-        try { const text = await cloudStt(pcm); sttProblem = ""; log("info", `speech (OpenAI): ${(pcm.length / 32000).toFixed(1)} s of talk written in ${((Date.now() - t0) / 1000).toFixed(1)} s`); return send(res, 200, { text, engine: "openai", ms: Date.now() - t0 }); }
+        try { const text = dropLeak(await cloudStt(pcm), sttWords()); sttProblem = ""; log("info", `speech (OpenAI): ${(pcm.length / 32000).toFixed(1)} s of talk written in ${((Date.now() - t0) / 1000).toFixed(1)} s`); return send(res, 200, { text, engine: "openai", ms: Date.now() - t0 }); }
         catch (e) {
           sttProblem = e.message; log("warn", "speech (OpenAI): " + e.message);
           if (!(await whisperUp())) return send(res, 502, { error: "OpenAI speech didn't work: " + e.message });

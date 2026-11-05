@@ -4467,6 +4467,13 @@ async function boxSampler(){
     }
     // Live typing with OpenAI: words appear as you talk (each phrase right after a short
     // breath). The box hands the page a key that only works for a minute or two.
+    // the speech engine can "hear" its own word list in a pause: any run of 5+ words from it is dropped
+    function sttDropLeak(text,list){const nz=w=>w.toLowerCase().replace(/[^a-z0-9']/g,"");
+      const L=String(list||"").split(/\s+/).map(nz).filter(Boolean),T=String(text||"").split(/(\s+)/);
+      const ws=T.map((x,i)=>({i,n:/\s/.test(x)?null:nz(x)})).filter(w=>w.n);const kill=new Set();
+      for(let a=0;a<ws.length;a++){let best=0;for(let b=0;b<L.length;b++){let k=0;while(a+k<ws.length&&b+k<L.length&&ws[a+k].n===L[b+k])k++;if(k>best)best=k}
+        if(best>=5){for(let k=0;k<best;k++)kill.add(ws[a+k].i);a+=best-1}}
+      return T.filter((x,i)=>!kill.has(i)).join("").replace(/\s+/g," ").trim()}
     let ai=null,aiStarting=false;
     async function startLiveAI(){if(aiStarting)return;aiStarting=true;try{await startLiveAI1()}finally{aiStarting=false}}
     async function startLiveAI1(){
@@ -4477,7 +4484,8 @@ async function boxSampler(){
       const pc=new RTCPeerConnection();stream.getTracks().forEach(t=>pc.addTrack(t,stream));
       const dc=pc.createDataChannel("oai-events");
       const t0=Date.now();let speaking=false,heard=false,lastSpeech=Date.now(),closing=false,timer=null;
-      const show=()=>{box.value=((base?base+" ":"")+order.map(id=>items.get(id)).filter(Boolean).join(" ")).replace(/\s+/g," ").trimStart();askGrow()};
+      const leakList=(j.words||"")+" A gabbai is talking to a synagogue door system in Brooklyn. Words used: Doors: "+S.doors.map(d=>d.name+",").join(" ");
+      const show=()=>{box.value=((base?base+" ":"")+order.map(id=>sttDropLeak(items.get(id),leakList)).filter(Boolean).join(" ")).replace(/\s+/g," ").trimStart();askGrow()};
       const item=id=>{if(id&&!items.has(id)){items.set(id,"");order.push(id)}};
       const end=()=>{clearInterval(timer);try{dc.close()}catch(e){}try{pc.close()}catch(e){}stream.getTracks().forEach(t=>t.stop());
         if(ai===me)ai=null;mic.classList.remove("rec");mic.title="Speak instead of typing";mic.setAttribute("aria-label",mic.title);
