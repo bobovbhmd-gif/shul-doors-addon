@@ -127,6 +127,12 @@ async function pulse(door, user) {
   }
 }
 // two rules on the same door at the same time with no choice made: say so in every report
+// how each guest code stands on the doors, for the Guest codes page (no PINs here)
+function codeStatus() {
+  const out = {};
+  for (const [id, r] of Object.entries((store && store.codeUsers) || {})) out[id] = { state: r.state, why: r.why || "", at: r.at, doors: Object.keys(r.groups || {}).length, texted: r.texted || null, textStatus: r.textStatus || null };
+  return out;
+}
 function clashNotes() {
   try { engine.setState(state); return engine.clashes(state.doors.map((d) => d.id), engine.today(), 60, true).map((c) => `Rules clash: ${c.line}. ${c.runs} runs until someone chooses. Open Rules in the app to choose.`); }
   catch (e) { return ["Could not check the rules for clashes: " + e.message]; }
@@ -165,7 +171,7 @@ async function runSync(reason) {
     if (!part) throw new Error(opts.partition ? `partition "${opts.partition}" not found (Protector.Net has: ${parts.map((p) => p.Name).join(", ")})` : "no partition visible to this Protector.Net user");
     await client.setPartition(part.Id);
     engine.setState(state);
-    const r = await sync({ client, engine, state, store, mode: opts.mode, pilotDoors, horizonDays: +opts.horizon_days, budget: +opts.budget, log });
+    const r = await sync({ client, engine, state, store, mode: opts.mode, pilotDoors, horizonDays: +opts.horizon_days, budget: +opts.budget, log, sms });
     r.reason = reason;
     const clashes = clashNotes();
     r.warnings.push(...clashes);
@@ -409,7 +415,7 @@ const server = http.createServer((req, res) => {
   if (halted && req.method === "GET" && (p === "/" || p === "/index.html")) return send(res, 200, `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shul Doors</title><body style="font:16px -apple-system,Segoe UI,sans-serif;padding:24px;max-width:640px;background:#fff;color:#111"><h1>Shul Doors is paused</h1><p>${stateProblem.replace(/</g, "&lt;")}</p><p>The doors keep running on what was last loaded into the panels. Send the add-on log to whoever set this up.</p></body>`, "text/html; charset=utf-8");
   if (halted && p === "/api/state") return send(res, 503, { error: stateProblem });
   if (req.method === "GET" && (p === "/" || p === "/index.html")) return send(res, 200, portal(req), "text/html; charset=utf-8");
-  if (req.method === "GET" && p === "/api/status") return send(res, 200, { problem: stateProblem, mode: opts.mode, pilotDoors, version, last: lastReport && { at: lastReport.at, ok: lastReport.ok, actions: lastReport.actions, errors: lastReport.errors, warnings: lastReport.warnings, loadedThrough: lastReport.loadedThrough, compare: lastReport.compare } });
+  if (req.method === "GET" && p === "/api/status") return send(res, 200, { problem: stateProblem, mode: opts.mode, pilotDoors, version, last: lastReport && { at: lastReport.at, ok: lastReport.ok, actions: lastReport.actions, errors: lastReport.errors, warnings: lastReport.warnings, loadedThrough: lastReport.loadedThrough, compare: lastReport.compare }, codes: codeStatus() });
   if (req.method === "GET" && p === "/api/report") {
     const r = lastReport || {}; const lines = [`Mode: ${opts.mode}`, `Checked: ${r.at ? new Date(r.at).toLocaleString("en-US", { timeZone: "America/New_York" }) : "not yet"} (${r.reason || ""})`, "",
       `Problems (${(r.errors || []).length}):`, ...(r.errors || []).map((x) => "  " + x), "", `Notes (${(r.warnings || []).length}):`, ...(r.warnings || []).map((x) => "  " + x), "",

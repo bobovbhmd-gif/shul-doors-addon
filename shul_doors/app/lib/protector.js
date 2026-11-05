@@ -140,6 +140,49 @@ function makeClient({ baseUrl, username, password, partitionId = null, log = () 
     async outputZones() { return pages("/api/OutputTimeZones", { PartitionId: partitionId, PerPage: 100 }); },
     async outputZoneSpans(id) { const d = await call("GET", `/api/OutputTimeZones/${id}`); const r = (d && d.Result) || d; return (r && r.TimeSpans) || []; },
     async setOutputZoneSpans(id, spans) { return call("PUT", `/api/OutputTimeZones/${id}/TimeSpans`, { json: { Id: Number(id), TimeSpans: spans } }); },
+    // ---- guest codes: temporary PIN users (same calls as the integration's temp codes) ----
+    async users() { return results(await call("GET", `/api/Partitions/${partitionId}/Users`, { query: { PageNumber: 1, PerPage: 500 } })); },
+    async securityLevelId() { try { const l = results(await call("GET", "/api/SecurityLevels", { query: { PageNumber: 1, PerPage: 50 } })); return (l[0] && l[0].Id) || 1; } catch { return 1; } },
+    async createUser({ first, last, startUtc, endUtc, securityLevelId = 1 }) {
+      const r = await call("POST", "/api/Users", { json: { FirstName: first.slice(0, 60), LastName: last.slice(0, 60), SecurityLevelId: securityLevelId, Partitions: [Number(partitionId)], AccessGroups: [],
+        IsMaster: false, IsSupervisor: false, IsSecurity: false, FirstCardInEnabled: false, HandicapOpener: false, CanTripleSwipe: false, StartedOn: startUtc, ExpiresOn: endUtc } });
+      if (!r || !r.Id) throw new ProtectorError("creating the user gave no Id");
+      return Number(r.Id);
+    },
+    async addPin(userId, name, pin) {
+      return call("POST", `/api/Users/${userId}/Credentials`, { json: { Name: ("PIN-" + name).slice(0, 60), CredentialType: "PinOnly", SiteCode: 0, CardNumber: 0, PinNumber: Number(pin) } });
+    },
+    async setUserTimes(userId, startUtc, endUtc) {
+      return call("PUT", `/api/Users/${userId}`, { json: { Properties: [{ Name: "StartedOn", Value: startUtc }, { Name: "ExpiresOn", Value: endUtc }] } });
+    },
+    // Hartmann sometimes answers 400 while the user is in fact gone: check before calling it a failure
+    async deleteUser(userId) {
+      try { await call("DELETE", `/api/Users/${userId}`, { query: { forceDelete: "true" } }); return true; }
+      catch (e) {
+        if (!cookie) await login();
+        const r = await raw("GET", `/api/Users/${userId}`);
+        if (r.status === 404) return true;
+        throw e;
+      }
+    },
+    async apgs() { return results(await call("GET", "/api/AccessPrivilegeGroups", { query: { PartitionId: partitionId, PageNumber: 1, PerPage: 500 } })); },
+    async apgReaders(apgId) { return results(await call("GET", `/api/AccessPrivilegeGroups/${apgId}/Readers`)); },
+    async readersOf(doorId) { return results(await call("GET", `/api/AccessPrivilegeGroups/AvailableReaders/${partitionId}`, { query: { PageNumber: 1, PerPage: 500 } })).filter((r) => Number(r.DoorId) === Number(doorId)); },
+    async alwaysZoneId() {
+      try { const l = results(await call("GET", "/api/UserTimeZones", { query: { PageNumber: 1, PerPage: 100 } }));
+        const z = l.find((t) => /always|24\/7|all day|anytime|no restriction/i.test(t.Name || "")); return z ? Number(z.Id) : 2; } catch { return 2; }
+    },
+    async holidayGroupId() { const l = results(await call("GET", "/api/UserHolidayGroups", { query: { PageNumber: 1, PerPage: 100 } })); return l[0] && l[0].Id; },
+    async createApg(name, description, holidayGroupId) {
+      const r = await call("POST", "/api/AccessPrivilegeGroups", { json: { GroupType: "Local", Name: name.slice(0, 60), Description: description.slice(0, 255), HolidayTimeZoneGroupId: holidayGroupId, PartitionId: Number(partitionId) } });
+      let id = r && r.Id;
+      if (!id) { const f = (await api.apgs()).find((a) => a.Name === name.slice(0, 60)); id = f && f.Id; }
+      if (!id) throw new ProtectorError(`could not create access group ${name}`);
+      return Number(id);
+    },
+    async apgAddReader(apgId, readerId, zoneId) { return call("PUT", `/api/AccessPrivilegeGroups/${apgId}/Readers/${readerId}/${zoneId}`, { json: {} }); },
+    async apgAddUser(apgId, userId) { return call("PUT", `/api/AccessPrivilegeGroups/${apgId}/Users/${userId}`, { json: {} }); },
+    async apgRemoveUser(apgId, userId) { return call("DELETE", `/api/AccessPrivilegeGroups/${apgId}/Users/${userId}`); },
     async pulseDoors(ids) { return call("POST", "/api/PanelCommands/PulseDoor", { json: { DoorIds: ids.map(Number) } }); },
     async updatePanels() { return call("POST", "/api/PanelCommands/UpdateAll", { json: {} }); },
   };

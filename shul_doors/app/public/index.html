@@ -822,7 +822,7 @@ details.more>summary.gh{color:var(--accent)}
 .checks label:has(input:focus-visible){box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 45%,transparent)}
 .checks label.grp{border:1.5px solid var(--accent);background:transparent;color:var(--accent)}
 .checks label.grp:has(input:checked){background:var(--accent);color:#fff}
-.onbox .cap-codes,.onbox #simPower{display:none!important}
+.onbox #simPower{display:none!important}
 .sdbanner{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;padding:12px 16px;border-radius:14px;margin-bottom:16px;font-size:14px}
 .sdbanner.info{background:color-mix(in srgb,var(--b) 12%,var(--surface))}
 .sdbanner.ok{background:var(--ok-soft)}
@@ -954,6 +954,9 @@ details.more>summary.gh{color:var(--accent)}
 .pass dt{flex:none;width:52px;color:var(--muted)}
 .pass dd{margin:0}
 .pass .meta{font-size:13px;color:var(--muted);margin:12px 0 0}
+.pass .cbox{display:flex;gap:8px;align-items:baseline;font-size:13px;margin:12px 0 0;line-height:1.4}
+.pass .cbox .dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--gray);transform:translateY(-1px)}
+.pass .cbox.ok .dot{background:var(--g)}.pass .cbox.bad{color:var(--lock)}.pass .cbox.bad .dot{background:var(--lock)}.pass .cbox.wait .dot{background:var(--b)}
 .pass-act{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 /* messages */
 .threads .thread+.thread{border-top:.5px solid var(--line)}
@@ -3289,7 +3292,9 @@ function checkImport(){
 }
 function renderAg(){$("#agTags").innerHTML=S.accessGroups.map(g=>`<div class="row"><span class="ic" style="--c:var(--indigo)">${ico("card")}</span><div class="rt"><b>${esc(g)}</b></div><button class="btn sm danger" type="button" data-agdel="${esc(g)}">Remove</button></div>`).join("")||`<div class="row"><span class="hint">No groups yet.</span></div>`}
 /* ---------- temporary codes ---------- */
-if(!S.codes) S.codes=structuredClone(SAMPLE.codes);
+if(!S.codes) S.codes=ON_BOX?[]:structuredClone(SAMPLE.codes);
+// the box never shows the made-up sample code or vendors (a state saved before codes were connected may hold them)
+if(ON_BOX){const isSample=(x,list)=>list.some(y=>y.id===x.id&&y.name===x.name&&(y.pin||"")===(x.pin||""));S.codes=S.codes.filter(c=>!isSample(c,SAMPLE.codes));if(S.vendors)S.vendors=S.vendors.filter(v=>!isSample(v,SAMPLE.vendors))}
 const HOURS={"":null,day:[420,1140],work:[540,1020]};
 function toLocalInput(ms){const d=nyDate(ms),m=nyMinutes(ms);return `${d}T${pad(Math.floor(m/60))}:${pad(m%60)}`}
 function fromLocalInput(v){if(!v)return null;const [d,t]=v.split("T");const [h,m]=t.split(":").map(Number);return nyToMs(d,h*60+m)}
@@ -3322,6 +3327,20 @@ function renderCodeForm(){
   if(!$("#tcPin").value) $("#tcPin").value=randPin();
   if(!$("#tcFrom").value){$("#tcFrom").value=toLocalInput(Date.now());$("#tcTo").value=toLocalInput(Date.now()+4*3600e3)}
 }
+// on the box: how this code stands on the doors (from the box's last run)
+function codeBoxLine(c,st){
+  if(st==="expired")return "";
+  const b=(typeof BOX_ST!=="undefined"&&BOX_ST&&BOX_ST.codes||{})[c.id], pilot=BOX_ST&&BOX_ST.mode==="pilot", prac=BOX_ST&&BOX_ST.mode==="practice";
+  const txt=b&&b.texted?(b.textStatus==="sent"?` Texted to ${c.phone}.`:b.textStatus==="test"?" Texting is in test mode, so the text was not sent.":b.textStatus&&b.textStatus!=="sent"?` The text to ${c.phone} did not go out.`:""):"";
+  const line=(cls,t)=>`<p class="cbox ${cls}"><i class="dot"></i>${esc(t)}</p>`;
+  if(prac)return line("wait","Practice mode: codes are not put on the doors.");
+  if(!b)return line("wait","Waiting for the box to put it on the doors. This takes about a minute.");
+  if(b.state==="on")return line("ok",(st==="active"?"On the doors now.":"Ready on the doors. It starts working at its start time.")+txt);
+  if(b.state==="partial")return line("bad",`On some doors only: ${b.why}.`+txt);
+  if(b.state==="nodoors")return line("bad",pilot?"None of its doors are on the pilot list, so it opens nothing.":"None of its doors are run by this system, so it opens nothing.");
+  if(b.state==="error")return line("bad",b.why||"The box could not put it on the doors.");
+  return line("wait","Waiting for the box to put it on the doors.");
+}
 function renderCodes(){
   renderCodeForm();
   const list=S.codes.filter(canSeeCode).sort((a,b)=>a.from-b.from);
@@ -3331,7 +3350,7 @@ function renderCodes(){
     return `<article class="pass ${st}"><div class="pass-top"><span class="ic" style="--c:${st==="active"?"var(--g)":st==="upcoming"?"var(--b)":"var(--gray)"}">${ico("key")}</span><div class="rt"><b>${esc(c.name)}</b><span>${esc(status)}</span></div></div>
       <div class="pin"><span data-pin="${esc(c.id)}">${c.show?esc(c.pin):"••••••"}</span><button class="linkbtn" type="button" data-pinshow="${esc(c.id)}">${c.show?"Hide":"Show"}</button></div>
       <dl><div><dt>Doors</dt><dd>${esc(codeDoorsText(c))}</dd></div><div><dt>From</dt><dd>${esc(whenText(c.from))}</dd></div><div><dt>Until</dt><dd>${esc(whenText(c.to))}</dd></div>${c.hours?`<div><dt>Hours</dt><dd>${c.hours==="day"?"7 AM to 7 PM":"9 AM to 5 PM"}</dd></div>`:""}</dl>
-      <p class="meta">Made by ${esc(c.by)}${c.phone?`, texted to ${esc(c.phone)}`:""}. ${c.used?`Last used ${esc(c.used)}.`:"Not used yet."}${(()=>{const v=c.vendorId&&(S.vendors||[]).find(x=>x.id===c.vendorId);return v&&v.arriveAlert&&(v.notifyUsers||[]).length&&st!=="expired"?` Texts ${esc(v.notifyUsers.join(" and "))} when they arrive.`:""})()}</p>
+      ${ON_BOX?codeBoxLine(c,st):""}<p class="meta">Made by ${esc(c.by)}${c.phone&&!ON_BOX?`, texted to ${esc(c.phone)}`:""}.${ON_BOX?"":c.used?` Last used ${esc(c.used)}.`:" Not used yet."}${ON_BOX?"":(()=>{const v=c.vendorId&&(S.vendors||[]).find(x=>x.id===c.vendorId);return v&&v.arriveAlert&&(v.notifyUsers||[]).length&&st!=="expired"?` Texts ${esc(v.notifyUsers.join(" and "))} when they arrive.`:""})()}</p>
       <div class="hint" data-cmsg="${esc(c.id)}"></div>
       ${st==="expired"&&canEditCode(c)?`<div class="pass-act"><button class="btn sm" type="button" data-creuse="${esc(c.id)}">Use again</button></div>`:""}${st!=="expired"?`<div class="pass-act"><button class="btn sm" type="button" data-pincopy="${esc(c.id)}">Copy message</button>${ed?`<button class="btn sm" type="button" data-cext="${esc(c.id)}">2 more hours</button><button class="btn sm" type="button" data-cext1="${esc(c.id)}">1 more day</button><button class="btn sm danger" type="button" data-cdel="${esc(c.id)}">Cancel code</button>`:""}</div>`:""}</article>`};
   const grp=(t,arr)=>arr.length?`<h2 class="gh">${t}</h2><div class="passes">${arr.map(pass).join("")}</div>`:"";
@@ -3340,7 +3359,7 @@ function renderCodes(){
     +(exp.length?`<details class="arch"><summary class="gh">Expired (${exp.length})</summary><div class="passes">${exp.map(pass).join("")}</div></details>`:"");
 }
 /* ---------- vendors: saved people who come back ---------- */
-if(!S.vendors) S.vendors=structuredClone(SAMPLE.vendors);
+if(!S.vendors) S.vendors=ON_BOX?[]:structuredClone(SAMPLE.vendors);
 let TCV="codes", VN_EDIT=null, TC_VENDOR=null;
 const HOURS_TXT={"":"Any time","day":"7 AM to 7 PM","work":"9 AM to 5 PM"};
 function fmtPhone(p){const d=String(p||"").replace(/\D/g,"").replace(/^1(?=\d{10}$)/,"");return d.length===10?`${d.slice(0,3)}-${d.slice(3,6)}-${d.slice(6)}`:null}
@@ -3791,7 +3810,7 @@ function showTab(t){CUR_TAB=t;if(t!=="doors"&&typeof SELMODE!=="undefined"&&SELM
   $("#pageTitle").textContent=TITLES[t]||"";$("#pageSub").textContent=SUBS[t]||"";$("#pageSub").hidden=!SUBS[t];
   document.querySelectorAll("#pageAct [data-for]").forEach(b=>b.hidden=b.dataset.for!==t||(b.dataset.tcv&&b.dataset.tcv!==TCV));
   setDrawer(false);hideTip();
-  ["board","doors","live","preview","rules","events","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);liveRun(t==="live");if(t==="doors")renderBoard();
+  ["board","doors","live","preview","rules","events","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);liveRun(t==="live");if(t==="doors")renderBoard();if(t==="codes"&&ON_BOX)renderCodes();
   if(t==="codes")setTCV(TCV);if(t==="reports")renderReports();if(t==="activity")renderLog();if(t==="setup"){$("#split").classList.remove("detail");renderSetupIndex()}
   scrollTo({top:0})}
 let SP=null;
@@ -3934,7 +3953,7 @@ $("#tcGo").onclick=()=>{
   const warns=pinCheck(doors,from,to,hours);
   const make=()=>{const c={id:"t"+Date.now(),vendorId:TC_VENDOR||undefined,name,phone:$("#tcPhone").value.trim(),pin,doors,from,to,hours,by:S.me,created:Date.now()};S.codes.push(c);TC_VENDOR=null;
     $("#tcName").value="";$("#tcPhone").value="";$("#tcPin").value="";$("#tcWarn").innerHTML="";document.querySelectorAll("#tcDoors input").forEach(x=>x.checked=false);
-    closeModal("mCode");toast(c.phone?`Code created. It will be texted to ${c.phone}.`:"Code created. Use Copy message to send it.");
+    closeModal("mCode");toast(ON_BOX?"Code created. The box puts it on the doors in about a minute.":c.phone?`Code created. It will be texted to ${c.phone}.`:"Code created. Use Copy message to send it.");
     commit(`Temp code for "${name}" on ${expandDoors(doors).length===S.doors.length?"all doors":doorsText(doors)}, ${whenText(from)} to ${whenText(to)}`)};
   if(!warns.length){make();return}
   $("#tcWarn").innerHTML=`<div class="warnbox"><b>The code won't open every door the whole time.</b><ul>${warns.map(w=>`<li>${esc(w)}</li>`).join("")}</ul><p style="margin:6px 0 0">You can create it anyway, or add a Card or PIN rule for those times.</p>
@@ -4492,7 +4511,7 @@ async function boxSampler(){
           check:{change:()=>S.events.push(ev),doors:S.doors.map(x=>x.id),from:addDays(d.from,-1),days:daysBetween(d.from,d.to)+3},apply:()=>S.events.push(ev),logText:`Added event "${ev.name}"`})}},
     {name:"propose_temp_code",description:"Prepare a temporary PIN for a service person or guest on given doors between two times (YYYY-MM-DD HH:MM New York time), shown for confirmation. For a saved vendor, pass vendor with their name: their mobile number, usual doors, hours and PIN are filled in from their record. Otherwise a random PIN is generated and you must already have asked the user for the person's mobile number: pass it as phone so the system texts them the code. Only if the user said there is no number, pass no_phone true instead.",
       inputSchema:{type:"object",properties:{vendor:{type:"string",description:"Name of a saved vendor, if this is one"},name:{type:"string"},doors:{type:"array",items:{type:"string"}},from:{type:"string"},to:{type:"string"},phone:{type:"string",description:"Mobile number to text the code to, like 718-555-0100"},no_phone:{type:"boolean",description:"True only when the user said not to text anyone"}},required:["from","to"]},
-      execute(i){if(ON_BOX)throw new Error("Guest codes are not connected to the doors yet, so a code can't be made here. Say so plainly.");if(!can("codes"))throw new Error(S.me+" may not give codes.");
+      execute(i){if(!can("codes"))throw new Error(S.me+" may not give codes.");
         const q=String(i.vendor||"").trim().toLowerCase(), vn=q?(S.vendors.find(v=>v.name.toLowerCase()===q)||S.vendors.find(v=>v.name.toLowerCase().includes(q)||q.includes(v.name.toLowerCase()))):null;
         if(q&&!vn)throw new Error(`No saved vendor matches "${i.vendor}". Saved vendors: ${S.vendors.map(v=>v.name).join(", ")||"none"}.`);
         if(!i.name&&!vn)throw new Error("Who is the code for?");
@@ -4564,7 +4583,6 @@ if(ON_BOX){
   { const bp=$("#bProto"); if(bp) bp.textContent="Each door shows what its rules say it is doing now."; }
   const bk=document.querySelector('[data-sp="backup"] .gf'); if(bk) bk.textContent="The box keeps a copy of the rules and settings every day for 60 days. You can also copy everything here and keep it somewhere safe, or paste a copy back to restore it.";
   CATS[5][1]="Whose cards work, and when. Saved here, not sent to the doors yet";
-  $("#tab-codes").insertAdjacentHTML("afterbegin",`<div class="sdbanner info" style="display:block">Guest codes and vendor access are not connected to the doors yet. A code made here would not open anything, so making codes is turned off for now.</div>`);
   const ap=document.querySelector('[data-sp="alerts"] h2'); if(ap) ap.insertAdjacentHTML("afterend",`<p class="gf top" id="smsMode">Checking texting…</p>`);
   smsRefresh();
   const _toast=toast;
@@ -4584,6 +4602,7 @@ if(ON_BOX){
       const calm=!document.querySelector(".modal:not([hidden])")&&!SAVING&&!(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
       if(calm&&j.version&&window.__SD_VERSION&&+j.version!==+window.__SD_VERSION){try{sessionStorage.setItem("shulTab",CUR_TAB);sessionStorage.setItem("shulY",String(scrollY))}catch(e){}location.reload();return}
       if(calm&&LAST_DAY!==todayNY()){LAST_DAY=todayNY();renderAll()}
+      else if(calm&&CUR_TAB==="codes")renderCodes();
     }catch(e){}
   }
   let LAST_DAY=todayNY(),BOX_DOWN=0;

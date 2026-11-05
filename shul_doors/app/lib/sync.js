@@ -52,7 +52,7 @@ const normSpan = (x, legend) => ({ d: dayName(x.DayOfWeek ?? x.DayOfWeekVal), a:
   m: modeName(x.Mode ?? x.TimeSpanState ?? x.TimeSpanStateVal, legend) });
 const norm = (s) => (s || []).filter((x) => !x.DeletedOn).map((x) => { const n = normSpan(x); return [n.d, n.a, n.b, n.m]; }).sort((p, q) => String(p).localeCompare(String(q)));
 
-async function sync({ client, engine, state, store, now = Date.now(), mode = "practice", pilotDoors = [], horizonDays = 30, budget = 24, log = () => {} }) {
+async function sync({ client, engine, state, store, now = Date.now(), mode = "practice", pilotDoors = [], horizonDays = 30, budget = 24, log = () => {}, sms = null }) {
   const write = mode !== "practice";
   const report = { at: now, mode, actions: [], warnings: [], loadedThrough: {}, errors: [] };
   const act = async (what, fn) => {
@@ -204,6 +204,10 @@ async function sync({ client, engine, state, store, now = Date.now(), mode = "pr
   try { if (await syncOutputs({ client, engine, state, store, mode, pilotDoors, report, act, write })) changed = true; }
   catch (e) { report.warnings.push("Outputs: could not check (" + e.message + ")"); }
 
+  // guest codes (temporary PIN users)
+  try { await syncCodes({ client, engine, state, store, mode, managed, byOur, report, act, write, now, sms }); }
+  catch (e) { report.warnings.push("Guest codes: could not check (" + e.message + ")"); }
+
   // The push to the panels is remembered until it succeeds, so a failed push is
   // retried on the next run even if nothing else needs to change.
   if (changed && write) store.needUpdate = true;
@@ -224,6 +228,7 @@ async function sync({ client, engine, state, store, now = Date.now(), mode = "pr
 
 const { API_MODE, DOW } = require("./planner");
 const { syncOutputs, outputsOf } = require("./outputs");
+const { syncCodes } = require("./codes");
 const { localMinute, dayInstants } = require("./time");
 const LABEL = { Unlock: "Open", CardOrPin: "Card or PIN", Card: "Card only", Pin: "PIN only", CardAndPin: "Card and PIN", UnlockWithFirstCardIn: "First credential in", Lockdown: "Lockdown", DualCard: "Dual card" };
 
