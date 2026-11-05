@@ -1872,6 +1872,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
         <div class="glist form">
           <div class="frow"><label for="tcName">For</label><input id="tcName" placeholder="Boiler repair, Cohen Plumbing"></div>
           <div class="frow"><label for="tcPhone">Mobile number</label><input id="tcPhone" placeholder="718-555-0100" inputmode="tel" autocomplete="off"></div>
+          <label class="frow swrow" for="tcAgree" id="tcAgreeRow"><span class="rt"><b>They agreed to get this text</b><span>Ask first: "May K'hal Shaarei Zion text your door code to this number? Msg and data rates may apply. Reply STOP to stop, HELP for help."</span></span><input type="checkbox" class="switch" id="tcAgree"></label>
         </div>
         <div id="tcPhoneAsk"></div>
         <h3 class="gh">When</h3>
@@ -1916,7 +1917,8 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
           <div class="frow"><label for="vnContact">Contact</label><input id="vnContact" placeholder="Optional"></div>
           <div class="frow"><label for="vnPhone">Mobile number</label><input id="vnPhone" placeholder="718-555-0100" inputmode="tel" autocomplete="off"></div>
         </div>
-        <p class="gf">Codes are texted to this number.</p>
+        <div class="glist form"><label class="frow swrow" for="vnAgree"><span class="rt"><b>They agreed to get texts</b><span>Ask first: "May K'hal Shaarei Zion text your door codes to this number, about a few texts per visit? Msg and data rates may apply. Reply STOP to stop, HELP for help."</span></span><input type="checkbox" class="switch" id="vnAgree"></label></div>
+        <p class="gf">Codes are texted to this number only after they agree.</p>
         <h3 class="gh">Usual doors</h3>
         <div class="glist form"><div class="frow"><div class="checks" id="vnDoors"></div></div></div>
         <h3 class="gh">Usual hours</h3>
@@ -3429,7 +3431,7 @@ function vendorDoorChecks(sel){
 function openVendor(v){
   VN_EDIT=v?v.id:null;const x=v||{name:"",contact:"",phone:"",doors:[],hours:"work",samePin:true,pin:"",notes:""};
   $("#mVnT").textContent=v?"Edit vendor":"New vendor";
-  $("#vnName").value=x.name;$("#vnContact").value=x.contact||"";$("#vnPhone").value=x.phone||"";$("#vnHours").value=x.hours||"";
+  $("#vnName").value=x.name;$("#vnContact").value=x.contact||"";$("#vnPhone").value=x.phone||"";$("#vnAgree").checked=!!x.consentAt;$("#vnHours").value=x.hours||"";
   $("#vnSame").checked=!!x.samePin;$("#vnPin").value=x.pin||(x.samePin?randPin():"");$("#vnPinRow").hidden=!x.samePin;$("#vnNotes").value=x.notes||"";
   $("#vnDoors").innerHTML=vendorDoorChecks(x.doors);$("#vnArrive").checked=!!x.arriveAlert;$("#vnNotifyRow").hidden=!x.arriveAlert;
   const nu=x.notifyUsers||(v?[]:[S.me]);$("#vnNotify").innerHTML=S.users.map(u=>`<label><input type="checkbox" name="vnNotify" value="${esc(u.name)}"${nu.includes(u.name)?" checked":""}>${esc(u.name)}${u.phone?"":` <span class="hint">(no number)</span>`}</label>`).join("");$("#vnErr").hidden=true;$("#vnDelWrap").hidden=!v;$("#vnDel").textContent="Delete vendor";
@@ -3438,7 +3440,7 @@ function giveAccess(v,fromCode){
   TC_VENDOR=v?v.id:(fromCode&&fromCode.vendorId)||null;TC_NOPHONE=false;
   $("#tcWarn").innerHTML="";$("#tcPhoneAsk").innerHTML="";renderCodeForm();
   const src=v||fromCode;
-  $("#tcName").value=src.name;$("#tcPhone").value=src.phone||"";$("#tcHours").value=src.hours||"";
+  $("#tcName").value=src.name;$("#tcPhone").value=src.phone||"";$("#tcHours").value=src.hours||"";$("#tcAgree").checked=!!src.consentAt;
   const ids=expandDoors(src.doors);document.querySelectorAll("#tcDoors input").forEach(x=>x.checked=x.name==="tcDoor"&&ids.includes(x.value));
   const vv=v||S.vendors.find(y=>y.id===TC_VENDOR);
   $("#tcPin").value=vv&&vv.samePin&&vv.pin?vv.pin:randPin();
@@ -3993,14 +3995,16 @@ $("#tcGo").onclick=()=>{
   const phRaw=$("#tcPhone").value.trim(),phDigits=phRaw.replace(/\D/g,"").replace(/^1(?=\d{10}$)/,"");
   if(phRaw&&phDigits.length!==10){$("#tcPhoneAsk").innerHTML=`<div class="errline">The phone number should be 10 digits, like 718-555-0100.</div>`;$("#tcPhone").focus();return}
   if(phRaw)$("#tcPhone").value=`${phDigits.slice(0,3)}-${phDigits.slice(3,6)}-${phDigits.slice(6)}`;
+  if(phRaw&&!$("#tcAgree").checked){$("#tcPhoneAsk").innerHTML=`<div class="errline">Ask them if the shul may text the code to this number, then turn on "They agreed". Or clear the number and use Copy message instead.</div>`;$("#tcAgree").focus();return}
   if(!phRaw&&!TC_NOPHONE){$("#tcPhoneAsk").innerHTML=`<div class="banner warn in"><div><b>Text the code to them?</b><span>Add their mobile number above and the system texts them the code and a reminder before it ends.</span><div class="tline" style="margin-top:10px"><button class="btn sm" type="button" id="tcNoPhone">Create without texting</button></div></div></div>`;$("#tcPhone").focus();
     $("#tcNoPhone").onclick=()=>{TC_NOPHONE=true;$("#tcGo").click()};return}
   TC_NOPHONE=false;$("#tcPhoneAsk").innerHTML="";
   const warns=pinCheck(doors,from,to,hours);
-  const make=()=>{const c={id:"t"+Date.now(),vendorId:TC_VENDOR||undefined,name,phone:$("#tcPhone").value.trim(),pin,doors,from,to,hours,by:S.me,created:Date.now()};S.codes.push(c);
+  const make=()=>{const ph=$("#tcPhone").value.trim(),src=TC_VENDOR&&(S.vendors||[]).find(x=>x.id===TC_VENDOR);
+    const c={id:"t"+Date.now(),vendorId:TC_VENDOR||undefined,name,phone:ph,consentAt:ph?(src&&src.consentAt&&fmtPhone(src.phone)===fmtPhone(ph)?src.consentAt:Date.now()):null,consentBy:ph?(src&&src.consentAt&&fmtPhone(src.phone)===fmtPhone(ph)?src.consentBy:S.me):null,pin,doors,from,to,hours,by:S.me,created:Date.now()};S.codes.push(c);
     {const v=TC_VENDOR&&(S.vendors||[]).find(x=>x.id===TC_VENDOR);if(v&&v.samePin&&!v.pin)v.pin=pin}   // "same PIN each visit": keep the first one
     TC_VENDOR=null;
-    $("#tcName").value="";$("#tcPhone").value="";$("#tcPin").value="";$("#tcWarn").innerHTML="";document.querySelectorAll("#tcDoors input").forEach(x=>x.checked=false);
+    $("#tcName").value="";$("#tcPhone").value="";$("#tcAgree").checked=false;$("#tcPin").value="";$("#tcWarn").innerHTML="";document.querySelectorAll("#tcDoors input").forEach(x=>x.checked=false);
     closeModal("mCode");if(typeof setTCV==="function")setTCV("codes");toast(ON_BOX?"Code created. The box puts it on the doors in about a minute.":c.phone?`Code created. It will be texted to ${c.phone}.`:"Code created. Use Copy message to send it.");
     commit(`Temp code for "${name}" on ${expandDoors(doors).length===S.doors.length?"all doors":doorsText(doors)}, ${whenText(from)} to ${whenText(to)}`)};
   if(!warns.length){make();return}
@@ -4241,7 +4245,8 @@ $("#vnSave").onclick=()=>{const err=t=>{$("#vnErr").textContent=t;$("#vnErr").hi
   if(arrive&&!who.length)return err("Pick who gets the arrival text.");
   const noPh=who.filter(n=>!(S.users.find(u=>u.name===n)||{}).phone);
   if(arrive&&noPh.length)return err(`${noPh.join(" and ")} ${noPh.length>1?"have":"has"} no mobile number yet. Add it in Settings, Users and permissions.`);
-  const x={id:VN_EDIT||"v"+Date.now(),name,contact:$("#vnContact").value.trim(),phone,doors,hours:$("#vnHours").value,samePin:same,pin:same?pin:"",notes:$("#vnNotes").value.trim(),arriveAlert:arrive,notifyUsers:arrive?who:[]};
+  const old=VN_EDIT&&S.vendors.find(v=>v.id===VN_EDIT),agree=$("#vnAgree").checked&&!!phone;
+  const x={id:VN_EDIT||"v"+Date.now(),name,contact:$("#vnContact").value.trim(),phone,consentAt:agree?(old&&old.consentAt&&old.phone===phone?old.consentAt:Date.now()):null,consentBy:agree?(old&&old.consentAt&&old.phone===phone?old.consentBy:S.me):null,doors,hours:$("#vnHours").value,samePin:same,pin:same?pin:"",notes:$("#vnNotes").value.trim(),arriveAlert:arrive,notifyUsers:arrive?who:[]};
   const isNew=!VN_EDIT;if(isNew)S.vendors.push(x);else S.vendors=S.vendors.map(v=>v.id===x.id?x:v);
   closeModal("mVendor");commit(`${isNew?"Added":"Updated"} vendor "${name}"`);toast(isNew?"Vendor saved":"Vendor updated")};
 $("#vnDel").onclick=()=>{const b=$("#vnDel");if(b.textContent!=="Tap again to delete"){b.textContent="Tap again to delete";return}
@@ -4258,7 +4263,7 @@ document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const q=b.datase
   else if(q==="codes"){showTab("codes");renderCodeForm();openModal("mCode")}
   else if(q==="ask")$("#askOpen").click()});
 $("#evNew").onclick=()=>openModal("mEvent");
-$("#tcNew").onclick=()=>{TC_NOPHONE=false;TC_VENDOR=null;$("#mTcT").textContent="New guest code";$("#tcWarn").innerHTML="";$("#tcPhoneAsk").innerHTML="";renderCodeForm();openModal("mCode")};
+$("#tcNew").onclick=()=>{TC_NOPHONE=false;TC_VENDOR=null;$("#tcAgree").checked=false;$("#mTcT").textContent="New guest code";$("#tcWarn").innerHTML="";$("#tcPhoneAsk").innerHTML="";renderCodeForm();openModal("mCode")};
 $("#rqNew").onclick=()=>{$("#rqMsg").textContent="";openModal("mMsg")};
 $("#printBtn").onclick=()=>print();
 $("#ovUntilRow").hidden=true;

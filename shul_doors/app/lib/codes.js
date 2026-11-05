@@ -143,7 +143,7 @@ async function syncCodes({ client, engine, state, store, mode, managed, byOur, r
     if (write) recs[c.id] = rec;
     info.state = rec.state;
     // text the guest their code once, when it first goes on the doors
-    if (write && sms && c.phone && !rec.texted && rec.state !== "error") {
+    if (write && sms && c.phone && c.consentAt && !rec.texted && rec.state !== "error") {   // only with their consent
       rec.texted = now;
       const doors = expand(c.doors).map(doorName).join(", ");
       const fmt = (ms) => new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(ms);
