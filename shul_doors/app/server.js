@@ -407,10 +407,12 @@ async function cloudStt(pcm) {
     const r = await fetch(STT_URL, { method: "POST", headers: { Authorization: "Bearer " + opts.openai_api_key, "Content-Type": "multipart/form-data; boundary=" + b }, body, signal: ctl.signal });
     const j = await r.json().catch(() => ({}));
     if (r.status === 401) throw new Error("The OpenAI key in the add-on settings was not accepted.");
+    if (r.status === 429 && /quota|billing|credit/i.test((j.error && j.error.message) || "")) throw new Error("the OpenAI account has no credit. Add credit in OpenAI under Settings, Billing.");
     if (!r.ok) throw new Error("OpenAI speech answered " + r.status + (j.error && j.error.message ? ": " + j.error.message.slice(0, 120) : ""));
     return String(j.text || "").trim();
   } finally { clearTimeout(t); }
 }
+let sttProblem = "";   // the last OpenAI speech error, shown in the app
 function whisperUp() {
   return new Promise((resolve) => { const s = require("net").connect(WHISPER_PORT, WHISPER_HOST); const t = setTimeout(() => { s.destroy(); resolve(false); }, 1500);
     s.on("connect", () => { clearTimeout(t); s.destroy(); resolve(true); }); s.on("error", () => { clearTimeout(t); resolve(false); }); });
@@ -529,7 +531,7 @@ const server = http.createServer((req, res) => {
     return send(res, 200, { runs: out.slice(-5000) });
   }
   if (req.method === "GET" && p === "/api/stt") {
-    if (opts.openai_api_key) return send(res, 200, { on: true, engine: "openai" });
+    if (opts.openai_api_key) return send(res, 200, { on: true, engine: "openai", problem: sttProblem });
     whisperUp().then((on) => send(res, 200, { on, engine: on ? "whisper" : null })); return;
   }
   if (req.method === "POST" && p === "/api/stt") {
@@ -539,11 +541,16 @@ const server = http.createServer((req, res) => {
       if (size > 4e6) return send(res, 413, { error: "Recording too long. Keep it under two minutes." });
       if (size < 3200) return send(res, 400, { error: "Nothing was recorded." });
       const pcm = Buffer.concat(chunks);
+      const t0 = Date.now(); let warn = "";
       if (opts.openai_api_key) {
-        try { return send(res, 200, { text: await cloudStt(pcm), engine: "openai" }); }
-        catch (e) { log("warn", "speech (OpenAI): " + e.message); if (!(await whisperUp())) return send(res, 502, { error: e.message }); }
+        try { const text = await cloudStt(pcm); sttProblem = ""; log("info", `speech (OpenAI): ${(pcm.length / 32000).toFixed(1)} s of talk written in ${((Date.now() - t0) / 1000).toFixed(1)} s`); return send(res, 200, { text, engine: "openai", ms: Date.now() - t0 }); }
+        catch (e) {
+          sttProblem = e.message; log("warn", "speech (OpenAI): " + e.message);
+          if (!(await whisperUp())) return send(res, 502, { error: "OpenAI speech didn't work: " + e.message });
+          warn = "OpenAI speech didn't work (" + e.message + "), so the slower speech engine on the box was used.";
+        }
       }
-      try { send(res, 200, { text: await whisper(pcm), engine: "whisper" }); }
+      try { send(res, 200, { text: await whisper(pcm), engine: "whisper", ms: Date.now() - t0, warn }); }
       catch (e) { log("warn", "speech: " + e.message); send(res, 502, { error: "The speech engine (Whisper) did not answer. Check that it is installed and running in Home Assistant." }); }
     });
     return;

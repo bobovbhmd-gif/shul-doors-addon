@@ -645,6 +645,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .ask .mic.rec{background:var(--r);color:#fff;animation:micpulse 1.2s ease-in-out infinite}
 .ask .mic.rec svg rect{fill:currentColor}
 .ask .mic.busy{opacity:.6;cursor:progress}
+/* the message box grows with what you say or type, so the whole text stays in view */
+.ask form{align-items:flex-end}
+.ask form textarea{font-size:16px;line-height:1.4;max-height:none;overflow-y:auto;transition:height .12s ease}
+.ask .mic{align-self:flex-end}
+@media (min-width:600px) and (max-width:1280px){
+  .ask{width:min(620px,calc(100vw - 32px));height:calc(100vh - 110px);height:calc(100dvh - 110px)}
+  .ask .msgs{font-size:16px}
+}
 @keyframes micpulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--r) 45%,transparent)}50%{box-shadow:0 0 0 8px transparent}}
 @media (prefers-reduced-motion:reduce){.ask .mic.rec{animation:none}}
 .tip{border-radius:10px;background:rgba(30,30,32,.94);color:#fff}
@@ -4356,7 +4364,7 @@ async function boxSampler(){
   let turns=[], ctl=null, busy=false;
   const msgs=$("#askMsgs");
   const add=(cls,text)=>{const d=document.createElement("div");d.className="msg "+cls;d.textContent=text;msgs.append(d);msgs.scrollTop=msgs.scrollHeight;return d};
-  $("#askOpen").onclick=()=>{$("#askPanel").hidden=false;$("#askOpen").hidden=true;$("#askIn").focus();if(!msgs.children.length)add("sys","Ask about doors, schedules, rules, events, codes or zmanim for the schedule. This assistant only handles the door system. Changes are shown to you first and only saved when you press Save. "+($("#askMic").hidden?"To speak instead of typing, tap the microphone on your phone's keyboard, or press Windows key + H on a PC.":"To speak instead of typing, click the microphone, talk, then click it again. Your words appear in the box so you can check them before sending.")+($("#askClip").hidden?"":" To show it a screenshot, tap the paperclip or paste it into the box."))};
+  $("#askOpen").onclick=()=>{$("#askPanel").hidden=false;$("#askOpen").hidden=true;$("#askIn").focus();if(!msgs.children.length)add("sys","Ask about doors, schedules, rules, events, codes or zmanim for the schedule. This assistant only handles the door system. Changes are shown to you first and only saved when you press Save. "+($("#askMic").hidden?"To speak instead of typing, tap the microphone on your phone's keyboard, or press Windows key + H on a PC.":"To speak instead of typing, tap the microphone and talk. It stops by itself when you pause. Your words appear in the box so you can check them before sending.")+($("#askClip").hidden?"":" To show it a screenshot, tap the paperclip or paste it into the box."))};
   $("#askClose").onclick=()=>{$("#askPanel").hidden=true;$("#askOpen").hidden=false};
   $("#askClear").onclick=()=>{ctl?.abort();turns=[];msgs.innerHTML="";$("#askSugg").hidden=false;add("sys","New chat.")};
   $("#askSugg").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;$("#askIn").value=b.textContent;$("#askForm").requestSubmit()});
@@ -4390,18 +4398,23 @@ async function boxSampler(){
 
   /* speak instead of typing. First choice: the browser's own speech typing (Chrome, Edge, Safari),
      which writes as you talk. If the browser can't, record here and Whisper on the box writes it down. */
+  // the message box grows to fit its text, up to half the panel; then it scrolls, showing the end
+  function askGrow(){const b=$("#askIn");if(!b)return;const max=Math.max(120,Math.round(($("#askPanel").clientHeight||600)*0.5));
+    b.style.height="auto";b.style.height=Math.min(b.scrollHeight+2,max)+"px";b.scrollTop=b.scrollHeight}
+  $("#askIn").addEventListener("input",()=>{askGrow();$("#askSugg").hidden=!!$("#askIn").value.trim()||$("#askMsgs").children.length>1});addEventListener("resize",askGrow);
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   let BOX_STT=false,SR_BAD=false,live=null,STT_ENGINE=null;
   if(SR&&ON_BOX)$("#askMic").hidden=false;
   if(ON_BOX){
-    fetch("api/stt").then(r=>r.json()).then(j=>{if(j&&j.on){BOX_STT=true;STT_ENGINE=j.engine||"whisper";$("#askMic").hidden=false}}).catch(()=>{});
+    let STT_PROBLEM="";
+    fetch("api/stt").then(r=>r.json()).then(j=>{if(j&&j.on){BOX_STT=true;STT_ENGINE=j.engine||"whisper";STT_PROBLEM=j.problem||"";$("#askMic").hidden=false}}).catch(()=>{});
     let rec=null,sending=false;const mic=$("#askMic");
     const setMic=on=>{mic.classList.toggle("rec",on);mic.title=on?"Stop":"Speak instead of typing";mic.setAttribute("aria-label",mic.title)};
     function startLive(){
       const box=$("#askIn"),base=box.value.trim();let finalT="",gotAny=false;
       const r=new SR();r.lang="en-US";r.interimResults=true;r.continuous=true;r.maxAlternatives=1;
       r.onresult=e=>{let interim="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)finalT+=t;else interim+=t}
-        gotAny=true;box.value=((base?base+" ":"")+finalT+interim).replace(/\s+/g," ").trimStart();box.scrollTop=box.scrollHeight};
+        gotAny=true;box.value=((base?base+" ":"")+finalT+interim).replace(/\s+/g," ").trimStart();askGrow()};
       r.onerror=e=>{
         if(e.error==="not-allowed"||e.error==="service-not-allowed"||e.error==="network"||e.error==="audio-capture"){
           if(e.error==="not-allowed"&&window.top!==window&&!BOX_STT){const d=help(`The microphone is blocked inside Home Assistant's frame. <button class="btn sm" type="button">Open Shul Doors in its own window</button> and press Speak there.`);d.querySelector("button").onclick=()=>window.open(location.href,"_blank")}
@@ -4421,29 +4434,39 @@ async function boxSampler(){
         else help("The microphone was not allowed. Click the microphone icon at the right of Chrome's address bar, choose Allow, and try again.");
         return}
       const ctx=new (window.AudioContext||window.webkitAudioContext)(),src=ctx.createMediaStreamSource(stream),proc=ctx.createScriptProcessor(4096,1,1),parts=[];
-      proc.onaudioprocess=e=>parts.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+      // stops by itself after a short pause once you've talked (no need to tap again)
+      let floor=null,heard=false,quiet=0,t=0;
+      proc.onaudioprocess=e=>{const d=new Float32Array(e.inputBuffer.getChannelData(0));parts.push(d);if(!rec)return;
+        let sum=0;for(let i=0;i<d.length;i++)sum+=d[i]*d[i];const rms=Math.sqrt(sum/d.length),dt=d.length/ctx.sampleRate;t+=dt;
+        if(t<0.35){floor=floor==null?rms:Math.min(floor,rms);return}
+        const loud=rms>Math.max(0.012,(floor||0)*3);
+        if(loud){heard=true;quiet=0}else if(heard){quiet+=dt;if(quiet>1.6)stopRec()}};
       src.connect(proc);proc.connect(ctx.destination);
       rec={stream,ctx,proc,src,parts,rate:ctx.sampleRate,timer:setTimeout(()=>stopRec(),110000)};
       mic.classList.add("rec");mic.title="Stop and write it down";mic.setAttribute("aria-label",mic.title);
+      $("#askIn").dataset.ph=$("#askIn").placeholder;$("#askIn").placeholder="Listening… it stops when you pause";
     }
     async function stopRec(){
       if(!rec)return;const r=rec;rec=null;clearTimeout(r.timer);
       r.src.disconnect();r.proc.disconnect();r.stream.getTracks().forEach(t=>t.stop());r.ctx.close();
       mic.classList.remove("rec");mic.title="Speak instead of typing";mic.setAttribute("aria-label",mic.title);
+      const ph=()=>{const b=$("#askIn");if(b.dataset.ph!=null){b.placeholder=b.dataset.ph;delete b.dataset.ph}};
       const n=r.parts.reduce((a,p)=>a+p.length,0),all=new Float32Array(n);let o=0;r.parts.forEach(p=>{all.set(p,o);o+=p.length});
       const m=Math.floor(n*16000/r.rate),pcm=new Int16Array(m);   // to 16 kHz, 16-bit, what Whisper expects
       for(let i=0;i<m;i++){const x=i*r.rate/16000,j=Math.floor(x),f=x-j,v=(all[j]||0)*(1-f)+(all[j+1]||0)*f;pcm[i]=Math.max(-32768,Math.min(32767,Math.round(v*32767)))}
-      if(m<16000*0.4){add("sys","That was too short. Click the microphone, talk, then click it again.");return}
+      if(m<16000*0.4){ph();add("sys","That was too short. Click the microphone, talk, then click it again.");return}
+      $("#askIn").placeholder="Writing it down…";
       sending=true;mic.disabled=true;mic.classList.add("busy");mic.title="Writing it down...";
       try{const res=await fetch("api/stt",{method:"POST",headers:{"Content-Type":"application/octet-stream"},body:pcm.buffer});const j=await res.json().catch(()=>({}));
         if(!res.ok)throw new Error(j.error||"The speech engine did not answer.");
+        if(j.warn)add("sys",j.warn);
         const t=String(j.text||"").trim();if(!t){add("sys","I didn't catch any words. Try again a little closer to the microphone.");return}
-        const box=$("#askIn");box.value=(box.value.trim()?box.value.trim()+" ":"")+t;box.focus();box.setSelectionRange(box.value.length,box.value.length)}
+        const box=$("#askIn");box.value=(box.value.trim()?box.value.trim()+" ":"")+t;askGrow();box.focus();box.setSelectionRange(box.value.length,box.value.length)}
       catch(e){add("sys",e.message)}
-      finally{sending=false;mic.disabled=false;mic.classList.remove("busy");mic.title="Speak instead of typing"}
+      finally{sending=false;mic.disabled=false;mic.classList.remove("busy");mic.title="Speak instead of typing";ph()}
     }
     // OpenAI (when the box has a key) knows the shul's words best; then the browser's own; then Whisper on the box
-    mic.onclick=()=>{if(sending)return;if(live){live.stop();return}if(rec){stopRec();return}if(STT_ENGINE==="openai")startRec();else if(SR&&!SR_BAD)startLive();else if(BOX_STT)startRec()};
+    mic.onclick=()=>{if(sending)return;if(live){live.stop();return}if(rec){stopRec();return}if(STT_ENGINE==="openai"){if(STT_PROBLEM){add("sys","Last time OpenAI speech didn't work: "+STT_PROBLEM);STT_PROBLEM=""}startRec()}else if(SR&&!SR_BAD)startLive();else if(BOX_STT)startRec()};
   }
 
   /* helpers the tools share */
@@ -4604,7 +4627,7 @@ Use the tools to look things up rather than guessing. To change anything, call a
 
   $("#askForm").addEventListener("submit",async ev=>{
     ev.preventDefault();const q=$("#askIn").value.trim();if((!q&&!ATT.length)||busy)return;
-    $("#askIn").value="";$("#askSugg").hidden=true;
+    $("#askIn").value="";$("#askIn").style.height="";$("#askSugg").hidden=true;
     const pics=ATT;ATT=[];drawAtt();
     const me=add("me",q);if(pics.length)me.insertAdjacentHTML("beforeend",`<span class="msg-pics">${pics.map(a=>`<img src="${a.url}" alt="Screenshot">`).join("")}</span>`);
     turns.push({role:"user",content:pics.length?[...pics.map(a=>({type:"image",source:{type:"base64",media_type:a.type,data:a.data}})),{type:"text",text:q||"Here is a screenshot. What does it show, and does anything need fixing?"}]:q});
