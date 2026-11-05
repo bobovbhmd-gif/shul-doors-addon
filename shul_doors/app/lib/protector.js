@@ -149,6 +149,9 @@ function makeClient({ baseUrl, username, password, partitionId = null, log = () 
       if (!r || !r.Id) throw new ProtectorError("creating the user gave no Id");
       return Number(r.Id);
     },
+    async addCard(userId, name, card, siteCode, type = "Card") {
+      return call("POST", `/api/Users/${userId}/Credentials`, { json: { Name: String(name).slice(0, 60), CredentialType: type, SiteCode: Number(siteCode) || 0, CardNumber: Number(card), PinNumber: 0 } });
+    },
     async addPin(userId, name, pin) {
       return call("POST", `/api/Users/${userId}/Credentials`, { json: { Name: ("PIN-" + name).slice(0, 60), CredentialType: "PinOnly", SiteCode: 0, CardNumber: 0, PinNumber: Number(pin) } });
     },

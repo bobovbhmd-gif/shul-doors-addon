@@ -121,6 +121,32 @@ async function peopleApi(req, p, u) {
   try {
     const client = await readyClient(), now = Date.now();
     if (req.method === "GET" && p === "/api/people") return [200, { ...(await people.list(client, store, now, peopleCache, u.searchParams.get("fresh") === "1")), log: (store.peopleLog || []).slice(-30).reverse(), mode: opts.mode }];
+    if (req.method === "GET" && p === "/api/people/groups") { const users = await client.users(); const sh = await people.cardShape(client, store, users); writeJson("store.json", store); return [200, { groups: await people.groups(client), site: sh.site, cards: sh.seen }]; }
+    if (req.method === "POST" && p === "/api/people") {
+      if (opts.mode === "practice") return [200, { ok: false, message: "Practice mode: nothing in Protector.Net is changed." }];
+      const body = await new Promise((r) => { const ch = []; req.on("data", (c) => ch.push(c)); req.on("end", () => { try { r(JSON.parse(Buffer.concat(ch).toString("utf8") || "{}")); } catch { r({}); } }); });
+      const by = user || "someone";
+      let r; try { r = await people.addPerson(client, store, body, by, now); } catch (e) { return [200, { ok: false, message: e.message }]; }
+      if (r.ok) {
+        peopleCache.at = 0; writeJson("store.json", store);
+        fs.appendFileSync(file("history.jsonl"), JSON.stringify({ at: now, reason: "person added", person: `${body.first || ""} ${body.last || ""}`.trim(), by, mode: opts.mode, actions: 1, errors: [], warnings: 0 }) + "\n");
+        log("info", `people: added user ${r.id} by ${by}`);
+      }
+      return [200, r];
+    }
+    const mm = /^\/api\/people\/(\d+)\/(pin|groups)$/.exec(p);
+    if (req.method === "POST" && mm) {
+      if (opts.mode === "practice") return [200, { ok: false, message: "Practice mode: nothing in Protector.Net is changed." }];
+      const body = await new Promise((r) => { const ch = []; req.on("data", (c) => ch.push(c)); req.on("end", () => { try { r(JSON.parse(Buffer.concat(ch).toString("utf8") || "{}")); } catch { r({}); } }); });
+      const by = user || "someone";
+      let r; try { r = mm[2] === "pin" ? await people.addPin(client, store, +mm[1], body.pin, by, now) : await people.setGroups(client, store, +mm[1], body.add, body.remove, by, now); }
+      catch (e) { return [200, { ok: false, message: e.message }]; }
+      peopleCache.at = 0; writeJson("store.json", store);
+      const last = (store.peopleLog || []).slice(-1)[0] || {};
+      fs.appendFileSync(file("history.jsonl"), JSON.stringify({ at: now, reason: mm[2] === "pin" ? "pin added" : "groups changed", person: last.name || "", by, mode: opts.mode, actions: 1, errors: [], warnings: 0 }) + "\n");
+      log("info", `people: ${mm[2]} for user ${mm[1]} by ${by}`);
+      return [200, r];
+    }
     const m = /^\/api\/people\/(\d+)(?:\/(off|on))?$/.exec(p);
     if (!m) return [404, { error: "not found" }];
     if (req.method === "GET" && !m[2]) return [200, await people.detail(client, +m[1])];

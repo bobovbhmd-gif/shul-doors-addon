@@ -961,6 +961,14 @@ details.more>summary.gh{color:var(--accent)}
 .pp-det{padding:4px 16px 16px;border-top:.5px solid var(--line);background:var(--fill)}
 .pp-det dl{display:grid;grid-template-columns:110px 1fr;gap:6px 12px;margin:12px 0;font-size:14px}.pp-det dt{color:var(--muted)}.pp-det dd{margin:0}
 .pp-det .tline{gap:8px}
+.pp-add{padding:18px;margin-bottom:14px}.pp-add h2{margin:0 0 12px;font-size:17px}
+.pp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.pp-grid label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.pp-grid input{font-size:15px}
+.pp-groups{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 2px}.pp-groups label{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border-radius:10px;background:var(--fill);font-size:14px;cursor:pointer}
+.pp-ed{margin:10px 0 0;padding:12px;border-radius:12px;background:var(--surface)}.pp-ed .tline{margin-top:8px}
+.pp-pin{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.pp-pin input{width:150px;font-size:15px}
+@media (max-width:700px){.pp-grid{grid-template-columns:1fr}}
+.pp-add .errline:empty,.pp-ed .errline:empty{display:none}
 .pp-log{margin-top:18px}.pp-log li{font-size:13.5px;color:var(--muted);padding:3px 0}
 @media (max-width:700px){#ppQ{max-width:none}}
 .pass .cbox{display:flex;gap:8px;align-items:baseline;font-size:13px;margin:12px 0 0;line-height:1.4}
@@ -1619,10 +1627,12 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
       <span class="sp"></span>
       <span class="hint" id="ppAt"></span>
       <button class="btn sm" type="button" id="ppRefresh">Refresh</button>
+      <button class="btn sm pri" type="button" id="ppNew">Add person</button>
     </div>
+    <div class="card pp-add" id="ppAdd" hidden></div>
     <div class="card lv-list" id="ppList"></div>
     <div id="ppLog"></div>
-    <p class="gf">From Protector.Net. People, cards and access groups are added and set up there. Here you can turn one person's access off, and back on.</p>
+    <p class="gf">From Protector.Net. Here you can add a person with a card or PIN, give someone a PIN, change their access groups, and turn their access off and back on. Access groups themselves, master users and deleting people stay in Protector.Net.</p>
   </section>
   <section id="tab-reports" hidden>
     <div class="rp-bar">
@@ -3338,7 +3348,12 @@ function pinCheck(doors,from,to,hours){
       });
     }
   }
-  return Object.values(bad).map(x=>`${x.d} is set to ${x.mode} on ${x.n} day${x.n===1?"":"s"} in this window, first ${WDN[dow(x.first)]} ${shortDate(x.first)} ${fmt(x.a)} to ${fmt(x.b)}. ${x.mode==="Lockdown"?"No code opens a locked-down door.":"The PIN alone won't open it then."}`);
+  // doors blocked the same way at the same time are one line, by name
+  const grp={};for(const x of Object.values(bad)){const k=[x.mode,x.n,x.first,x.a,x.b].join("|");(grp[k]=grp[k]||{...x,ds:[]}).ds.push(x.d)}
+  const ML={Card:"Card only",Lockdown:"Lockdown","Card and Pin":"Card and PIN","Dual Card":"Dual card"};
+  return Object.values(grp).map(x=>{const one=x.ds.length===1,names=x.ds.map(doorName).join(", ");
+    const when=x.n===1?`${WDN[dow(x.first)]} ${shortDate(x.first)}, ${fmt(x.a)} to ${fmt(x.b)}`:`${x.n} days, first ${WDN[dow(x.first)]} ${shortDate(x.first)}, ${fmt(x.a)} to ${fmt(x.b)}`;
+    return `${when}: ${one?names+" is":x.ds.length+" doors are"} set to ${ML[x.mode]||x.mode}, so ${x.mode==="Lockdown"?"no code opens "+(one?"it":"them"):"the PIN alone won't open "+(one?"it":"them")}.${one?"":" ("+names+")"}`});
 }
 function renderCodeForm(){
   const sel=new Set([...document.querySelectorAll("input[name=tcDoor]:checked")].map(x=>x.value));
@@ -4602,6 +4617,18 @@ let PP=null,PP_ERR="",PP_OPEN=null,PP_DET={},PP_KIND="all",PP_ARM=null;
 const PP_SAMPLE=()=>({at:Date.now(),mode:"live",log:[{at:Date.now()-864e5,by:"Hershy",name:"Yidel Klein",what:"off"}],people:[
   {id:11,first:"Moshe",last:"Friedman",state:"active",until:null},{id:12,first:"Yidel",last:"Klein",state:"off",offBy:"Hershy",offAt:Date.now()-864e5},
   {id:13,first:"Chaim",last:"Weiss",state:"expired",until:Date.now()-40*864e5},{id:14,first:"Office",last:"Master",state:"active",master:true}]});
+let PP_GROUPS=null,PP_SITE=null,PP_ED=null;   // PP_ED: "pin"+id or "grp"+id while editing
+async function ppGroups(){
+  if(PP_GROUPS)return PP_GROUPS;
+  if(!ON_BOX){PP_GROUPS=[{id:1,name:"Members"},{id:2,name:"Mikva attendants"},{id:3,name:"Staff"}];PP_SITE=12;return PP_GROUPS}
+  try{const j=await (await fetch("api/people/groups")).json();if(j.groups){PP_GROUPS=j.groups;PP_SITE=j.site}}catch(e){}
+  return PP_GROUPS||[];
+}
+const ppPin=()=>String(Math.floor(100000+Math.random()*900000));
+async function ppPost(url,body){
+  if(!ON_BOX)return {ok:true};
+  try{return await (await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body||{})})).json()}catch(e){return {ok:false,message:"Can't reach the box."}}
+}
 async function ppFetch(fresh){
   if(!ON_BOX){PP=PP||PP_SAMPLE();renderPeople();return}
   if(PP&&!fresh&&Date.now()-PP.at<5*60e3){renderPeople();return}
@@ -4623,13 +4650,25 @@ function renderPeople(){
     return `<button type="button" class="pp-row" data-pp="${p.id}" aria-expanded="${PP_OPEN===p.id}"><span class="nm"><b>${esc((p.first+" "+p.last).trim()||"No name")}</b>${sub?`<span>${esc(sub)}</span>`:""}</span><span class="pill ${st[0]}">${esc(st[1])}</span></button>${PP_OPEN===p.id?ppDetail(p):""}`}).join("")
     :`<p class="none" style="padding:16px">${q?"Nobody by that name.":"Nobody here."}</p>`;
   const lg=PP.log||[];
-  $("#ppLog").innerHTML=lg.length?`<div class="pp-log"><h2 class="gh">Recent changes here</h2><ul style="list-style:none;padding:0;margin:0">${lg.slice(0,10).map(x=>`<li>${esc(whenText(x.at))}: ${esc(x.by)} turned ${x.what==="off"?"off":"back on"} ${esc(x.name)}</li>`).join("")}</ul></div>`:"";
+  $("#ppLog").innerHTML=lg.length?`<div class="pp-log"><h2 class="gh">Recent changes here</h2><ul style="list-style:none;padding:0;margin:0">${lg.slice(0,10).map(x=>`<li>${esc(whenText(x.at))}: ${esc(x.by)} ${x.what==="off"?"turned off":x.what==="on"?"turned back on":x.what==="added"?"added":x.what==="pin"?"gave a PIN to":"changed the access groups of"} ${esc(x.name)}${x.groups?" ("+esc(x.groups.join(", "))+")":""}</li>`).join("")}</ul></div>`:"";
+}
+function ppGroupIds(d){
+  const ids=new Set(d.groupIds||[]);(d.groups||[]).forEach(n=>{const g=(PP_GROUPS||[]).find(x=>x.name===n);if(g)ids.add(g.id)});return ids;
+}
+function ppEditors(p,d){
+  if(p.master||(ON_BOX&&PP.mode==="practice"))return "";
+  if(PP_ED==="pin"+p.id)return `<div class="pp-ed"><b>New PIN for ${esc(p.first)}</b><div class="pp-pin" style="margin-top:8px"><input id="ppPinIn" inputmode="numeric" maxlength="9" value="${ppPin()}" aria-label="PIN"><button class="btn sm" type="button" data-ppgen>Make another</button></div>
+    <p class="hint">4 to 9 digits. It works on the same doors and times as their card.</p><div class="tline"><button class="btn sm pri" type="button" data-ppsavepin="${p.id}">Add PIN</button><button class="btn sm" type="button" data-ppcancel>Cancel</button></div><div class="errline" id="ppEdErr"></div></div>`;
+  if(PP_ED==="grp"+p.id){const on=ppGroupIds(d);
+    return `<div class="pp-ed"><b>Access groups for ${esc(p.first)}</b><div class="pp-groups">${(PP_GROUPS||[]).map(g=>`<label><input type="checkbox" name="ppEdG" value="${g.id}"${on.has(g.id)?" checked":""}> ${esc(g.name)}</label>`).join("")||`<span class="hint">No groups found.</span>`}</div>
+    <div class="tline"><button class="btn sm pri" type="button" data-ppsavegrp="${p.id}">Save groups</button><button class="btn sm" type="button" data-ppcancel>Cancel</button></div><div class="errline" id="ppEdErr"></div></div>`}
+  return `<div class="tline" style="margin-bottom:10px"><button class="btn sm" type="button" data-pped="pin${p.id}">Add a PIN</button><button class="btn sm" type="button" data-pped="grp${p.id}">Change access groups</button></div>`;
 }
 function ppDetail(p){
   const d=PP_DET[p.id];
   const body=!d?`<p class="hint">Reading…</p>`:d.error?`<p class="hint">${esc(d.error)}</p>`:`<dl>
     <dt>Cards and PINs</dt><dd>${d.creds.length?d.creds.map(c=>esc(c.type+(c.card?" "+c.card:""))).join(", "):"None"}</dd>
-    <dt>Access groups</dt><dd>${d.groups.length?d.groups.map(esc).join(", "):"None listed"}</dd></dl>`;
+    <dt>Access groups</dt><dd>${d.groups.length?d.groups.map(esc).join(", "):"None listed"}</dd></dl>${ppEditors(p,d)}`;
   const prac=ON_BOX&&PP.mode==="practice";
   const act=p.master?`<p class="hint">A master user can only be changed in Protector.Net.</p>`
     :p.state==="off"?`<div class="tline"><button class="btn sm pri" type="button" data-ppon="${p.id}">${PP_ARM==="on"+p.id?"Tap again to turn back on":"Turn back on"}</button></div>`
@@ -4638,13 +4677,31 @@ function ppDetail(p){
   return `<div class="pp-det">${body}${prac?`<p class="hint">Practice mode: nothing in Protector.Net can be changed.</p>`:act}</div>`;
 }
 async function ppDetFetch(id){
-  if(!ON_BOX){PP_DET[id]={creds:[{type:"Card",card:"…"+String(4400+id)}],groups:["Members"]};renderPeople();return}
+  await ppGroups();
+  if(!ON_BOX){PP_DET[id]=PP_DET[id]||{creds:[{type:"Card",card:"…"+String(4400+id)}],groups:["Members"],groupIds:[1]};renderPeople();return}
   try{PP_DET[id]=await (await fetch("api/people/"+id)).json()}catch(e){PP_DET[id]={error:"Can't reach the box."}}
   renderPeople();
 }
 $("#ppList").addEventListener("click",async ev=>{
   const b=ev.target.closest("button");if(!b)return;
-  if(b.dataset.pp){const id=+b.dataset.pp;PP_ARM=null;PP_OPEN=PP_OPEN===id?null:id;renderPeople();if(PP_OPEN&&!PP_DET[id])ppDetFetch(id);return}
+  if(b.dataset.pp){const id=+b.dataset.pp;PP_ARM=null;PP_ED=null;PP_OPEN=PP_OPEN===id?null:id;renderPeople();if(PP_OPEN&&!PP_DET[id])ppDetFetch(id);return}
+  if(b.dataset.pped){await ppGroups();PP_ED=b.dataset.pped;renderPeople();return}
+  if(b.hasAttribute("data-ppcancel")){PP_ED=null;renderPeople();return}
+  if(b.hasAttribute("data-ppgen")){$("#ppPinIn").value=ppPin();return}
+  if(b.dataset.ppsavepin){const id=+b.dataset.ppsavepin,pin=$("#ppPinIn").value.trim();
+    if(!/^\d{4,9}$/.test(pin)){$("#ppEdErr").textContent="The PIN must be 4 to 9 digits.";return}
+    b.disabled=true;const j=await ppPost(`api/people/${id}/pin`,{pin});
+    if(!j.ok){b.disabled=false;$("#ppEdErr").textContent=j.message||j.error||"Not added.";return}
+    const p=PP.people.find(x=>x.id===id);PP_ED=null;toast(`PIN ${pin} added for ${p.first} ${p.last}.${ON_BOX?"":" Prototype: nothing was sent."}`);
+    if(!ON_BOX)PP_DET[id].creds.push({type:"PIN"});else delete PP_DET[id];if(ON_BOX){await ppFetch(true);ppDetFetch(id)}else renderPeople();return}
+  if(b.dataset.ppsavegrp){const id=+b.dataset.ppsavegrp,d=PP_DET[id],was=ppGroupIds(d),now=new Set([...document.querySelectorAll("input[name=ppEdG]:checked")].map(x=>+x.value));
+    const add=[...now].filter(g=>!was.has(g)),remove=[...was].filter(g=>!now.has(g));
+    if(!now.size&&!confirmRemoveAll(b)){$("#ppEdErr").textContent="With no groups their card opens nothing. Tap Save groups again to do it anyway.";return}
+    if(!add.length&&!remove.length){PP_ED=null;renderPeople();return}
+    b.disabled=true;const j=await ppPost(`api/people/${id}/groups`,{add,remove});
+    if(!j.ok){b.disabled=false;$("#ppEdErr").textContent=j.message||j.error||"Not saved.";return}
+    const p=PP.people.find(x=>x.id===id);PP_ED=null;toast(`Access groups changed for ${p.first} ${p.last}.${ON_BOX?"":" Prototype: nothing was sent."}`);
+    if(!ON_BOX){d.groupIds=[...now];d.groups=PP_GROUPS.filter(g=>now.has(g.id)).map(g=>g.name)}else delete PP_DET[id];if(ON_BOX){await ppFetch(true);ppDetFetch(id)}else renderPeople();return}
   const what=b.dataset.ppoff?"off":b.dataset.ppon?"on":null;if(!what)return;
   const id=+(b.dataset.ppoff||b.dataset.ppon), p=PP.people.find(x=>x.id===id), nm=(p.first+" "+p.last).trim();
   if(PP_ARM!==what+id){PP_ARM=what+id;renderPeople();setTimeout(()=>{if(PP_ARM===what+id){PP_ARM=null;renderPeople()}},5000);return}
@@ -4654,6 +4711,43 @@ $("#ppList").addEventListener("click",async ev=>{
   if(j.ok){toast(what==="off"?`${nm} is turned off. Their card and PIN no longer open the doors.`:`${nm} is back on.`);await ppFetch(true)}
   else{toast(j.message||("Not changed: "+(j.error||"unknown problem")));renderPeople()}
 });
+let PP_RMALL=false;function confirmRemoveAll(){if(PP_RMALL){PP_RMALL=false;return true}PP_RMALL=true;setTimeout(()=>{PP_RMALL=false},6000);return false}
+// add a person: card, PIN or both, and the access groups
+let PP_ADDARM=false,PP_SAMEOK=false;
+async function ppAddForm(){
+  const gs=await ppGroups(),f=$("#ppAdd");PP_ADDARM=false;PP_SAMEOK=false;
+  f.innerHTML=`<h2>Add a person</h2>
+    <div class="pp-grid"><label>First name<input id="paFirst" autocomplete="off"></label><label>Last name<input id="paLast" autocomplete="off"></label>
+    <label>Card number<input id="paCard" inputmode="numeric" autocomplete="off"></label>
+    <label>PIN (optional)<span class="pp-pin"><input id="paPin" inputmode="numeric" maxlength="9" autocomplete="off" style="flex:1;width:auto"><button class="btn sm" type="button" id="paGen">Make one</button></span></label></div>
+    <p class="hint" style="margin:10px 0 4px">Access groups</p>
+    <div class="pp-groups">${gs.map(g=>`<label><input type="checkbox" name="paG" value="${g.id}"> ${esc(g.name)}</label>`).join("")||`<span class="hint">No groups found in Protector.Net.</span>`}</div>
+    <details style="margin-top:10px"><summary class="hint">More: site code, dates</summary>
+      <div class="pp-grid" style="margin-top:8px"><label>Site code<input id="paSite" inputmode="numeric" placeholder="${PP_SITE==null?"":esc(String(PP_SITE))}"></label><span></span>
+      <label>Starts (optional)<input type="datetime-local" id="paFrom"></label><label>Ends (optional)<input type="datetime-local" id="paTo"></label></div>
+      <p class="hint">${PP_SITE==null?"":`Left blank, the site code is ${esc(String(PP_SITE))}, the same as most of your cards.`}</p></details>
+    <div class="errline" id="paErr"></div>
+    <div class="tline" style="margin-top:12px"><button class="btn pri" type="button" id="paGo">Add person</button><button class="btn" type="button" id="paX">Cancel</button></div>`;
+  f.hidden=false;$("#paFirst").focus();
+  $("#paGen").onclick=()=>{$("#paPin").value=ppPin()};
+  $("#paX").onclick=()=>{f.hidden=true};
+  f.oninput=()=>{PP_ADDARM=false;$("#paGo").textContent="Add person"};
+  $("#paGo").onclick=async()=>{
+    const x={first:$("#paFirst").value.trim(),last:$("#paLast").value.trim(),card:$("#paCard").value.replace(/\D/g,""),pin:$("#paPin").value.trim(),site:$("#paSite").value.trim(),
+      groups:[...document.querySelectorAll("input[name=paG]:checked")].map(i=>+i.value),from:fromLocalInput($("#paFrom").value),to:fromLocalInput($("#paTo").value),sameNameOk:PP_SAMEOK};
+    const err=!x.first&&!x.last?"Enter a name.":!x.card&&!x.pin?"Enter a card number, a PIN, or both.":x.pin&&!/^\d{4,9}$/.test(x.pin)?"The PIN must be 4 to 9 digits.":!x.groups.length?"Pick at least one access group.":x.from&&x.to&&x.to<=x.from?"The end must be after the start.":"";
+    if(err){$("#paErr").textContent=err;return}$("#paErr").textContent="";
+    const nm=(x.first+" "+x.last).trim();
+    if(!PP_ADDARM){PP_ADDARM=true;$("#paGo").textContent=`Tap again to add ${nm}`;return}
+    $("#paGo").disabled=true;const j=await ppPost("api/people",x);$("#paGo").disabled=false;PP_ADDARM=false;$("#paGo").textContent="Add person";
+    if(j.sameName){PP_SAMEOK=true;$("#paErr").textContent=j.message+" Tap Add person twice more to add them anyway.";return}
+    if(!j.ok){$("#paErr").textContent=j.message||j.error||"Not added.";return}
+    f.hidden=true;toast(`${nm} was added.${j.failed&&j.failed.length?" Not added to: "+j.failed.join(", ")+".":""}${ON_BOX?"":" Prototype: nothing was sent."}`);
+    if(!ON_BOX){const id=Date.now();PP.people.push({id,first:x.first,last:x.last,state:"active"});PP_DET[id]={creds:[...(x.card?[{type:"Card",card:"…"+x.card.slice(-4)}]:[]),...(x.pin?[{type:"PIN"}]:[])],groups:PP_GROUPS.filter(g=>x.groups.includes(g.id)).map(g=>g.name),groupIds:x.groups};PP.log.unshift({at:Date.now(),by:S.me,name:nm,what:"added"});renderPeople()}
+    else await ppFetch(true);
+  };
+}
+$("#ppNew").onclick=()=>{if(ON_BOX&&PP&&PP.mode==="practice"){toast("Practice mode: nothing in Protector.Net is changed.");return}ppAddForm()};
 $("#ppKind").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;PP_KIND=b.dataset.k;renderPeople()});
 $("#ppQ").addEventListener("input",()=>renderPeople());
 $("#ppRefresh").onclick=()=>ppFetch(true);
