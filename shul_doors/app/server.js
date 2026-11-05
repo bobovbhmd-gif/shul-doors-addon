@@ -191,10 +191,27 @@ async function pulse(door, user) {
   }
 }
 // two rules on the same door at the same time with no choice made: say so in every report
+// A guest code was used (its Protector.Net user is "SD-<code id>"): remember when, and
+// tell the people the vendor's card names, by text, the first time each visit.
+function codeEntry(e) {
+  const m = /\bSD-([A-Za-z0-9]+)/.exec(String(e.who || ""));   // "SD-t123 Name" or "Name, SD-t123"
+  if (!m || !e.ok || !store) return;
+  const id = m[1], c = (state.codes || []).find((x) => x.id === id);
+  store.codeUsed = store.codeUsed || {};
+  const first = !store.codeUsed[id];
+  if (!store.codeUsed[id] || e.t > store.codeUsed[id].t) store.codeUsed[id] = { t: e.t, door: e.door };
+  writeJson("store.json", store);
+  if (!c || !first || Date.now() - e.t > 15 * 60e3) return;
+  const v = c.vendorId && (state.vendors || []).find((x) => x.id === c.vendorId);
+  if (!v || !v.arriveAlert || !(v.notifyUsers || []).length || !sms) return;
+  const who = new Set(v.notifyUsers.map((n) => n.toLowerCase()));
+  const sub = { ...state, contacts: (state.contacts || []).filter((x) => who.has(String(x.name || "").toLowerCase())) };
+  sms.toContacts(sub, `${v.name} just came in at ${e.door}.`, "arrive").then((r) => { if (!r.length) log("info", `${v.name} arrived; nobody to text (add ${v.notifyUsers.join(", ")} as an alert contact who agreed to texts)`); }).catch(() => {});
+}
 // how each guest code stands on the doors, for the Guest codes page (no PINs here)
 function codeStatus() {
   const out = {};
-  for (const [id, r] of Object.entries((store && store.codeUsers) || {})) out[id] = { state: r.state, why: r.why || "", at: r.at, doors: Object.keys(r.groups || {}).length, texted: r.texted || null, textStatus: r.textStatus || null };
+  for (const [id, r] of Object.entries((store && store.codeUsers) || {})) out[id] = { state: r.state, why: r.why || "", at: r.at, doors: Object.keys(r.groups || {}).length, texted: r.texted || null, textStatus: r.textStatus || null, used: (store.codeUsed && store.codeUsed[id]) || null };
   return out;
 }
 function clashNotes() {
@@ -305,7 +322,7 @@ const HA_TOKEN = process.env.SD_HA_TOKEN || SUP_TOKEN;
 const HA_URL = process.env.SD_HA_URL || (SUP_TOKEN ? "http://supervisor/core/api" : "");
 log("info", HA_TOKEN ? "activity: Home Assistant access key found" : "activity: no Home Assistant access key found");
 let activity = null;
-try { activity = createActivity({ file: file("activity.jsonl"), haUrl: HA_URL, token: HA_TOKEN, log, onStates: (st) => checkHeld(st) }); }
+try { activity = createActivity({ file: file("activity.jsonl"), haUrl: HA_URL, token: HA_TOKEN, log, onStates: (st) => checkHeld(st), onEntry: (e) => codeEntry(e) }); }
 catch (e) { log("error", "activity: " + e.message); }
 if (activity) {
   const every = +process.env.SD_ACTIVITY_MS || 60000;

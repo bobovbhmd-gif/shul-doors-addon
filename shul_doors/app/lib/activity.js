@@ -10,7 +10,7 @@ const fs = require("fs");
 const KEEP_DAYS = 400;
 const ENTRY = /^(.*?)\s+(granted|denied)\s+access\b/i;
 
-function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.now(), fetchImpl = fetch, onStates = null }) {
+function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.now(), fetchImpl = fetch, onStates = null, onEntry = null }) {
   let stale = false;
   let events = [], seen = new Set(), lastPoll = 0, sensors = [], status = { on: false, problem: "", sensors: 0, lastPoll: 0 };
   // load what we already have
@@ -49,6 +49,7 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
     const e = { v: 2, k, t, kind: "mode", door: String(a.friendly_name || entity.replace(/^sensor\./, "").replace(/_/g, " ")).replace(/\s+Reader Mode.*$/i, ""), mode };
     events.push(e);
     fs.appendFileSync(file, JSON.stringify(e) + "\n");
+    if (onEntry) { try { onEntry(e); } catch { /* never stop reading */ } }
     return true;
   }
 
@@ -67,6 +68,7 @@ function createActivity({ file, haUrl, token, log = () => {}, now = () => Date.n
     const e = { v: 2, k, t, pid: a["Door ID"] != null ? Number(a["Door ID"]) : null, door: String(a.friendly_name || "").replace(/\s+Last Door Log.*$/i, ""), who: m[1].trim(), ok: m[2].toLowerCase() === "granted" };
     events.push(e);
     fs.appendFileSync(file, JSON.stringify(e) + "\n");
+    if (onEntry) { try { onEntry(e); } catch { /* never stop reading */ } }
     return true;
   }
 

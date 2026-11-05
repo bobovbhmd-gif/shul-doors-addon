@@ -3364,6 +3364,7 @@ function renderCodeForm(){
   if(!$("#tcPin").value) $("#tcPin").value=randPin();
   if(!$("#tcFrom").value){$("#tcFrom").value=toLocalInput(Date.now());$("#tcTo").value=toLocalInput(Date.now()+4*3600e3)}
 }
+function codeUsedText(c){const u=((typeof BOX_ST!=="undefined"&&BOX_ST&&BOX_ST.codes)||{})[c.id];return u&&u.used?` Last used ${esc(whenText(u.used.t))}${u.used.door?" at "+esc(u.used.door):""}.`:" Not used yet."}
 // on the box: how this code stands on the doors (from the box's last run)
 function codeBoxLine(c,st){
   if(st==="expired")return "";
@@ -3387,7 +3388,7 @@ function renderCodes(){
     return `<article class="pass ${st}"><div class="pass-top"><span class="ic" style="--c:${st==="active"?"var(--g)":st==="upcoming"?"var(--b)":"var(--gray)"}">${ico("key")}</span><div class="rt"><b>${esc(c.name)}</b><span>${esc(status)}</span></div></div>
       <div class="pin"><span data-pin="${esc(c.id)}">${c.show?esc(c.pin):"••••••"}</span><button class="linkbtn" type="button" data-pinshow="${esc(c.id)}">${c.show?"Hide":"Show"}</button></div>
       <dl><div><dt>Doors</dt><dd>${esc(codeDoorsText(c))}</dd></div><div><dt>From</dt><dd>${esc(whenText(c.from))}</dd></div><div><dt>Until</dt><dd>${esc(whenText(c.to))}</dd></div>${c.hours?`<div><dt>Hours</dt><dd>${c.hours==="day"?"7 AM to 7 PM":"9 AM to 5 PM"}</dd></div>`:""}</dl>
-      ${ON_BOX?codeBoxLine(c,st):""}<p class="meta">Made by ${esc(c.by)}${c.phone&&!ON_BOX?`, texted to ${esc(c.phone)}`:""}.${ON_BOX?"":c.used?` Last used ${esc(c.used)}.`:" Not used yet."}${ON_BOX?"":(()=>{const v=c.vendorId&&(S.vendors||[]).find(x=>x.id===c.vendorId);return v&&v.arriveAlert&&(v.notifyUsers||[]).length&&st!=="expired"?` Texts ${esc(v.notifyUsers.join(" and "))} when they arrive.`:""})()}</p>
+      ${ON_BOX?codeBoxLine(c,st):""}<p class="meta">Made by ${esc(c.by)}${c.phone&&!ON_BOX?`, texted to ${esc(c.phone)}`:""}.${ON_BOX?codeUsedText(c):c.used?` Last used ${esc(c.used)}.`:" Not used yet."}${(()=>{const v=c.vendorId&&(S.vendors||[]).find(x=>x.id===c.vendorId);return v&&v.arriveAlert&&(v.notifyUsers||[]).length&&st!=="expired"?` Texts ${esc(v.notifyUsers.join(" and "))} when they arrive.`:""})()}</p>
       <div class="hint" data-cmsg="${esc(c.id)}"></div>
       ${st==="expired"&&canEditCode(c)?`<div class="pass-act"><button class="btn sm" type="button" data-creuse="${esc(c.id)}">Use again</button></div>`:""}${st!=="expired"?`<div class="pass-act"><button class="btn sm" type="button" data-pincopy="${esc(c.id)}">Copy message</button>${ed?`<button class="btn sm" type="button" data-cext="${esc(c.id)}">2 more hours</button><button class="btn sm" type="button" data-cext1="${esc(c.id)}">1 more day</button><button class="btn sm danger" type="button" data-cdel="${esc(c.id)}">Cancel code</button>`:""}</div>`:""}</article>`};
   const grp=(t,arr)=>arr.length?`<h2 class="gh">${t}</h2><div class="passes">${arr.map(pass).join("")}</div>`:"";
@@ -3404,7 +3405,7 @@ function seeVendor(v){return isAdmin()||(can("codes")&&expandDoors(v.doors).some
 function vendorStatus(v){const cs=S.codes.filter(c=>c.vendorId===v.id).sort((a,b)=>b.from-a.from), n=Date.now();
   const act=cs.find(c=>codeState(c)==="active");if(act)return `<span class="pill green">In until ${esc(whenText(act.to))}</span>`;
   const up=cs.filter(c=>codeState(c)==="upcoming").pop();if(up)return `<span class="pill blue">Coming ${esc(whenText(up.from))}</span>`;
-  const last=cs.find(c=>codeState(c)==="expired");return `<span class="hint">${last?"Last came "+esc(shortDate(nyDate(last.from)).replace(/, \d{4}$/,"")):"Not yet"}</span>`}
+  const last=cs.find(c=>codeState(c)==="expired");return `<span class="hint">${last?"Last came "+esc(shortDate(nyDate(last.from)).replace(/, \d{4}$/,"")):"No access now"}</span>`}
 function renderVendors(){
   const list=S.vendors.filter(seeVendor).sort((a,b)=>a.name.localeCompare(b.name));
   $("#vnList").innerHTML=(list.length?`<div class="glist">${list.map(v=>`<div class="row tap vrow" data-vedit="${esc(v.id)}" tabindex="0" role="button" aria-label="Edit ${esc(v.name)}">
@@ -3988,7 +3989,9 @@ $("#tcGo").onclick=()=>{
     $("#tcNoPhone").onclick=()=>{TC_NOPHONE=true;$("#tcGo").click()};return}
   TC_NOPHONE=false;$("#tcPhoneAsk").innerHTML="";
   const warns=pinCheck(doors,from,to,hours);
-  const make=()=>{const c={id:"t"+Date.now(),vendorId:TC_VENDOR||undefined,name,phone:$("#tcPhone").value.trim(),pin,doors,from,to,hours,by:S.me,created:Date.now()};S.codes.push(c);TC_VENDOR=null;
+  const make=()=>{const c={id:"t"+Date.now(),vendorId:TC_VENDOR||undefined,name,phone:$("#tcPhone").value.trim(),pin,doors,from,to,hours,by:S.me,created:Date.now()};S.codes.push(c);
+    {const v=TC_VENDOR&&(S.vendors||[]).find(x=>x.id===TC_VENDOR);if(v&&v.samePin&&!v.pin)v.pin=pin}   // "same PIN each visit": keep the first one
+    TC_VENDOR=null;
     $("#tcName").value="";$("#tcPhone").value="";$("#tcPin").value="";$("#tcWarn").innerHTML="";document.querySelectorAll("#tcDoors input").forEach(x=>x.checked=false);
     closeModal("mCode");toast(ON_BOX?"Code created. The box puts it on the doors in about a minute.":c.phone?`Code created. It will be texted to ${c.phone}.`:"Code created. Use Copy message to send it.");
     commit(`Temp code for "${name}" on ${expandDoors(doors).length===S.doors.length?"all doors":doorsText(doors)}, ${whenText(from)} to ${whenText(to)}`)};
