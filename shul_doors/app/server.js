@@ -99,6 +99,73 @@ function loadStore() {   // what the box remembers about the doors (original sch
 // ---------- syncing with the doors ----------
 // "Buzz open": a pulse unlock, the same as pressing the door's release button. Super admins only;
 // in practice mode nothing is sent. Every buzz is written to the history.
+// ---------- someone else changed the schedule: tell the people picked in Alerts ----------
+// In the app it shows under Messages, "Changes by others". By text (when texting is on), changes
+// made close together go out as one text a few minutes after the last one.
+const changeQueue = {};   // recipient -> { by: Set, lines: [], timer }
+function changeAlerts(before, after, who) {
+  const last = Math.max(0, ...((before.log || []).map((e) => +e.t || 0)));
+  const fresh = (after.log || []).filter((e) => (+e.t || 0) > last && e.text);
+  if (!fresh.length) return;
+  const to = (after.alerts && Array.isArray(after.alerts.changeTo)) ? after.alerts.changeTo : (after.users || []).filter((u) => u.role === "Super admin").map((u) => u.name);
+  for (const name of to) {
+    const u = (after.users || []).find((x) => x.name === name); if (!u || !u.phone) continue;
+    const mine = fresh.filter((e) => String(e.u || who).toLowerCase() !== name.toLowerCase()); if (!mine.length) continue;
+    const q = changeQueue[name] = changeQueue[name] || { by: new Set(), lines: [], timer: null };
+    for (const e of mine) { q.by.add(e.u || who); q.lines.push(String(e.text)); }
+    clearTimeout(q.timer);
+    q.timer = setTimeout(() => {
+      delete changeQueue[name];
+      if (!sms || !(state.alerts && state.alerts.changeText !== false)) return;
+      const by = [...q.by].join(" and "), n = q.lines.length;
+      const body = `${by} changed the door schedule: ${q.lines.slice(0, 3).join("; ")}${n > 3 ? `; and ${n - 3} more` : ""}. See Messages in Shul Doors.`;
+      sms.sendOne(u.phone, body.slice(0, 480), "change").catch(() => {});
+    }, +process.env.SD_CHANGE_MS || 3 * 60e3);
+  }
+}
+// ---------- the assistant's memory: each person's chats, and what it learned about them ----------
+// Chats are kept per person on the box (the last 40), so a closed chat picks up where it was.
+// Screenshots are not kept. "memory.json" holds short notes about each person (how they like
+// answers, what they call things); they only shape that person's chats.
+const slug = (n) => String(n || "default").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "default";
+function personOf(req) { const u = matchUser(haUser(req)); return u ? u.name : (haUser(req) || "default"); }
+function readBody(req) { return new Promise((r) => { const ch = []; let n = 0; req.on("data", (c) => { n += c.length; if (n < 3e6) ch.push(c); }); req.on("end", () => { try { r(JSON.parse(Buffer.concat(ch).toString("utf8") || "{}")); } catch { r(null); } }); }); }
+function chatFile(who) { try { fs.mkdirSync(file("chats"), { recursive: true }); } catch {} return file("chats/" + slug(who) + ".json"); }
+function loadChats(who) { try { return JSON.parse(fs.readFileSync(chatFile(who), "utf8")); } catch { return { threads: [] }; } }
+function saveChats(who, c) { c.threads = c.threads.sort((a, b) => b.updated - a.updated).slice(0, 40); fs.writeFileSync(chatFile(who), JSON.stringify(c)); }
+const textOnly = (turns) => (Array.isArray(turns) ? turns : []).slice(-24).map((t) => ({ role: t.role === "assistant" ? "assistant" : "user",
+  content: typeof t.content === "string" ? t.content.slice(0, 8000) : (Array.isArray(t.content) ? t.content.filter((b) => b && b.type === "text").map((b) => b.text).join("\n").slice(0, 8000) : "") })).filter((t) => t.content);
+function loadMemory() { try { return JSON.parse(fs.readFileSync(file("memory.json"), "utf8")); } catch { return {}; } }
+async function chatApi(req, res, p) {
+  const who = personOf(req), now = Date.now();
+  if (p === "/api/seen") {   // when this person last looked at changes others made
+    if (req.method === "POST") { const b = (await readBody(req)) || {}; store.seen = store.seen || {}; store.seen[who] = Math.min(now, +b.t || now); writeJson("store.json", store); }
+    return send(res, 200, { t: (store.seen && store.seen[who]) || 0 });
+  }
+  if (p === "/api/memory") {
+    const mem = loadMemory(); mem[who] = mem[who] || [];
+    if (req.method === "POST") {
+      const b = (await readBody(req)) || {}; const t = String(b.text || "").replace(/\s+/g, " ").trim().slice(0, 200);
+      if (b.remove != null) mem[who] = mem[who].filter((x) => x.id !== b.remove);
+      else if (t && !mem[who].some((x) => x.text.toLowerCase() === t.toLowerCase())) { mem[who].push({ id: "m" + now, text: t, at: now }); mem[who] = mem[who].slice(-30); }
+      fs.writeFileSync(file("memory.json"), JSON.stringify(mem));
+    }
+    return send(res, 200, { notes: mem[who] });
+  }
+  const c = loadChats(who), id = p.split("/")[3];
+  if (!id) return send(res, 200, { who, threads: c.threads.map((t) => ({ id: t.id, title: t.title, updated: t.updated, n: (t.view || []).length })), memory: loadMemory()[who] || [] });
+  const t = c.threads.find((x) => x.id === id);
+  if (req.method === "GET") return t ? send(res, 200, t) : send(res, 404, { error: "no such chat" });
+  if (req.method === "DELETE") { c.threads = c.threads.filter((x) => x.id !== id); saveChats(who, c); return send(res, 200, { ok: true }); }
+  if (req.method === "PUT") {
+    const b = await readBody(req); if (!b) return send(res, 400, { error: "bad json" });
+    const view = (Array.isArray(b.view) ? b.view : []).slice(-200).map((m) => ({ c: ["me", "ai", "sys", "card"].includes(m.c) ? m.c : "sys", t: String(m.t || "").slice(0, 8000), at: +m.at || now }));
+    const x = t || { id, created: now }; x.title = String(b.title || x.title || "Chat").slice(0, 80); x.view = view; x.turns = textOnly(b.turns); x.updated = now;
+    if (!t) c.threads.push(x); saveChats(who, c);
+    return send(res, 200, { ok: true });
+  }
+  send(res, 404, { error: "not found" });
+}
 // a logged-in Protector.Net client on the shul's partition
 async function readyClient() {
   if (!opts.protector_url || !opts.protector_username || !opts.protector_password) throw new Error("The Protector.Net login isn't set yet.");
@@ -513,13 +580,24 @@ function send(res, code, body, type = "application/json") {
   res.writeHead(code, { "Content-Type": type, "Cache-Control": "no-store" });
   res.end(type === "application/json" ? JSON.stringify(body) : body);
 }
+// The person, as Home Assistant names them ("Hershy Reifer"), matched to a Shul Doors user ("Hershy").
+function haUser(req) { return String(req.headers["x-remote-user-display-name"] || req.headers["x-remote-user-name"] || "").trim(); }
+function matchUser(name) {
+  const n = String(name || "").toLowerCase(); if (!n) return null;
+  const us = (state && state.users) || [];
+  return us.find((u) => u.name.toLowerCase() === n) || us.find((u) => n.startsWith(u.name.toLowerCase() + " ")) || null;
+}
+// Home Assistant users who aren't added in Shul Doors get a short page instead of the app.
+// (Until the first super admin exists, the first person in is let in, as before.)
+function notAdded(req) { const n = haUser(req); return !!n && !matchUser(n) && ((state && state.users) || []).some((u) => u.role === "Super admin"); }
+const NOT_ADDED = (name) => `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shul Doors</title><body style="font:17px -apple-system,Segoe UI,Roboto,sans-serif;margin:0;min-height:100vh;display:grid;place-items:center;background:#f5f5f7;color:#1d1d1f"><div style="max-width:420px;padding:32px;text-align:center"><div style="font-size:44px">🔒</div><h1 style="font-size:24px;margin:12px 0 8px">You're not added yet</h1><p style="color:#6e6e73;line-height:1.5">Hi ${String(name).replace(/[<&]/g, "")}. Ask a Shul Doors admin to add you under Settings, Users and permissions, using the name <b>${String(name).replace(/[<&]/g, "")}</b>. Then reload this page.</p></div></body>`;
 function portal(req) {
   const html = fs.readFileSync(path.join(__dirname, "public", "index.html"), "utf8");
   const user = req.headers["x-remote-user-display-name"] || req.headers["x-remote-user-name"] || "";
   const s = structuredClone(state);
   const match = s.users.find((u) => u.name.toLowerCase() === user.toLowerCase()) || s.users.find((u) => user.toLowerCase().startsWith(u.name.toLowerCase() + " "));
   if (match) s.me = match.name;
-  else if (user) { s.users.push({ name: user, role: "Super admin" }); s.me = user; }   // only Home Assistant admins can open the panel (panel_admin)
+  else if (user) { s.users.push({ name: user, role: "Super admin" }); s.me = user; }   // only until the first super admin exists; after that people must be added (see notAdded)
   const boot = `<script>window.__SD_STATE=${JSON.stringify(s).replace(/</g, "\\u003c")};window.__SD_VERSION=${version};window.__SD_USER=${JSON.stringify(user).replace(/</g, "\\u003c")};</script>`;
   return html.replace("__CAL__", JSON.stringify(calendar.cal)).replace("__HEB__", JSON.stringify(calendar.heb)).replace("__PARSHA__", JSON.stringify(calendar.parsha))
     .replace('const HEB_START = "2026-09-01";', `const HEB_START = ${JSON.stringify(calendar.start)};`)
@@ -534,7 +612,12 @@ const server = http.createServer((req, res) => {
   const p = u.pathname.replace(/\/+$/, "") || "/";
   if (halted && req.method === "GET" && (p === "/" || p === "/index.html")) return send(res, 200, `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shul Doors</title><body style="font:16px -apple-system,Segoe UI,sans-serif;padding:24px;max-width:640px;background:#fff;color:#111"><h1>Shul Doors is paused</h1><p>${stateProblem.replace(/</g, "&lt;")}</p><p>The doors keep running on what was last loaded into the panels. Send the add-on log to whoever set this up.</p></body>`, "text/html; charset=utf-8");
   if (halted && p === "/api/state") return send(res, 503, { error: stateProblem });
+  if (notAdded(req)) {
+    if (req.method === "GET" && (p === "/" || p === "/index.html")) return send(res, 200, NOT_ADDED(haUser(req)), "text/html; charset=utf-8");
+    return send(res, 403, { error: "You're not added in Shul Doors yet." });
+  }
   if (req.method === "GET" && (p === "/" || p === "/index.html")) return send(res, 200, portal(req), "text/html; charset=utf-8");
+  if (p === "/api/chats" || p.startsWith("/api/chats/") || p === "/api/memory" || p === "/api/seen") { chatApi(req, res, p); return; }
   if (req.method === "GET" && p === "/api/status") return send(res, 200, { problem: stateProblem, mode: opts.mode, pilotDoors, version, last: lastReport && { at: lastReport.at, ok: lastReport.ok, actions: lastReport.actions, errors: lastReport.errors, warnings: lastReport.warnings, loadedThrough: lastReport.loadedThrough, compare: lastReport.compare }, codes: codeStatus() });
   if (req.method === "GET" && p === "/api/report") {
     const r = lastReport || {}; const lines = [`Mode: ${opts.mode}`, `Checked: ${r.at ? new Date(r.at).toLocaleString("en-US", { timeZone: "America/New_York" }) : "not yet"} (${r.reason || ""})`, "",
@@ -632,7 +715,8 @@ const server = http.createServer((req, res) => {
       // "open now", a situation switched on or off, or the rabbi leaving should reach the doors right away
       const pick = (x) => JSON.stringify([x.overrides || [], (x.situations || []).map((t) => [t.id, t.on, t.ranges || []]), x.rabbiAwayNow || false, x.away || []]);
       const urgent = pick(state) !== pick(body.state);
-      state = body.state; version++;
+      const before = state; state = body.state; version++;
+      try { changeAlerts(before, state, personOf(req)); } catch (e) { log("warn", "change alerts: " + e.message); }
       writeJson("state.json", state); writeJson("version.json", { v: version }); backup();
       clearTimeout(saveTimer); saveTimer = setTimeout(() => runSync(urgent ? "urgent change" : "change saved"), urgent ? 1500 : 15000);
       send(res, 200, { ok: true, version });
