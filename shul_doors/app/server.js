@@ -413,6 +413,23 @@ async function cloudStt(pcm) {
   } finally { clearTimeout(t); }
 }
 let sttProblem = "";   // the last OpenAI speech error, shown in the app
+// Live typing: the box asks OpenAI for a short-lived key (a minute or so) set up for
+// transcription only, and the page talks to OpenAI with it directly over WebRTC. The
+// real key never leaves the box.
+const RT_URL = process.env.SD_RT_URL || "https://api.openai.com/v1/realtime/client_secrets";
+async function liveSttKey() {
+  const r = await fetch(RT_URL, { method: "POST", headers: { Authorization: "Bearer " + opts.openai_api_key, "Content-Type": "application/json" },
+    body: JSON.stringify({ expires_after: { anchor: "created_at", seconds: 120 }, session: { type: "transcription", audio: { input: {
+      format: { type: "audio/pcm", rate: 24000 }, noise_reduction: { type: "near_field" },
+      transcription: { model: STT_MODEL, language: "en", prompt: sttWords() },
+      turn_detection: { type: "server_vad", threshold: 0.5, prefix_padding_ms: 300, silence_duration_ms: 450 } } } } }) });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) throw new Error("The OpenAI key in the add-on settings was not accepted.");
+  if (!r.ok) throw new Error("OpenAI answered " + r.status + (j.error && j.error.message ? ": " + j.error.message.slice(0, 140) : ""));
+  const value = j.value || (j.client_secret && j.client_secret.value);
+  if (!value) throw new Error("OpenAI gave no live key");
+  return value;
+}
 function whisperUp() {
   return new Promise((resolve) => { const s = require("net").connect(WHISPER_PORT, WHISPER_HOST); const t = setTimeout(() => { s.destroy(); resolve(false); }, 1500);
     s.on("connect", () => { clearTimeout(t); s.destroy(); resolve(true); }); s.on("error", () => { clearTimeout(t); resolve(false); }); });
@@ -529,6 +546,12 @@ const server = http.createServer((req, res) => {
     let text = ""; try { text = fs.readFileSync(file("history.jsonl"), "utf8"); } catch { /* none yet */ }
     for (const line of text.split("\n")) { if (!line) continue; try { const x = JSON.parse(line); if (x.at >= from) out.push(x); } catch { /* skip */ } }
     return send(res, 200, { runs: out.slice(-5000) });
+  }
+  if (req.method === "GET" && p === "/api/stt/live") {
+    if (!opts.openai_api_key || opts.stt_live === false) return send(res, 200, { on: false });
+    liveSttKey().then((key) => send(res, 200, { on: true, key, url: process.env.SD_RT_CALLS || "https://api.openai.com/v1/realtime/calls" }))
+      .catch((e) => { sttProblem = e.message; log("warn", "live speech: " + e.message); send(res, 200, { on: false, error: e.message }); });
+    return;
   }
   if (req.method === "GET" && p === "/api/stt") {
     if (opts.openai_api_key) return send(res, 200, { on: true, engine: "openai", problem: sttProblem });

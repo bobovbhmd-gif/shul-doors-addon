@@ -4465,8 +4465,50 @@ async function boxSampler(){
       catch(e){add("sys",e.message)}
       finally{sending=false;mic.disabled=false;mic.classList.remove("busy");mic.title="Speak instead of typing";ph()}
     }
+    // Live typing with OpenAI: words appear as you talk (each phrase right after a short
+    // breath). The box hands the page a key that only works for a minute or two.
+    let ai=null,aiStarting=false;
+    async function startLiveAI(){if(aiStarting)return;aiStarting=true;try{await startLiveAI1()}finally{aiStarting=false}}
+    async function startLiveAI1(){
+      const box=$("#askIn"),base=box.value.trim(),items=new Map(),order=[],done=new Set();
+      let j={};try{j=await (await fetch("api/stt/live")).json()}catch(e){}
+      if(!j.on||!window.RTCPeerConnection){if(j.error)add("sys","Live typing didn't start ("+j.error+"). Your words will appear when you stop.");return startRec()}
+      let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true}})}catch(e){return startRec()}
+      const pc=new RTCPeerConnection();stream.getTracks().forEach(t=>pc.addTrack(t,stream));
+      const dc=pc.createDataChannel("oai-events");
+      const t0=Date.now();let speaking=false,heard=false,lastSpeech=Date.now(),closing=false,timer=null;
+      const show=()=>{box.value=((base?base+" ":"")+order.map(id=>items.get(id)).filter(Boolean).join(" ")).replace(/\s+/g," ").trimStart();askGrow()};
+      const item=id=>{if(id&&!items.has(id)){items.set(id,"");order.push(id)}};
+      const end=()=>{clearInterval(timer);try{dc.close()}catch(e){}try{pc.close()}catch(e){}stream.getTracks().forEach(t=>t.stop());
+        if(ai===me)ai=null;mic.classList.remove("rec");mic.title="Speak instead of typing";mic.setAttribute("aria-label",mic.title);
+        if(box.dataset.ph!=null){box.placeholder=box.dataset.ph;delete box.dataset.ph}
+        box.value=box.value.trim();box.focus();box.setSelectionRange(box.value.length,box.value.length)};
+      // stopping waits a moment for the last phrase to finish writing
+      const stop=()=>{if(closing)return;closing=true;stream.getTracks().forEach(t=>t.enabled=false);const until=Date.now()+3000;
+        const w=setInterval(()=>{if(order.every(id=>done.has(id))||Date.now()>until){clearInterval(w);end()}},150)};
+      const me={stop};
+      dc.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}
+        if(m.type==="input_audio_buffer.speech_started"){speaking=true;heard=true;lastSpeech=Date.now();item(m.item_id)}
+        else if(m.type==="input_audio_buffer.speech_stopped"){speaking=false;lastSpeech=Date.now();item(m.item_id)}
+        else if(m.type==="input_audio_buffer.committed")item(m.item_id);
+        else if(m.type==="conversation.item.input_audio_transcription.delta"){item(m.item_id);items.set(m.item_id,(items.get(m.item_id)||"")+(m.delta||""));show()}
+        else if(m.type==="conversation.item.input_audio_transcription.completed"){item(m.item_id);items.set(m.item_id,String(m.transcript||"").trim());done.add(m.item_id);show()}
+        else if(m.type==="conversation.item.input_audio_transcription.failed"){done.add(m.item_id)}
+        else if(m.type==="error")add("sys","Live typing problem: "+((m.error&&m.error.message)||"unknown"))};
+      try{
+        const offer=await pc.createOffer();await pc.setLocalDescription(offer);
+        const r=await fetch(j.url,{method:"POST",body:offer.sdp,headers:{Authorization:"Bearer "+j.key,"Content-Type":"application/sdp"}});
+        if(!r.ok)throw new Error("OpenAI answered "+r.status);
+        await pc.setRemoteDescription({type:"answer",sdp:await r.text()});
+      }catch(e){try{pc.close()}catch(x){}stream.getTracks().forEach(t=>t.stop());add("sys","Live typing didn't connect ("+e.message+"). Your words will appear when you stop.");return startRec()}
+      ai=me;mic.classList.add("rec");mic.title="Stop";mic.setAttribute("aria-label",mic.title);
+      box.dataset.ph=box.placeholder;box.placeholder="Listening… words appear as you talk";
+      // stops by itself after a few quiet seconds once something was written, or if nothing is said
+      timer=setInterval(()=>{if(closing||speaking)return;const q=Date.now()-lastSpeech;
+        if(heard&&q>3500&&order.every(id=>done.has(id)))stop();else if(!heard&&Date.now()-t0>15000)stop()},400);
+    }
     // OpenAI (when the box has a key) knows the shul's words best; then the browser's own; then Whisper on the box
-    mic.onclick=()=>{if(sending)return;if(live){live.stop();return}if(rec){stopRec();return}if(STT_ENGINE==="openai"){if(STT_PROBLEM){add("sys","Last time OpenAI speech didn't work: "+STT_PROBLEM);STT_PROBLEM=""}startRec()}else if(SR&&!SR_BAD)startLive();else if(BOX_STT)startRec()};
+    mic.onclick=()=>{if(sending)return;if(ai){ai.stop();return}if(live){live.stop();return}if(rec){stopRec();return}if(STT_ENGINE==="openai"){if(STT_PROBLEM){add("sys","Last time OpenAI speech didn't work: "+STT_PROBLEM);STT_PROBLEM=""}startLiveAI()}else if(SR&&!SR_BAD)startLive();else if(BOX_STT)startRec()};
   }
 
   /* helpers the tools share */
