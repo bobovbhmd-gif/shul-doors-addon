@@ -4399,8 +4399,8 @@ async function boxSampler(){
   /* speak instead of typing. First choice: the browser's own speech typing (Chrome, Edge, Safari),
      which writes as you talk. If the browser can't, record here and Whisper on the box writes it down. */
   // the message box grows to fit its text, up to half the panel; then it scrolls, showing the end
-  function askGrow(){const b=$("#askIn");if(!b)return;const max=Math.max(120,Math.round(($("#askPanel").clientHeight||600)*0.5));
-    b.style.height="auto";b.style.height=Math.min(b.scrollHeight+2,max)+"px";b.scrollTop=b.scrollHeight}
+  function askGrow(){const b=$("#askIn");if(!b)return;const grMax=Math.max(120,Math.round(($("#askPanel").clientHeight||600)*0.5));
+    b.style.height="auto";b.style.height=Math.min(b.scrollHeight+2,grMax)+"px";b.scrollTop=b.scrollHeight}
   $("#askIn").addEventListener("input",()=>{askGrow();$("#askSugg").hidden=!!$("#askIn").value.trim()||$("#askMsgs").children.length>1});addEventListener("resize",askGrow);
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   let BOX_STT=false,SR_BAD=false,live=null,STT_ENGINE=null;
@@ -4435,11 +4435,11 @@ async function boxSampler(){
         return}
       const ctx=new (window.AudioContext||window.webkitAudioContext)(),src=ctx.createMediaStreamSource(stream),proc=ctx.createScriptProcessor(4096,1,1),parts=[];
       // stops by itself after a short pause once you've talked (no need to tap again)
-      let floor=null,heard=false,quiet=0,t=0;
+      let nFloor=null,heard=false,quiet=0,t=0;
       proc.onaudioprocess=e=>{const d=new Float32Array(e.inputBuffer.getChannelData(0));parts.push(d);if(!rec)return;
         let sum=0;for(let i=0;i<d.length;i++)sum+=d[i]*d[i];const rms=Math.sqrt(sum/d.length),dt=d.length/ctx.sampleRate;t+=dt;
-        if(t<0.35){floor=floor==null?rms:Math.min(floor,rms);return}
-        const loud=rms>Math.max(0.012,(floor||0)*3);
+        if(t<0.35){nFloor=nFloor==null?rms:Math.min(nFloor,rms);return}
+        const loud=rms>Math.max(0.012,(nFloor||0)*3);
         if(loud){heard=true;quiet=0}else if(heard){quiet+=dt;if(quiet>1.6)stopRec()}};
       src.connect(proc);proc.connect(ctx.destination);
       rec={stream,ctx,proc,src,parts,rate:ctx.sampleRate,timer:setTimeout(()=>stopRec(),110000)};
