@@ -386,9 +386,11 @@ function whisper(pcm) {   // pcm: 16 kHz, 16-bit, mono
 // It is told the shul's words (door names, zmanim, holidays) so it spells them right.
 const STT_URL = process.env.SD_STT_URL || "https://api.openai.com/v1/audio/transcriptions";
 const STT_MODEL = opts.stt_model || "gpt-4o-transcribe";
-function sttWords() {
+function sttWords(max = 2000) {   // live typing allows only 1024 characters, so the door list is cut at a whole name
   const doors = ((state && state.doors) || []).map((d) => d.name).join(", ");
-  return `A gabbai is talking to a synagogue door system in Brooklyn. Words used: Shabbos, Yom Tov, Rabbeinu Tam, shkiah, candle lighting, havdalah, zmanim, Mikvah, Rov, Rabbi, sukkah, Shacharis, Mincha, Maariv, Rosh Chodesh, Chol Hamoed, Pesach, Shavuos, Sukkos, Rosh Hashana, Yom Kippur, kiddush, sheva brachos, bar mitzvah, levaya, Card or PIN, override, pilot. Doors: ${doors}.`.slice(0, 2000);
+  const t = `A gabbai is talking to a synagogue door system in Brooklyn. Words used: Shabbos, Yom Tov, Rabbeinu Tam, shkiah, candle lighting, havdalah, zmanim, Mikvah, Rov, Rabbi, sukkah, Shacharis, Mincha, Maariv, Rosh Chodesh, Chol Hamoed, Pesach, Shavuos, Sukkos, Rosh Hashana, Yom Kippur, kiddush, sheva brachos, bar mitzvah, levaya, Card or PIN, override, pilot. Doors: ${doors}.`;
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max); return cut.slice(0, Math.max(cut.lastIndexOf(","), cut.lastIndexOf("."))) + ".";
 }
 function wav(pcm) {   // 16 kHz, 16-bit, mono
   const h = Buffer.alloc(44);
@@ -421,7 +423,7 @@ async function liveSttKey() {
   const r = await fetch(RT_URL, { method: "POST", headers: { Authorization: "Bearer " + opts.openai_api_key, "Content-Type": "application/json" },
     body: JSON.stringify({ expires_after: { anchor: "created_at", seconds: 120 }, session: { type: "transcription", audio: { input: {
       format: { type: "audio/pcm", rate: 24000 }, noise_reduction: { type: "near_field" },
-      transcription: { model: STT_MODEL, language: "en", prompt: sttWords() },
+      transcription: { model: STT_MODEL, language: "en", prompt: sttWords(1000) },
       turn_detection: { type: "server_vad", threshold: 0.5, prefix_padding_ms: 300, silence_duration_ms: 450 } } } } }) });
   const j = await r.json().catch(() => ({}));
   if (r.status === 401) throw new Error("The OpenAI key in the add-on settings was not accepted.");
