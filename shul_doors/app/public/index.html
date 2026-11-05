@@ -954,6 +954,15 @@ details.more>summary.gh{color:var(--accent)}
 .pass dt{flex:none;width:52px;color:var(--muted)}
 .pass dd{margin:0}
 .pass .meta{font-size:13px;color:var(--muted);margin:12px 0 0}
+#ppQ{flex:1 1 200px;max-width:320px}
+.pp-row{display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:0;border-top:.5px solid var(--line);background:none;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.pp-row:first-child{border-top:0}.pp-row:hover{background:var(--fill)}
+.pp-row .nm{flex:1;min-width:0}.pp-row .nm b{display:block;font-weight:600}.pp-row .nm span{font-size:13px;color:var(--muted)}
+.pp-det{padding:4px 16px 16px;border-top:.5px solid var(--line);background:var(--fill)}
+.pp-det dl{display:grid;grid-template-columns:110px 1fr;gap:6px 12px;margin:12px 0;font-size:14px}.pp-det dt{color:var(--muted)}.pp-det dd{margin:0}
+.pp-det .tline{gap:8px}
+.pp-log{margin-top:18px}.pp-log li{font-size:13.5px;color:var(--muted);padding:3px 0}
+@media (max-width:700px){#ppQ{max-width:none}}
 .pass .cbox{display:flex;gap:8px;align-items:baseline;font-size:13px;margin:12px 0 0;line-height:1.4}
 .pass .cbox .dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--gray);transform:translateY(-1px)}
 .pass .cbox.ok .dot{background:var(--g)}.pass .cbox.bad{color:var(--lock)}.pass .cbox.bad .dot{background:var(--lock)}.pass .cbox.wait .dot{background:var(--b)}
@@ -1413,6 +1422,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
     <div class="ng">Team</div>
     <button type="button" class="navbtn" data-tab="msgs"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></i>Messages <span class="badge" id="msgBadge" hidden></span></button>
     <div class="ng">Admin</div>
+    <button type="button" class="navbtn admin-only" data-tab="people"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.8 14.2c2.4-.2 4.2 1.3 4.7 4.3"/></svg></i>People</button>
     <button type="button" class="navbtn admin-only adv" data-tab="reports"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M11 20V5M17 20v-7M3 20h18"/></svg></i>Reports</button>
     <button type="button" class="navbtn adv" data-tab="activity"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i>History</button>
     <button type="button" class="navbtn" data-tab="setup"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></i>Settings</button>
@@ -1601,6 +1611,18 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
     </div>
     <div class="card lv-list" id="lvList"></div>
     <p class="gf" id="lvFoot">The last 100, newest first. Updates every few seconds while this page is open.</p>
+  </section>
+  <section id="tab-people" hidden>
+    <div class="lv-bar">
+      <input type="search" id="ppQ" placeholder="Search by name" aria-label="Search people" autocomplete="off">
+      <div class="seg" role="group" aria-label="Show" id="ppKind"><button type="button" data-k="all" class="on">All</button><button type="button" data-k="active">Active</button><button type="button" data-k="off">Turned off</button><button type="button" data-k="expired">Expired</button></div>
+      <span class="sp"></span>
+      <span class="hint" id="ppAt"></span>
+      <button class="btn sm" type="button" id="ppRefresh">Refresh</button>
+    </div>
+    <div class="card lv-list" id="ppList"></div>
+    <div id="ppLog"></div>
+    <p class="gf">From Protector.Net. People, cards and access groups are added and set up there. Here you can turn one person's access off, and back on.</p>
   </section>
   <section id="tab-reports" hidden>
     <div class="rp-bar">
@@ -3793,7 +3815,7 @@ async function showMoment(s,min){
     const same=e.mode===td.dataset.want;td.className=same?"okm":"warnm";td.textContent=`${modeLabel(e.mode)}${same?"":" (differs)"}`;td.title=`Since ${whenText(e.t)}`});
 }
 /* ---------- wiring ---------- */
-const TITLES={live:"Live entries",board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules",events:"Events",codes:"Guest codes",msgs:"Messages",reports:"Reports",activity:"History",setup:"Settings"};
+const TITLES={people:"People",live:"Live entries",board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules",events:"Events",codes:"Guest codes",msgs:"Messages",reports:"Reports",activity:"History",setup:"Settings"};
 document.querySelectorAll(".navbtn[data-tab]").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 function setDrawer(open){document.body.classList.toggle("drawer",open);$("#scrim").hidden=!open;$("#menuBtn").setAttribute("aria-expanded",open)}
 document.querySelectorAll(".viewseg button").forEach(b=>b.onclick=()=>{SIMPLE=b.dataset.view==="simple";try{localStorage.setItem("shulDoorSimple",SIMPLE?"1":"0")}catch(e){}renderView();if(SIMPLE&&["reports","activity"].includes(CUR_TAB))showTab("board");if(CUR_TAB==="setup")renderSetupIndex()});
@@ -3803,14 +3825,14 @@ $("#moreBtn").onclick=()=>setDrawer(true);
 $("#scrim").onclick=()=>setDrawer(false);
 document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab(b.dataset.go));
 addEventListener("keydown",ev=>{if(ev.key==="Escape")setDrawer(false)});
-const SUBS={live:"Who is coming in, at every door, as it happens",board:"",doors:"Live status of every door. Tap one to change it.",preview:"What every door does, hour by hour",sheet:"One week on one page, ready to print or email",rules:"The standing instructions the doors follow",events:"Weddings, sheva brachos and the shul's own dates",codes:"PINs for visitors that expire on their own",msgs:"Ask a teammate to make a change",reports:"How the doors are used",activity:"What changed, and what the doors were doing at any moment",setup:""};
+const SUBS={people:"Everyone with a card or PIN in Protector.Net",live:"Who is coming in, at every door, as it happens",board:"",doors:"Live status of every door. Tap one to change it.",preview:"What every door does, hour by hour",sheet:"One week on one page, ready to print or email",rules:"The standing instructions the doors follow",events:"Weddings, sheva brachos and the shul's own dates",codes:"PINs for visitors that expire on their own",msgs:"Ask a teammate to make a change",reports:"How the doors are used",activity:"What changed, and what the doors were doing at any moment",setup:""};
 function showTab(t){CUR_TAB=t;if(t!=="doors"&&typeof SELMODE!=="undefined"&&SELMODE){SELMODE=false;DSEL.clear();document.body.classList.remove("selmode")}document.querySelectorAll(".navbtn[data-tab]").forEach(x=>x.classList.toggle("on",x.dataset.tab===t));
   const inBar=[...document.querySelectorAll(".bnav [data-tab]")].some(x=>x.dataset.tab===t||(t==="sheet"&&x.dataset.tab==="preview"));
   $("#moreBtn").classList.toggle("on",!inBar);
   $("#pageTitle").textContent=TITLES[t]||"";$("#pageSub").textContent=SUBS[t]||"";$("#pageSub").hidden=!SUBS[t];
   document.querySelectorAll("#pageAct [data-for]").forEach(b=>b.hidden=b.dataset.for!==t||(b.dataset.tcv&&b.dataset.tcv!==TCV));
   setDrawer(false);hideTip();
-  ["board","doors","live","preview","rules","events","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);liveRun(t==="live");if(t==="doors")renderBoard();if(t==="codes"&&ON_BOX)renderCodes();
+  ["board","doors","live","people","preview","rules","events","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);liveRun(t==="live");if(t==="doors")renderBoard();if(t==="codes"&&ON_BOX)renderCodes();if(t==="people")ppFetch(false);
   if(t==="codes")setTCV(TCV);if(t==="reports")renderReports();if(t==="activity")renderLog();if(t==="setup"){$("#split").classList.remove("detail");renderSetupIndex()}
   scrollTo({top:0})}
 let SP=null;
@@ -4574,6 +4596,67 @@ Use the tools to look things up rather than guessing. To change anything, call a
   });
   $("#askSend").addEventListener("click",ev=>{if(busy){ev.preventDefault();ctl?.abort()}});
 })();
+
+/* ---------- people: read from Protector.Net, off and back on one at a time ---------- */
+let PP=null,PP_ERR="",PP_OPEN=null,PP_DET={},PP_KIND="all",PP_ARM=null;
+const PP_SAMPLE=()=>({at:Date.now(),mode:"live",log:[{at:Date.now()-864e5,by:"Hershy",name:"Yidel Klein",what:"off"}],people:[
+  {id:11,first:"Moshe",last:"Friedman",state:"active",until:null},{id:12,first:"Yidel",last:"Klein",state:"off",offBy:"Hershy",offAt:Date.now()-864e5},
+  {id:13,first:"Chaim",last:"Weiss",state:"expired",until:Date.now()-40*864e5},{id:14,first:"Office",last:"Master",state:"active",master:true}]});
+async function ppFetch(fresh){
+  if(!ON_BOX){PP=PP||PP_SAMPLE();renderPeople();return}
+  if(PP&&!fresh&&Date.now()-PP.at<5*60e3){renderPeople();return}
+  if(!PP)$("#ppList").innerHTML=`<p class="none" style="padding:16px">Reading Protector.Net…</p>`;
+  try{const j=await (await fetch("api/people"+(fresh?"?fresh=1":""))).json();if(j.error){PP_ERR=j.error}else{PP=j;PP_ERR=""}}catch(e){PP_ERR="Can't reach the box."}
+  renderPeople();
+}
+const ppDate=ms=>{const y=new Date(ms).toLocaleString("en-US",{timeZone:TZ,year:"numeric"}),y0=new Date().toLocaleString("en-US",{timeZone:TZ,year:"numeric"});return y===y0?whenText(ms):new Date(ms).toLocaleDateString("en-US",{timeZone:TZ,month:"short",day:"numeric",year:"numeric"})};
+const PP_ST={active:["green","Active"],off:["red","Turned off"],expired:["","Expired"],notyet:["blue","Starts later"]};
+function renderPeople(){
+  if(!$("#ppList"))return;
+  if(!PP){$("#ppList").innerHTML=`<p class="none" style="padding:16px">${esc(PP_ERR||"Reading Protector.Net…")}</p>`;return}
+  document.querySelectorAll("#ppKind button").forEach(b=>b.classList.toggle("on",b.dataset.k===PP_KIND));
+  const q=$("#ppQ").value.trim().toLowerCase();
+  const list=PP.people.filter(p=>(PP_KIND==="all"||p.state===PP_KIND)&&(!q||(p.first+" "+p.last).toLowerCase().includes(q)));
+  $("#ppAt").textContent=(PP_ERR?PP_ERR+" ":"")+`${PP.people.length} people · read ${whenText(PP.at)}`;
+  $("#ppList").innerHTML=list.length?list.map(p=>{const st=PP_ST[p.state]||["",p.state];
+    const sub=p.state==="off"?`Turned off by ${p.offBy||"someone"}${p.offAt?", "+whenText(p.offAt):""}`:p.state==="expired"&&p.until?`Ended ${ppDate(p.until)}`:p.until?`Until ${ppDate(p.until)}`:p.master?"Master user":"";
+    return `<button type="button" class="pp-row" data-pp="${p.id}" aria-expanded="${PP_OPEN===p.id}"><span class="nm"><b>${esc((p.first+" "+p.last).trim()||"No name")}</b>${sub?`<span>${esc(sub)}</span>`:""}</span><span class="pill ${st[0]}">${esc(st[1])}</span></button>${PP_OPEN===p.id?ppDetail(p):""}`}).join("")
+    :`<p class="none" style="padding:16px">${q?"Nobody by that name.":"Nobody here."}</p>`;
+  const lg=PP.log||[];
+  $("#ppLog").innerHTML=lg.length?`<div class="pp-log"><h2 class="gh">Recent changes here</h2><ul style="list-style:none;padding:0;margin:0">${lg.slice(0,10).map(x=>`<li>${esc(whenText(x.at))}: ${esc(x.by)} turned ${x.what==="off"?"off":"back on"} ${esc(x.name)}</li>`).join("")}</ul></div>`:"";
+}
+function ppDetail(p){
+  const d=PP_DET[p.id];
+  const body=!d?`<p class="hint">Reading…</p>`:d.error?`<p class="hint">${esc(d.error)}</p>`:`<dl>
+    <dt>Cards and PINs</dt><dd>${d.creds.length?d.creds.map(c=>esc(c.type+(c.card?" "+c.card:""))).join(", "):"None"}</dd>
+    <dt>Access groups</dt><dd>${d.groups.length?d.groups.map(esc).join(", "):"None listed"}</dd></dl>`;
+  const prac=ON_BOX&&PP.mode==="practice";
+  const act=p.master?`<p class="hint">A master user can only be changed in Protector.Net.</p>`
+    :p.state==="off"?`<div class="tline"><button class="btn sm pri" type="button" data-ppon="${p.id}">${PP_ARM==="on"+p.id?"Tap again to turn back on":"Turn back on"}</button></div>`
+    :p.state==="expired"?`<p class="hint">Their access already ended in Protector.Net. Change it there.</p>`
+    :`<div class="tline"><button class="btn sm danger" type="button" data-ppoff="${p.id}">${PP_ARM==="off"+p.id?"Tap again to turn off":"Turn off access"}</button></div><p class="hint">Their card and PIN stop working on every door. You can turn them back on here.</p>`;
+  return `<div class="pp-det">${body}${prac?`<p class="hint">Practice mode: nothing in Protector.Net can be changed.</p>`:act}</div>`;
+}
+async function ppDetFetch(id){
+  if(!ON_BOX){PP_DET[id]={creds:[{type:"Card",card:"…"+String(4400+id)}],groups:["Members"]};renderPeople();return}
+  try{PP_DET[id]=await (await fetch("api/people/"+id)).json()}catch(e){PP_DET[id]={error:"Can't reach the box."}}
+  renderPeople();
+}
+$("#ppList").addEventListener("click",async ev=>{
+  const b=ev.target.closest("button");if(!b)return;
+  if(b.dataset.pp){const id=+b.dataset.pp;PP_ARM=null;PP_OPEN=PP_OPEN===id?null:id;renderPeople();if(PP_OPEN&&!PP_DET[id])ppDetFetch(id);return}
+  const what=b.dataset.ppoff?"off":b.dataset.ppon?"on":null;if(!what)return;
+  const id=+(b.dataset.ppoff||b.dataset.ppon), p=PP.people.find(x=>x.id===id), nm=(p.first+" "+p.last).trim();
+  if(PP_ARM!==what+id){PP_ARM=what+id;renderPeople();setTimeout(()=>{if(PP_ARM===what+id){PP_ARM=null;renderPeople()}},5000);return}
+  PP_ARM=null;b.disabled=true;
+  if(!ON_BOX){p.state=what==="off"?"off":"active";p.offBy=S.me;p.offAt=Date.now();PP.log.unshift({at:Date.now(),by:S.me,name:nm,what});renderPeople();toast(what==="off"?`${nm} is turned off. Prototype: nothing was sent.`:`${nm} is back on. Prototype: nothing was sent.`);return}
+  let j;try{j=await (await fetch(`api/people/${id}/${what}`,{method:"POST"})).json()}catch(e){j={error:"Can't reach the box."}}
+  if(j.ok){toast(what==="off"?`${nm} is turned off. Their card and PIN no longer open the doors.`:`${nm} is back on.`);await ppFetch(true)}
+  else{toast(j.message||("Not changed: "+(j.error||"unknown problem")));renderPeople()}
+});
+$("#ppKind").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;PP_KIND=b.dataset.k;renderPeople()});
+$("#ppQ").addEventListener("input",()=>renderPeople());
+$("#ppRefresh").onclick=()=>ppFetch(true);
 
 /* ---------- on the box: show what the door system is doing ---------- */
 if(ON_BOX){

@@ -165,6 +165,9 @@ function makeClient({ baseUrl, username, password, partitionId = null, log = () 
         throw e;
       }
     },
+    async user(userId) { const d = await call("GET", `/api/Users/${userId}`); return (d && d.Result) || d; },
+    async credentials(userId) { return results(await call("GET", `/api/Users/${userId}/Credentials`, { query: { PageNumber: 1, PerPage: 50 } })); },
+    async setUserExpires(userId, value) { return call("PUT", `/api/Users/${userId}`, { json: { Properties: [{ Name: "ExpiresOn", Value: value }] } }); },
     async apgs() { return results(await call("GET", "/api/AccessPrivilegeGroups", { query: { PartitionId: partitionId, PageNumber: 1, PerPage: 500 } })); },
     async apgReaders(apgId) { return results(await call("GET", `/api/AccessPrivilegeGroups/${apgId}/Readers`)); },
     async readersOf(doorId) { return results(await call("GET", `/api/AccessPrivilegeGroups/AvailableReaders/${partitionId}`, { query: { PageNumber: 1, PerPage: 500 } })).filter((r) => Number(r.DoorId) === Number(doorId)); },

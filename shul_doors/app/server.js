@@ -8,6 +8,7 @@ const path = require("path");
 const { execFile } = require("child_process");
 const { createEngine } = require("./engine/load");
 const { outputReportLines } = require("./lib/outputs");
+const people = require("./lib/people");
 const { createSms } = require("./lib/sms");
 const { makeClient } = require("./lib/protector");
 const { sync } = require("./lib/sync");
@@ -98,6 +99,43 @@ function loadStore() {   // what the box remembers about the doors (original sch
 // ---------- syncing with the doors ----------
 // "Buzz open": a pulse unlock, the same as pressing the door's release button. Super admins only;
 // in practice mode nothing is sent. Every buzz is written to the history.
+// a logged-in Protector.Net client on the shul's partition
+async function readyClient() {
+  if (!opts.protector_url || !opts.protector_username || !opts.protector_password) throw new Error("The Protector.Net login isn't set yet.");
+  const client = makeClient({ baseUrl: opts.protector_url, username: opts.protector_username, password: opts.protector_password, log });
+  const parts = await client.partitions();
+  const part = opts.partition ? parts.find((x) => x.Name === opts.partition) : parts[0];
+  if (!part) throw new Error("partition not found");
+  await client.setPartition(part.Id);
+  return client;
+}
+function superAdmin(user) {
+  if (!user) return true;   // only Home Assistant admins reach the box
+  const u = (state.users || []).find((x) => x.name.toLowerCase() === user.toLowerCase()) || (state.users || []).find((x) => user.toLowerCase().startsWith(x.name.toLowerCase() + " "));
+  return !u || u.role === "Super admin";
+}
+const peopleCache = {};
+async function peopleApi(req, p, u) {
+  const user = req.headers["x-remote-user-display-name"] || req.headers["x-remote-user-name"] || "";
+  if (!superAdmin(user)) return [403, { error: "Only a super admin can see the people in Protector.Net." }];
+  try {
+    const client = await readyClient(), now = Date.now();
+    if (req.method === "GET" && p === "/api/people") return [200, { ...(await people.list(client, store, now, peopleCache, u.searchParams.get("fresh") === "1")), log: (store.peopleLog || []).slice(-30).reverse(), mode: opts.mode }];
+    const m = /^\/api\/people\/(\d+)(?:\/(off|on))?$/.exec(p);
+    if (!m) return [404, { error: "not found" }];
+    if (req.method === "GET" && !m[2]) return [200, await people.detail(client, +m[1])];
+    if (req.method === "POST" && m[2]) {
+      if (opts.mode === "practice") return [200, { ok: false, message: "Practice mode: nothing in Protector.Net is changed." }];
+      const by = user || "someone";
+      const r = m[2] === "off" ? await people.turnOff(client, store, +m[1], by, now) : await people.turnOn(client, store, +m[1], by, now);
+      peopleCache.at = 0; writeJson("store.json", store);
+      fs.appendFileSync(file("history.jsonl"), JSON.stringify({ at: now, reason: m[2] === "off" ? "access off" : "access on", person: (store.peopleLog || []).slice(-1)[0]?.name || "", by, mode: opts.mode, actions: 1, errors: [], warnings: 0 }) + "\n");
+      log("info", `people: access ${m[2]} for user ${m[1]} by ${by}`);
+      return [200, r];
+    }
+    return [404, { error: "not found" }];
+  } catch (e) { return [200, { ok: false, error: e.message }]; }
+}
 async function pulse(door, user) {
   const d = (state.doors || []).find((x) => x.id === door);
   if (!d) return { code: 404, body: { error: "No such door." } };
@@ -485,6 +523,7 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+  if (p === "/api/people" || p.startsWith("/api/people/")) { peopleApi(req, p, u).then(([c, b]) => send(res, c, b)); return; }
   if (req.method === "POST" && p === "/api/sync") { runSync("by hand").then((r) => send(res, 200, r)); return; }
   if (req.method === "PUT" && p === "/api/state") {
     const chunks = []; req.on("data", (c) => chunks.push(c)); req.on("end", () => {
