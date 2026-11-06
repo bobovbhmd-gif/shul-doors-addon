@@ -547,7 +547,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .lv-r.new{animation:lvn 2.5s ease-out}
 @keyframes lvn{from{background:color-mix(in srgb,var(--b) 16%,transparent)}to{background:transparent}}
 .lv-day{padding:8px 16px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:var(--fill2)}
-.bz-doors{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.bz-doors{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}
+.bz-gh{font-size:12.5px;font-weight:600;color:var(--muted);margin:14px 2px 8px;letter-spacing:.01em}
+.bz-gh:first-of-type{margin-top:6px}
+.bz-dw{position:relative;display:flex}.bz-dw .bz-d{flex:1;padding-right:38px;min-width:0}
+.bz-pin{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:0;background:transparent;color:var(--muted);opacity:.45;cursor:pointer;display:grid;place-items:center;padding:0;transition:opacity .15s,background .15s}
+.bz-pin svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.bz-pin:hover{opacity:1;background:var(--fill)}.bz-pin.on{color:var(--accent);opacity:1}.bz-pin.on svg{fill:currentColor}
+.bz-tip{margin:10px 2px 0}
 .bz-d{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:0;border-radius:14px;padding:12px 14px;background:var(--fill2);color:var(--fg);font:inherit;cursor:pointer;min-height:64px;transition:background .15s,transform .1s}
 .bz-d b{font-size:15px;font-weight:600;line-height:1.25}.bz-d span{font-size:12.5px;color:var(--muted)}
 .bz-d:active{transform:scale(.97)}
@@ -981,6 +988,8 @@ details.more>summary.gh{color:var(--accent)}
 .pass dt{flex:none;width:52px;color:var(--muted)}
 .pass dd{margin:0}
 .pass .meta{font-size:13px;color:var(--muted);margin:12px 0 0}
+.usave{position:sticky;top:8px;z-index:20;display:flex;align-items:center;gap:10px;padding:10px 12px 10px 16px;margin:0 0 12px;border-radius:14px;background:var(--surface);box-shadow:0 4px 18px rgba(0,0,0,.12),0 0 0 1px var(--accent)}
+.usave span{flex:1;font-weight:600;font-size:14px}
 .wel-prev{display:block;width:100%;min-height:400px;margin-top:14px;border:0;border-radius:14px;background:#f5f5f7;box-shadow:0 0 0 .5px var(--line)}
 .wel-btns{margin:6px 0 4px;flex-wrap:wrap}
 .wel-msg{margin:6px 2px 0;font-size:14px;min-height:0}.wel-msg:empty{display:none}.wel-msg.ok{color:var(--ok)}.wel-msg.bad{color:var(--lock)}
@@ -1040,8 +1049,11 @@ details.more>summary.gh{color:var(--accent)}
 #hOut{margin-top:14px}
 .vrow .rt .arr{color:var(--ok);font-weight:500}
 .row input.uphone{flex:0 1 170px;min-width:0;text-align:right}
-.row input.uphone.uemail{flex:1 1 300px;max-width:440px;text-align:left}
-@media (max-width:640px){.ublock .row:has(.uemail){flex-wrap:wrap}.row input.uphone.uemail{flex-basis:100%;max-width:none}}
+.ublock>.row:first-child{flex-wrap:wrap;row-gap:8px}
+.ublock>.row:first-child .rt{flex:1 1 140px;min-width:140px}
+.ublock .row .rt{min-width:150px}
+.ublock .row:has(.uemail){flex-wrap:wrap;row-gap:8px}
+.row input.uphone.uemail{flex:1 1 260px;max-width:none;text-align:left}
 .nrow{align-items:flex-start}
 .nrow .ic{margin-top:2px}
 .nacts{display:flex;gap:6px;flex:none;align-self:center}
@@ -1328,7 +1340,9 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
 .hs-det summary{cursor:pointer;color:var(--accent);font-size:13px;margin-top:4px}
 .hs-det ul{margin:6px 0 0;padding-left:18px;font-size:13px;color:var(--muted)}
 @media (max-width:699px){.rp-cols,.rp-axis{margin-right:24px}.rp-cols .gl{right:-24px}.hc{height:16px}.hs-row .hs-t{width:54px}}
-@media print{.rp-bar,.hs-bar,#rpCsv,.rp-more .btn{display:none!important}}
+@media print{.rp-bar,.hs-bar,.dl2,.rp-more .btn{display:none!important}}
+.dl2{display:inline-flex;align-items:center;gap:6px;flex:none}.dl2>span{font-size:13px;color:var(--muted)}
+.rp-dlrow{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.rp-dlrow .rp-src{flex:1 1 300px;margin:0}
 .secthead .pvf{width:auto;max-width:240px;margin-left:12px;height:34px;font-size:14px}
 .tpick{display:inline-flex;align-items:center;gap:4px}
 .tpick select{width:auto;min-width:58px;padding-right:22px}
@@ -1689,7 +1703,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
       <label class="search sm rp-who"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="rpWho" placeholder="Person" aria-label="Person"></label>
       <select id="rpRes" aria-label="Result"><option value="all">Granted and denied</option><option value="ok">Granted only</option><option value="no">Denied only</option></select>
     </div>
-    <p class="gf rp-src" id="rpSrc">Loading…</p>
+    <div class="rp-dlrow"><p class="gf rp-src" id="rpSrc">Loading…</p><span id="rpDlWrap"></span></div>
     <div class="kpis rp-kpis" id="rpKpi"></div>
     <div class="card rp-card"><div class="rp-ch"><h2 class="ch" id="rpTrendH">Entries per day</h2><span class="hint" id="rpTrendS"></span></div><div id="rpTrend"></div></div>
     <div class="rp-two">
@@ -1704,7 +1718,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
       <div><h2 class="gh">Denied attempts</h2><div class="card tw rp-card" id="rpDenied"></div></div>
     </div>
     <h2 class="gh">Door changes</h2><div class="card tw rp-card" id="rpModes"></div>
-    <div class="rp-ch rp-logh"><h2 class="gh">Every entry</h2><button class="btn sm" type="button" id="rpCsv">Download</button></div>
+    <div class="rp-ch rp-logh"><h2 class="gh">Every entry</h2></div>
     <div class="card tw rp-card" id="rpLog"></div>
   </section>
 
@@ -1729,6 +1743,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
       <select id="hsWho" aria-label="Who"></select>
       <label class="search sm rp-who"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="hsQ" placeholder="Search" aria-label="Search history"></label>
     </div>
+    <div class="rp-dlrow"><span></span><span id="hsDlWrap"></span></div>
     <div class="kpis rp-kpis" id="hsKpi"></div>
     <div id="logRows"></div>
     <p class="gf">People: every change someone made, and who. Box: each time the box sent changes to the doors, or had a problem. Doors: when each door's mode really changed, read from the door panels, and whether that matched the rules.</p>
@@ -1850,6 +1865,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
           <h2>Users and permissions</h2>
           <p class="gf top">A super admin sees and changes everything. For anyone else, set each door to Edit, View only or Hidden, and choose whether they can make permanent schedules or only temporary ones. New doors start hidden for them.</p>
           <p class="gf top" id="accessLine" hidden></p>
+          <div class="usave" id="uSaveBar" hidden><span id="uSaveTxt">Unsaved changes</span><button class="btn sm" type="button" id="uCancel">Cancel</button><button class="btn sm pri" type="button" id="uSave">Save changes</button></div>
           <div id="userRows"></div>
           <div class="glist addrow"><div class="row"><input id="uName" placeholder="New user's name" aria-label="User name"><select id="uRole" aria-label="Role"><option>Restricted</option><option>Super admin</option></select><button class="btn sm pri" type="button" id="addUser">Add</button></div></div>
           <div class="steps-card"><b>Adding someone new</b><ol>
@@ -3050,7 +3066,7 @@ function renderSetup(){
   $("#alertChecks").innerHTML=ALERTS.map(([k,l])=>`<label class="row swrow" for="al-${k}"><span class="rt"><b>${esc(l)}</b>${k==="held"?`<span>After <input type="number" id="heldMin" min="1" max="120" value="${S.alerts.heldMin}" aria-label="Minutes"> minutes</span>`:""}${NOTYET.includes(k)?`<span>Not connected yet</span>`:""}</span><input type="checkbox" class="switch" id="al-${k}" data-alert="${k}"${S.alerts[k]?" checked":""}></label>`).join("");
   {const to=chgRecipients();$("#chgTo").innerHTML=S.users.map(u=>`<label class="row swrow" for="chg-${esc(u.name)}"><span class="avatar">${esc(initials(u.name))}</span><span class="rt"><b>${esc(u.name)}</b><span>${u.phone?esc(u.phone):"No mobile number yet, so in the app only"}</span></span><input type="checkbox" class="switch" id="chg-${esc(u.name)}" data-chg="${esc(u.name)}"${to.includes(u.name)?" checked":""}></label>`).join("")}
   const CAPS=[["codes","Give guest codes"],["override","Open or lock doors by hand"],["events","Add events"],["rabbi","Set the rabbi away and switch situations"]];
-  $("#userRows").innerHTML=S.users.map((u,i)=>{
+  $("#userRows").innerHTML=UL().map((u,i)=>{
     const r=u.role==="Restricted";
     return `<div class="glist ublock"><div class="row"><span class="avatar">${esc(initials(u.name))}</span><div class="rt"><b>${esc(u.name)}${u.name===S.me?' <span class="mini">You</span>':""}</b><span>${r?"Restricted":"Sees and changes everything"}</span></div>
       <select data-urole="${i}" aria-label="Role for ${esc(u.name)}"><option${!r?" selected":""}>Super admin</option><option${r?" selected":""}>Restricted</option></select>
@@ -3284,8 +3300,14 @@ async function buzzDoor(id){
   try{return await (await fetch("api/pulse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({door:id})})).json()}
   catch(e){return {sent:false,message:"Couldn't reach the box. Try again."}}
 }
-function buzzRecent(){let r=[];try{r=JSON.parse(localStorage.getItem("shulBuzzRecent")||"[]")}catch(e){}return r.filter(id=>S.doors.some(d=>d.id===id))}
-function buzzRemember(id){const r=[id,...buzzRecent().filter(x=>x!==id)].slice(0,12);try{localStorage.setItem("shulBuzzRecent",JSON.stringify(r))}catch(e){}}
+// recent and pinned doors are kept per person (on the box, so every device shows the same)
+const bzValid=id=>S.doors.some(d=>d.id===id);
+function buzzRecent(){const u=S.users.find(x=>x.name===S.me);let r=u&&Array.isArray(u.buzzRecent)?u.buzzRecent:null;
+  if(!r){try{r=JSON.parse(localStorage.getItem("shulBuzzRecent")||"[]")}catch(e){r=[]}}return r.filter(bzValid)}
+function buzzRemember(id){const r=[id,...buzzRecent().filter(x=>x!==id)].slice(0,12);const u=S.users.find(x=>x.name===S.me);if(u)u.buzzRecent=r;try{localStorage.setItem("shulBuzzRecent",JSON.stringify(r))}catch(e){}}
+function buzzPins(){const u=S.users.find(x=>x.name===S.me);return (u&&Array.isArray(u.buzzPins)?u.buzzPins:[]).filter(bzValid)}
+function buzzPin(id){const u=S.users.find(x=>x.name===S.me);if(!u)return;const p=buzzPins();u.buzzPins=p.includes(id)?p.filter(x=>x!==id):[...p,id];save();renderBuzzCard();
+  toast(u.buzzPins.includes(id)?`${doorName(id)} is pinned to the top`:`${doorName(id)} unpinned`)}
 let BUZZ_ALL=false,BUZZ_Q="",BZ_SEL=null,BZ_OPEN=false;
 // Home: pick a door, then buzz it or open it for a few minutes
 function renderBuzzCard(){
@@ -3295,10 +3317,13 @@ function renderBuzzCard(){
   if(!doors.length){el.hidden=true;el.innerHTML="";return}el.hidden=false;
   el.classList.toggle("closed",!BZ_OPEN);
   if(!BZ_OPEN){el.innerHTML=`<button type="button" class="bz-open" id="bzOpen" aria-expanded="false"><span class="ic" style="--c:var(--g)">${ico("open")}</span><span class="rt"><b>Open or buzz a door</b><span>Buzz open, or open for 5 to 60 minutes</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>`;return}
-  const rec=buzzRecent(),defs=[...doors.filter(d=>/main ent/i.test(d.name)),...doors.filter(d=>/entrance/i.test(d.name))].map(d=>d.id);
-  const top=[...new Set([...rec,...defs,...doors.map(d=>d.id)])].filter(id=>doors.some(d=>d.id===id)).slice(0,6);
-  if(BZ_SEL&&!top.includes(BZ_SEL)&&!BUZZ_ALL)top.unshift(BZ_SEL);
-  const q=BUZZ_Q.trim().toLowerCase(),list=BUZZ_ALL?doors.filter(d=>!q||(d.name+" "+d.id).toLowerCase().includes(q)).map(d=>d.id):top.slice(0,6);
+  // pinned first, then the ones this person opened lately, then the main entrances
+  const has=id=>doors.some(d=>d.id===id),pins=buzzPins().filter(has),rec=buzzRecent().filter(id=>has(id)&&!pins.includes(id)).slice(0,8);
+  const defs=[...doors.filter(d=>/main ent/i.test(d.name)),...doors.filter(d=>/entrance/i.test(d.name))].map(d=>d.id).filter(id=>!pins.includes(id)&&!rec.includes(id));
+  const more=[...new Set(defs)].slice(0,Math.max(0,9-pins.length-rec.length));
+  if(BZ_SEL&&has(BZ_SEL)&&!BUZZ_ALL&&![...pins,...rec,...more].includes(BZ_SEL))more.unshift(BZ_SEL);
+  const q=BUZZ_Q.trim().toLowerCase(),found=doors.filter(d=>!q||(d.name+" "+d.id).toLowerCase().includes(q)).map(d=>d.id).sort((a,b)=>(pins.includes(b)-pins.includes(a)));
+  const groups=BUZZ_ALL?[["",found]]:[["Pinned",pins],["Recent",rec],[pins.length||rec.length?"Main doors":"",more]].filter(g=>g[1].length);
   const sel=BZ_SEL&&doors.some(d=>d.id===BZ_SEL)?BZ_SEL:null;
   let acts="";
   if(sel){const f=doorFacts(sel),b=typeof BOX_ST!=="undefined"&&BOX_ST;
@@ -3310,7 +3335,8 @@ function renderBuzzCard(){
   el.innerHTML=`<div class="bz-h"><span class="ic" style="--c:var(--g)">${ico("open")}</span><div><b>Open a door</b><span>${sel?"Choose what to do":"Tap a door"}</span></div>
       <button type="button" class="linkbtn" id="bzAll">${BUZZ_ALL?"Fewer doors":"All doors"}</button><button type="button" class="linkbtn" id="bzClose">Close</button></div>
     ${BUZZ_ALL?`<label class="search sm bz-q"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="bzQ" placeholder="Find a door" aria-label="Find a door" value="${esc(BUZZ_Q)}"></label>`:""}
-    <div class="bz-doors">${list.map(id=>{const f=doorFacts(id);return `<button type="button" class="bz-d${id===sel?" on":""}" data-bz="${esc(id)}" aria-pressed="${id===sel}"><b>${esc(doorName(id))}</b><span><i class="dot" style="--c:${modeColor(f.st.mode)}"></i>${esc(f.label)}${f.hand?" · by hand":""}</span></button>`}).join("")||`<p class="none">No door matches.</p>`}</div>${acts}${isAdmin()||can("override")?`<div class="bz-foot"><button type="button" class="linkbtn" id="bzMore">Lock a door, or open until a set time</button></div>`:""}`;
+    ${groups.map(([h,ids])=>`${h?`<div class="bz-gh">${esc(h)}</div>`:""}<div class="bz-doors">${ids.map(id=>{const f=doorFacts(id),pn=pins.includes(id);return `<div class="bz-dw"><button type="button" class="bz-d${id===sel?" on":""}" data-bz="${esc(id)}" aria-pressed="${id===sel}"><b>${esc(doorName(id))}</b><span><i class="dot" style="--c:${modeColor(f.st.mode)}"></i>${esc(f.label)}${f.hand?" · by hand":""}</span></button><button type="button" class="bz-pin${pn?" on":""}" data-bzpin="${esc(id)}" aria-pressed="${pn}" aria-label="${pn?"Unpin":"Pin"} ${esc(doorName(id))}" title="${pn?"Unpin":"Pin to the top"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z"/><path d="M12 13v8"/></svg></button></div>`}).join("")}</div>`).join("")||`<p class="none">No door matches.</p>`}
+    ${!BUZZ_ALL&&!pins.length?`<p class="hint bz-tip">Tip: tap the pin on a door to keep it at the top.</p>`:""}${acts}${isAdmin()||can("override")?`<div class="bz-foot"><button type="button" class="linkbtn" id="bzMore">Lock a door, or open until a set time</button></div>`:""}`;
   const qi=$("#bzQ");if(qi)qi.addEventListener("input",e=>{BUZZ_Q=e.target.value;const pos=e.target.selectionStart;renderBuzzCard();const n=$("#bzQ");n.focus();n.setSelectionRange(pos,pos)});
 }
 document.addEventListener("click",async ev=>{
@@ -3318,15 +3344,16 @@ document.addEventListener("click",async ev=>{
   if(ev.target.closest("#bzMore")){document.querySelector('[data-q="override"]').click();return}
   if(ev.target.closest("#bzClose")){BZ_OPEN=false;BZ_SEL=null;BUZZ_ALL=false;BUZZ_Q="";renderBuzzCard();return}
   if(ev.target.closest("#bzAll")){BUZZ_ALL=!BUZZ_ALL;BUZZ_Q="";renderBuzzCard();return}
+  const pn=ev.target.closest("[data-bzpin]");if(pn){buzzPin(pn.dataset.bzpin);return}
   const d=ev.target.closest("[data-bz]");if(d){BZ_SEL=BZ_SEL===d.dataset.bz?null:d.dataset.bz;renderBuzzCard();return}
   const a=ev.target.closest("[data-bza]");if(!a||!BZ_SEL||a.disabled)return;
   const id=BZ_SEL,name=doorName(id),k=a.dataset.bza;
   if(k==="buzz"){a.disabled=true;const t=a.innerHTML;a.textContent="Buzzing…";const j=await buzzDoor(id);a.disabled=false;
     if(j&&j.sent){buzzRemember(id);commit(`Buzzed ${name} open`);toast(`${name} buzzed open`);a.textContent="Buzzed";setTimeout(()=>{a.innerHTML=t},2000)}
     else{a.innerHTML=t;toast((j&&(j.message||j.error))||"Not sent")}return}
-  if(k==="back"){endOverridesFor(id);buzzRemember(id);BZ_OPEN=false;BZ_SEL=null;commit(`${name}: back to the schedule`);toast(`${name} is back on its schedule`);return}
+  if(k==="back"){endOverridesFor(id);buzzRemember(id);BZ_OPEN=false;BZ_SEL=null;BUZZ_ALL=false;BUZZ_Q="";commit(`${name}: back to the schedule`);toast(`${name} is back on its schedule`);return}
   const mins=+k,now=Date.now(),o={id:"o"+now,doors:[id],mode:"Unlock",from:now,to:now+mins*60e3,by:S.me,why:"Quick open from Home"};
-  endOverridesFor(id);S.overrides.push(o);buzzRemember(id);BZ_OPEN=false;BZ_SEL=null;
+  endOverridesFor(id);S.overrides.push(o);buzzRemember(id);BZ_OPEN=false;BZ_SEL=null;BUZZ_ALL=false;BUZZ_Q="";
   commit(`Override: Unlock on ${name} until ${whenText(o.to)} (quick open, ${mins} min)`);toast(`${name} is now open for ${mins} minutes`);
 });
 function endOverridesFor(id){const now=Date.now();
@@ -3570,6 +3597,17 @@ function seeReq(q){return isAdmin()||q.from===S.me||q.to===S.me}
 function unread(q){const last=q.msgs[q.msgs.length-1];return forMe(q)&&q.status==="open"&&last.u!==S.me&&(!q.read||!q.read[S.me]||q.read[S.me]<last.t)}
 function changeLines(c){if(!c)return[];const r=c.rule;return [`Doors: ${doorsText(r.doors)}`,`${anchorText(r.start)} to ${anchorText(r.end)}${r.end.days?` (${r.end.days} day${r.end.days>1?"s":""} later)`:""}, ${r.kind==="access"?r.group+" cards":r.mode}`,`Runs on: ${condText(r.inc)}`,...(condText(r.exc)?[`Except: ${condText(r.exc)}`]:[]),...(r.season&&r.season!=="any"?[r.season==="dst"?"Only on the summer clock":"Only on the winter clock"]:[]),...(r.rabbi&&r.rabbi!=="any"?[r.rabbi==="away"?"Only when the rabbi is away":"Only when the rabbi is here"]:[]),["Part of the schedule","Overrides the schedule during the event","Overrides the schedule while the situation is on","Overrides everything while the situation is on"][ruleLayer(r)],...(isTempRule(r)?["Temporary"]:["Permanent"])]}
 let OPENQ=null;
+// ---------- Users and permissions: edits wait for Save changes ----------
+let UD=null,UCH=[];
+const UL=()=>UD||S.users;
+function ud(){if(!UD)UD=structuredClone(S.users);return UD}
+function uchg(text,rerender){UCH.push(text);$("#uSaveBar").hidden=false;$("#uSaveTxt").textContent=UCH.length===1?"1 unsaved change":UCH.length+" unsaved changes";if(rerender)renderSetup()}
+function uDone(){UD=null;UCH=[];$("#uSaveBar").hidden=true}
+$("#uSave").onclick=()=>{if(!UD){uDone();return}
+  if(!UD.some(u=>u.role==="Super admin")){toast("Keep at least one super admin.");return}
+  const n=UCH.length,text=UCH.length===1?UCH[0]:`Users and permissions: ${UCH.join("; ")}`;S.users=UD;uDone();commit(text);toast(n===1?"Saved.":`Saved ${n} changes.`);if(ON_BOX)setTimeout(accessLine,6000)};
+$("#uCancel").onclick=()=>{uDone();renderSetup()};
+addEventListener("beforeunload",ev=>{if(UD){ev.preventDefault();ev.returnValue=""}});
 // the Cloudflare sign-in list (which emails may reach building.khalbobov.org)
 async function accessLine(){const el=$("#accessLine");if(!el||!ON_BOX)return;let j={};try{j=await (await fetch("api/access")).json()}catch(e){return}
   el.hidden=false;el.className="gf top"+(j.why?" warnm":"");
@@ -3672,7 +3710,7 @@ K'hal Shaarei Zion Bobov`;
 let WEL=null;
 function welRender(){const u=S.users[WEL];if(!u)return;const m=welcomeEmail(u,$("#welUser").value.trim(),$("#welFrom").value.trim());
   const f=$("#welPrev");f.onload=()=>{try{f.style.height=(f.contentDocument.documentElement.scrollHeight+4)+"px"}catch(e){}};f.srcdoc=`<!doctype html><meta charset="utf-8"><body style="margin:0">${m.html}</body>`;return m}
-$("#userRows").addEventListener("click",ev=>{const b=ev.target.closest("[data-uwel]");if(!b)return;WEL=+b.dataset.uwel;const u=S.users[WEL];
+$("#userRows").addEventListener("click",ev=>{const b=ev.target.closest("[data-uwel]");if(!b)return;if(UD){toast("Save changes first, then send the welcome email.");return}WEL=+b.dataset.uwel;const u=S.users[WEL];
   $("#mWelT").textContent="Welcome email for "+u.name;$("#welUser").value=u.login||u.name.toLowerCase().split(/\s+/)[0];$("#welFrom").value=S.me;$("#welMsg").textContent="";
   welRender();openModal("mWel");welSetup();welPwSetup()});
 ["welUser","welFrom"].forEach(id=>$("#"+id).addEventListener("input",welRender));
@@ -3981,8 +4019,19 @@ function drawReports(j,r){
   $("#rpLog").innerHTML=shown.length?`<table class="rp-t"><thead><tr><th>When</th><th>Door</th><th>Who</th><th>Result</th></tr></thead><tbody>${shown.slice(0,lim).map(e=>`<tr><td class="time">${esc(dshort(e.t))}, ${tm(e.t)}</td><td>${esc(doorName(e.door))}</td><td><a class="rp-p" data-who="${esc(e.who)}">${esc(e.who)}</a></td><td>${e.ok?"Granted":`<span class="warnm">Denied</span>`}</td></tr>`).join("")}</tbody></table>
       <div class="rp-more"><span class="hint">Showing ${fmtN(Math.min(lim,shown.length))} of ${fmtN(shown.length)}</span>${shown.length>lim?`<button class="btn sm" type="button" id="rpMore">Show more</button>`:""}</div>`
     :`<p class="none">No entries match.</p>`;
-  $("#rpCsv").disabled=!shown.length;
+  // everything above, in full (the screen shows only the top of each list), for the downloads
+  const per=r.days===1?nyDate(r.a):`${nyDate(r.a)} to ${nyDate(r.b-1)}`;
+  RP_X=[
+    {name:"Summary",rows:[["Shul Doors report",""],["Period",per],["Doors",RP.door?doorName(RP.door.startsWith("g:")?RP.door:RP.door):"All"],["Person filter",RP.who||"Everyone"],["Entries",ok.length],["People",people.size],["Denied",den.length],["After hours",late.length],["Door changes",M.length]]},
+    {name:"By door",rows:[["Door","Door number","Entries","People","Denied","After hours","Busiest hour","Last entry"],...allRows.map(x=>[doorName(x.d),x.d,x.n,x.p,x.den,x.late,x.bh<0?"":fmt(x.bh*60),x.last?whenX(x.last):""])]},
+    {name:"People",rows:[["Person","Entries","Denied","Doors","Which doors","Last seen"],...Object.entries(pm).sort((a,b)=>b[1].n-a[1].n).map(([n,p])=>[n,p.n,p.den,p.doors.size,[...p.doors].map(doorName).join(", "),whenX(p.last)])]},
+    {name:"Denied",rows:[["When","Door","Who"],...[...den].sort((a,b)=>b.t-a.t).map(e=>[whenX(e.t),doorName(e.door),e.who])]},
+    {name:"After hours",rows:[["When","Door","Who"],...[...late].sort((a,b)=>b.t-a.t).map(e=>[whenX(e.t),doorName(e.door),e.who])]},
+    {name:"Door changes",rows:[["When","Door","Changed to","Rules"],...[...M].sort((a,b)=>b.t-a.t).map(e=>{const o=onSchedule(e.door,e.t,e.mode);return [whenX(e.t),doorName(e.door),modeLabel(e.mode),o===null?"":o?"On schedule":"Not from the rules"]})]},
+    {name:"Every entry",rows:[["When","Door","Door number","Who","Result"],...shown.map(e=>[whenX(e.t),doorName(e.door),e.door,e.who,e.ok?"Granted":"Denied"])]}];
+  RP_XBASE=`door-report-${per.replace(/ to /,"_to_")}`;
 }
+let RP_X=null,RP_XBASE="door-report";
 let RP_SHOWN=[];
 function drawTrend(ok,den,r){
   const today=nyDate(r.a)===nyDate(r.b-1),cols=[];
@@ -4012,8 +4061,43 @@ function rpCsv(){const q=v=>`"${String(v).replace(/"/g,'""')}"`;
   const lines=[["When","Door","Door number","Person","Result"].map(q).join(",")].concat(RP_SHOWN.map(e=>[new Date(e.t).toLocaleString("en-US",{timeZone:TZ}),doorName(e.door),e.door,e.who,e.ok?"Granted":"Denied"].map(q).join(",")));
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([lines.join("\r\n")],{type:"text/csv"}));a.download=`door-activity-${todayNY()}.csv`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
 
+/* ---------- downloads: CSV, or a real Excel file (.xlsx, built here, no add-ons) ---------- */
+function dlBlob(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
+function csvText(sheets){const q=v=>{const t=v==null?"":String(v);return /[",\r\n]/.test(t)?`"${t.replace(/"/g,'""')}"`:t};
+  return "\ufeff"+sheets.map((sh,i)=>(sheets.length>1?[[sh.name]]:[]).concat(sh.rows).map(r=>r.map(q).join(",")).join("\r\n")).join("\r\n\r\n")}
+const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC_T[(c^b[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+function zipStore(files){// files: [{name, data:Uint8Array}] stored, no compression
+  const enc=new TextEncoder(),parts=[],cen=[];let off=0;
+  const u16=n=>[n&255,(n>>>8)&255],u32=n=>[n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255];
+  for(const f of files){const nm=enc.encode(f.name),c=crc32(f.data),sz=f.data.length;
+    const h=new Uint8Array([...u32(0x04034b50),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(c),...u32(sz),...u32(sz),...u16(nm.length),...u16(0)]);
+    parts.push(h,nm,f.data);
+    cen.push(new Uint8Array([...u32(0x02014b50),...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(c),...u32(sz),...u32(sz),...u16(nm.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(off)]),nm);
+    off+=h.length+nm.length+sz}
+  const cs=cen.reduce((t,x)=>t+x.length,0);
+  return new Blob([...parts,...cen,new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),...u16(files.length),...u16(files.length),...u32(cs),...u32(off),...u16(0)])],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})}
+function xlsxBlob(sheets){
+  const enc=new TextEncoder(),x=v=>String(v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"");
+  const col=i=>{let s="";i++;while(i){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26)}return s};
+  const used=new Set(),sname=n=>{let b=String(n).replace(/[\\\/?*\[\]:]/g," ").slice(0,31)||"Sheet",k=b,i=2;while(used.has(k.toLowerCase()))k=b.slice(0,28)+" "+i++;used.add(k.toLowerCase());return k};
+  const files=[],names=sheets.map(sh=>sname(sh.name));
+  sheets.forEach((sh,si)=>{const rows=sh.rows,w=[];rows.forEach(r=>r.forEach((v,i)=>{w[i]=Math.min(60,Math.max(w[i]||8,String(v==null?"":v).length+2))}));
+    const body=rows.map((r,ri)=>`<row r="${ri+1}">${r.map((v,ci)=>{const ref=col(ci)+(ri+1),st=ri===0?' s="1"':"";if(v==null||v==="")return "";
+      return typeof v==="number"&&isFinite(v)?`<c r="${ref}"${st}><v>${v}</v></c>`:`<c r="${ref}" t="inlineStr"${st}><is><t xml:space="preserve">${x(v)}</t></is></c>`}).join("")}</row>`).join("");
+    files.push({name:`xl/worksheets/sheet${si+1}.xml`,data:enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>${w.length?`<cols>${w.map((n,i)=>`<col min="${i+1}" max="${i+1}" width="${n}" customWidth="1"/>`).join("")}</cols>`:""}<sheetData>${body}</sheetData></worksheet>`)})});
+  const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((_,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}</Types>`;
+  const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+  const wb=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${names.map((n,i)=>`<sheet name="${x(n)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join("")}</sheets></workbook>`;
+  const wbr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${names.map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join("")}<Relationship Id="rId${names.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  const sty=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  return zipStore([{name:"[Content_Types].xml",data:enc.encode(ct)},{name:"_rels/.rels",data:enc.encode(rels)},{name:"xl/workbook.xml",data:enc.encode(wb)},{name:"xl/_rels/workbook.xml.rels",data:enc.encode(wbr)},{name:"xl/styles.xml",data:enc.encode(sty)},...files])}
+function exportSheets(kind,sheets,base){if(!sheets||!sheets.some(s=>s.rows.length>1)){toast("Nothing to download in this period.");return}
+  if(kind==="xlsx")dlBlob(xlsxBlob(sheets),base+".xlsx");else dlBlob(new Blob([csvText(sheets)],{type:"text/csv;charset=utf-8"}),base+".csv")}
+const dlCtl=id=>`<span class="dl2" id="${id}"><span>Download</span><button type="button" class="btn sm" data-dl="xlsx">Excel</button><button type="button" class="btn sm" data-dl="csv">CSV</button></span>`;
+const whenX=t=>new Date(t).toLocaleString("en-US",{timeZone:TZ,month:"short",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"});
 /* History: people's changes, what the box did, and what the doors really did */
-let HS={k:"all",days:"7",who:"",q:"",lim:150};
+let HS={k:"all",days:"7",who:"",q:"",lim:150},HS_X=null,HS_XBASE="history";
 const REASON={nightly:"nightly update","hourly check":"hourly check","change saved":"after a change was saved","urgent change":"right after a change by hand","opened or locked by hand":"right after a change by hand",start:"when the box started","by hand":"asked by hand",retry:"retry after a problem","queued change":"after a change was saved",buzz:"buzz"};
 function renderLog(){
   if(!$("#logRows"))return;
@@ -4038,6 +4122,9 @@ function renderLog(){
     grp.forEach(g=>{const verb=g.mode==="Unlock"?"opened":g.mode==="Lockdown"?"went into lockdown":`changed to ${MODE_WORD[g.mode]||modeLabel(g.mode).toLowerCase()}`;
       items.push({t:g.t,k:"doors",mode:g.mode,bad:g.off>0,title:`${g.doors.length>1?g.doors.length+" doors":doorName(g.doors[0])} ${verb}`,sub:g.doors.length>1?g.doors.map(doorName).join(", "):"",tag:g.off?`${g.off===g.doors.length?"Not":g.off+" not"} from the rules`:"On schedule"})});
     const list=items.filter(x=>!q||[x.title,x.sub,...(x.list||[])].join(" ").toLowerCase().includes(q)).sort((a,b)=>b.t-a.t);
+    const KW={people:"Change by a person",box:"Box",doors:"Door"};
+    HS_X=[{name:"History",rows:[["When","Type","Who","What","Details","Note"],...list.map(x=>[whenX(x.t),KW[x.k]||x.k,x.k==="people"?x.u:"",x.title,[x.sub,...(x.list||[])].filter(Boolean).join("; "),x.tag||(x.bad?"Problem":"")])]}];
+    HS_XBASE=`history-${HS.days==="1"?todayNY():"last-"+HS.days+"-days"}`;
     // numbers for the period
     const cnt=k=>list.filter(x=>x.k===k).length,runsN=Object.values(quiet).reduce((t,x)=>t+x.n,0),runsBad=Object.values(quiet).reduce((t,x)=>t+x.bad,0);
     $("#hsKpi").innerHTML=(want("people")?kpi("Changes by people",fmtN(cnt("people")),""):"")+(want("box")?kpi("Box checks",fmtN(runsN),`<span class="dl${runsBad?" bad":""}">${runsBad?runsBad+" with a problem":"no problems"}</span>`):"")
@@ -4199,7 +4286,10 @@ $("#rpDoor").addEventListener("change",e=>{RP.door=e.target.value;RP.page=1;rend
 $("#rpRes").addEventListener("change",e=>{RP.res=e.target.value;RP.page=1;renderReports()});
 {let t=null;$("#rpWho").addEventListener("input",e=>{clearTimeout(t);t=setTimeout(()=>{RP.who=e.target.value;RP.page=1;renderReports()},250)})}
 ["#rpAhFrom","#rpAhTo"].forEach(id=>$(id).addEventListener("change",()=>{ahSet({a:+$("#rpAhFrom").value,b:+$("#rpAhTo").value});renderReports()}));
-$("#rpCsv").onclick=rpCsv;
+$("#rpDlWrap").innerHTML=dlCtl("rpDl");
+$("#rpDl").addEventListener("click",ev=>{const b=ev.target.closest("[data-dl]");if(b)exportSheets(b.dataset.dl,RP_X,RP_XBASE)});
+$("#hsDlWrap").innerHTML=dlCtl("hsDl");
+$("#hsDl").addEventListener("click",ev=>{const b=ev.target.closest("[data-dl]");if(b)exportSheets(b.dataset.dl,HS_X,HS_XBASE)});
 $("#tab-reports").addEventListener("click",ev=>{
   const w=ev.target.closest("[data-who]");if(w){RP.who=w.dataset.who;$("#rpWho").value=RP.who;RP.page=1;renderReports();scrollTo({top:0,behavior:"smooth"});return}
   const d=ev.target.closest("tr[data-door]");if(d){RP.door=d.dataset.door;RP.page=1;renderReports();scrollTo({top:0,behavior:"smooth"});return}
@@ -4384,16 +4474,16 @@ async function smsRefresh(){if(!ON_BOX)return;let j;try{j=await (await fetch("ap
   const m=$("#smsMode");if(m){m.innerHTML=j.mode==="live"?(j.configured?"<b>Texting is on.</b> Alerts go by text to everyone below who agreed.":"<b>Texting is on, but the Twilio details are missing</b> in the add-on settings."):j.mode==="test"?"<b>Texting is in test mode.</b> Nothing is sent: each text that would go out is listed under Recent texts.":"<b>Texting is off</b> in the add-on settings.";m.style.color=j.mode==="live"&&j.configured?"":"var(--warn)"}
   const L=$("#smsLog");if(L)L.innerHTML=(j.log||[]).slice(0,20).map(e=>`<div class="row"><span class="ic" style="--c:${e.status==="sent"?"var(--g)":e.status==="test"?"var(--b)":"var(--o)"}">${ico("chat")}</span><div class="rt"><b>${esc(e.to)}</b><span>${esc(e.body)}</span><span>${esc(whenText(e.at))} · ${esc(e.status==="test"?"test, not sent":e.status==="sent"?"sent":(e.status+(e.why?": "+e.why:"")))}</span></div></div>`).join("")||`<div class="row"><span class="hint">None yet.</span></div>`}
 $("#userRows").addEventListener("change",ev=>{const t=ev.target,d=t.dataset;
-  if(d.urole!==undefined){const u=S.users[d.urole];
-    if(u.name===S.me&&t.value!=="Super admin"&&S.users.filter(x=>x.role==="Super admin").length<2){t.value="Super admin";return} // keep at least one super admin
-    u.role=t.value;if(t.value==="Restricted"){u.perm=u.perm||{};u.sched=u.sched||"none";u.can=u.can||{rules:false,override:true,events:true,rabbi:false}}commit(`${u.name} is now ${t.value}`)}
-  else if(d.uperm!==undefined){const u=S.users[d.uperm];u.perm=u.perm||{};u.perm[d.door]=t.value;commit(`${u.name}: ${d.door} set to ${t.options[t.selectedIndex].text}`)}
-  else if(d.uall!==undefined&&t.value){const u=S.users[d.uall];u.perm={};S.doors.forEach(x=>u.perm[x.id]=t.value);commit(`${u.name}: every door set to ${t.options[t.selectedIndex].text}`)}
-  else if(d.usched!==undefined){const u=S.users[d.usched];u.sched=t.value;commit(`${u.name}: schedules set to ${t.options[t.selectedIndex].text}`)}
-  else if(d.ucan!==undefined){const u=S.users[d.ucan];u.can=u.can||{};u.can[d.cap]=t.checked;commit(`${u.name}: "${CAPS_LABEL[d.cap]}" turned ${t.checked?"on":"off"}`)}});
+  if(d.urole!==undefined){const u=ud()[d.urole];
+    if(u.name===S.me&&t.value!=="Super admin"&&ud().filter(x=>x.role==="Super admin").length<2){t.value="Super admin";return} // keep at least one super admin
+    u.role=t.value;if(t.value==="Restricted"){u.perm=u.perm||{};u.sched=u.sched||"none";u.can=u.can||{rules:false,override:true,events:true,rabbi:false}}uchg(`${u.name} is now ${t.value}`,true)}
+  else if(d.uperm!==undefined){const u=ud()[d.uperm];u.perm=u.perm||{};u.perm[d.door]=t.value;uchg(`${u.name}: ${d.door} set to ${t.options[t.selectedIndex].text}`)}
+  else if(d.uall!==undefined&&t.value){const u=ud()[d.uall];u.perm={};S.doors.forEach(x=>u.perm[x.id]=t.value);uchg(`${u.name}: every door set to ${t.options[t.selectedIndex].text}`,true)}
+  else if(d.usched!==undefined){const u=ud()[d.usched];u.sched=t.value;uchg(`${u.name}: schedules set to ${t.options[t.selectedIndex].text}`)}
+  else if(d.ucan!==undefined){const u=ud()[d.ucan];u.can=u.can||{};u.can[d.cap]=t.checked;uchg(`${u.name}: "${CAPS_LABEL[d.cap]}" turned ${t.checked?"on":"off"}`)}});
 const CAPS_LABEL={codes:"Give temporary codes for their Edit doors",rules:"Change rules for their Edit doors",override:"Use Override now",events:"Add events",rabbi:"Set the rabbi away"};
-$("#userRows").addEventListener("click",ev=>{const i=ev.target.dataset.udel;if(i!==undefined){const u=S.users.splice(i,1)[0];commit(`Removed user ${u.name}`)}});
-$("#addUser").onclick=()=>{const n=$("#uName").value.trim();if(!n||S.users.some(u=>u.name===n))return;S.users.push($("#uRole").value==="Restricted"?{name:n,role:"Restricted",perm:{},sched:"none",can:{rules:false,override:false,events:false,rabbi:false},added:Date.now()}:{name:n,role:"Super admin",added:Date.now()});$("#uName").value="";commit(`Added user ${n} (${$("#uRole").value})`)};
+$("#userRows").addEventListener("click",ev=>{const i=ev.target.dataset.udel;if(i!==undefined){const u=ud().splice(i,1)[0];uchg(`Removed user ${u.name}`,true)}});
+$("#addUser").onclick=()=>{const n=$("#uName").value.trim();if(!n||ud().some(u=>u.name===n))return;ud().push($("#uRole").value==="Restricted"?{name:n,role:"Restricted",perm:{},sched:"none",can:{rules:false,override:false,events:false,rabbi:false},added:Date.now()}:{name:n,role:"Super admin",added:Date.now()});$("#uName").value="";uchg(`Added user ${n} (${$("#uRole").value})`,true)};
 $("#copyBackup").onclick=()=>{const txt=JSON.stringify(S);
   const fallback=()=>{$("#restoreTxt").value=txt;$("#restoreTxt").select();$("#copyMsg").textContent="Selected below. Copy it with your keyboard or long-press."};
   try{navigator.clipboard.writeText(txt).then(()=>{$("#copyMsg").textContent="Copied. Paste it somewhere safe."},fallback)}catch(e){fallback()}};
@@ -4489,12 +4579,12 @@ $("#tcList").addEventListener("click",ev=>{const b=ev.target.closest("[data-creu
 $("#vnSame").addEventListener("change",e=>{$("#vnPinRow").hidden=!e.target.checked;if(e.target.checked&&!$("#vnPin").value)$("#vnPin").value=randPin()});
 $("#vnGen").onclick=()=>{$("#vnPin").value=randPin()};
 $("#vnArrive").addEventListener("change",e=>{$("#vnNotifyRow").hidden=!e.target.checked});
-$("#userRows").addEventListener("change",ev=>{const k=ev.target.dataset.uemail;if(k===undefined)return;const u=S.users[k],v=ev.target.value.trim().toLowerCase();
+$("#userRows").addEventListener("change",ev=>{const k=ev.target.dataset.uemail;if(k===undefined)return;const u=ud()[k],v=ev.target.value.trim().toLowerCase();
   if(v&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ev.target.value=u.email||"";toast("That doesn't look like an email address.");return}
-  if(v&&S.users.some((x,j)=>j!=k&&(x.email||"").toLowerCase()===v)){ev.target.value=u.email||"";toast("Another user already has that email.");return}
-  const was=u.email||"";u.email=v;commit(`${u.name}: sign-in email ${v?(was?"changed":"added"):"removed"}`);if(ON_BOX)setTimeout(accessLine,6000)});
-$("#userRows").addEventListener("change",ev=>{const i=ev.target.dataset.uphone;if(i===undefined)return;const u=S.users[i],v=ev.target.value.trim(),ph=v?fmtPhone(v):"";
-  if(v&&!ph){ev.target.value=u.phone||"";toast("Use a 10-digit number, like 718-555-0100");return}u.phone=ph;commit(`${u.name}: mobile number ${ph?"set":"removed"}`)});
+  if(v&&ud().some((x,j)=>j!=k&&(x.email||"").toLowerCase()===v)){ev.target.value=u.email||"";toast("Another user already has that email.");return}
+  const was=u.email||"";u.email=v;uchg(`${u.name}: sign-in email ${v?(was?"changed":"added"):"removed"}`)});
+$("#userRows").addEventListener("change",ev=>{const i=ev.target.dataset.uphone;if(i===undefined)return;const u=ud()[i],v=ev.target.value.trim(),ph=v?fmtPhone(v):"";
+  if(v&&!ph){ev.target.value=u.phone||"";toast("Use a 10-digit number, like 718-555-0100");return}u.phone=ph;uchg(`${u.name}: mobile number ${ph?"set":"removed"}`)});
 $("#vnSave").onclick=()=>{const err=t=>{$("#vnErr").textContent=t;$("#vnErr").hidden=false;$("#vnErr").scrollIntoView({block:"nearest"})};
   const name=$("#vnName").value.trim(), ph=$("#vnPhone").value.trim(), phone=ph?fmtPhone(ph):"", same=$("#vnSame").checked, pin=$("#vnPin").value.trim();
   const doors=[...document.querySelectorAll("input[name=vnDoor]:checked")].map(x=>x.value);
@@ -5180,7 +5270,7 @@ if(ON_BOX){
       b.innerHTML=`<b>${esc(MODE_TXT[j.mode]||j.mode)}</b><span>Checked ${esc(when)} · ${r.actions?r.actions.length:0} ${j.mode==="practice"?"changes it would make":"changes made"}${err?`, ${err} problem${err>1?"s":""}`:""}${warn?`, ${warn} note${warn>1?"s":""}`:""}${r.compare&&r.compare.differ?` · ${r.compare.differ.length?`rules and doors differ on ${r.compare.differ.length} door${r.compare.differ.length>1?"s":""}`:r.compare.checked?`rules and doors match on ${r.compare.checked} door${r.compare.checked>1?"s":""}`:"could not read the doors' schedules yet"}${r.compare.checked&&r.compare.skipped&&r.compare.skipped.length?`, ${r.compare.skipped.length} could not be read`:""}`:""}.</span>${(r.warnings||[]).some(x=>/login not set/i.test(x))?`<span><b>Next step:</b> enter the Protector.Net login in the add-on's Configuration tab (Settings, Apps, Shul Doors, Configuration).</span>`:""}<a href="api/report" target="_blank">See details</a>`;
       b.hidden=false;BOX_ST=j;renderHealth();renderHero();
       // a screen left open (like the tablet in the shul) stays current: new day, or a change made on another device
-      const calm=!document.querySelector(".modal:not([hidden])")&&!SAVING&&!(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
+      const calm=!UD&&!document.querySelector(".modal:not([hidden])")&&!SAVING&&!(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
       if(calm&&j.version&&window.__SD_VERSION&&+j.version!==+window.__SD_VERSION){try{sessionStorage.setItem("shulTab",CUR_TAB);sessionStorage.setItem("shulY",String(scrollY))}catch(e){}location.reload();return}
       if(calm&&LAST_DAY!==todayNY()){LAST_DAY=todayNY();renderAll()}
       else if(calm&&CUR_TAB==="codes")renderCodes();
