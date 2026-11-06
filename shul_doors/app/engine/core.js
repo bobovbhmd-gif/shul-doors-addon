@@ -28,7 +28,7 @@ const WDN=["Sun","Mon","Tue","Wed","Thu","Fri","Shabbos"];
 const HMONTHS=[[7,"Tishrei"],[8,"Cheshvan"],[9,"Kislev"],[10,"Teves"],[11,"Shvat"],[14,"Adar I"],[12,"Adar"],[1,"Nissan"],[2,"Iyar"],[3,"Sivan"],[4,"Tammuz"],[5,"Av"],[6,"Elul"]];
 const HMN={1:"Nissan",2:"Iyar",3:"Sivan",4:"Tammuz",5:"Av",6:"Elul",7:"Tishrei",8:"Cheshvan",9:"Kislev",10:"Teves",11:"Shvat",12:"Adar",13:"Adar II"};
 const MODES=["Unlock","Card or Pin","Card","Pin","Card and Pin","First Credential In","Lockdown"];
-const ANCHORS={clock:"Clock time",alos:"Alos",sunrise:"Netz (sunrise)",chatzos:"Chatzos",plag:"Plag hamincha",sunset:"Shkiah (sunset)",candles:"Candle lighting",tzeis:"Tzeis",havdalah:"Havdalah",rt:"Rabbeinu Tam"};
+const ANCHORS={clock:"Clock time",alos:"Alos",sunrise:"Netz (sunrise)",chatzos:"Chatzos",plag:"Plag hamincha",sunset:"Shkiah (sunset)",candles:"Candle lighting",tzeis:"Tzeis",havdalah:"Havdalah (same as Rabbeinu Tam)",rt:"Rabbeinu Tam"};
 const ALERTS=[["offline","A panel goes offline"],["ups","Power goes out and the box runs on the UPS battery"],["batt","The UPS battery drops below 50%"],["push","The nightly push to the doors fails"],["heartbeat","This system stops responding (checked from outside every 5 min)"],["held","A door is held open longer than"],["conflicts","The preview finds a conflict in the next 14 days"]];
 
 const W5=[0,1,2,3,4];

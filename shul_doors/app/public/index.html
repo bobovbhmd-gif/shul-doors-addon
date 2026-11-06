@@ -1826,8 +1826,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
           <h2>Zmanim</h2>
           <div class="glist">
             <div class="row"><div class="rt"><b>Candle lighting</b><span>Minutes before shkiah</span></div><input type="number" id="candleOff" min="0" max="60"></div>
-            <div class="row"><div class="rt"><b>Havdalah</b><span>Minutes after shkiah</span></div><input type="number" id="havOff" min="0" max="120"></div>
-            <div class="row"><div class="rt"><b>Rabbeinu Tam</b><span>Minutes after shkiah</span></div><input type="number" id="rtOff" min="0" max="120"></div>
+            <div class="row"><div class="rt"><b>Havdalah (Rabbeinu Tam)</b><span>Minutes after shkiah. Rules set to havdalah and to Rabbeinu Tam both use this.</span></div><input type="number" id="havOff" min="0" max="120"></div>
           </div>
           <p class="gf">Alos 16.1°, tzeis 8.5°, plag and chatzos by the GRA.</p>
         </div>
@@ -2088,7 +2087,7 @@ const WDN=["Sun","Mon","Tue","Wed","Thu","Fri","Shabbos"];
 const HMONTHS=[[7,"Tishrei"],[8,"Cheshvan"],[9,"Kislev"],[10,"Teves"],[11,"Shvat"],[14,"Adar I"],[12,"Adar"],[1,"Nissan"],[2,"Iyar"],[3,"Sivan"],[4,"Tammuz"],[5,"Av"],[6,"Elul"]];
 const HMN={1:"Nissan",2:"Iyar",3:"Sivan",4:"Tammuz",5:"Av",6:"Elul",7:"Tishrei",8:"Cheshvan",9:"Kislev",10:"Teves",11:"Shvat",12:"Adar",13:"Adar II"};
 const MODES=["Unlock","Card or Pin","Card","Pin","Card and Pin","First Credential In","Lockdown"];
-const ANCHORS={clock:"Clock time",alos:"Alos",sunrise:"Netz (sunrise)",chatzos:"Chatzos",plag:"Plag hamincha",sunset:"Shkiah (sunset)",candles:"Candle lighting",tzeis:"Tzeis",havdalah:"Havdalah",rt:"Rabbeinu Tam"};
+const ANCHORS={clock:"Clock time",alos:"Alos",sunrise:"Netz (sunrise)",chatzos:"Chatzos",plag:"Plag hamincha",sunset:"Shkiah (sunset)",candles:"Candle lighting",tzeis:"Tzeis",havdalah:"Havdalah (same as Rabbeinu Tam)",rt:"Rabbeinu Tam"};
 const ALERTS=[["offline","A panel goes offline"],["ups","Power goes out and the box runs on the UPS battery"],["batt","The UPS battery drops below 50%"],["push","The nightly push to the doors fails"],["heartbeat","This system stops responding (checked from outside every 5 min)"],["held","A door is held open longer than"],["conflicts","The preview finds a conflict in the next 14 days"]];
 
 const W5=[0,1,2,3,4];
@@ -3059,7 +3058,7 @@ function renderSetup(){
   $("#groupRows").innerHTML=S.groups.map(g=>`<div class="glist gblock"><div class="row"><span class="ic" style="--c:var(--teal)">${ico("grid")}</span><div class="rt"><b>${esc(g.name)}</b><span>${g.doors.length} door${g.doors.length===1?"":"s"}</span></div><button class="btn sm danger" type="button" data-gdel="${esc(g.id)}">Remove</button></div>
     <div class="row"><div class="checks">${S.doors.map(d=>`<label><input type="checkbox" data-gid="${esc(g.id)}" value="${esc(d.id)}"${g.doors.includes(d.id)?" checked":""}>${esc(d.name)}</label>`).join("")}</div></div>
     <div class="row"><span class="rt"><span>Set the default for all of them</span></span><select data-gdefsel="${esc(g.id)}" aria-label="Default for ${esc(g.name)}">${MODES.map(m=>`<option value="${m}">${esc(modeLabel(m))}</option>`).join("")}</select><button class="btn sm" type="button" data-gdef="${esc(g.id)}">Apply</button></div></div>`).join("")||`<div class="glist"><div class="row"><span class="hint">No groups yet.</span></div></div>`;
-  $("#candleOff").value=S.candleOff;$("#havOff").value=S.havOff;$("#rtOff").value=S.rtOff;
+  $("#candleOff").value=S.candleOff;$("#havOff").value=S.rtOff;
   $("#awayRows").innerHTML=S.away.length?S.away.map((a,i)=>`<div class="row"><span class="ic" style="--c:var(--p)">${ico("cal")}</span><div class="rt"><b>${esc(rangeText(a.from,a.to))}</b></div><button class="btn sm danger" type="button" data-adel="${i}">Remove</button></div>`).join(""):`<div class="row"><span class="hint">No away dates set.</span></div>`;
   $("#contactRows").innerHTML=S.contacts.map((c,i)=>`<div class="row"><span class="avatar">${esc(initials(c.name))}</span><div class="rt"><b>${esc(c.name)}</b><span>${esc(c.to)} · ${c.sms&&c.consentAt?`gets texts, agreed ${esc(shortDate(nyDate(c.consentAt)))}`:`<span class="warnm">no texts until they agree</span>`}</span></div>${c.sms&&c.consentAt?`<button class="btn sm" type="button" data-cstop="${i}">Stop texts</button>`:`<button class="btn sm" type="button" data-cok="${i}">They agreed</button>`}<button class="btn sm danger" type="button" data-cdel="${i}">Remove</button></div>`).join("")||`<div class="row"><span class="hint">No one gets alerts yet.</span></div>`;
   const NOTYET=ON_BOX?["offline","ups","batt","heartbeat"]:[];
@@ -4447,8 +4446,7 @@ $("#mgOnN").addEventListener("change",e=>{const o=mag(),n=Math.max(0,Math.min(18
 $("#mgOnA").addEventListener("change",()=>$("#mgOnN").dispatchEvent(new Event("change")));
 $("#mgExtra").addEventListener("click",e=>{const b=e.target.closest("[data-mgx]");if(!b)return;if(!armed(b))return;const o=mag(),x=o.extra[+b.dataset.mgx];o.extra.splice(+b.dataset.mgx,1);commit(`Shabbos magnet: removed weekly off time ${WDN[x.d]} ${fmt(x.a)} to ${fmt(x.b)}`)});
 $("#candleOff").addEventListener("change",e=>{S.candleOff=+e.target.value||0;commit(`Candle lighting set to ${S.candleOff} min`)});
-$("#havOff").addEventListener("change",e=>{S.havOff=+e.target.value||0;commit(`Havdalah set to ${S.havOff} min`)});
-$("#rtOff").addEventListener("change",e=>{S.rtOff=+e.target.value||0;commit(`Rabbeinu Tam set to ${S.rtOff} min`)});
+$("#havOff").addEventListener("change",e=>{const n=Math.max(0,Math.min(120,+e.target.value||0));S.havOff=n;S.rtOff=n;commit(`Havdalah (Rabbeinu Tam) set to ${n} min after shkiah`)});
 $("#addAway").onclick=()=>{const f=$("#awayFrom").value,t=$("#awayTo").value||f;if(!f||t<f)return;S.away.push({from:f,to:t});commit(`Rabbi away ${shortDate(f)} to ${shortDate(t)}`)};
 $("#awayRows").addEventListener("click",ev=>{const i=ev.target.dataset.adel;if(i!==undefined){S.away.splice(i,1);commit("Removed rabbi away dates")}});
 $("#addContact").onclick=()=>{const n=$("#cName").value.trim(),t=$("#cTo").value.trim(),ok=$("#cAgree").checked;if(!n||!t)return;
