@@ -1610,6 +1610,12 @@ body:not(.rsel) .rrow [data-pick]{display:none}
 @media (max-width:699px){.bz-dw .bz-d span{display:none}.bz-dw .bz-d.on span{display:inline}}
 /* typing near the bottom of a tablet: keep the box above the keyboard */
 html{scroll-padding-bottom:40vh}
+
+/* rule editor */
+.rsum{display:block!important;font-size:15px;line-height:1.55;padding:12px 14px!important;background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.rsum .warnm{color:var(--o)}
+#ruleForm .dpick .checks.plist{max-height:260px}
+details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 </style>
 
 <button class="ask-fab" type="button" id="askOpen" hidden aria-label="Ask the assistant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Ask the assistant</span></button>
@@ -3019,7 +3025,7 @@ function condBox(kind){
   const tags=[...c.fest.map(k=>`<span class="tag">${esc(keyLabel(k))}<button type="button" data-rmfest="${esc(k)}" aria-label="Remove">×</button></span>`),
     ...c.hr.map((r,i)=>`<span class="tag">${esc(hrText(r))}<button type="button" data-rmhr="${i}" aria-label="Remove">×</button></span>`),
     ...c.dates.map((d,i)=>`<span class="tag">${esc(dateText(d))}<button type="button" data-rmdate="${i}" aria-label="Remove">×</button></span>`)].join("");
-  return `<h3 class="gh">${exc?"Except on":"Runs on"}</h3><div class="glist form box${exc?" exc":""}" data-box="${kind}">
+  return `${exc?"":`<h3 class="gh">Which days?</h3>`}<div class="glist form box${exc?" exc":""}" data-box="${kind}">
     <div class="frow"><div class="wd">${WDN.map((n,i)=>`<button type="button" class="${c.wd.includes(i)?"on":""}" data-wd="${i}" aria-pressed="${c.wd.includes(i)}">${n==="Shabbos"?"Shab":n}</button>`).join("")}</div></div>
     ${tags?`<div class="frow"><div class="tags">${tags}</div></div>`:""}
     ${festPick(kind,c)}
@@ -3050,12 +3056,20 @@ function anchorFields(p,x){
 }
 function captureTop(){
   if(!$("#ruleForm")) return;
-  Object.assign(E,{kind:$("#rKind").value,group:$("#rGroup").value,note:$("#rNote").value,year:$("#rYear").value,name:$("#rName").value,mode:$("#rMode").value,rabbi:$("#rRabbi").value,sit:$("#rSit").value,season:$("#rSeason").value,
+  Object.assign(E,readEditor());
+}
+function readEditor(){
+  return ({kind:$("#rKind").value,group:$("#rGroup").value,note:$("#rNote").value,year:$("#rYear").value,name:$("#rName").value,mode:$("#rMode").value,rabbi:$("#rRabbi").value,sit:$("#rSit").value,season:$("#rSeason").value,
     doors:[...document.querySelectorAll("input[name=rDoor]:checked")].map(x=>x.value),
     until:(()=>{const k=$("#rUntilK").value;if(!k)return "";if(k==="date")return $("#rUntil").value||"";return addDays(todayNY(),+k-1)})(),
     start:{a:$("#sA").value,t:$("#sT").value,o:(+$("#sO").value||0)*(+$("#sS").value||1),...($("#sA").value!=="clock"&&$("#sNBK").value?{nb:$("#sNB").value}:{})},
     end:{a:$("#eA").value,t:$("#eT").value,o:(+$("#eO").value||0)*(+$("#eS").value||1),days:+$("#eD").value||0,...($("#eA").value!=="clock"&&$("#eNBK").value?{nb:$("#eNB").value}:{})}});
 }
+// the rule in one plain sentence, updated as the form changes
+function edSummary(){const el=$("#rSum");if(!el||!E)return;let r;try{r={...E,...readEditor()}}catch(e){return}
+  const days=condText(r.inc),ex=condText(r.exc),acc=r.kind==="access";
+  if(!r.doors.length&&!days){el.innerHTML=`<span class="hint">Pick the doors, the time and the days. This line will read your rule back to you.</span>`;return}
+  el.innerHTML=`<span class="mtag" style="--c:${acc?"var(--o)":modeColor(r.mode)}">${esc(acc?r.group+" cards":modeLabel(r.mode))}</span> ${esc(ruleTime(r))}${days?", "+esc(days):", <span class=\"warnm\">no days yet</span>"}${ex?`, except ${esc(ex)}`:""}${r.doors.length?`, at ${esc(doorsText(r.doors))}`:`, <span class="warnm">no doors yet</span>`}.`}
 function drawEditor(){
   const e=E, canSave=can("rules")||isAdmin();
   $("#editorSlot").innerHTML=`<form id="ruleForm" class="mform">
@@ -3063,11 +3077,15 @@ function drawEditor(){
    <div class="mbody">
     <div class="glist form">
       <div class="frow"><input id="rName" class="big" value="${esc(e.name)}" placeholder="Rule name, like Weekday Maariv" aria-label="Name"></div>
+      <div class="frow rsum" id="rSum"></div>
+    </div>
+    <h3 class="gh">What should the doors do?</h3>
+    <div class="glist form">
       <div class="frow" id="modeField"${e.kind==="access"?" hidden":""}><label for="rMode">Door is</label><select id="rMode">${MODES.map(m=>`<option value="${m}"${m===e.mode?" selected":""}>${esc(modeLabel(m))}</option>`).join("")}</select></div>
       <div class="frow" id="agField"${e.kind!=="access"?" hidden":""}><label for="rGroup">Cards that work</label><select id="rGroup">${S.accessGroups.map(g=>`<option${g===e.group?" selected":""}>${esc(g)}</option>`).join("")}</select></div>
-      <div class="frow adv"><label for="rKind">Controls</label><select id="rKind"><option value="door"${e.kind!=="access"?" selected":""}>Door mode</option><option value="access"${e.kind==="access"?" selected":""}>Badge access</option></select></div>
+      <div class="frow"${e.kind==="access"?"":" hidden"}><label for="rKind">Controls</label><select id="rKind"><option value="door"${e.kind!=="access"?" selected":""}>Door mode</option><option value="access"${e.kind==="access"?" selected":""}>Badge access</option></select></div>
     </div>
-    <h3 class="gh">Doors</h3>
+    <h3 class="gh">Which doors?</h3>
     <div class="glist form dpick">
       <div class="frow"><label class="search sm"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="rDoorQ" placeholder="Find a door or group" aria-label="Find a door or group" value="${esc(DPQ)}"></label><span class="dp-sum" id="rDoorSum"></span></div>
       <div class="frow dp-sec"><div class="checks plist" id="rDoorMore">
@@ -3075,27 +3093,25 @@ function drawEditor(){
       <div class="pl-h">Doors</div>
       ${visDoors().map(d=>`<label data-dpn="${esc((d.name+" "+d.id).toLowerCase())}"><input type="checkbox" name="rDoor" value="${esc(d.id)}"${e.doors.includes(d.id)?" checked":""}>${esc(d.name)}${perm(d.id)!=="edit"?` <span class="hint">by request</span>`:""}</label>`).join("")}</div></div>
     </div>
-    <h3 class="gh">Time</h3>
+    <h3 class="gh">When?</h3>
     <div class="glist form">
       <div class="frow"><label for="sA">Starts</label>${anchorFields("s",e.start)}</div>
       <div class="frow"><label for="eA">Ends</label>${anchorFields("e",e.end)}</div>
       <div class="frow"><label for="eD">Ends on</label><select id="eD">${[0,1,2,3,4,5,6,7].map(k=>`<option value="${k}"${(+e.end.days||0)===k?" selected":""}>${k===0?"The same day":k===1?"The next day":k+" days later"}</option>`).join("")}</select></div>
-      <div class="frow"><label for="rUntilK">Keep this rule</label><div class="tline"><select id="rUntilK"><option value="">Until I delete it</option><option value="30">For 30 days</option><option value="60">For 60 days</option><option value="90">For 90 days</option><option value="date"${e.until?" selected":""}>Until a date…</option></select><input type="date" id="rUntil" value="${esc(e.until||"")}" aria-label="Last day"${e.until?"":" hidden"}></div></div>
     </div>
-    <p class="gf">Times like havdalah come from the day it ends. If the end is earlier than the start on the same day, it runs past midnight.${e.until?` This rule runs through ${esc(longDate(e.until))}, then stops.`:""}</p>
+    <p class="gf">If it ends earlier than it starts, it runs past midnight.${e.until?` This rule stops after ${esc(longDate(e.until))}.`:""}</p>
     ${sched()==="temp"?`<p class="notice">You can make temporary schedules only: pick specific dates (leave Every year unticked) or one event.</p>`:""}
-    ${condBox("inc")}${condBox("exc")}${(E.yields||[]).length?`<h3 class="gh">Gives way to</h3><div class="glist form" id="yBox">${E.yields.map((y,i)=>{const W=S.rules.find(x=>String(x.id)===String(y.id));return `<div class="row"><div class="rt"><b>${W?rlink(W,"data-ropen"):esc(rn(W))}</b><span>${W?esc(condText(W.inc)):"No longer has any effect"}${y.doors&&y.doors.length?", at "+esc(y.doors.map(doorName).join(", ")):", on every door they share"}</span></div><button class="btn sm danger" type="button" data-yrm="${i}">Remove</button></div>`}).join("")}</div>`:""}${(()=>{if(E.isNew)return "";const drop=E.dropOv||[],L=S.rules.filter(x=>!drop.includes(String(x.id))&&(x.yields||[]).some(y=>String(y.id)===String(E.id)));if(!L.length)return "";
+    ${condBox("inc")}<details class="more skip"${(()=>{const x=E.exc;return x.wd.length||x.fest.length||x.dates.length||x.hr.length?" open":""})()}><summary class="gh">Skip some days</summary>${condBox("exc")}</details>${(E.yields||[]).length?`<h3 class="gh">Gives way to</h3><div class="glist form" id="yBox">${E.yields.map((y,i)=>{const W=S.rules.find(x=>String(x.id)===String(y.id));return `<div class="row"><div class="rt"><b>${W?rlink(W,"data-ropen"):esc(rn(W))}</b><span>${W?esc(condText(W.inc)):"No longer has any effect"}${y.doors&&y.doors.length?", at "+esc(y.doors.map(doorName).join(", ")):", on every door they share"}</span></div><button class="btn sm danger" type="button" data-yrm="${i}">Remove</button></div>`}).join("")}</div>`:""}${(()=>{if(E.isNew)return "";const drop=E.dropOv||[],L=S.rules.filter(x=>!drop.includes(String(x.id))&&(x.yields||[]).some(y=>String(y.id)===String(E.id)));if(!L.length)return "";
       return `<h3 class="gh">Wins over</h3><div class="glist form" id="oBox">${L.map(x=>{const y=x.yields.find(v=>String(v.id)===String(E.id));return `<div class="row"><div class="rt"><b>${rlink(x,"data-ropen")}</b><span>${esc(condText(x.inc))}${y.doors&&y.doors.length?", at "+esc(y.doors.map(doorName).join(", ")):", on every door they share"}</span></div><button class="btn sm danger" type="button" data-orm="${esc(String(x.id))}">Remove</button></div>`}).join("")}</div>`})()}
-    <p class="gf">The rule runs on any day that matches Runs on, unless it also matches Except on.</p>
-    <details class="more"${(!SIMPLE||e.sit||(e.rabbi&&e.rabbi!=="any")||e.year||(e.season&&e.season!=="any"))?" open":""}><summary class="gh">More options</summary>
+    <details class="more"${(e.sit||(e.rabbi&&e.rabbi!=="any")||e.year||e.until||(e.season&&e.season!=="any"))?" open":""}><summary class="gh">More options</summary>
     <div class="glist form">
+      <div class="frow"><label for="rUntilK">Keep this rule</label><div class="tline"><select id="rUntilK"><option value="">Until I delete it</option><option value="30">For 30 days</option><option value="60">For 60 days</option><option value="90">For 90 days</option><option value="date"${e.until?" selected":""}>Until a date…</option></select><input type="date" id="rUntil" value="${esc(e.until||"")}" aria-label="Last day"${e.until?"":" hidden"}></div></div>
       <div class="frow"><label for="rSit">Situation</label><select id="rSit"><option value="">Any time</option>${(S.situations||[]).map(x=>`<option value="${esc(x.id)}"${e.sit===x.id?" selected":""}>Only when "${esc(x.name)}" is on</option>`).join("")}</select></div>
       <div class="frow"><label for="rRabbi">Rabbi</label><select id="rRabbi"><option value="any">Local or away</option><option value="local"${e.rabbi==="local"?" selected":""}>Only when local</option><option value="away"${e.rabbi==="away"?" selected":""}>Only when away</option></select></div>
       <div class="frow"><label for="rYear">Repeat</label><select id="rYear"><option value="">Every year</option>${[5787,5788,5789,5790,5791,5792].map(y=>`<option value="${y}"${+e.year===y?" selected":""}>Only in ${y} (${hebYearSpan(y)})</option>`).join("")}</select></div>
+      <div class="frow"><label for="rNote">Note</label><textarea id="rNote" placeholder="Why this rule exists, who asked for it">${esc(e.note||"")}</textarea></div>
       <div class="frow"><label for="rSeason">Clock</label><select id="rSeason"><option value="any">Any time of year</option><option value="dst"${e.season==="dst"?" selected":""}>Summer clock only</option><option value="std"${e.season==="std"?" selected":""}>Winter clock only</option></select></div>
     </div></details>
-    <h3 class="gh">Note</h3>
-    <div class="glist form"><div class="frow"><textarea id="rNote" placeholder="Why this rule exists, who asked for it" aria-label="Note">${esc(e.note||"")}</textarea></div></div>
     <p id="formErr" class="errline" hidden></p>
     <div id="formWarn"></div>
     <div id="reqBox"></div>
@@ -3116,6 +3132,7 @@ function drawEditor(){
   $("#ruleForm").addEventListener("click",ev=>{const a=ev.target.closest("[data-nbon]"),b=ev.target.closest("[data-nboff]");if(!a&&!b)return;const p=(a||b).dataset.nbon||(a||b).dataset.nboff,on=!!a;
     $(`#${p}NBK`).value=on?"on":"";$(`#${p}NBX`).hidden=!on;if($(`#${p}NBA`))$(`#${p}NBA`).hidden=on});
   $("#rKind").addEventListener("change",ev=>{const a=ev.target.value==="access";$("#modeField").hidden=a;$("#agField").hidden=!a});
+  ["input","change"].forEach(k=>$("#ruleForm").addEventListener(k,()=>setTimeout(edSummary,0)));$("#ruleForm").addEventListener("click",()=>setTimeout(edSummary,0));edSummary();
   $("#cancelEdit").onclick=closeEditor;
   if(!e.isNew){
     $("#delRule").onclick=()=>{const box=$("#delConfirm"),ids=expandDoors(e.doors),before=weekModes(ids,30),keep=S.rules;
