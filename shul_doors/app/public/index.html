@@ -4129,7 +4129,25 @@ async function getRuns(days){
       for(let h=1;h<24;h++){const t2=nyToMs(s,h*60+30);if(t2<Date.now())runs.push({at:t2,reason:"hourly check",mode:"live",actions:0,errors:[]})}}}
   ACT_CACHE[key]={at:Date.now(),data:runs};return runs;
 }
-// after hours is the viewer's choice, kept in this browser (default 11 PM to 5 AM)
+// After hours follows the doors: each night it starts when the main doors lock on
+// schedule and ends when they open in the morning (so 12:00 to 12:05 AM with the doors
+// still open is not after hours). With no main doors, the window picked on the card.
+let NIGHT={};
+function mainDoors(){return S.doors.filter(d=>/main ent/i.test(d.name)).map(d=>d.id)}
+function nightOf(s){if(NIGHT[s])return NIGHT[s];const ids=mainDoors();let r=null;
+  if(ids.length){const open=new Array(2160).fill(false);
+    ids.forEach(id=>{[[s,0],[addDays(s,1),1440]].forEach(([d,off])=>{try{daySegments(id,d).forEach(g=>{const m=g.c.ov?g.c.ov.mode:g.c.r.mode;if(m!=="Unlock")return;for(let k=Math.max(g.a+off,1080);k<Math.min(g.b+off,2160);k++)open[k]=true})}catch(e){}})});
+    // the night is the closed stretch around 3 AM; doors open all night (like Shavuos) means no after hours
+    const C=1440+180;if(open[C]){NIGHT[s]=null;return null}
+    let close=C;while(close>1080&&!open[close-1])close--;
+    let op=C;while(op<2160&&!open[op])op++;
+    const at=k=>k>=1440?nyToMs(addDays(s,1),k-1440):nyToMs(s,k);r={from:at(close),to:at(op),a:close,b:op}}
+  return NIGHT[s]=r}
+function isLate(t){if(!mainDoors().length)return ahIn(Math.floor(nyMinutes(t)/60),ahGet());const s=nyDate(t);
+  return [addDays(s,-1),s].some(d=>{const n=nightOf(d);return n&&t>=n.from&&t<n.to})}
+function ahLine(){if(!mainDoors().length)return "";const n=nightOf(nyMinutes(Date.now())<720?addDays(todayNY(),-1):todayNY());
+  return `From when the main doors lock for the night until they open in the morning.${n?` Tonight: ${fmt(n.a%1440)} to ${fmt(n.b%1440)}.`:" Tonight they stay open."}`}
+// the fallback window, kept in this browser (default 11 PM to 5 AM)
 function ahGet(){let v=null;try{v=JSON.parse(localStorage.getItem("shulAfterHours")||"null")}catch(e){}return v&&Number.isInteger(v.a)&&Number.isInteger(v.b)?v:{a:23,b:5}}
 function ahSet(v){try{localStorage.setItem("shulAfterHours",JSON.stringify(v))}catch(e){}}
 function ahIn(h,v){return v.a===v.b?false:v.a<v.b?(h>=v.a&&h<v.b):(h>=v.a||h<v.b)}
@@ -4163,7 +4181,7 @@ function renderReports(){
   document.querySelectorAll("#rpPer [data-per]").forEach(x=>x.classList.toggle("on",x.dataset.per===RP.per));
   $("#rpDates").hidden=RP.per!=="c";
   if(RP.per==="c"&&!RP.from){RP.from=addDays(todayNY(),-6);RP.to=todayNY()}
-  $("#rpFrom").value=RP.from;$("#rpTo").value=RP.to;ahFill();
+  $("#rpFrom").value=RP.from;$("#rpTo").value=RP.to;ahFill();{const md=mainDoors().length,ah=document.querySelector(".rp-ah");if(ah){ah.querySelectorAll("select").forEach(x=>x.hidden=!!md);let t=ah.querySelector(".ahl");if(!t){t=document.createElement("span");t.className="ahl hint";ah.prepend(t)}t.textContent=md?ahLine():"";ah.childNodes.forEach(n=>{if(n.nodeType===3)n.textContent=md?"":n.textContent})}}
   const r=rpRange();
   getActivity(r.days).then(j=>{if(!$("#tab-reports").hidden)drawReports(j,r)}).catch(()=>{$("#rpSrc").textContent="Could not load door activity from the box. Try again in a minute."});
 }
@@ -4174,8 +4192,8 @@ function drawReports(j,r){
   const E=all.filter(e=>(e.kind||"entry")==="entry"&&inDoor(e)&&(!q||String(e.who||"").toLowerCase().includes(q)));
   const cur=E.filter(e=>e.t>=r.a&&e.t<r.b),prev=E.filter(e=>e.t>=r.pa&&e.t<r.pb);
   const M=all.filter(e=>e.kind==="mode"&&inDoor(e)&&e.t>=r.a&&e.t<r.b);
-  const ok=cur.filter(e=>e.ok),den=cur.filter(e=>!e.ok),AH=ahGet(),hr=e=>Math.floor(nyMinutes(e.t)/60);
-  const late=ok.filter(e=>ahIn(hr(e),AH)),plate=prev.filter(e=>e.ok&&ahIn(hr(e),AH));
+  NIGHT={};const ok=cur.filter(e=>e.ok),den=cur.filter(e=>!e.ok),AH=ahGet(),hr=e=>Math.floor(nyMinutes(e.t)/60);
+  const late=ok.filter(e=>isLate(e.t)),plate=prev.filter(e=>e.ok&&isLate(e.t));
   const src=ON_BOX?(!st.on&&!all.length?`<b>No door activity yet.</b> ${esc(st.problem||"The box is still reading Home Assistant's records. Check again in a minute.")}`
       :`Real card and PIN activity from Protector.Net, collected through Home Assistant.${st.since?" Collected since "+esc(whenText(st.since))+".":""}${st.problem?" Note: "+esc(st.problem):""}`)
     :"Sample activity in the prototype. The live system reads each panel's door log.";
@@ -4196,11 +4214,11 @@ function drawReports(j,r){
   $("#rpLateH").textContent=`After hours · ${fmtN(late.length)}`;
   const lr=[...late].sort((x,y)=>y.t-x.t).slice(0,10);
   $("#rpLate").innerHTML=lr.length?`<table class="rp-t"><tbody>${lr.map(e=>`<tr><td class="time">${esc(dshort(e.t))}, ${tm(e.t)}</td><td><b>${esc(doorName(e.door))}</b></td><td><a class="rp-p" data-who="${esc(e.who)}">${esc(e.who)}</a></td></tr>`).join("")}</tbody></table>${late.length>10?`<p class="gf">and ${fmtN(late.length-10)} more in Every entry below.</p>`:""}`
-    :`<p class="none">No entries between ${fmt(AH.a*60)} and ${fmt(AH.b*60)} in this period.</p>`;
+    :`<p class="none">${mainDoors().length?"No entries after hours":`No entries between ${fmt(AH.a*60)} and ${fmt(AH.b*60)}`} in this period.</p>`;
   // by door
   const doors=[...new Set(cur.map(e=>e.door))];
   const drow=d=>{const e=cur.filter(x=>x.door===d),o=e.filter(x=>x.ok),hh=Array(24).fill(0);o.forEach(x=>hh[hr(x)]++);const bh=hh.indexOf(Math.max(...hh));const last=e.reduce((m,x)=>x.t>m?x.t:m,0);
-    return {d,n:o.length,p:new Set(o.map(x=>x.who)).size,den:e.length-o.length,late:o.filter(x=>ahIn(hr(x),AH)).length,bh:o.length?bh:-1,last}};
+    return {d,n:o.length,p:new Set(o.map(x=>x.who)).size,den:e.length-o.length,late:o.filter(x=>isLate(x.t)).length,bh:o.length?bh:-1,last}};
   const allRows=doors.map(drow).sort((x,y)=>y.n-x.n),rows=RP.allDoors?allRows:allRows.slice(0,12),mx=Math.max(1,...rows.map(x=>x.n));
   $("#rpDoors").innerHTML=rows.length?`<table class="rp-t"><thead><tr><th>Door</th><th class="w40">Entries</th><th>People</th><th>Denied</th><th>After hours</th><th>Busiest hour</th><th>Last</th></tr></thead><tbody>${rows.map(x=>`<tr class="rp-click" data-door="${esc(x.d)}" title="Show only this door"><td><b>${esc(doorName(x.d))}</b><br><span class="hint">${esc(x.d)}</span></td><td class="nw"><span class="rp-bar1"><i style="width:${(x.n/mx*100).toFixed(1)}%"></i></span><span class="time">${fmtN(x.n)}</span></td><td class="time">${x.p}</td><td class="time">${x.den||"–"}</td><td class="time">${x.late||"–"}</td><td class="time">${x.bh<0?"–":fmt(x.bh*60)}</td><td class="time">${x.last?esc(dshort(x.last)):"–"}</td></tr>`).join("")}</tbody></table>${allRows.length>12?`<div class="rp-more"><span class="hint">${RP.allDoors?`All ${allRows.length} doors`:`Top 12 of ${allRows.length} doors`}. Tap a door to see only that door.</span><button class="btn sm" type="button" id="rpAllDoors">${RP.allDoors?"Show fewer":"Show all"}</button></div>`:""}`
     :`<p class="none">No entries in this period.</p>`;
