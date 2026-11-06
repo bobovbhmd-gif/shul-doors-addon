@@ -119,11 +119,12 @@ function accessSoon(ms = 4000) {
 const SMTP2GO = process.env.SD_SMTP2GO_URL || "https://api.smtp2go.com/v3/email/send";
 // "K'hal Shaarei Zion <info@khalbobov.org>" -> a properly quoted sender; or just the address
 function senderOf(from) {
-  const m = /^\s*"?([^"<]*?)"?\s*<\s*([^<>\s]+@[^<>\s]+)\s*>\s*$/.exec(String(from || ""));
-  if (!m) return { full: String(from || "").trim(), bare: String(from || "").trim() };
-  // SMTP2GO checks the sender strictly: a name with only letters, digits and spaces, then <address>
-  const name = m[1].replace(/[^A-Za-z0-9 ]+/g, "").replace(/\s+/g, " ").trim();
-  return { full: name ? `${name} <${m[2]}>` : m[2], bare: m[2] };
+  // forgiving: find the address anywhere (a missing ">" or quotes don't matter), the rest is the name
+  const raw = String(from || "");
+  const m = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/.exec(raw);
+  if (!m) return { full: raw.trim(), bare: raw.trim() };
+  const name = raw.slice(0, m.index).replace(/[^A-Za-z0-9 ]+/g, "").replace(/\s+/g, " ").trim();
+  return { full: name ? `${name} <${m[0]}>` : m[0], bare: m[0] };
 }
 async function sendEmail({ to, subject, html, text }) {
   const snd = senderOf(opts.email_from);
