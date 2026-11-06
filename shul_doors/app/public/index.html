@@ -1892,7 +1892,7 @@ html{scroll-padding-bottom:40vh}
     <div class="hs-head"><h2 class="gh">What happened</h2></div>
     <div class="rp-bar hs-bar">
       <div class="seg" role="group" aria-label="Show" id="hsKind"><button type="button" data-k="all">All</button><button type="button" data-k="people">People</button><button type="button" data-k="box">Box</button><button type="button" data-k="doors">Doors</button></div>
-      <select id="hsDays" aria-label="Period"><option value="1">Today</option><option value="7">7 days</option><option value="30">30 days</option><option value="90">90 days</option></select>
+      <select id="hsDays" aria-label="Period"><option value="1">Today</option><option value="y">Yesterday</option><option value="7">7 days</option><option value="30">30 days</option><option value="90">90 days</option></select>
       <select id="hsWho" aria-label="Who"></select>
       <label class="search sm rp-who"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="hsQ" placeholder="Search" aria-label="Search history"></label>
     </div>
@@ -4330,25 +4330,25 @@ function renderLog(){
   const names=[...new Set([...S.users.map(u=>u.name),...S.log.map(l=>l.u)].filter(Boolean))];
   $("#hsWho").innerHTML=`<option value="">Everyone</option>`+names.map(n=>`<option${n===HS.who?" selected":""}>${esc(n)}</option>`).join("");
   $("#hsWho").hidden=HS.k!=="people"&&HS.k!=="all";
-  const days=+HS.days,from=days===1?nyToMs(todayNY(),0):Date.now()-days*864e5;
+  const Y=HS.days==="y",days=Y?2:+HS.days,from=Y?nyToMs(addDays(todayNY(),-1),0):days===1?nyToMs(todayNY(),0):Date.now()-days*864e5,upto=Y?nyToMs(todayNY(),0):Infinity,inP=t=>t>=from&&t<upto;
   const want=k=>HS.k==="all"||HS.k===k;
   Promise.all([want("box")?getRuns(days).catch(()=>[]):[],want("doors")?getActivity(days,"mode").catch(()=>({events:[]})):{events:[]}]).then(([runs,act])=>{
     if(!$("#logRows"))return;
     const items=[],q=HS.q.trim().toLowerCase();
-    if(want("people"))(isAdmin()?S.log:S.log.filter(l=>l.u===S.me)).forEach(l=>{if(l.t>=from&&(!HS.who||l.u===HS.who))items.push({t:l.t,k:"people",u:l.u,title:l.text,sub:l.u})});
+    if(want("people"))(isAdmin()?S.log:S.log.filter(l=>l.u===S.me)).forEach(l=>{if(inP(l.t)&&(!HS.who||l.u===HS.who))items.push({t:l.t,k:"people",u:l.u,title:l.text,sub:l.u})});
     const quiet={};
-    runs.forEach(x=>{if(x.at<from||x.reason==="buzz")return;const dk=nyDate(x.at),n=x.actions||0,er=(x.errors||[]).length;
+    runs.forEach(x=>{if(!inP(x.at)||x.reason==="buzz")return;const dk=nyDate(x.at),n=x.actions||0,er=(x.errors||[]).length;
       const qd=quiet[dk]||(quiet[dk]={n:0,bad:0});qd.n++;if(er)qd.bad++;
       if(!n&&!er)return;
       items.push({t:x.at,k:"box",bad:!!er,title:er?`The box had ${er===1?"a problem":er+" problems"}`:`The box sent ${n} change${n===1?"":"s"} to the doors`,sub:`${REASON[x.reason]||x.reason}${x.mode&&x.mode!=="live"?" · "+x.mode+" mode":""}${x.differ?` · ${x.differ} door${x.differ===1?"":"s"} still differed`:""}`,list:[...(x.errors||[]),...(x.list||[])]})});
-    const md=(act.events||[]).filter(e=>e.t>=from&&e.door&&perm(e.door)!=="hidden"),grp=new Map();
+    const md=(act.events||[]).filter(e=>inP(e.t)&&e.door&&perm(e.door)!=="hidden"),grp=new Map();
     md.forEach(e=>{const k=Math.floor(e.t/60000)+"|"+e.mode;const g=grp.get(k)||{t:e.t,mode:e.mode,doors:[],off:0};g.doors.push(e.door);if(onSchedule(e.door,e.t,e.mode)===false)g.off++;grp.set(k,g)});
     grp.forEach(g=>{const verb=g.mode==="Unlock"?"opened":g.mode==="Lockdown"?"went into lockdown":`changed to ${MODE_WORD[g.mode]||modeLabel(g.mode).toLowerCase()}`;
       items.push({t:g.t,k:"doors",mode:g.mode,bad:g.off>0,title:`${g.doors.length>1?g.doors.length+" doors":doorName(g.doors[0])} ${verb}`,sub:g.doors.length>1?g.doors.map(doorName).join(", "):"",tag:g.off?`${g.off===g.doors.length?"Not":g.off+" not"} from the rules`:"On schedule"})});
     const list=items.filter(x=>!q||[x.title,x.sub,...(x.list||[])].join(" ").toLowerCase().includes(q)).sort((a,b)=>b.t-a.t);
     const KW={people:"Change by a person",box:"Box",doors:"Door"};
     HS_X=[{name:"History",rows:[["When","Type","Who","What","Details","Note"],...list.map(x=>[whenX(x.t),KW[x.k]||x.k,x.k==="people"?x.u:"",x.title,[x.sub,...(x.list||[])].filter(Boolean).join("; "),x.tag||(x.bad?"Problem":"")])]}];
-    HS_XBASE=`history-${HS.days==="1"?todayNY():"last-"+HS.days+"-days"}`;
+    HS_XBASE=`history-${HS.days==="1"?todayNY():Y?addDays(todayNY(),-1):"last-"+HS.days+"-days"}`;
     // numbers for the period
     const cnt=k=>list.filter(x=>x.k===k).length,runsN=Object.values(quiet).reduce((t,x)=>t+x.n,0),runsBad=Object.values(quiet).reduce((t,x)=>t+x.bad,0);
     $("#hsKpi").innerHTML=(want("people")?kpi("Changes by people",fmtN(cnt("people")),""):"")+(want("box")?kpi("Box checks",fmtN(runsN),`<span class="dl${runsBad?" bad":""}">${runsBad?runsBad+" with a problem":"no problems"}</span>`):"")
