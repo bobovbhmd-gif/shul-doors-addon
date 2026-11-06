@@ -667,6 +667,21 @@ const server = http.createServer((req, res) => {
       catch (e) { log("warn", "welcome email: " + e.message); send(res, 200, { ok: false, error: "The email didn't go out: " + e.message }); }
     }); return;
   }
+  if (req.method === "POST" && p === "/api/sms/password") {
+    readBody(req).then(async (b) => {
+      const me = matchUser(personOf(req));
+      if (haUser(req) && (!me || me.role !== "Super admin")) return send(res, 403, { error: "Only a super admin can send passwords." });
+      const u = (state.users || []).find((x) => x.name === (b && b.name));
+      const pw = String((b && b.password) || "");
+      if (!u) return send(res, 200, { ok: false, error: "No such user." });
+      if (!u.phone) return send(res, 200, { ok: false, error: `Add a mobile number for ${u.name} first.` });
+      if (pw.length < 8) return send(res, 200, { ok: false, error: "Use a password of at least 8 characters." });
+      if (!sms || sms.mode !== "live") return send(res, 200, { ok: false, notLive: true, error: "Texting isn't live yet, so nothing was sent. Give them the password in person for now." });
+      const r = await sms.sendOne(u.phone, `Your Shul Doors starting password is ${pw} . Sign in at building.khalbobov.org with the username in your welcome email, then change it.`, "password", { secret: pw });
+      log("info", `starting password texted to ${u.name}: ${r.status}`);
+      send(res, 200, r.status === "sent" ? { ok: true } : { ok: false, error: "The text didn't go out: " + (r.why || r.status) });
+    }); return;
+  }
   if (req.method === "GET" && p === "/api/access") return send(res, 200, { on: !!opts.cloudflare_api_token, emails: accessState.emails, at: accessState.at, why: accessState.why });
   if (req.method === "GET" && p === "/api/sms") return send(res, 200, sms ? { mode: sms.mode, configured: sms.configured, log: sms.list(30), optedOut: sms.optedOut() } : { mode: "off" });
   if (req.method === "POST" && p === "/api/sms/test") {

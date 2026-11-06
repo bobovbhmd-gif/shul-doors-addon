@@ -36,9 +36,11 @@ function createSms({ opts, file, store, save = () => {}, log = () => {}, now = (
   try { entries = fs.readFileSync(file, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l)).slice(-500); } catch { /* first start */ }
   const keep = (e) => { entries.push(e); if (entries.length > 500) entries = entries.slice(-500); try { fs.appendFileSync(file, JSON.stringify(e) + "\n"); } catch { /* disk */ } };
 
-  async function sendOne(to, body, kind) {
+  // secret: a word (a password) that is sent but never written to the texts log
+  async function sendOne(to, body, kind, { secret } = {}) {
     const num = e164(to);
-    const e = { at: now(), to: num || String(to), body: text(body), kind, mode };
+    const full = text(body);
+    const e = { at: now(), to: num || String(to), body: secret ? full.split(secret).join("••••••") : full, kind, mode };
     if (!num) { e.status = "skipped"; e.why = "not a US mobile number"; keep(e); return e; }
     if (store.smsOptOut.includes(num)) { e.status = "skipped"; e.why = "replied STOP"; keep(e); return e; }
     if (mode === "off") return { ...e, status: "off" };
@@ -50,7 +52,7 @@ function createSms({ opts, file, store, save = () => {}, log = () => {}, now = (
     try {
       const r = await fetchImpl(url, { method: "POST",
         headers: { Authorization: "Basic " + Buffer.from(opts.twilio_api_key_sid + ":" + opts.twilio_api_key_secret).toString("base64"), "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ To: num, MessagingServiceSid: opts.twilio_messaging_service_sid, Body: e.body }).toString() });
+        body: new URLSearchParams({ To: num, MessagingServiceSid: opts.twilio_messaging_service_sid, Body: full }).toString() });
       const j = await r.json().catch(() => ({}));
       if (r.ok) { e.status = "sent"; e.sid = j.sid; }
       else {

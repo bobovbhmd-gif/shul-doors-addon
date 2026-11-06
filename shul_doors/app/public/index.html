@@ -1040,6 +1040,8 @@ details.more>summary.gh{color:var(--accent)}
 #hOut{margin-top:14px}
 .vrow .rt .arr{color:var(--ok);font-weight:500}
 .row input.uphone{flex:0 1 170px;min-width:0;text-align:right}
+.row input.uphone.uemail{flex:1 1 300px;max-width:440px;text-align:left}
+@media (max-width:640px){.ublock .row:has(.uemail){flex-wrap:wrap}.row input.uphone.uemail{flex-basis:100%;max-width:none}}
 .nrow{align-items:flex-start}
 .nrow .ic{margin-top:2px}
 .nacts{display:flex;gap:6px;flex:none;align-self:center}
@@ -2001,7 +2003,14 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
           <div class="frow"><label for="welUser">Their Home Assistant username</label><input id="welUser" autocomplete="off" placeholder="moshe"></div>
           <div class="frow"><label for="welFrom">Signed</label><input id="welFrom" autocomplete="off"></div>
         </div>
-        <p class="gf">The email never includes their password. Give them the starting password separately, by text or in person.</p>
+        <h3 class="gh" style="margin-top:14px">1. Starting password, by text</h3>
+        <div class="glist form">
+          <div class="frow"><label for="welPw">Starting password</label><span class="pp-pin" style="flex:1"><input id="welPw" autocomplete="off" spellcheck="false" style="flex:1;font-family:ui-monospace,Menlo,monospace" placeholder="The one you set in Home Assistant"><button class="btn sm" type="button" id="welPwGen">Make one</button></span></div>
+        </div>
+        <div class="tline wel-btns"><button class="btn" type="button" id="welPwSend">Text it</button></div>
+        <p class="wel-msg" id="welPwMsg" role="status"></p>
+        <p class="gf" id="welPwHow">Use this same password when you create their login in Home Assistant. It is never saved here or written in the texts log, and it never goes in the email.</p>
+        <h3 class="gh" style="margin-top:14px">2. Welcome email</h3>
         <div class="tline wel-btns"><button class="btn pri" type="button" id="welSend" hidden>Send email</button><button class="btn" type="button" id="welCopy">Copy email</button><button class="btn" type="button" id="welMail">Open in my email</button></div>
         <p class="wel-msg" id="welMsg" role="status"></p>
         <p class="gf" id="welHow"><b>Copy email</b> keeps the formatting: paste it into Gmail or Outlook. <b>Open in my email</b> starts a plain-text email to them.</p>
@@ -2137,12 +2146,22 @@ function save(){ensureNos();if(ON_BOX){boxSave();return}try{localStorage.setItem
 let SP_T=null;function savePill(kind){const el=typeof document!=="undefined"&&document.getElementById("savePill");if(!el)return;clearTimeout(SP_T);
   el.className="savepill "+kind;el.textContent=kind==="saving"?"Saving…":kind==="saved"?"Saved":"Not saved";el.hidden=false;
   if(kind==="saved")SP_T=setTimeout(()=>{el.hidden=true},2500)}
-let BOX_T=null,SAVING=false;function boxSave(){clearTimeout(BOX_T);SAVING=true;savePill("saving");BOX_T=setTimeout(()=>{fetch("api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({version:window.__SD_VERSION,state:S})}).then(r=>r.json()).then(j=>{if(j.version)window.__SD_VERSION=j.version;BOX_TRY=0;savePill(j.version&&!j.error&&!j.conflict?"saved":"bad");
-    if(j.conflict){toast("Not saved: someone else changed something at the same time. Loading the latest, then please make your change again.");setTimeout(()=>location.reload(),3500);return}
-    if(j.error){toast("Not saved: "+j.error);setTimeout(()=>location.reload(),4000)}}).catch(()=>{savePill("bad");BOX_TRY=(BOX_TRY||0)+1;
-      // the box may be restarting: try again by itself for about two minutes
-      if(BOX_TRY<=24){toast("The box isn't answering. Trying again…");setTimeout(()=>{if(!SAVING)boxSave()},5000)}else{BOX_TRY=0;toast("Could not save. Check the connection to the box, then make the change again.")}}).finally(()=>{SAVING=false})},400)}
-let BOX_TRY=0;
+// One save at a time: a change made while the last save is still on its way waits for it,
+// then goes with the new version number (two quick changes used to trip over each other).
+let BOX_T=null,SAVING=false,BOX_INFLIGHT=false,BOX_AGAIN=false,BOX_TRY=0;
+function boxSave(){clearTimeout(BOX_T);SAVING=true;savePill("saving");BOX_T=setTimeout(boxPut,400)}
+function boxPut(){
+  if(BOX_INFLIGHT){BOX_AGAIN=true;return}
+  BOX_INFLIGHT=true;let stop=false;
+  fetch("api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({version:window.__SD_VERSION,state:S})}).then(r=>r.json()).then(j=>{
+    if(j.version)window.__SD_VERSION=j.version;BOX_TRY=0;
+    if(j.conflict){stop=true;savePill("bad");toast("Not saved: someone else changed something at the same time. Loading the latest, then please make your change again.");setTimeout(()=>location.reload(),3500);return}
+    if(j.error){stop=true;savePill("bad");toast("Not saved: "+j.error);setTimeout(()=>location.reload(),4000);return}
+    if(!BOX_AGAIN)savePill("saved")})
+  .catch(()=>{savePill("bad");BOX_TRY++;
+    // the box may be restarting: try again by itself for about two minutes
+    if(BOX_TRY<=24){toast("The box isn't answering. Trying again…");setTimeout(()=>{if(!BOX_INFLIGHT)boxSave()},5000)}else{BOX_TRY=0;toast("Could not save. Check the connection to the box, then make the change again.")}})
+  .finally(()=>{BOX_INFLIGHT=false;if(BOX_AGAIN&&!stop){BOX_AGAIN=false;boxPut();return}BOX_AGAIN=false;SAVING=false})}
 function log(text){
   const e={t:Date.now(),u:S.me,text,push:"pending"};S.log.unshift(e);S.log=S.log.slice(0,500);
   // prototype: pretend the push and the read-back check take a few seconds
@@ -3607,6 +3626,14 @@ function welcomeEmail(u,login,from){
 ${steps.map(([t,d],i)=>`<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 10px;border-collapse:collapse"><tr><td style="vertical-align:top;padding-right:12px"><div style="width:26px;height:26px;border-radius:13px;background:#0071e3;color:#fff;font-weight:600;font-size:14px;line-height:26px;text-align:center">${i+1}</div></td><td style="vertical-align:top"><b>${t}</b><br><span style="color:#3a3a3c">${d}</span></td></tr></table>`).join("")}
 <h2 style="font-size:16px;margin:20px 0 8px">What you can do</h2>
 <ul style="margin:0;padding-left:20px;color:#3a3a3c">${can.map(c=>`<li style="margin:4px 0">${e(c)}</li>`).join("")}</ul>
+<div style="margin:20px 0 0;padding:16px 18px;background:#fff4e5;border-radius:12px;border-left:4px solid #ff9500">
+<div style="font-weight:700;font-size:16px;margin:0 0 6px">Please be careful: these are real doors</div>
+<ul style="margin:0;padding-left:20px;color:#3a3a3c">
+<li style="margin:4px 0">Every change you save goes to the shul's doors. A mistake can leave a door <b>unlocked</b> to the street, or <b>lock people out</b>, including on Shabbos.</li>
+<li style="margin:4px 0">Before you press <b>Save</b>, check the doors, the days and the times twice, especially when you make a schedule.</li>
+<li style="margin:4px 0">Be extra careful <b>deleting</b> or changing an existing schedule. The doors change right away. If you're not sure, leave it.</li>
+<li style="margin:4px 0"><b>Not sure how something works? Ask before you change it.</b> Don't assume. Ask ${e(from||"a super admin")} or the assistant first.</li>
+</ul></div>
 <h2 style="font-size:16px;margin:20px 0 8px">Finding your way</h2>
 ${tips.map(([t,d])=>`<p style="margin:0 0 8px"><b>${t}:</b> <span style="color:#3a3a3c">${d}</span></p>`).join("")}
 <div style="margin:20px 0 0;padding:14px 16px;background:#f5f5f7;border-radius:12px;font-size:14px;color:#3a3a3c"><b>Keep it safe.</b> Don't share your login. For extra protection, turn on two-step sign in: tap your name, then <b>Multi-factor authentication</b>.</div>
@@ -3626,6 +3653,12 @@ GETTING IN
 WHAT YOU CAN DO
 ${can.map(c=>"- "+c).join("\n")}
 
+PLEASE BE CAREFUL: THESE ARE REAL DOORS
+- Every change you save goes to the shul's doors. A mistake can leave a door unlocked to the street, or lock people out, including on Shabbos.
+- Before you press Save, check the doors, the days and the times twice, especially when you make a schedule.
+- Be extra careful deleting or changing an existing schedule. The doors change right away. If you're not sure, leave it.
+- Not sure how something works? Ask before you change it. Don't assume. Ask ${from||"a super admin"} or the assistant first.
+
 FINDING YOUR WAY
 ${tips.map(([t,d])=>"- "+t+": "+d.replace(/<[^>]+>/g,"").replace(/\\"/g,'"')).join("\n")}
 
@@ -3641,10 +3674,27 @@ function welRender(){const u=S.users[WEL];if(!u)return;const m=welcomeEmail(u,$(
   const f=$("#welPrev");f.onload=()=>{try{f.style.height=(f.contentDocument.documentElement.scrollHeight+4)+"px"}catch(e){}};f.srcdoc=`<!doctype html><meta charset="utf-8"><body style="margin:0">${m.html}</body>`;return m}
 $("#userRows").addEventListener("click",ev=>{const b=ev.target.closest("[data-uwel]");if(!b)return;WEL=+b.dataset.uwel;const u=S.users[WEL];
   $("#mWelT").textContent="Welcome email for "+u.name;$("#welUser").value=u.login||u.name.toLowerCase().split(/\s+/)[0];$("#welFrom").value=S.me;$("#welMsg").textContent="";
-  welRender();openModal("mWel");welSetup()});
+  welRender();openModal("mWel");welSetup();welPwSetup()});
 ["welUser","welFrom"].forEach(id=>$("#"+id).addEventListener("input",welRender));
 $("#welUser").addEventListener("change",()=>{const u=S.users[WEL],v=$("#welUser").value.trim();if(u&&v&&u.login!==v){u.login=v;save()}});
-let WEL_EMAIL=null,WEL_ARM=false;
+let WEL_EMAIL=null,WEL_ARM=false,WEL_SMS=null,WEL_PWARM=false;
+const PW_WORDS=["Cedar","Maple","Harbor","Window","Garden","Silver","Candle","Meadow","River","Copper","Lantern","Orchard","Willow","Summit","Granite","Amber","Beacon","Falcon","Juniper","Marble"];
+function makePw(){const a=new Uint32Array(3);crypto.getRandomValues(a);return `${PW_WORDS[a[0]%PW_WORDS.length]}-${PW_WORDS[a[1]%PW_WORDS.length]}-${1000+a[2]%9000}`}
+async function welPwSetup(){const u=S.users[WEL],b=$("#welPwSend"),m=$("#welPwMsg");m.className="wel-msg";m.textContent="";WEL_PWARM=false;$("#welPw").value="";
+  if(ON_BOX&&WEL_SMS==null){try{WEL_SMS=(await (await fetch("api/sms")).json()).mode}catch(e){WEL_SMS="off"}}
+  const live=ON_BOX&&WEL_SMS==="live";
+  b.textContent=u.phone?`Text it to ${u.phone}`:"Text it";b.disabled=!u.phone||!live;
+  if(!u.phone){m.className="wel-msg bad";m.textContent="Add their mobile number in Users and permissions first."}
+  else if(!live){m.textContent="Texting isn't live yet. Until it is, give them the password in person; this button works as soon as texting is turned on."}}
+$("#welPwGen").onclick=()=>{$("#welPw").value=makePw();$("#welPwMsg").className="wel-msg";$("#welPwMsg").textContent="Now set this exact password for them in Home Assistant, then text it."};
+$("#welPwSend").onclick=async()=>{const u=S.users[WEL],b=$("#welPwSend"),m=$("#welPwMsg"),pw=$("#welPw").value.trim();
+  if(pw.length<8){m.className="wel-msg bad";m.textContent="Type the starting password (at least 8 characters), or tap Make one.";return}
+  if(!WEL_PWARM){WEL_PWARM=true;b.textContent=`Text the password to ${u.phone}?`;setTimeout(()=>{if(WEL_PWARM){WEL_PWARM=false;b.textContent=`Text it to ${u.phone}`}},6000);return}
+  WEL_PWARM=false;b.disabled=true;b.textContent="Sending…";let j={};
+  try{j=await (await fetch("api/sms/password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:u.name,password:pw})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}
+  b.disabled=false;b.textContent=`Text it to ${u.phone}`;
+  if(j.ok){m.className="wel-msg ok";m.textContent="✓ Password texted to "+u.phone+".";$("#welPw").value="";commit(`Texted a starting password to ${u.name}`)}
+  else{m.className="wel-msg bad";m.textContent=j.error||"The text didn't go out."}};
 async function welSetup(){const u=S.users[WEL],sendB=$("#welSend"),msg=$("#welMsg");msg.className="wel-msg";msg.textContent="";WEL_ARM=false;sendB.textContent="Send email";
   if(ON_BOX&&WEL_EMAIL==null){try{WEL_EMAIL=await (await fetch("api/email")).json()}catch(e){WEL_EMAIL={on:false}}}
   const on=ON_BOX&&WEL_EMAIL&&WEL_EMAIL.on;sendB.hidden=!on;$("#welCopy").classList.toggle("pri",!on);
