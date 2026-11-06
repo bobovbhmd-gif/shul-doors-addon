@@ -981,6 +981,8 @@ details.more>summary.gh{color:var(--accent)}
 .pass dt{flex:none;width:52px;color:var(--muted)}
 .pass dd{margin:0}
 .pass .meta{font-size:13px;color:var(--muted);margin:12px 0 0}
+.wel-prev{display:block;width:100%;min-height:400px;margin-top:14px;border:0;border-radius:14px;background:#f5f5f7;box-shadow:0 0 0 .5px var(--line)}
+.wel-btns{margin:6px 0 4px;flex-wrap:wrap}
 .steps-card{margin-top:14px;padding:16px 18px;border-radius:14px;background:var(--fill);font-size:14px;line-height:1.5}
 .steps-card ol{margin:8px 0 8px;padding-left:20px}.steps-card li{margin:5px 0}.steps-card p{margin:0;color:var(--muted);font-size:13px}
 .ch-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -1986,6 +1988,21 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
     </div>
   </div>
 
+  <div class="modal" id="mWel" hidden role="dialog" aria-modal="true" aria-labelledby="mWelT">
+    <div class="mbox wide">
+      <header class="mhead"><button type="button" class="mbtn" data-close>Close</button><b id="mWelT">Welcome email</b><span class="mbtn" aria-hidden="true"></span></header>
+      <div class="mbody">
+        <div class="glist form">
+          <div class="frow"><label for="welUser">Their Home Assistant username</label><input id="welUser" autocomplete="off" placeholder="moshe"></div>
+          <div class="frow"><label for="welFrom">Signed</label><input id="welFrom" autocomplete="off"></div>
+        </div>
+        <p class="gf">The email never includes their password. Give them the starting password separately, by text or in person.</p>
+        <div class="tline wel-btns"><button class="btn pri" type="button" id="welCopy">Copy email</button><button class="btn" type="button" id="welMail">Open in my email</button><span class="hint" id="welMsg"></span></div>
+        <p class="gf"><b>Copy email</b> keeps the formatting: paste it into Gmail or Outlook. <b>Open in my email</b> starts a plain-text email to them.</p>
+        <iframe class="wel-prev" id="welPrev" title="Email preview" sandbox="allow-same-origin"></iframe>
+      </div>
+    </div>
+  </div>
   <div class="modal" id="mMsg" hidden role="dialog" aria-modal="true" aria-labelledby="mRqT">
     <div class="mbox">
       <header class="mhead"><button type="button" class="mbtn" data-close>Cancel</button><b id="mRqT">New message</b><button type="button" class="mbtn pri" id="rqSend">Send</button></header>
@@ -3012,7 +3029,7 @@ function renderSetup(){
     const r=u.role==="Restricted";
     return `<div class="glist ublock"><div class="row"><span class="avatar">${esc(initials(u.name))}</span><div class="rt"><b>${esc(u.name)}${u.name===S.me?' <span class="mini">You</span>':""}</b><span>${r?"Restricted":"Sees and changes everything"}</span></div>
       <select data-urole="${i}" aria-label="Role for ${esc(u.name)}"><option${!r?" selected":""}>Super admin</option><option${r?" selected":""}>Restricted</option></select>
-      ${u.name!==S.me?`<button class="btn sm danger" type="button" data-udel="${i}">Remove</button>`:""}</div>
+      <button class="btn sm" type="button" data-uwel="${i}">Welcome email</button>${u.name!==S.me?`<button class="btn sm danger" type="button" data-udel="${i}">Remove</button>`:""}</div>
       <div class="row"><span class="rt"><b>Mobile number</b><span>For alerts and vendor arrival texts</span></span><input class="uphone" data-uphone="${i}" value="${esc(u.phone||"")}" placeholder="Add a number" inputmode="tel" aria-label="Mobile number for ${esc(u.name)}"></div>
       <div class="row"><span class="rt"><b>Email</b><span>Lets them sign in at building.khalbobov.org</span></span><input class="uphone uemail" data-uemail="${i}" value="${esc(u.email||"")}" placeholder="Add an email" inputmode="email" autocomplete="off" aria-label="Email for ${esc(u.name)}"></div>
       ${r?`<div class="row"><span class="rt"><b>Schedules</b><span>For doors they can edit</span></span><select id="us${i}" data-usched="${i}" aria-label="Schedules"><option value="none"${u.sched==="none"?" selected":""}>None</option><option value="temp"${u.sched==="temp"?" selected":""}>Temporary only</option><option value="both"${u.sched==="both"?" selected":""}>Permanent and temporary</option></select></div>
@@ -3533,6 +3550,86 @@ async function accessLine(){const el=$("#accessLine");if(!el||!ON_BOX)return;let
   el.hidden=false;el.className="gf top"+(j.why?" warnm":"");
   el.textContent=!j.on?"Emails are saved here but not sent to Cloudflare yet: add a Cloudflare key in the add-on settings to turn that on.":j.why?j.why:j.at?`Sign-in list is up to date: ${j.emails.length} email${j.emails.length===1?"":"s"} can reach building.khalbobov.org.`:"Checking the sign-in list…"}
 if(ON_BOX)setTimeout(accessLine,3000);
+// ---------- welcome email for a new user: what they can do, and how to get in ----------
+// Inline styles only, so it looks the same once pasted into Gmail or Outlook. Never a password.
+function welcomeEmail(u,login,from){
+  const r=u.role==="Restricted",e=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const ed=r?S.doors.filter(d=>((u.perm||{})[d.id]||"hidden")==="edit"):S.doors, vw=r?S.doors.filter(d=>((u.perm||{})[d.id]||"hidden")==="view"):[];
+  const cn=k=>!r||!!(u.can||{})[k], sc=r?(u.sched||"none"):"both";
+  const can=[];
+  if(!r)can.push("See and change everything: every door, rule, event, code and setting.");
+  else{
+    if(ed.length)can.push(`Change these doors: ${ed.map(d=>d.name).join(", ")}.`);
+    if(vw.length)can.push(`See, but not change: ${vw.map(d=>d.name).join(", ")}.`);
+    if(sc==="both")can.push("Make lasting and one-time schedules for your doors.");else if(sc==="temp")can.push("Make one-time schedules (a date or an event) for your doors.");
+    if(cn("override"))can.push("Open or lock a door by hand.");
+    if(cn("codes"))can.push("Give guest codes to vendors and visitors.");
+    if(cn("events"))can.push("Add events like a kiddush or a wedding.");
+    if(cn("rabbi"))can.push("Set the Rabbi away and switch situations.");
+    can.push("Anything else: ask a super admin from Messages, or ask the assistant to send the request for you.");
+  }
+  const steps=[
+    ["Open the site",`Go to <a href="https://building.khalbobov.org" style="color:#0071e3">building.khalbobov.org</a> on your phone, tablet or computer. Save it to your home screen for next time.`],
+    ["Enter the email code",`Type <b>${e(u.email||"your email")}</b>. A code arrives in that inbox; type it in. Each device remembers you for 60 days.`],
+    ["Sign in",`Username: <b>${e(login||"(we'll give it to you)")}</b>. Your starting password comes separately. Tap your name at the bottom left to change it.`],
+    ["Open Shul Doors","Tap <b>Shul Doors</b> in the menu on the left."]];
+  const tips=[
+    ["Home","what every door is doing right now, today's zmanim, and quick open buttons."],
+    ["Ask the assistant","the blue button at the bottom. Type or tap the microphone and talk, for example <i>\"Open the ladies entrance Tuesday 6 to 11 for the Cohen wedding\"</i>. It shows you the change first; nothing is saved until you press <b>Save</b>. It remembers your chats and how you like things."],
+    ["Messages","requests between the team, and a note whenever someone changes something."],
+    ["Guest codes","a PIN for a vendor or guest, on the doors and times you choose. Ask before texting it to them."]].filter(([k])=>k!=="Guest codes"||cn("codes"));
+  const H=`<div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1d1d1f;background:#f5f5f7;padding:24px 12px">
+<div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:18px;padding:28px 26px;line-height:1.5;font-size:15px">
+<div style="font-size:13px;color:#6e6e73;letter-spacing:.02em">CONGREGATION K'HAL SHAAREI ZION BOBOV</div>
+<h1 style="font-size:24px;margin:6px 0 4px">Welcome to Shul Doors, ${e(u.name)}</h1>
+<p style="margin:0 0 18px;color:#6e6e73">The system that runs the shul's doors by zmanim, Shabbos, Yom Tov and events.</p>
+<h2 style="font-size:16px;margin:0 0 10px">Getting in</h2>
+${steps.map(([t,d],i)=>`<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 10px;border-collapse:collapse"><tr><td style="vertical-align:top;padding-right:12px"><div style="width:26px;height:26px;border-radius:13px;background:#0071e3;color:#fff;font-weight:600;font-size:14px;line-height:26px;text-align:center">${i+1}</div></td><td style="vertical-align:top"><b>${t}</b><br><span style="color:#3a3a3c">${d}</span></td></tr></table>`).join("")}
+<h2 style="font-size:16px;margin:20px 0 8px">What you can do</h2>
+<ul style="margin:0;padding-left:20px;color:#3a3a3c">${can.map(c=>`<li style="margin:4px 0">${e(c)}</li>`).join("")}</ul>
+<h2 style="font-size:16px;margin:20px 0 8px">Finding your way</h2>
+${tips.map(([t,d])=>`<p style="margin:0 0 8px"><b>${t}:</b> <span style="color:#3a3a3c">${d}</span></p>`).join("")}
+<div style="margin:20px 0 0;padding:14px 16px;background:#f5f5f7;border-radius:12px;font-size:14px;color:#3a3a3c"><b>Keep it safe.</b> Don't share your login. For extra protection, turn on two-step sign in: tap your name, then <b>Multi-factor authentication</b>.</div>
+<p style="margin:20px 0 0">Questions? Reply to this email.</p>
+<p style="margin:12px 0 0">${e(from||"")}<br><span style="color:#6e6e73">K'hal Shaarei Zion Bobov</span></p>
+</div></div>`;
+  const T=`Welcome to Shul Doors, ${u.name}
+
+The system that runs the shul's doors by zmanim, Shabbos, Yom Tov and events.
+
+GETTING IN
+1. Open the site: building.khalbobov.org (save it to your home screen).
+2. Enter the email code: type ${u.email||"your email"}, then the code that arrives. Each device remembers you for 60 days.
+3. Sign in: username ${login||"(we'll give it to you)"}. Your starting password comes separately. Tap your name at the bottom left to change it.
+4. Tap Shul Doors in the menu on the left.
+
+WHAT YOU CAN DO
+${can.map(c=>"- "+c).join("\n")}
+
+FINDING YOUR WAY
+${tips.map(([t,d])=>"- "+t+": "+d.replace(/<[^>]+>/g,"").replace(/\\"/g,'"')).join("\n")}
+
+Keep it safe: don't share your login. Turn on two-step sign in: tap your name, then Multi-factor authentication.
+
+Questions? Reply to this email.
+${from||""}
+K'hal Shaarei Zion Bobov`;
+  return {html:H.replace(/\\"/g,'"'),text:T,subject:"Welcome to Shul Doors"};
+}
+let WEL=null;
+function welRender(){const u=S.users[WEL];if(!u)return;const m=welcomeEmail(u,$("#welUser").value.trim(),$("#welFrom").value.trim());
+  const f=$("#welPrev");f.onload=()=>{try{f.style.height=(f.contentDocument.documentElement.scrollHeight+4)+"px"}catch(e){}};f.srcdoc=`<!doctype html><meta charset="utf-8"><body style="margin:0">${m.html}</body>`;return m}
+$("#userRows").addEventListener("click",ev=>{const b=ev.target.closest("[data-uwel]");if(!b)return;WEL=+b.dataset.uwel;const u=S.users[WEL];
+  $("#mWelT").textContent="Welcome email for "+u.name;$("#welUser").value=u.login||u.name.toLowerCase().split(/\s+/)[0];$("#welFrom").value=S.me;$("#welMsg").textContent="";
+  welRender();openModal("mWel")});
+["welUser","welFrom"].forEach(id=>$("#"+id).addEventListener("input",welRender));
+$("#welUser").addEventListener("change",()=>{const u=S.users[WEL],v=$("#welUser").value.trim();if(u&&v&&u.login!==v){u.login=v;save()}});
+$("#welCopy").onclick=async()=>{const m=welRender();try{
+    if(window.ClipboardItem)await navigator.clipboard.write([new ClipboardItem({"text/html":new Blob([m.html],{type:"text/html"}),"text/plain":new Blob([m.text],{type:"text/plain"})})]);
+    else await navigator.clipboard.writeText(m.text);
+    $("#welMsg").textContent="Copied. Paste it into a new email.";
+  }catch(e){try{const d=$("#welPrev").contentDocument,r=d.createRange();r.selectNodeContents(d.body);const sel=d.getSelection();sel.removeAllRanges();sel.addRange(r);$("#welPrev").focus();$("#welMsg").textContent="Selected in the preview. Press Ctrl+C (or Copy) to copy it."}catch(x){$("#welMsg").textContent="Copying isn't allowed here. Use Open in my email instead."}}};
+$("#welMail").onclick=()=>{const m=welRender(),u=S.users[WEL];location.href=`mailto:${encodeURIComponent(u.email||"")}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.text)}`};
 // changes other people made, for Messages ("Changes by others") and the badge
 function chgRecipients(){return S.alerts&&Array.isArray(S.alerts.changeTo)?S.alerts.changeTo:S.users.filter(u=>u.role==="Super admin").map(u=>u.name)}
 let CH_SEEN=null;
