@@ -117,13 +117,26 @@ function accessSoon(ms = 4000) {
 // ---------- email through SMTP2GO (welcome emails to users) ----------
 // Only to an email that belongs to a user in Shul Doors, and only a super admin can send.
 const SMTP2GO = process.env.SD_SMTP2GO_URL || "https://api.smtp2go.com/v3/email/send";
+// "K'hal Shaarei Zion <info@khalbobov.org>" -> a properly quoted sender; or just the address
+function senderOf(from) {
+  const m = /^\s*"?([^"<]*?)"?\s*<\s*([^<>\s]+@[^<>\s]+)\s*>\s*$/.exec(String(from || ""));
+  if (!m) return { full: String(from || "").trim(), bare: String(from || "").trim() };
+  const name = m[1].replace(/["\\]/g, "").trim();
+  return { full: name ? `"${name}" <${m[2]}>` : m[2], bare: m[2] };
+}
 async function sendEmail({ to, subject, html, text }) {
-  const r = await fetch(SMTP2GO, { method: "POST", headers: { "Content-Type": "application/json", "X-Smtp2go-Api-Key": opts.smtp2go_api_key },
-    body: JSON.stringify({ sender: opts.email_from, to: [to], subject: String(subject).slice(0, 200), html_body: String(html).slice(0, 200000), text_body: String(text || "").slice(0, 50000) }) });
-  const j = await r.json().catch(() => ({}));
-  const d = j.data || {};
-  if (!r.ok || !(d.succeeded >= 1)) throw new Error(String((d.error || (d.failures && d.failures[0]) || j.error || "SMTP2GO answered " + r.status)).slice(0, 200));
-  return d.email_id || "";
+  const snd = senderOf(opts.email_from);
+  const go = async (sender) => {
+    const r = await fetch(SMTP2GO, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json", "X-Smtp2go-Api-Key": String(opts.smtp2go_api_key).trim() },
+      body: JSON.stringify({ api_key: String(opts.smtp2go_api_key).trim(), sender, to: [to], subject: String(subject).slice(0, 200), html_body: String(html), text_body: String(text || "") }) });
+    const j = await r.json().catch(() => ({})); const d = j.data || {};
+    return { ok: r.ok && d.succeeded >= 1, id: d.email_id, why: String(d.error || (d.failures && d.failures[0]) || j.error || "SMTP2GO answered " + r.status).slice(0, 300), code: d.error_code || "" };
+  };
+  let r = await go(snd.full);
+  // some senders with a display name are refused: try the plain address once
+  if (!r.ok && snd.full !== snd.bare) { log("warn", "email with display name refused (" + r.why + "), trying the plain address"); r = await go(snd.bare); }
+  if (!r.ok) throw new Error(r.why + (r.code ? " (" + r.code + ")" : ""));
+  return r.id || "";
 }
 // ---------- someone else changed the schedule: tell the people picked in Alerts ----------
 // In the app it shows under Messages, "Changes by others". By text (when texting is on), changes
@@ -606,6 +619,7 @@ function send(res, code, body, type = "application/json") {
   res.writeHead(code, { "Content-Type": type, "Cache-Control": "no-store" });
   res.end(type === "application/json" ? JSON.stringify(body) : body);
 }
+const ADDON_VER = (() => { try { return fs.readFileSync(path.join(__dirname, "version.txt"), "utf8").trim(); } catch { return "dev"; } })();
 // The person, as Home Assistant names them ("Hershy Reifer"), matched to a Shul Doors user ("Hershy").
 function haUser(req) { return String(req.headers["x-remote-user-display-name"] || req.headers["x-remote-user-name"] || "").trim(); }
 function matchUser(name) {
@@ -624,7 +638,7 @@ function portal(req) {
   const match = s.users.find((u) => u.name.toLowerCase() === user.toLowerCase()) || s.users.find((u) => user.toLowerCase().startsWith(u.name.toLowerCase() + " "));
   if (match) s.me = match.name;
   else if (user) { s.users.push({ name: user, role: "Super admin" }); s.me = user; }   // only until the first super admin exists; after that people must be added (see notAdded)
-  const boot = `<script>window.__SD_STATE=${JSON.stringify(s).replace(/</g, "\\u003c")};window.__SD_VERSION=${version};window.__SD_USER=${JSON.stringify(user).replace(/</g, "\\u003c")};</script>`;
+  const boot = `<script>window.__SD_STATE=${JSON.stringify(s).replace(/</g, "\\u003c")};window.__SD_VERSION=${version};window.__SD_ADDON=${JSON.stringify(ADDON_VER)};window.__SD_USER=${JSON.stringify(user).replace(/</g, "\\u003c")};</script>`;
   return html.replace("__CAL__", JSON.stringify(calendar.cal)).replace("__HEB__", JSON.stringify(calendar.heb)).replace("__PARSHA__", JSON.stringify(calendar.parsha))
     .replace('const HEB_START = "2026-09-01";', `const HEB_START = ${JSON.stringify(calendar.start)};`)
     .replace("<script>", boot + "<script>");

@@ -99,8 +99,8 @@ function ensureNos(){if(!S||!S.rules)return;let m=Math.max(0,...S.rules.map(r=>+
 function rn(r){return r?(r.no?`#${r.no} `:"")+`"${r.name}"`:'"(deleted rule)"'}
 function save(){ensureNos();if(ON_BOX){boxSave();return}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 // a small pill that always says whether the last change reached the box
-let SP_T=null;function savePill(kind){const el=typeof document!=="undefined"&&document.getElementById("savePill");if(!el)return;clearTimeout(SP_T);
-  el.className="savepill "+kind;el.textContent=kind==="saving"?"Saving…":kind==="saved"?"Saved":"Not saved";el.hidden=false;
+let SP_T=null;function savePill(kind,why){const el=typeof document!=="undefined"&&document.getElementById("savePill");if(!el)return;clearTimeout(SP_T);
+  el.className="savepill "+kind;el.textContent=kind==="saving"?"Saving…":kind==="saved"?"Saved":"Not saved"+(why?": "+why:"");el.hidden=false;
   if(kind==="saved")SP_T=setTimeout(()=>{el.hidden=true},2500)}
 // One save at a time: a change made while the last save is still on its way waits for it,
 // then goes with the new version number (two quick changes used to trip over each other).
@@ -111,10 +111,10 @@ function boxPut(){
   BOX_INFLIGHT=true;let stop=false;
   fetch("api/state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({version:window.__SD_VERSION,state:S})}).then(r=>r.json()).then(j=>{
     if(j.version)window.__SD_VERSION=j.version;BOX_TRY=0;
-    if(j.conflict){stop=true;savePill("bad");toast("Not saved: someone else changed something at the same time. Loading the latest, then please make your change again.");setTimeout(()=>location.reload(),3500);return}
-    if(j.error){stop=true;savePill("bad");toast("Not saved: "+j.error);setTimeout(()=>location.reload(),4000);return}
+    if(j.conflict){stop=true;savePill("bad","someone else saved first");toast("Not saved: someone else changed something at the same time. Loading the latest, then please make your change again.");setTimeout(()=>location.reload(),3500);return}
+    if(j.error){stop=true;savePill("bad",String(j.error).slice(0,60));toast("Not saved: "+j.error);setTimeout(()=>location.reload(),4000);return}
     if(!BOX_AGAIN)savePill("saved")})
-  .catch(()=>{savePill("bad");BOX_TRY++;
+  .catch(()=>{savePill("bad","the box isn't answering");BOX_TRY++;
     // the box may be restarting: try again by itself for about two minutes
     if(BOX_TRY<=24){toast("The box isn't answering. Trying again…");setTimeout(()=>{if(!BOX_INFLIGHT)boxSave()},5000)}else{BOX_TRY=0;toast("Could not save. Check the connection to the box, then make the change again.")}})
   .finally(()=>{BOX_INFLIGHT=false;if(BOX_AGAIN&&!stop){BOX_AGAIN=false;boxPut();return}BOX_AGAIN=false;SAVING=false})}
