@@ -121,16 +121,18 @@ const SMTP2GO = process.env.SD_SMTP2GO_URL || "https://api.smtp2go.com/v3/email/
 function senderOf(from) {
   const m = /^\s*"?([^"<]*?)"?\s*<\s*([^<>\s]+@[^<>\s]+)\s*>\s*$/.exec(String(from || ""));
   if (!m) return { full: String(from || "").trim(), bare: String(from || "").trim() };
-  const name = m[1].replace(/["\\]/g, "").trim();
-  return { full: name ? `"${name}" <${m[2]}>` : m[2], bare: m[2] };
+  // SMTP2GO checks the sender strictly: a name with only letters, digits and spaces, then <address>
+  const name = m[1].replace(/[^A-Za-z0-9 ]+/g, "").replace(/\s+/g, " ").trim();
+  return { full: name ? `${name} <${m[2]}>` : m[2], bare: m[2] };
 }
 async function sendEmail({ to, subject, html, text }) {
   const snd = senderOf(opts.email_from);
   const go = async (sender) => {
     const r = await fetch(SMTP2GO, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json", "X-Smtp2go-Api-Key": String(opts.smtp2go_api_key).trim() },
-      body: JSON.stringify({ api_key: String(opts.smtp2go_api_key).trim(), sender, to: [to], subject: String(subject).slice(0, 200), html_body: String(html), text_body: String(text || "") }) });
+      body: JSON.stringify({ sender, to: [to], subject: String(subject).slice(0, 200), html_body: String(html), text_body: String(text || "") }) });
     const j = await r.json().catch(() => ({})); const d = j.data || {};
-    return { ok: r.ok && d.succeeded >= 1, id: d.email_id, why: String(d.error || (d.failures && d.failures[0]) || j.error || "SMTP2GO answered " + r.status).slice(0, 300), code: d.error_code || "" };
+    const fv = d.field_validation_errors, fvt = fv ? (Array.isArray(fv) ? fv : [fv]).map((x) => `${x.fieldname}: ${x.message}`).join("; ") : "";
+    return { ok: r.ok && d.succeeded >= 1, id: d.email_id, why: (fvt || String(d.error || (d.failures && d.failures[0]) || j.error || "SMTP2GO answered " + r.status)).slice(0, 300), code: fvt ? "" : (d.error_code || "") };
   };
   let r = await go(snd.full);
   // some senders with a display name are refused: try the plain address once
