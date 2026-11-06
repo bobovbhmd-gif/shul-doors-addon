@@ -2865,8 +2865,9 @@ function anchorFields(p,x){
   return `<div class="tline"><select id="${p}A" aria-label="${p==="s"?"Start":"End"} anchor">${Object.entries(ANCHORS).map(([k,v])=>`<option value="${k}"${x.a===k?" selected":""}>${v}</option>`).join("")}</select>
     ${tpick(p+"T",x.t||(p==="s"?"18:00":"22:00"),p==="s"?"Start time":"End time",x.a!=="clock")}
     <span id="${p}OW" class="offw" ${x.a==="clock"?"hidden":""}><input type="number" id="${p}O" value="${Math.abs(+x.o||0)||""}" placeholder="0" min="0" step="5" inputmode="numeric" aria-label="Minutes" onfocus="this.select()"><select id="${p}S" aria-label="Before or after"><option value="-1"${(+x.o<0||(!+x.o&&p==="s"))?" selected":""}>min before</option><option value="1"${(+x.o>0||(!+x.o&&p!=="s"))?" selected":""}>min after</option></select></span></div>
-    <div class="tline nbw" id="${p}NBX" ${x.a==="clock"?"hidden":""}><select id="${p}NBK" aria-label="Earliest time"><option value="">Any time</option><option value="on"${x.nb?" selected":""}>Not earlier than</option></select>
-    ${tpick(p+"NB",x.nb||"01:00","Earliest time",!x.nb)}</div>`;
+    <div class="tline nbw" id="${p}NBX" ${x.a==="clock"||!x.nb?"hidden":""}><span class="hint">Not earlier than</span><input type="hidden" id="${p}NBK" value="${x.nb?"on":""}">
+    ${tpick(p+"NB",x.nb||"01:00","Earliest time",false)}<button type="button" class="linkbtn" data-nboff="${p}">Remove</button></div>
+    ${p==="e"?`<div class="tline nbw adv" id="${p}NBA" ${x.a==="clock"||x.nb?"hidden":""}><button type="button" class="linkbtn" data-nbon="${p}">Special: never earlier than a set time</button></div>`:""}`;
 }
 function captureTop(){
   if(!$("#ruleForm")) return;
@@ -2933,8 +2934,9 @@ function drawEditor(){
     $("#rDoorMore").addEventListener("toggle",ev=>{DPOPEN=ev.target.open});
     document.querySelectorAll("input[name=rDoor]").forEach(x=>x.addEventListener("change",sum));sum();filt(); }
   $("#rUntilK").addEventListener("change",ev=>{const d=ev.target.value==="date";$("#rUntil").hidden=!d;if(d&&!$("#rUntil").value)$("#rUntil").value=addDays(todayNY(),29)});
-  ["s","e"].forEach(p=>$(`#${p}A`).addEventListener("change",ev=>{const c=ev.target.value==="clock";$(`#${p}TW`).hidden=!c;$(`#${p}OW`).hidden=c;$(`#${p}NBX`).hidden=c}));
-  ["s","e"].forEach(p=>$(`#${p}NBK`).addEventListener("change",ev=>{$(`#${p}NBW`).hidden=!ev.target.value}));
+  ["s","e"].forEach(p=>$(`#${p}A`).addEventListener("change",ev=>{const c=ev.target.value==="clock";$(`#${p}TW`).hidden=!c;$(`#${p}OW`).hidden=c;const on=$(`#${p}NBK`).value==="on";$(`#${p}NBX`).hidden=c||!on;if($(`#${p}NBA`))$(`#${p}NBA`).hidden=c||on}));
+  $("#ruleForm").addEventListener("click",ev=>{const a=ev.target.closest("[data-nbon]"),b=ev.target.closest("[data-nboff]");if(!a&&!b)return;const p=(a||b).dataset.nbon||(a||b).dataset.nboff,on=!!a;
+    $(`#${p}NBK`).value=on?"on":"";$(`#${p}NBX`).hidden=!on;if($(`#${p}NBA`))$(`#${p}NBA`).hidden=on});
   $("#rKind").addEventListener("change",ev=>{const a=ev.target.value==="access";$("#modeField").hidden=a;$("#agField").hidden=!a});
   $("#cancelEdit").onclick=closeEditor;
   if(!e.isNew){
