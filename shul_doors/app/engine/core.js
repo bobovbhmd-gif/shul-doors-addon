@@ -99,7 +99,9 @@ function ensureNos(){if(!S||!S.rules)return;let m=Math.max(0,...S.rules.map(r=>+
 function rn(r){return r?(r.no?`#${r.no} `:"")+`"${r.name}"`:'"(deleted rule)"'}
 function save(){ensureNos();if(ON_BOX){boxSave();return}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 // a small pill that always says whether the last change reached the box
-let SP_T=null;function savePill(kind,why){const el=typeof document!=="undefined"&&document.getElementById("savePill");if(!el)return;clearTimeout(SP_T);
+let SP_T=null;function savePill(kind,why){const el=typeof document!=="undefined"&&document.getElementById("savePill");if(!el)return;
+  if(kind!=="bad"&&!(Date.now()-(globalThis.SD_LAST_INPUT||0)<10000)&&el.hidden)return;   // only after the person's own change
+  clearTimeout(SP_T);
   el.className="savepill "+kind;el.textContent=kind==="saving"?"Saving…":kind==="saved"?"Saved":"Not saved"+(why?": "+why:"");el.hidden=false;
   if(kind==="saved")SP_T=setTimeout(()=>{el.hidden=true},2500)}
 // One save at a time: a change made while the last save is still on its way waits for it,
