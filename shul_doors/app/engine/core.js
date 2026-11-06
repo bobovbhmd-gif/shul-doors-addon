@@ -333,7 +333,10 @@ function staticScore(r){
 }
 function anchorMin(x,info){
   if(x.a==="clock"){const [h,m]=(x.t||"00:00").split(":").map(Number);return h*60+m}
-  return info.z[x.a]+(+x.o||0);
+  const v=info.z[x.a]+(+x.o||0);
+  // "not earlier than": a zman-based time that never goes before a set clock time
+  if(x.nb&&/^\d{1,2}:\d{2}$/.test(x.nb)){const [h,m]=x.nb.split(":").map(Number);return Math.max(v,h*60+m)}
+  return v;
 }
 // Which layer a rule is in. The schedule (weekdays, holidays, dates, rabbi) is one
 // layer and its rules may never overlap; events override it during their hours,

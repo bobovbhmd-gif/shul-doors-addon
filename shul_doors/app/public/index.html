@@ -988,6 +988,7 @@ details.more>summary.gh{color:var(--accent)}
 .pass dt{flex:none;width:52px;color:var(--muted)}
 .pass dd{margin:0}
 .pass .meta{font-size:13px;color:var(--muted);margin:12px 0 0}
+.nbw{margin-top:8px;justify-content:flex-end}
 .usave{position:sticky;top:8px;z-index:20;display:flex;align-items:center;gap:10px;padding:10px 12px 10px 16px;margin:0 0 12px;border-radius:14px;background:var(--surface);box-shadow:0 4px 18px rgba(0,0,0,.12),0 0 0 1px var(--accent)}
 .usave span{flex:1;font-weight:600;font-size:14px}
 .wel-prev{display:block;width:100%;min-height:400px;margin-top:14px;border:0;border-radius:14px;background:#f5f5f7;box-shadow:0 0 0 .5px var(--line)}
@@ -2392,7 +2393,10 @@ function staticScore(r){
 }
 function anchorMin(x,info){
   if(x.a==="clock"){const [h,m]=(x.t||"00:00").split(":").map(Number);return h*60+m}
-  return info.z[x.a]+(+x.o||0);
+  const v=info.z[x.a]+(+x.o||0);
+  // "not earlier than": a zman-based time that never goes before a set clock time
+  if(x.nb&&/^\d{1,2}:\d{2}$/.test(x.nb)){const [h,m]=x.nb.split(":").map(Number);return Math.max(v,h*60+m)}
+  return v;
 }
 // Which layer a rule is in. The schedule (weekdays, holidays, dates, rabbi) is one
 // layer and its rules may never overlap; events override it during their hours,
@@ -2607,7 +2611,8 @@ function emptyState(icon,title,text,btn){return `<div class="empty"><span class=
 const modeCls=m=>m==="Unlock"?"m-Unlock":m==="Lockdown"?"m-Lockdown":"m-other";
 function anchorText(x){
   if(x.a==="clock"){const [h,m]=(x.t||"00:00").split(":").map(Number);return fmt(h*60+m)}
-  const o=+x.o||0, n=ANCHORS[x.a].replace(/ \(.+\)$/,"");return o?`${Math.abs(o)} min ${o>0?"after":"before"} ${n==="Rabbeinu Tam"?n:n.toLowerCase()}`:n;
+  const o=+x.o||0, n=ANCHORS[x.a].replace(/ \(.+\)$/,""),nb=x.nb?(()=>{const [h,m]=x.nb.split(":").map(Number);return `, not earlier than ${fmt(h*60+m)}`})():"";
+  return (o?`${Math.abs(o)} min ${o>0?"after":"before"} ${n==="Rabbeinu Tam"?n:n.toLowerCase()}`:n)+nb;
 }
 function whenText(ms){return new Date(ms).toLocaleString("en-US",{timeZone:TZ,month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}
 /* ---------- timeline view: one colored bar per door per day ---------- */
@@ -2859,14 +2864,17 @@ document.addEventListener("click",ev=>{const b=ev.target.closest&&ev.target.clos
 function anchorFields(p,x){
   return `<div class="tline"><select id="${p}A" aria-label="${p==="s"?"Start":"End"} anchor">${Object.entries(ANCHORS).map(([k,v])=>`<option value="${k}"${x.a===k?" selected":""}>${v}</option>`).join("")}</select>
     ${tpick(p+"T",x.t||(p==="s"?"18:00":"22:00"),p==="s"?"Start time":"End time",x.a!=="clock")}
-    <span id="${p}OW" class="offw" ${x.a==="clock"?"hidden":""}><input type="number" id="${p}O" value="${Math.abs(+x.o||0)||""}" placeholder="0" min="0" step="5" inputmode="numeric" aria-label="Minutes" onfocus="this.select()"><select id="${p}S" aria-label="Before or after"><option value="-1"${(+x.o<0||(!+x.o&&p==="s"))?" selected":""}>min before</option><option value="1"${(+x.o>0||(!+x.o&&p!=="s"))?" selected":""}>min after</option></select></span></div>`;
+    <span id="${p}OW" class="offw" ${x.a==="clock"?"hidden":""}><input type="number" id="${p}O" value="${Math.abs(+x.o||0)||""}" placeholder="0" min="0" step="5" inputmode="numeric" aria-label="Minutes" onfocus="this.select()"><select id="${p}S" aria-label="Before or after"><option value="-1"${(+x.o<0||(!+x.o&&p==="s"))?" selected":""}>min before</option><option value="1"${(+x.o>0||(!+x.o&&p!=="s"))?" selected":""}>min after</option></select></span></div>
+    <div class="tline nbw" id="${p}NBX" ${x.a==="clock"?"hidden":""}><select id="${p}NBK" aria-label="Earliest time"><option value="">Any time</option><option value="on"${x.nb?" selected":""}>Not earlier than</option></select>
+    ${tpick(p+"NB",x.nb||"01:00","Earliest time",!x.nb)}</div>`;
 }
 function captureTop(){
   if(!$("#ruleForm")) return;
   Object.assign(E,{kind:$("#rKind").value,group:$("#rGroup").value,note:$("#rNote").value,year:$("#rYear").value,name:$("#rName").value,mode:$("#rMode").value,rabbi:$("#rRabbi").value,sit:$("#rSit").value,season:$("#rSeason").value,
     doors:[...document.querySelectorAll("input[name=rDoor]:checked")].map(x=>x.value),
     until:(()=>{const k=$("#rUntilK").value;if(!k)return "";if(k==="date")return $("#rUntil").value||"";return addDays(todayNY(),+k-1)})(),
-    start:{a:$("#sA").value,t:$("#sT").value,o:(+$("#sO").value||0)*(+$("#sS").value||1)},end:{a:$("#eA").value,t:$("#eT").value,o:(+$("#eO").value||0)*(+$("#eS").value||1),days:+$("#eD").value||0}});
+    start:{a:$("#sA").value,t:$("#sT").value,o:(+$("#sO").value||0)*(+$("#sS").value||1),...($("#sA").value!=="clock"&&$("#sNBK").value?{nb:$("#sNB").value}:{})},
+    end:{a:$("#eA").value,t:$("#eT").value,o:(+$("#eO").value||0)*(+$("#eS").value||1),days:+$("#eD").value||0,...($("#eA").value!=="clock"&&$("#eNBK").value?{nb:$("#eNB").value}:{})}});
 }
 function drawEditor(){
   const e=E, canSave=can("rules")||isAdmin();
@@ -2925,7 +2933,8 @@ function drawEditor(){
     $("#rDoorMore").addEventListener("toggle",ev=>{DPOPEN=ev.target.open});
     document.querySelectorAll("input[name=rDoor]").forEach(x=>x.addEventListener("change",sum));sum();filt(); }
   $("#rUntilK").addEventListener("change",ev=>{const d=ev.target.value==="date";$("#rUntil").hidden=!d;if(d&&!$("#rUntil").value)$("#rUntil").value=addDays(todayNY(),29)});
-  ["s","e"].forEach(p=>$(`#${p}A`).addEventListener("change",ev=>{const c=ev.target.value==="clock";$(`#${p}TW`).hidden=!c;$(`#${p}OW`).hidden=c}));
+  ["s","e"].forEach(p=>$(`#${p}A`).addEventListener("change",ev=>{const c=ev.target.value==="clock";$(`#${p}TW`).hidden=!c;$(`#${p}OW`).hidden=c;$(`#${p}NBX`).hidden=c}));
+  ["s","e"].forEach(p=>$(`#${p}NBK`).addEventListener("change",ev=>{$(`#${p}NBW`).hidden=!ev.target.value}));
   $("#rKind").addEventListener("change",ev=>{const a=ev.target.value==="access";$("#modeField").hidden=a;$("#agField").hidden=!a});
   $("#cancelEdit").onclick=closeEditor;
   if(!e.isNew){
