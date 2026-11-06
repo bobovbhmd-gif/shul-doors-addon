@@ -1840,12 +1840,13 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
         <div class="panel admin-only" data-sp="users" data-ic="people" data-c="var(--gray)">
           <h2>Users and permissions</h2>
           <p class="gf top">A super admin sees and changes everything. For anyone else, set each door to Edit, View only or Hidden, and choose whether they can make permanent schedules or only temporary ones. New doors start hidden for them.</p>
+          <p class="gf top" id="accessLine" hidden></p>
           <div id="userRows"></div>
           <div class="glist addrow"><div class="row"><input id="uName" placeholder="New user's name" aria-label="User name"><select id="uRole" aria-label="Role"><option>Restricted</option><option>Super admin</option></select><button class="btn sm pri" type="button" id="addUser">Add</button></div></div>
           <div class="steps-card"><b>Adding someone new</b><ol>
             <li>In Home Assistant: Settings, People, <b>Add person</b>. Turn on <b>Allow login</b>, give them a username and a starting password. Leave <b>Administrator</b> off.</li>
-            <li>Here: add them above with the <b>same name</b> as in Home Assistant, and pick what they may do. Add their mobile number if they should get texts.</li>
-            <li>They sign in at building.khalbobov.org and open <b>Shul Doors</b>. They can change their password by tapping their name in Home Assistant.</li></ol>
+            <li>Here: add them above with the <b>same name</b> as in Home Assistant, and pick what they may do. Add their <b>email</b> so they can get past the sign-in code screen, and their mobile number if they should get texts.</li>
+            <li>They open building.khalbobov.org, enter the code emailed to them (once every 60 days per device), then their Home Assistant username and password, and open <b>Shul Doors</b>. They can change their password by tapping their name in Home Assistant.</li></ol>
             <p>Anyone not added here sees "You're not added yet" instead of the app. Changes they make show up for you under Messages.</p></div>
         </div>
 
@@ -3009,7 +3010,8 @@ function renderSetup(){
     return `<div class="glist ublock"><div class="row"><span class="avatar">${esc(initials(u.name))}</span><div class="rt"><b>${esc(u.name)}${u.name===S.me?' <span class="mini">You</span>':""}</b><span>${r?"Restricted":"Sees and changes everything"}</span></div>
       <select data-urole="${i}" aria-label="Role for ${esc(u.name)}"><option${!r?" selected":""}>Super admin</option><option${r?" selected":""}>Restricted</option></select>
       ${u.name!==S.me?`<button class="btn sm danger" type="button" data-udel="${i}">Remove</button>`:""}</div>
-      <div class="row"><span class="rt"><b>Mobile number</b><span>For vendor arrival texts</span></span><input class="uphone" data-uphone="${i}" value="${esc(u.phone||"")}" placeholder="Add a number" inputmode="tel" aria-label="Mobile number for ${esc(u.name)}"></div>
+      <div class="row"><span class="rt"><b>Mobile number</b><span>For alerts and vendor arrival texts</span></span><input class="uphone" data-uphone="${i}" value="${esc(u.phone||"")}" placeholder="Add a number" inputmode="tel" aria-label="Mobile number for ${esc(u.name)}"></div>
+      <div class="row"><span class="rt"><b>Email</b><span>Lets them sign in at building.khalbobov.org</span></span><input class="uphone uemail" data-uemail="${i}" value="${esc(u.email||"")}" placeholder="Add an email" inputmode="email" autocomplete="off" aria-label="Email for ${esc(u.name)}"></div>
       ${r?`<div class="row"><span class="rt"><b>Schedules</b><span>For doors they can edit</span></span><select id="us${i}" data-usched="${i}" aria-label="Schedules"><option value="none"${u.sched==="none"?" selected":""}>None</option><option value="temp"${u.sched==="temp"?" selected":""}>Temporary only</option><option value="both"${u.sched==="both"?" selected":""}>Permanent and temporary</option></select></div>
       ${CAPS.map(([k,l])=>`<label class="row swrow"><span class="rt"><b>${esc(l)}</b></span><input type="checkbox" class="switch" data-ucan="${i}" data-cap="${k}"${(u.can||{})[k]?" checked":""}></label>`).join("")}
       <details class="row doorperm"><summary><span class="rt"><b>Doors</b><span>${S.doors.filter(d=>((u.perm||{})[d.id]||"hidden")==="edit").length} edit, ${S.doors.filter(d=>((u.perm||{})[d.id]||"hidden")==="view").length} view only, the rest hidden</span></span><span class="chev"></span></summary>
@@ -3523,6 +3525,11 @@ function seeReq(q){return isAdmin()||q.from===S.me||q.to===S.me}
 function unread(q){const last=q.msgs[q.msgs.length-1];return forMe(q)&&q.status==="open"&&last.u!==S.me&&(!q.read||!q.read[S.me]||q.read[S.me]<last.t)}
 function changeLines(c){if(!c)return[];const r=c.rule;return [`Doors: ${doorsText(r.doors)}`,`${anchorText(r.start)} to ${anchorText(r.end)}${r.end.days?` (${r.end.days} day${r.end.days>1?"s":""} later)`:""}, ${r.kind==="access"?r.group+" cards":r.mode}`,`Runs on: ${condText(r.inc)}`,...(condText(r.exc)?[`Except: ${condText(r.exc)}`]:[]),...(r.season&&r.season!=="any"?[r.season==="dst"?"Only on the summer clock":"Only on the winter clock"]:[]),...(r.rabbi&&r.rabbi!=="any"?[r.rabbi==="away"?"Only when the rabbi is away":"Only when the rabbi is here"]:[]),["Part of the schedule","Overrides the schedule during the event","Overrides the schedule while the situation is on","Overrides everything while the situation is on"][ruleLayer(r)],...(isTempRule(r)?["Temporary"]:["Permanent"])]}
 let OPENQ=null;
+// the Cloudflare sign-in list (which emails may reach building.khalbobov.org)
+async function accessLine(){const el=$("#accessLine");if(!el||!ON_BOX)return;let j={};try{j=await (await fetch("api/access")).json()}catch(e){return}
+  el.hidden=false;el.className="gf top"+(j.why?" warnm":"");
+  el.textContent=!j.on?"Emails are saved here but not sent to Cloudflare yet: add a Cloudflare key in the add-on settings to turn that on.":j.why?j.why:j.at?`Sign-in list is up to date: ${j.emails.length} email${j.emails.length===1?"":"s"} can reach building.khalbobov.org.`:"Checking the sign-in list…"}
+if(ON_BOX)setTimeout(accessLine,3000);
 // changes other people made, for Messages ("Changes by others") and the badge
 function chgRecipients(){return S.alerts&&Array.isArray(S.alerts.changeTo)?S.alerts.changeTo:S.users.filter(u=>u.role==="Super admin").map(u=>u.name)}
 let CH_SEEN=null;
@@ -4299,6 +4306,10 @@ $("#tcList").addEventListener("click",ev=>{const b=ev.target.closest("[data-creu
 $("#vnSame").addEventListener("change",e=>{$("#vnPinRow").hidden=!e.target.checked;if(e.target.checked&&!$("#vnPin").value)$("#vnPin").value=randPin()});
 $("#vnGen").onclick=()=>{$("#vnPin").value=randPin()};
 $("#vnArrive").addEventListener("change",e=>{$("#vnNotifyRow").hidden=!e.target.checked});
+$("#userRows").addEventListener("change",ev=>{const k=ev.target.dataset.uemail;if(k===undefined)return;const u=S.users[k],v=ev.target.value.trim().toLowerCase();
+  if(v&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ev.target.value=u.email||"";toast("That doesn't look like an email address.");return}
+  if(v&&S.users.some((x,j)=>j!=k&&(x.email||"").toLowerCase()===v)){ev.target.value=u.email||"";toast("Another user already has that email.");return}
+  const was=u.email||"";u.email=v;commit(`${u.name}: sign-in email ${v?(was?"changed":"added"):"removed"}`);if(ON_BOX)setTimeout(accessLine,6000)});
 $("#userRows").addEventListener("change",ev=>{const i=ev.target.dataset.uphone;if(i===undefined)return;const u=S.users[i],v=ev.target.value.trim(),ph=v?fmtPhone(v):"";
   if(v&&!ph){ev.target.value=u.phone||"";toast("Use a 10-digit number, like 718-555-0100");return}u.phone=ph;commit(`${u.name}: mobile number ${ph?"set":"removed"}`)});
 $("#vnSave").onclick=()=>{const err=t=>{$("#vnErr").textContent=t;$("#vnErr").hidden=false;$("#vnErr").scrollIntoView({block:"nearest"})};

@@ -9,6 +9,7 @@ const { execFile } = require("child_process");
 const { createEngine } = require("./engine/load");
 const { outputReportLines } = require("./lib/outputs");
 const people = require("./lib/people");
+const { syncAccess } = require("./lib/access");
 const { createSms } = require("./lib/sms");
 const { makeClient } = require("./lib/protector");
 const { sync } = require("./lib/sync");
@@ -99,6 +100,20 @@ function loadStore() {   // what the box remembers about the doors (original sch
 // ---------- syncing with the doors ----------
 // "Buzz open": a pulse unlock, the same as pressing the door's release button. Super admins only;
 // in practice mode nothing is sent. Every buzz is written to the history.
+// ---------- the Cloudflare sign-in list follows the users' emails ----------
+let accessState = { on: false, emails: [], at: 0, why: "" }, accessTimer = null;
+function accessSoon(ms = 4000) {
+  if (!opts.cloudflare_api_token) return;
+  clearTimeout(accessTimer);
+  accessTimer = setTimeout(async () => {
+    try {
+      const r = await syncAccess({ token: opts.cloudflare_api_token, accountId: opts.cloudflare_account_id || "", group: opts.cloudflare_access_group || "Shul Doors users", users: state.users, always: opts.cloudflare_always_allow || "" });
+      accessState = { on: true, emails: r.emails || [], at: Date.now(), why: r.why || "" };
+      if (r.added && r.added.length) log("info", "sign-in list: added " + r.added.join(", "));
+      if (r.removed && r.removed.length) log("info", "sign-in list: removed " + r.removed.join(", "));
+    } catch (e) { accessState = { ...accessState, on: true, at: Date.now(), why: "Couldn't update the Cloudflare sign-in list: " + e.message }; log("warn", "sign-in list: " + e.message); }
+  }, ms);
+}
 // ---------- someone else changed the schedule: tell the people picked in Alerts ----------
 // In the app it shows under Messages, "Changes by others". By text (when texting is on), changes
 // made close together go out as one text a few minutes after the last one.
@@ -626,6 +641,7 @@ const server = http.createServer((req, res) => {
       `${opts.mode === "practice" ? "Would do" : "Did"} (${(r.actions || []).length}):`, ...(r.actions || []).map((x) => "  " + x), "", "Special days loaded through:", ...Object.entries(r.loadedThrough || {}).map(([d, t]) => `  ${d}: ${t}`)];
     return send(res, 200, lines.join("\n"), "text/plain; charset=utf-8");
   }
+  if (req.method === "GET" && p === "/api/access") return send(res, 200, { on: !!opts.cloudflare_api_token, emails: accessState.emails, at: accessState.at, why: accessState.why });
   if (req.method === "GET" && p === "/api/sms") return send(res, 200, sms ? { mode: sms.mode, configured: sms.configured, log: sms.list(30), optedOut: sms.optedOut() } : { mode: "off" });
   if (req.method === "POST" && p === "/api/sms/test") {
     if (!sms) return send(res, 503, { error: "not ready" });
@@ -717,6 +733,8 @@ const server = http.createServer((req, res) => {
       const urgent = pick(state) !== pick(body.state);
       const before = state; state = body.state; version++;
       try { changeAlerts(before, state, personOf(req)); } catch (e) { log("warn", "change alerts: " + e.message); }
+      const em = (x) => JSON.stringify((x.users || []).map((u) => [u.email || "", u.role]));
+      if (em(before) !== em(state)) accessSoon();
       writeJson("state.json", state); writeJson("version.json", { v: version }); backup();
       clearTimeout(saveTimer); saveTimer = setTimeout(() => runSync(urgent ? "urgent change" : "change saved"), urgent ? 1500 : 15000);
       send(res, 200, { ok: true, version });
@@ -728,4 +746,5 @@ const server = http.createServer((req, res) => {
 init().then(() => {
   server.listen(PORT, () => log("info", `portal on port ${PORT}`));
   setTimeout(() => runSync("start"), 5000);
+  accessSoon(8000);
 }).catch((e) => { log("error", "could not start: " + e.stack); process.exit(1); });

@@ -1,5 +1,5 @@
 name: Shul Doors
-version: "0.2.46"
+version: "0.2.47"
 slug: shul_doors
 description: Runs the shul's Protector.Net doors by zmanim, Jewish holidays, events and situations.
 url: https://github.com/bobovbhmd-gif/shul-doors-addon
@@ -54,6 +54,10 @@ schema:
   openai_api_key: password?
   stt_model: str?
   stt_live: bool?
+  cloudflare_api_token: password?
+  cloudflare_account_id: str?
+  cloudflare_access_group: str?
+  cloudflare_always_allow: str?
   sms_mode: list(off|test|live)
   twilio_account_sid: str?
   twilio_api_key_sid: str?
