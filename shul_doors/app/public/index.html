@@ -1577,9 +1577,42 @@ body.simple .hsys.ok{display:none}
 #tab-reports .seg{max-width:100%;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
 #tab-reports .seg::-webkit-scrollbar{display:none}
 #tab-reports .seg button{flex:none}
+
+/* Rules page: calmer */
+.fbtn{display:inline-flex;align-items:center;gap:6px;position:relative;flex:none}
+.fbtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.fdot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.fpanel{display:flex;flex-wrap:wrap;gap:10px;margin:-4px 0 14px;padding:12px;border-radius:14px;background:var(--surface)}
+.fpanel[hidden]{display:none}
+#tab-rules .searchbar{flex-wrap:nowrap}
+#tab-rules .searchbar .search{flex:1;min-width:0}
+#tab-rules #rules .gh span{display:none}
+body:not(.rsel) .rrow [data-pick]{display:none}
+.hpHow p{font-size:14.5px;line-height:1.55;margin:0 0 10px;color:var(--text)}
+.ask-fab{display:inline-flex;align-items:center;gap:8px}
+.ask-fab svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
+@media (max-width:1100px){.ask-fab{width:54px;height:54px;padding:0!important;justify-content:center;border-radius:50%}.ask-fab span{display:none}.ask-fab svg{width:24px;height:24px}}
+
+/* Open a door: a plain list, not cards */
+.bz-doors{display:flex!important;flex-direction:column;gap:0;background:var(--fill2);border-radius:14px;overflow:hidden}
+.bz-dw{border-bottom:1px solid var(--line);flex-wrap:wrap}
+.bz-dw:last-child{border-bottom:0}
+.bz-dw .bz-d{flex-direction:row!important;align-items:center!important;justify-content:space-between;gap:10px!important;border-radius:0!important;background:transparent!important;padding:13px 48px 13px 14px!important;min-height:50px;box-shadow:none!important;color:var(--text)!important}
+.bz-dw .bz-d b{font-size:15.5px;font-weight:500}
+.bz-dw .bz-d span{font-size:13px;color:var(--muted)!important;white-space:nowrap}
+.bz-dw .bz-d.on{background:color-mix(in srgb,var(--accent) 9%,transparent)!important}
+.bz-dw .bz-d.on b{font-weight:650}
+.bz-pin{top:50%!important;transform:translateY(-50%)}
+.bz-doors>.bz-acts{margin:0;padding:2px 14px 14px;border-top:0;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.bz-doors>.bz-acts .bz-btns{margin-top:8px}
+.bz-dw .bz-d span .dot{margin-right:5px}
+.bz-q{max-width:none!important}
+@media (max-width:699px){.bz-dw .bz-d span{display:none}.bz-dw .bz-d.on span{display:inline}}
+/* typing near the bottom of a tablet: keep the box above the keyboard */
+html{scroll-padding-bottom:40vh}
 </style>
 
-<button class="ask-fab" type="button" id="askOpen" hidden>Ask the assistant</button>
+<button class="ask-fab" type="button" id="askOpen" hidden aria-label="Ask the assistant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Ask the assistant</span></button>
 <section class="ask" id="askPanel" hidden aria-label="Assistant">
   <header><b id="askTitle">Assistant</b><span class="askbtns"><button class="aib" type="button" id="askHist" aria-label="All chats" title="All chats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button><button class="aib" type="button" id="askClear" aria-label="New chat" title="New chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><button class="aib" type="button" id="askClose" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></header>
   <div class="ask-hist" id="askHistView" hidden></div>
@@ -1724,14 +1757,15 @@ body.simple .hsys.ok{display:none}
     <div id="rlClash" hidden></div>
     <p class="notice editor-note">You see rules for your doors. You can change a rule only if you may edit every door in it.</p>
     <div class="searchbar">
-      <label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="rqSearch" type="search" placeholder="Search by name, number, door or holiday" aria-label="Search rules"></label>
+      <label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="rqSearch" type="search" placeholder="Search rules" aria-label="Search rules by name, number, door or holiday"></label>
+      <button type="button" class="btn fbtn" id="rqFBtn" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filter<i class="fdot" id="rqFDot" hidden></i></button>
+    </div>
+    <div class="fpanel" id="rqFPanel" hidden>
       <select id="rqDoorF" aria-label="Filter by door or group"></select>
       <select id="rqModeF" aria-label="Filter by door state"></select>
       <div class="seg" role="group" aria-label="Group rules" id="rqGroup"><button type="button" data-rg="kind" class="on">By kind</button><button type="button" data-rg="area">By door area</button></div>
+      <button type="button" class="btn admin-only adv" id="rqSelBtn">Select rules</button>
     </div>
-    <details class="how"><summary>How rules work together</summary>
-      <p><b>The schedule</b> is every rule for weekdays, holidays, dates and the rabbi. Two of these may never run on the same door at the same time. When you save one that overlaps another, the system asks which one the door should follow. The one you pick <b>wins</b>, only on the doors they share and only on the days it runs. Tap "Shares doors with…" under a rule to see it: "Wins over …" on the one that wins and "Gives way to …" on the other.</p>
-      <p><b>Events</b> (wedding, kiddush, sheva brachos) take over from the schedule during their hours, then the schedule continues. <b>Situations</b> that are switched on take over the same way; one marked "beats everything" also beats events. <b>Open or lock now</b> by hand beats everything. Outside every rule, a door is on its default.</p></details>
     <div class="card admin-only adv bulk" id="bulkBar" hidden>
       <div class="secthead" style="margin:0 0 10px"><b id="pickCount"></b><span class="grow"></span><button class="btn sm" type="button" id="pickNone">Clear selection</button></div>
       <div class="grid2">
@@ -2894,7 +2928,7 @@ function ruleRow(r){
       <span class="rdoors">${esc(shownDoorsText(r.doors))}</span>`})()}
       ${(()=>{const yt=yieldsHtml(r),ot=overridesHtml(r);const n=(r.yields||[]).filter(y=>S.rules.some(x=>String(x.id)===String(y.id))).length+S.rules.filter(L=>(L.yields||[]).some(y=>String(y.id)===String(r.id))).length;
         return n?`<details class="rshare"><summary>Shares doors with ${n} other rule${n>1?"s":""}</summary><span>${ot?`<span class="rovr">${ot.replace(/Overrides /g,"Wins over ")}</span>`:""}${ot&&yt?"<br>":""}${yt?`<span>${yt.replace(/Overridden by /g,"Gives way to ")}</span>`:""}</span></details>`:""})()}
-      ${r.note?`<span class="note">${esc(r.note)}</span>`:""}</div>
+      ${r.note&&!/^Copied from Protector\.Net/.test(r.note)?`<span class="note">${esc(r.note)}</span>`:""}</div>
     ${ed?'<span class="chev"></span>':isAdmin()?'<span class="hint">View only</span>':`<button class="btn sm" type="button" data-reqrule="${r.id}">Ask to change</button>`}</div>`;
 }
 let CLASH_KEY="",CLASH_PAIRS=[];
@@ -2922,7 +2956,7 @@ function ruleArea(r){const g=r.doors.find(x=>x.startsWith("g:"));if(g){const G=S
   const ids=expandDoors(r.doors);let best=null,bn=0;S.groups.forEach(G=>{const n=ids.filter(id=>G.doors.includes(id)).length;if(n>bn||(n===bn&&best&&n&&G.doors.length<best.doors.length)){best=G;bn=n}});
   return best&&bn?best.name:"Other doors"}
 function renderRules(){
-  renderClashBanner();
+  renderClashBanner();try{rqFDot()}catch(e){}
   const vis=[...S.rules].filter(canSeeRule);
   const fd=$("#rqDoorF").value, fm=$("#rqModeF").value, q=$("#rqSearch").value.trim().toLowerCase();
   $("#rqModeF").innerHTML=`<option value="">Any door state</option>`+MODES.map(m=>`<option value="${esc(m)}"${fm===m?" selected":""}>${esc(modeLabel(m))}</option>`).join("");
@@ -3494,20 +3528,20 @@ function renderBuzzCard(){
   const more=[...new Set(defs)].slice(0,Math.max(0,9-pins.length-rec.length));
   if(BZ_SEL&&has(BZ_SEL)&&!BUZZ_ALL&&![...pins,...rec,...more].includes(BZ_SEL))more.unshift(BZ_SEL);
   const q=BUZZ_Q.trim().toLowerCase(),found=doors.filter(d=>!q||(d.name+" "+d.id).toLowerCase().includes(q)).map(d=>d.id).sort((a,b)=>(pins.includes(b)-pins.includes(a)));
-  const groups=BUZZ_ALL?[["",found]]:[["Pinned",pins],["Recent",rec],[pins.length||rec.length?"Main doors":"",more]].filter(g=>g[1].length);
+  const groups=BUZZ_ALL||q?[["",found]]:[["Pinned",pins],["Recent",rec],[pins.length||rec.length?"Main doors":"",more]].filter(g=>g[1].length);
   const sel=BZ_SEL&&doors.some(d=>d.id===BZ_SEL)?BZ_SEL:null;
   let acts="";
   if(sel){const f=doorFacts(sel),b=typeof BOX_ST!=="undefined"&&BOX_ST;
     const notSent=ON_BOX&&b&&b.mode!=="live"&&!(b.mode==="pilot"&&(b.pilotDoors||[]).includes(sel));
-    acts=`<div class="bz-acts"><div class="bz-now"><b>${esc(doorName(sel))}</b><span>${esc(f.label)} now · ${esc(f.nx)}</span></div>
+    acts=`<div class="bz-acts"><div class="bz-now"><span>${esc(f.label)} now · ${esc(f.nx)}</span></div>
       <div class="bz-btns">${mayBuzz?`<button type="button" class="bz-a buzz" data-bza="buzz">${ico("open")}Buzz open</button>`:""}
       ${mayOpen(sel)?[5,10,20,30,60].map(m=>`<button type="button" class="bz-a" data-bza="${m}">Open ${m} min</button>`).join("")+(f.hand?`<button type="button" class="bz-a back" data-bza="back">Back to schedule</button>`:""):""}</div>
       ${notSent?`<p class="hint bz-note">This door isn't run by the box yet${b.mode==="pilot"?" (not in the pilot)":""}, so "Open" is saved but not sent. Buzz open still works.</p>`:""}</div>`}
   el.innerHTML=`<div class="bz-h"><span class="ic" style="--c:var(--g)">${ico("open")}</span><div><b>Open a door</b><span>${sel?"Choose what to do":"Tap a door"}</span></div>
       <button type="button" class="linkbtn" id="bzAll">${BUZZ_ALL?"Fewer doors":"All doors"}</button><button type="button" class="linkbtn" id="bzClose">Close</button></div>
-    ${BUZZ_ALL?`<label class="search sm bz-q"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="bzQ" placeholder="Find a door" aria-label="Find a door" value="${esc(BUZZ_Q)}"></label>`:""}
-    ${groups.map(([h,ids])=>`${h?`<div class="bz-gh">${esc(h)}</div>`:""}<div class="bz-doors">${ids.map(id=>{const f=doorFacts(id),pn=pins.includes(id);return `<div class="bz-dw"><button type="button" class="bz-d${id===sel?" on":""}" data-bz="${esc(id)}" aria-pressed="${id===sel}"><b>${esc(doorName(id))}</b><span><i class="dot" style="--c:${modeColor(f.st.mode)}"></i>${esc(f.label)}${f.hand?" · by hand":""}</span></button><button type="button" class="bz-pin${pn?" on":""}" data-bzpin="${esc(id)}" aria-pressed="${pn}" aria-label="${pn?"Unpin":"Pin"} ${esc(doorName(id))}" title="${pn?"Unpin":"Pin to the top"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z"/><path d="M12 13v8"/></svg></button></div>`}).join("")}</div>`).join("")||`<p class="none">No door matches.</p>`}
-    ${!BUZZ_ALL&&!pins.length?`<p class="hint bz-tip">Tip: tap the pin on a door to keep it at the top.</p>`:""}${acts}${isAdmin()||can("override")?`<div class="bz-foot"><button type="button" class="linkbtn" id="bzMore">Lock a door, or open until a set time</button></div>`:""}`;
+    ${`<label class="search sm bz-q"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="bzQ" placeholder="Find a door" aria-label="Find a door" value="${esc(BUZZ_Q)}"></label>`}
+    ${groups.map(([h,ids])=>`${h?`<div class="bz-gh">${esc(h)}</div>`:""}<div class="bz-doors">${ids.map(id=>{const f=doorFacts(id),pn=pins.includes(id);return `<div class="bz-dw"><button type="button" class="bz-d${id===sel?" on":""}" data-bz="${esc(id)}" aria-pressed="${id===sel}"><b>${esc(doorName(id))}</b><span><i class="dot" style="--c:${modeColor(f.st.mode)}"></i>${esc(f.label)}${f.hand?" · by hand":""}</span></button><button type="button" class="bz-pin${pn?" on":""}" data-bzpin="${esc(id)}" aria-pressed="${pn}" aria-label="${pn?"Unpin":"Pin"} ${esc(doorName(id))}" title="${pn?"Unpin":"Pin to the top"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z"/><path d="M12 13v8"/></svg></button></div>${id===sel?acts:""}`}).join("")}</div>`).join("")||`<p class="none">No door matches.</p>`}
+    ${!BUZZ_ALL&&!pins.length?`<p class="hint bz-tip">Tip: tap the pin on a door to keep it at the top.</p>`:""}${isAdmin()||can("override")?`<div class="bz-foot"><button type="button" class="linkbtn" id="bzMore">Lock a door, or open until a set time</button></div>`:""}`;
   const qi=$("#bzQ");if(qi)qi.addEventListener("input",e=>{BUZZ_Q=e.target.value;const pos=e.target.selectionStart;renderBuzzCard();const n=$("#bzQ");n.focus();n.setSelectionRange(pos,pos)});
 }
 document.addEventListener("click",async ev=>{
@@ -4394,6 +4428,17 @@ function showWhatChanges(el,ch,go){
   $("#wcBack").onclick=()=>{el.innerHTML=""};
   $("#wcGo").onclick=()=>{el.innerHTML="";go()}}
 /* ---------- wiring ---------- */
+// on touch screens the keyboard covers the bottom half: bring the box being typed in to the middle
+if(window.matchMedia&&matchMedia("(pointer:coarse)").matches){
+  const lift=el=>{if(!el||!/INPUT|TEXTAREA|SELECT/.test(el.tagName)||/checkbox|radio|file/.test(el.type))return;el.scrollIntoView({block:"center",behavior:"smooth"})};
+  addEventListener("focusin",ev=>{const el=ev.target;setTimeout(()=>lift(el),350)});
+  if(window.visualViewport)visualViewport.addEventListener("resize",()=>{const el=document.activeElement;if(el&&el!==document.body)setTimeout(()=>lift(el),100)});
+}
+
+$("#rqFBtn").onclick=()=>{const p=$("#rqFPanel"),open=p.hidden;p.hidden=!open;$("#rqFBtn").setAttribute("aria-expanded",open)};
+$("#rqSelBtn").onclick=()=>{const on=!document.body.classList.contains("rsel");document.body.classList.toggle("rsel",on);$("#rqSelBtn").textContent=on?"Done selecting":"Select rules";if(!on){PICK.clear();renderRules();renderBulk()}};
+function rqFDot(){const d=$("#rqFDot");if(d)d.hidden=!($("#rqDoorF").value||$("#rqModeF").value||RGROUP!=="kind")}
+
 // the assistant's replies: bold, bullet lists and line breaks, everything else as plain text
 function mdLite(t){const lines=esc(String(t||"")).split("\n");let out="",inList=false;
   const inl=x=>x.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g,"$1<i>$2</i>").replace(/`([^`]+)`/g,"<b>$1</b>");
@@ -4419,8 +4464,10 @@ const HELP={
  reports:["Reports","How the doors are used: busiest doors, times and people.","Download to Excel or CSV."],
  people:["People","Everyone with a card or PIN in Protector.Net.","Tap a person to turn them off, give a PIN or change their access groups."],
  setup:["Settings","Doors, groups, situations, users and the system itself.","Most people never need to change anything here."]};
+const HOW_RULES='<p><b>The schedule</b> is every rule for weekdays, holidays, dates and the rabbi. Two of these may never run on the same door at the same time. When you save one that overlaps another, the system asks which one the door should follow. The one you pick <b>wins</b>, only on the doors they share and only on the days it runs. Tap "Shares doors with…" under a rule to see it: "Wins over …" on the one that wins and "Gives way to …" on the other.</p>       <p><b>Events</b> (wedding, kiddush, sheva brachos) take over from the schedule during their hours, then the schedule continues. <b>Situations</b> that are switched on take over the same way; one marked "beats everything" also beats events. <b>Open or lock now</b> by hand beats everything. Outside every rule, a door is on its default.</p>';
 function showHelp(){const h=HELP[CUR_TAB]||HELP.board;$("#mHpT").textContent=h[0];
   $("#hpBody").innerHTML=`<div class="glist">${h.slice(1).map(x=>`<div class="row"><div class="rt"><span style="font-size:15px;line-height:1.5;color:var(--text)">${esc(x)}</span></div></div>`).join("")}</div>
+   ${CUR_TAB==="rules"?`<h3 class="gh">How rules work together</h3><div class="glist"><div class="row"><div class="rt hpHow">${HOW_RULES}</div></div></div>`:""}
    <p class="gf">Still not sure? <a href="#" id="hpAsk">Ask the assistant</a> or <a href="#" id="hpTour">take the 1 minute tour</a>.</p>`;openModal("mHelp")}
 $("#pageHelp").onclick=showHelp;
 document.addEventListener("click",ev=>{if(ev.target.id==="hpAsk"){ev.preventDefault();closeModal("mHelp");const a=$("#askOpen");if(a&&!a.hidden)a.click()}if(ev.target.id==="hpTour"){ev.preventDefault();closeModal("mHelp");startTour()}});
