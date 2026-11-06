@@ -114,6 +114,17 @@ function accessSoon(ms = 4000) {
     } catch (e) { accessState = { ...accessState, on: true, at: Date.now(), why: "Couldn't update the Cloudflare sign-in list: " + e.message }; log("warn", "sign-in list: " + e.message); }
   }, ms);
 }
+// ---------- email through SMTP2GO (welcome emails to users) ----------
+// Only to an email that belongs to a user in Shul Doors, and only a super admin can send.
+const SMTP2GO = process.env.SD_SMTP2GO_URL || "https://api.smtp2go.com/v3/email/send";
+async function sendEmail({ to, subject, html, text }) {
+  const r = await fetch(SMTP2GO, { method: "POST", headers: { "Content-Type": "application/json", "X-Smtp2go-Api-Key": opts.smtp2go_api_key },
+    body: JSON.stringify({ sender: opts.email_from, to: [to], subject: String(subject).slice(0, 200), html_body: String(html).slice(0, 200000), text_body: String(text || "").slice(0, 50000) }) });
+  const j = await r.json().catch(() => ({}));
+  const d = j.data || {};
+  if (!r.ok || !(d.succeeded >= 1)) throw new Error(String((d.error || (d.failures && d.failures[0]) || j.error || "SMTP2GO answered " + r.status)).slice(0, 200));
+  return d.email_id || "";
+}
 // ---------- someone else changed the schedule: tell the people picked in Alerts ----------
 // In the app it shows under Messages, "Changes by others". By text (when texting is on), changes
 // made close together go out as one text a few minutes after the last one.
@@ -640,6 +651,21 @@ const server = http.createServer((req, res) => {
       ...compareLines(r.compare), "", ...outputReportLines(r.outputs2),
       `${opts.mode === "practice" ? "Would do" : "Did"} (${(r.actions || []).length}):`, ...(r.actions || []).map((x) => "  " + x), "", "Special days loaded through:", ...Object.entries(r.loadedThrough || {}).map(([d, t]) => `  ${d}: ${t}`)];
     return send(res, 200, lines.join("\n"), "text/plain; charset=utf-8");
+  }
+  if (req.method === "GET" && p === "/api/email") return send(res, 200, { on: !!(opts.smtp2go_api_key && opts.email_from), from: opts.email_from || "" });
+  if (req.method === "POST" && p === "/api/email/welcome") {
+    readBody(req).then(async (b) => {
+      const who = personOf(req), me = matchUser(who);
+      if (haUser(req) && (!me || me.role !== "Super admin")) return send(res, 403, { error: "Only a super admin can send emails." });
+      if (!opts.smtp2go_api_key || !opts.email_from) return send(res, 200, { ok: false, error: "Email isn't set up: add the SMTP2GO key and the From address in the add-on settings." });
+      const to = String((b && b.to) || "").trim().toLowerCase();
+      const u = (state.users || []).find((x) => (x.email || "").toLowerCase() === to);
+      if (!u) return send(res, 200, { ok: false, error: "That email doesn't belong to a user here." });
+      try { const id = await sendEmail({ to, subject: b.subject || "Welcome to Shul Doors", html: b.html || "", text: b.text || "" });
+        store.welcomeSent = store.welcomeSent || {}; store.welcomeSent[u.name] = { at: Date.now(), by: who, to }; writeJson("store.json", store);
+        log("info", `welcome email sent to ${u.name} by ${who}`); send(res, 200, { ok: true, id, at: Date.now() }); }
+      catch (e) { log("warn", "welcome email: " + e.message); send(res, 200, { ok: false, error: "The email didn't go out: " + e.message }); }
+    }); return;
   }
   if (req.method === "GET" && p === "/api/access") return send(res, 200, { on: !!opts.cloudflare_api_token, emails: accessState.emails, at: accessState.at, why: accessState.why });
   if (req.method === "GET" && p === "/api/sms") return send(res, 200, sms ? { mode: sms.mode, configured: sms.configured, log: sms.list(30), optedOut: sms.optedOut() } : { mode: "off" });

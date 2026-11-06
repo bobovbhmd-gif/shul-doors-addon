@@ -983,6 +983,11 @@ details.more>summary.gh{color:var(--accent)}
 .pass .meta{font-size:13px;color:var(--muted);margin:12px 0 0}
 .wel-prev{display:block;width:100%;min-height:400px;margin-top:14px;border:0;border-radius:14px;background:#f5f5f7;box-shadow:0 0 0 .5px var(--line)}
 .wel-btns{margin:6px 0 4px;flex-wrap:wrap}
+.wel-msg{margin:6px 2px 0;font-size:14px;min-height:0}.wel-msg:empty{display:none}.wel-msg.ok{color:var(--ok)}.wel-msg.bad{color:var(--lock)}
+.pwcard{position:fixed;inset:0;z-index:90;display:grid;place-items:center;background:rgba(0,0,0,.35);padding:16px}
+.pwcard>div{max-width:440px;width:100%;background:var(--surface);border-radius:20px;padding:26px 24px;box-shadow:0 12px 40px rgba(0,0,0,.2)}
+.pwcard h2{margin:6px 0 8px;font-size:21px}.pwcard ol{margin:10px 0 14px;padding-left:20px;line-height:1.55}.pwcard p{color:var(--muted);margin:0 0 6px;font-size:14px}
+.pwcard .tline{justify-content:flex-end;margin-top:16px}
 .steps-card{margin-top:14px;padding:16px 18px;border-radius:14px;background:var(--fill);font-size:14px;line-height:1.5}
 .steps-card ol{margin:8px 0 8px;padding-left:20px}.steps-card li{margin:5px 0}.steps-card p{margin:0;color:var(--muted);font-size:13px}
 .ch-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -1997,8 +2002,9 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
           <div class="frow"><label for="welFrom">Signed</label><input id="welFrom" autocomplete="off"></div>
         </div>
         <p class="gf">The email never includes their password. Give them the starting password separately, by text or in person.</p>
-        <div class="tline wel-btns"><button class="btn pri" type="button" id="welCopy">Copy email</button><button class="btn" type="button" id="welMail">Open in my email</button><span class="hint" id="welMsg"></span></div>
-        <p class="gf"><b>Copy email</b> keeps the formatting: paste it into Gmail or Outlook. <b>Open in my email</b> starts a plain-text email to them.</p>
+        <div class="tline wel-btns"><button class="btn pri" type="button" id="welSend" hidden>Send email</button><button class="btn" type="button" id="welCopy">Copy email</button><button class="btn" type="button" id="welMail">Open in my email</button></div>
+        <p class="wel-msg" id="welMsg" role="status"></p>
+        <p class="gf" id="welHow"><b>Copy email</b> keeps the formatting: paste it into Gmail or Outlook. <b>Open in my email</b> starts a plain-text email to them.</p>
         <iframe class="wel-prev" id="welPrev" title="Email preview" sandbox="allow-same-origin"></iframe>
       </div>
     </div>
@@ -3550,6 +3556,20 @@ async function accessLine(){const el=$("#accessLine");if(!el||!ON_BOX)return;let
   el.hidden=false;el.className="gf top"+(j.why?" warnm":"");
   el.textContent=!j.on?"Emails are saved here but not sent to Cloudflare yet: add a Cloudflare key in the add-on settings to turn that on.":j.why?j.why:j.at?`Sign-in list is up to date: ${j.emails.length} email${j.emails.length===1?"":"s"} can reach building.khalbobov.org.`:"Checking the sign-in list…"}
 if(ON_BOX)setTimeout(accessLine,3000);
+// ---------- a new user's first visit: please change your starting password ----------
+function pwReminder(){
+  if(!ON_BOX)return;const u=me();if(!u||!u.added||u.pwDone)return;
+  try{if(+sessionStorage.getItem("pwLater")>Date.now())return}catch(e){}
+  const d=document.createElement("div");d.className="pwcard";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+  d.innerHTML=`<div><div style="font-size:34px">🔑</div><h2>Welcome, ${esc(u.name)}</h2><p>First, change the starting password you were given:</p>
+    <ol><li>Tap your name at the bottom left of Home Assistant.</li><li>Choose <b>Change password</b>, type the old one, then your new one twice.</li><li>For extra safety, also turn on <b>Multi-factor authentication</b> on the same page.</li></ol>
+    <div class="tline"><button class="btn" type="button" data-pw="later">Remind me later</button><button class="btn pri" type="button" data-pw="done">I changed it</button></div></div>`;
+  document.body.append(d);
+  d.addEventListener("click",ev=>{const b=ev.target.closest("[data-pw]");if(!b)return;
+    if(b.dataset.pw==="done"){u.pwDone=Date.now();save()}else{try{sessionStorage.setItem("pwLater",String(Date.now()+4*3600e3))}catch(e){}}
+    d.remove()});
+}
+setTimeout(pwReminder,1500);
 // ---------- welcome email for a new user: what they can do, and how to get in ----------
 // Inline styles only, so it looks the same once pasted into Gmail or Outlook. Never a password.
 function welcomeEmail(u,login,from){
@@ -3621,13 +3641,26 @@ function welRender(){const u=S.users[WEL];if(!u)return;const m=welcomeEmail(u,$(
   const f=$("#welPrev");f.onload=()=>{try{f.style.height=(f.contentDocument.documentElement.scrollHeight+4)+"px"}catch(e){}};f.srcdoc=`<!doctype html><meta charset="utf-8"><body style="margin:0">${m.html}</body>`;return m}
 $("#userRows").addEventListener("click",ev=>{const b=ev.target.closest("[data-uwel]");if(!b)return;WEL=+b.dataset.uwel;const u=S.users[WEL];
   $("#mWelT").textContent="Welcome email for "+u.name;$("#welUser").value=u.login||u.name.toLowerCase().split(/\s+/)[0];$("#welFrom").value=S.me;$("#welMsg").textContent="";
-  welRender();openModal("mWel")});
+  welRender();openModal("mWel");welSetup()});
 ["welUser","welFrom"].forEach(id=>$("#"+id).addEventListener("input",welRender));
 $("#welUser").addEventListener("change",()=>{const u=S.users[WEL],v=$("#welUser").value.trim();if(u&&v&&u.login!==v){u.login=v;save()}});
+let WEL_EMAIL=null,WEL_ARM=false;
+async function welSetup(){const u=S.users[WEL],sendB=$("#welSend"),msg=$("#welMsg");msg.className="wel-msg";msg.textContent="";WEL_ARM=false;sendB.textContent="Send email";
+  if(ON_BOX&&WEL_EMAIL==null){try{WEL_EMAIL=await (await fetch("api/email")).json()}catch(e){WEL_EMAIL={on:false}}}
+  const on=ON_BOX&&WEL_EMAIL&&WEL_EMAIL.on;sendB.hidden=!on;$("#welCopy").classList.toggle("pri",!on);
+  sendB.disabled=!u.email;if(on&&!u.email){msg.className="wel-msg bad";msg.textContent="Add their email in Users and permissions first."}
+  $("#welHow").innerHTML=(on?`<b>Send email</b> sends it now from ${esc(WEL_EMAIL.from)}. `:"")+`<b>Copy email</b> keeps the formatting: paste it into Gmail or Outlook. <b>Open in my email</b> starts a plain-text email to them.`}
+$("#welSend").onclick=async()=>{const u=S.users[WEL],b=$("#welSend"),msg=$("#welMsg");if(!u||!u.email)return;
+  if(!WEL_ARM){WEL_ARM=true;b.textContent="Send to "+u.email+"?";setTimeout(()=>{if(WEL_ARM){WEL_ARM=false;b.textContent="Send email"}},6000);return}
+  WEL_ARM=false;b.disabled=true;b.textContent="Sending…";const m=welRender();let j={};
+  try{j=await (await fetch("api/email/welcome",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:u.email,subject:m.subject,html:m.html,text:m.text})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}
+  b.disabled=false;b.textContent="Send email";
+  if(j.ok){msg.className="wel-msg ok";msg.textContent="✓ Sent to "+u.email+". Now give them their starting password by text or in person.";u.welcomedAt=Date.now();commit(`Sent the welcome email to ${u.name}`)}
+  else{msg.className="wel-msg bad";msg.textContent=j.error||"The email didn't go out."}};
 $("#welCopy").onclick=async()=>{const m=welRender();try{
     if(window.ClipboardItem)await navigator.clipboard.write([new ClipboardItem({"text/html":new Blob([m.html],{type:"text/html"}),"text/plain":new Blob([m.text],{type:"text/plain"})})]);
     else await navigator.clipboard.writeText(m.text);
-    $("#welMsg").textContent="Copied. Paste it into a new email.";
+    $("#welMsg").className="wel-msg ok";$("#welMsg").textContent="✓ Copied. Paste it into a new email.";
   }catch(e){try{const d=$("#welPrev").contentDocument,r=d.createRange();r.selectNodeContents(d.body);const sel=d.getSelection();sel.removeAllRanges();sel.addRange(r);$("#welPrev").focus();$("#welMsg").textContent="Selected in the preview. Press Ctrl+C (or Copy) to copy it."}catch(x){$("#welMsg").textContent="Copying isn't allowed here. Use Open in my email instead."}}};
 $("#welMail").onclick=()=>{const m=welRender(),u=S.users[WEL];location.href=`mailto:${encodeURIComponent(u.email||"")}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.text)}`};
 // changes other people made, for Messages ("Changes by others") and the badge
@@ -4310,7 +4343,7 @@ $("#userRows").addEventListener("change",ev=>{const t=ev.target,d=t.dataset;
   else if(d.ucan!==undefined){const u=S.users[d.ucan];u.can=u.can||{};u.can[d.cap]=t.checked;commit(`${u.name}: "${CAPS_LABEL[d.cap]}" turned ${t.checked?"on":"off"}`)}});
 const CAPS_LABEL={codes:"Give temporary codes for their Edit doors",rules:"Change rules for their Edit doors",override:"Use Override now",events:"Add events",rabbi:"Set the rabbi away"};
 $("#userRows").addEventListener("click",ev=>{const i=ev.target.dataset.udel;if(i!==undefined){const u=S.users.splice(i,1)[0];commit(`Removed user ${u.name}`)}});
-$("#addUser").onclick=()=>{const n=$("#uName").value.trim();if(!n||S.users.some(u=>u.name===n))return;S.users.push($("#uRole").value==="Restricted"?{name:n,role:"Restricted",perm:{},sched:"none",can:{rules:false,override:false,events:false,rabbi:false}}:{name:n,role:"Super admin"});$("#uName").value="";commit(`Added user ${n} (${$("#uRole").value})`)};
+$("#addUser").onclick=()=>{const n=$("#uName").value.trim();if(!n||S.users.some(u=>u.name===n))return;S.users.push($("#uRole").value==="Restricted"?{name:n,role:"Restricted",perm:{},sched:"none",can:{rules:false,override:false,events:false,rabbi:false},added:Date.now()}:{name:n,role:"Super admin",added:Date.now()});$("#uName").value="";commit(`Added user ${n} (${$("#uRole").value})`)};
 $("#copyBackup").onclick=()=>{const txt=JSON.stringify(S);
   const fallback=()=>{$("#restoreTxt").value=txt;$("#restoreTxt").select();$("#copyMsg").textContent="Selected below. Copy it with your keyboard or long-press."};
   try{navigator.clipboard.writeText(txt).then(()=>{$("#copyMsg").textContent="Copied. Paste it somewhere safe."},fallback)}catch(e){fallback()}};
