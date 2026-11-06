@@ -5,10 +5,10 @@
 // Its schedule as it was before the box first changed it is kept, and put back when
 // the output is taken off the pilot list.
 const DOW = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const DEFAULT_OUTPUTS = [{ id: "MAG", name: "Shabbos magnet", zone: "MAG SHABBOS OFF", where: "Output 3, Panel 04",
+const DEFAULT_OUTPUTS = [{ id: "MAG", name: "15 Ave magnet", zone: "MAG SHABBOS OFF", where: "Output 3, Panel 04",
   off: { a: "candles", o: 0 }, on: { a: "rt", o: 10 }, extra: [{ d: 3, a: 180, b: 361 }, { d: 4, a: 180, b: 420 }] }];
 
-const outputsOf = (state) => (Array.isArray(state.outputs) ? state.outputs : DEFAULT_OUTPUTS);
+const outputsOf = (state) => (Array.isArray(state.outputs) ? state.outputs : DEFAULT_OUTPUTS).map((o) => (o.name === "Shabbos magnet" ? { ...o, name: "15 Ave magnet" } : o));
 
 // [{DayOfWeek, StartTime, StopTime, Mode}] for the next 7 days, minutes inclusive
 function weekOf(engine, o, today) {

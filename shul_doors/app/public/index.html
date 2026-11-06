@@ -1790,7 +1790,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
           <div class="glist addrow"><div class="row"><input id="newGroup" placeholder="New group, like Basement doors" aria-label="New group name"><button class="btn sm pri" type="button" id="addGroup">Add</button></div></div>
         </div>
 
-        <div class="panel admin-only adv" data-sp="import" data-ic="tray" data-c="var(--teal)">
+        <div class="panel admin-only adv" data-gone data-sp="import" data-ic="tray" data-c="var(--teal)">
           <h2>Import doors</h2>
           <p class="gf top">Copy up to four columns from Excel or Google Sheets and paste them here: door ID, name, groups (separate with commas) and default mode. A CSV file works too. Existing doors are updated, new ones added, nothing is deleted.</p>
           <div class="card">
@@ -1800,7 +1800,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
           </div>
         </div>
 
-        <div class="panel admin-only adv" data-sp="badges" data-ic="card" data-c="var(--indigo)">
+        <div class="panel admin-only adv" data-gone data-sp="badges" data-ic="card" data-c="var(--indigo)">
           <h2>Badge groups</h2>
           <p class="gf top">The groups of cards in Protector.Net. A badge access rule decides when each group's cards work on which doors.</p>
           <div class="glist" id="agTags"></div>
@@ -1818,7 +1818,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
         </div>
 
         <div class="panel admin-only" data-sp="magnet" data-ic="lock" data-c="var(--o)">
-          <h2>Shabbos magnet</h2>
+          <h2>15 Ave magnet (Shabbos setting)</h2>
           <p class="gf" id="mgWhere"></p>
           <div class="glist">
             <div class="row mgrow"><div class="rt"><b>Turns off</b><span>Erev Shabbos and erev yom tov</span></div><span class="mgc"><input type="number" id="mgOffN" min="0" max="180" aria-label="Minutes"><span class="hint">min</span><select id="mgOffDir" aria-label="Before or after"><option value="-1">before candle lighting</option><option value="1">after candle lighting</option></select></span></div>
@@ -3016,8 +3016,8 @@ function renderHolNames(){
     return `<details class="hngrp" data-hng="${esc(g)}"${q||HN_OPEN.has(g)?" open":""}><summary class="gh">${esc(g)}<span>${[ren?ren+" renamed":"",hid?hid+" hidden":""].filter(Boolean).join(" · ")}</span></summary><div class="glist">${it.map(([k,l])=>{const hd=holHidden(k),used=holUses(k);return `<div class="row${hd?" hn-off":""}"><div class="rt"><input class="plain" data-hn="${k}" value="${esc(H[k]||l)}" placeholder="${esc(l)}" aria-label="Name for ${esc(l)}">${H[k]||hd||used?`<span>${[H[k]?"Built-in name: "+esc(l):"",hd?"Hidden from the rule list":"",used?`Used by ${used} rule${used>1?"s":""}`:""].filter(Boolean).join(" · ")}</span>`:""}</div>${H[k]?`<button class="btn sm" type="button" data-hnreset="${k}">Reset</button>`:""}${hd||!used?`<button class="btn sm" type="button" data-hnhide="${k}" aria-pressed="${hd}">${hd?"Show":"Hide"}</button>`:""}</div>`}).join("")}</div></details>`}).join("");
   $("#hnRows").innerHTML=html||emptyState("cal","Nothing matches","Try a different word.");
 }
-const DEF_OUTPUTS=[{id:"MAG",name:"Shabbos magnet",zone:"MAG SHABBOS OFF",where:"Output 3, Panel 04",off:{a:"candles",o:0},on:{a:"rt",o:10},extra:[{d:3,a:180,b:361},{d:4,a:180,b:420}]}];
-function mag(){if(!Array.isArray(S.outputs))S.outputs=structuredClone(DEF_OUTPUTS);return S.outputs[0]}
+const DEF_OUTPUTS=[{id:"MAG",name:"15 Ave magnet",zone:"MAG SHABBOS OFF",where:"Output 3, Panel 04",off:{a:"candles",o:0},on:{a:"rt",o:10},extra:[{d:3,a:180,b:361},{d:4,a:180,b:420}]}];
+function mag(){if(!Array.isArray(S.outputs))S.outputs=structuredClone(DEF_OUTPUTS);if(S.outputs[0]&&S.outputs[0].name==="Shabbos magnet")S.outputs[0].name="15 Ave magnet";return S.outputs[0]}
 // Off stretches from today on, joined across midnight
 function magPeriods(o,days){const t0=todayNY(),off=[];
   for(let k=0;k<days;k++){const s=addDays(t0,k);for(const g of outputDay(o,s))for(let m=g.a;m<g.b;m++)off.push(g.mode==="Off")}
@@ -4116,7 +4116,7 @@ function showTab(t){CUR_TAB=t;if(t!=="doors"&&typeof SELMODE!=="undefined"&&SELM
   if(t==="codes")setTCV(TCV);if(t==="reports")renderReports();if(t==="activity")renderLog();if(t==="setup"){$("#split").classList.remove("detail");renderSetupIndex()}
   scrollTo({top:0})}
 let SP=null;
-function spAvailable(p){if(p.classList.contains("admin-only")&&!isAdmin())return false;if(p.classList.contains("adv")&&SIMPLE)return false;if(p.classList.contains("cap-rabbi")&&!can("rabbi"))return false;return true}
+function spAvailable(p){if(p.hasAttribute("data-gone"))return false;if(p.classList.contains("admin-only")&&!isAdmin())return false;if(p.classList.contains("adv")&&SIMPLE)return false;if(p.classList.contains("cap-rabbi")&&!can("rabbi"))return false;return true}
 function renderSetupIndex(){
   const panels=[...document.querySelectorAll("#tab-setup .panel")], ok=panels.filter(spAvailable);
   if(!ok.some(p=>p.dataset.sp===SP))SP=(ok[1]||ok[0]||{dataset:{}}).dataset.sp;
@@ -4350,10 +4350,10 @@ $("#groupRows").addEventListener("click",ev=>{const gd=ev.target.closest("[data-
   if(!armed(b))return;
   S.groups=S.groups.filter(x=>x!==g);
   S.rules.forEach(r=>r.doors=r.doors.filter(d=>d!=="g:"+g.id));commit(`Removed door group "${g.name}"`)});
-$("#mgOffN").addEventListener("change",e=>{const o=mag(),n=Math.max(0,Math.min(180,+e.target.value||0));o.off={a:"candles",o:n*(+$("#mgOffDir").value)};commit(`Shabbos magnet turns off ${n?n+" min "+(o.off.o>0?"after":"before")+" ":"at "}candle lighting`)});
+$("#mgOffN").addEventListener("change",e=>{const o=mag(),n=Math.max(0,Math.min(180,+e.target.value||0));o.off={a:"candles",o:n*(+$("#mgOffDir").value)};commit(`15 Ave magnet turns off ${n?n+" min "+(o.off.o>0?"after":"before")+" ":"at "}candle lighting`)});
 $("#mgOffDir").addEventListener("change",()=>$("#mgOffN").dispatchEvent(new Event("change")));
 const MG_ON={rt:"Rabbeinu Tam",havdalah:"havdalah",tzeis:"tzeis"};
-$("#mgOnN").addEventListener("change",e=>{const o=mag(),n=Math.max(0,Math.min(180,+e.target.value||0));o.on={a:$("#mgOnA").value,o:n};commit(`Shabbos magnet turns back on ${n} min after ${MG_ON[o.on.a]}`)});
+$("#mgOnN").addEventListener("change",e=>{const o=mag(),n=Math.max(0,Math.min(180,+e.target.value||0));o.on={a:$("#mgOnA").value,o:n};commit(`15 Ave magnet turns back on ${n} min after ${MG_ON[o.on.a]}`)});
 $("#mgOnA").addEventListener("change",()=>$("#mgOnN").dispatchEvent(new Event("change")));
 $("#mgExtra").addEventListener("click",e=>{const b=e.target.closest("[data-mgx]");if(!b)return;if(!armed(b))return;const o=mag(),x=o.extra[+b.dataset.mgx];o.extra.splice(+b.dataset.mgx,1);commit(`Shabbos magnet: removed weekly off time ${WDN[x.d]} ${fmt(x.a)} to ${fmt(x.b)}`)});
 $("#candleOff").addEventListener("change",e=>{S.candleOff=+e.target.value||0;commit(`Candle lighting set to ${S.candleOff} min`)});
