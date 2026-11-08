@@ -1658,6 +1658,50 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 .da-h{display:flex;align-items:baseline;gap:8px;margin:18px 2px 8px}
 .da-h:first-child{margin-top:0}
 .da-h span{font-size:13px;color:var(--muted);font-weight:500}
+
+/* Reports: blocks with pin and download */
+.rp-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 16px;align-items:start}
+.rp-grid .rpb{grid-column:1 / -1;min-width:0}
+.rp-grid .rpb.half{grid-column:auto}
+@media (max-width:900px){.rp-grid{grid-template-columns:1fr}.rp-grid .rpb.half{grid-column:1 / -1}}
+.rpb-h{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:0 2px 8px}
+.rpb-h h2{font-size:17px;font-weight:650;margin:0}
+.rpb-h .hint{font-size:12.5px;display:block;margin-top:2px}
+.rpb-a{display:flex;gap:6px;flex:none;position:relative}
+.rpi{width:34px;height:34px;border-radius:50%;border:0;background:var(--surface);color:var(--muted);display:grid;place-items:center;cursor:pointer;padding:0;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.rpi svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.rpi:hover{color:var(--accent)}
+.rpi.on{background:var(--accent);color:#fff}
+.rpi.on svg{fill:currentColor}
+.rpdl{position:relative}
+.rpdm{position:absolute;right:0;top:40px;z-index:20;background:var(--surface);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:6px;display:flex;flex-direction:column;min-width:120px}
+.rpdm[hidden]{display:none}
+.rpdm button{border:0;background:none;font:inherit;font-size:14.5px;color:var(--text);text-align:left;padding:9px 12px;border-radius:8px;cursor:pointer}
+.rpdm button:hover{background:var(--fill2)}
+.rp-sec{margin:6px 2px 10px;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}
+#rpPinned{margin-bottom:22px}
+.rpb .rp-card{margin:0}
+.rpb .rp-ah select{font-size:12.5px;padding:2px 6px;min-height:0}
+
+/* Activity: tighter */
+.lv-list .row{padding-top:7px;padding-bottom:7px;min-height:48px}
+#tab-activity .rp-dlrow,#tab-reports .rp-dlrow{margin:4px 0 8px}
+#tab-activity .kpis .kpi,#tab-reports .kpis .kpi{padding:12px 14px}
+
+.rp-views{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:6px 0 14px;padding:2px}
+.rp-views::-webkit-scrollbar{display:none}
+.rp-views button{flex:none;border:0;background:var(--surface);color:var(--text);font:inherit;font-size:14px;padding:8px 14px;border-radius:999px;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.05);display:inline-flex;align-items:center;gap:6px}
+.rp-views button.on{background:var(--accent);color:#fff}
+.rp-views button.on .pdot{background:#fff}
+#rpPinned .rpb{grid-column:1 / -1!important}
+.rp-views .pdot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.rp-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.rpk{display:flex;align-items:center;gap:12px;text-align:left;border:0;background:var(--surface);border-radius:14px;padding:14px;font:inherit;color:var(--text);cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.rpk:hover{box-shadow:0 6px 20px rgba(0,0,0,.08)}
+.rpk .rt{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.rpk .rt span{font-size:13px;color:var(--muted)}
+.rp-grid.one .rpb{grid-column:1 / -1!important}
+#rpAll[hidden],#rpPickWrap[hidden],#rpKpi[hidden]{display:none}
 </style>
 
 <button class="ask-fab" type="button" id="askOpen" hidden aria-label="Ask the assistant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Ask the assistant</span></button>
@@ -1877,6 +1921,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
       <div class="seg" role="group" aria-label="Show" id="lvKind"><button type="button" data-k="all">All</button><button type="button" data-k="ok">Came in</button><button type="button" data-k="no">Denied</button><button type="button" data-k="mode">Door changes</button></div>
       <select id="lvDoor" aria-label="Door"></select>
       <span class="sp"></span>
+      <span id="lvDlWrap"></span>
       <button class="btn sm" type="button" id="lvPause">Pause</button>
     </div>
     <div class="card lv-list" id="lvList"></div>
@@ -1904,23 +1949,21 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
       <label class="search sm rp-who"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="rpWho" placeholder="Person" aria-label="Person"></label>
       <select id="rpRes" aria-label="Result"><option value="all">Granted and denied</option><option value="ok">Granted only</option><option value="no">Denied only</option></select>
     </div>
+    <div class="rp-views" id="rpViews" role="tablist" aria-label="Reports"></div>
     <div class="rp-dlrow"><p class="gf rp-src" id="rpSrc">Loading…</p><span id="rpDlWrap"></span></div>
     <div class="kpis rp-kpis" id="rpKpi"></div>
-    <div class="card rp-card"><div class="rp-ch"><h2 class="ch" id="rpTrendH">Entries per day</h2><span class="hint" id="rpTrendS"></span></div><div id="rpTrend"></div></div>
-    <div class="rp-two">
-      <div class="card rp-card"><div class="rp-ch"><h2 class="ch">Busy times</h2><span class="hint">Entries by day and hour</span></div><div id="rpHeat"></div></div>
-      <div class="card rp-card"><div class="rp-ch"><h2 class="ch" id="rpLateH">After hours</h2></div>
-        <div class="rp-ah">From <select id="rpAhFrom" aria-label="After hours start"></select> to <select id="rpAhTo" aria-label="After hours end"></select></div>
-        <div id="rpLate"></div></div>
+    <div id="rpPinWrap" hidden><h2 class="gh rp-sec">Pinned</h2><div class="rp-grid" id="rpPinned"></div></div>
+    <div id="rpPickWrap"><h2 class="gh rp-sec" id="rpPickH">Reports</h2><div class="rp-pick" id="rpPick"></div></div>
+    <div class="rp-grid" id="rpAll">
+      <div class="rpb" data-rep="trend"><div class="rpb-h"><div><h2 id="rpTrendH">Entries per day</h2><span class="hint" id="rpTrendS"></span></div></div><div class="card rp-card"><div id="rpTrend"></div></div></div>
+      <div class="rpb half" data-rep="heat"><div class="rpb-h"><div><h2>Busy times</h2><span class="hint">Entries by day and hour</span></div></div><div class="card rp-card"><div id="rpHeat"></div></div></div>
+      <div class="rpb half" data-rep="late"><div class="rpb-h"><div><h2 id="rpLateH">After hours</h2><span class="hint rp-ah"><select id="rpAhFrom" aria-label="After hours start"></select> to <select id="rpAhTo" aria-label="After hours end"></select></span></div></div><div class="card rp-card"><div id="rpLate"></div></div></div>
+      <div class="rpb" data-rep="doors"><div class="rpb-h"><div><h2>By door</h2><span class="hint">Tap a door to see only that door</span></div></div><div class="card tw rp-card" id="rpDoors"></div></div>
+      <div class="rpb half" data-rep="people"><div class="rpb-h"><div><h2>People</h2><span class="hint">Tap a name to see only them</span></div></div><div class="card tw rp-card" id="rpPeople"></div></div>
+      <div class="rpb half" data-rep="denied"><div class="rpb-h"><div><h2>Denied attempts</h2><span class="hint">Cards or PINs that did not open</span></div></div><div class="card tw rp-card" id="rpDenied"></div></div>
+      <div class="rpb" data-rep="modes"><div class="rpb-h"><div><h2>Door changes</h2><span class="hint">When each door changed, and if the rules did it</span></div></div><div class="card tw rp-card" id="rpModes"></div></div>
+      <div class="rpb" data-rep="log"><div class="rpb-h"><div><h2>Every entry</h2><span class="hint">Every card and PIN, newest first</span></div></div><div class="card tw rp-card" id="rpLog"></div></div>
     </div>
-    <h2 class="gh">By door</h2><div class="card tw rp-card" id="rpDoors"></div>
-    <div class="rp-two">
-      <div><h2 class="gh">People</h2><div class="card tw rp-card" id="rpPeople"></div></div>
-      <div><h2 class="gh">Denied attempts</h2><div class="card tw rp-card" id="rpDenied"></div></div>
-    </div>
-    <h2 class="gh">Door changes</h2><div class="card tw rp-card" id="rpModes"></div>
-    <div class="rp-ch rp-logh"><h2 class="gh">Every entry</h2></div>
-    <div class="card tw rp-card" id="rpLog"></div>
   </section>
 
   <section id="tab-msgs" hidden>
@@ -4169,7 +4212,7 @@ async function getActivity(days,kind){
   ACT_CACHE[key]={at:Date.now(),data};return data;
 }
 /* ---------- Live entries: the last 100, refreshed every few seconds while open ---------- */
-let LV_ON=false,LV_PAUSED=false,LV_TIMER=null,LV_EV=[],LV_SEEN=null,LV_KIND="all",LV_ERR="",LV_AT=0;
+let LV_X=null;let LV_ON=false,LV_PAUSED=false,LV_TIMER=null,LV_EV=[],LV_SEEN=null,LV_KIND="all",LV_ERR="",LV_AT=0;
 const lvKey=e=>e.t+"|"+(e.door||e.doorName)+"|"+(e.who||e.mode||"");
 async function lvFetch(){
   if(!ON_BOX){LV_EV=sampleActivity().slice().sort((a,b)=>b.t-a.t).slice(0,100);LV_ERR="";LV_AT=Date.now();return}
@@ -4190,6 +4233,7 @@ function renderLive(){
   const list=LV_EV.filter(e=>(!door||e.door===door)&&(LV_KIND==="all"||(LV_KIND==="mode"?e.kind==="mode":e.kind!=="mode"&&(LV_KIND==="ok"?e.ok:!e.ok))));
   const prev=LV_SEEN;LV_SEEN=new Set(LV_EV.map(lvKey));
   const nm=e=>e.door?doorName(e.door):(e.doorName||"A door");
+  LV_X=[{name:"Live",rows:[["When","Door","Who","What"],...list.map(e=>[whenX(e.t),nm(e),e.kind==="mode"?"":(e.who||""),e.kind==="mode"?"Changed to "+modeLabel(e.mode):e.ok?"Came in":"Denied"])]}];
   let lvD="",h="";
   for(const e of list){const d=nyDate(e.t);
     if(d!==lvD){lvD=d;h+=`<div class="lv-day">${d===todayNY()?"Today":d===addDays(todayNY(),-1)?"Yesterday":esc(dshort(e.t))}</div>`}
@@ -4262,7 +4306,7 @@ function rpRange(){const now=Date.now(),today=todayNY();let a,b=now,label;
   else{const n=+RP.per||30;a=nyToMs(addDays(today,-(n-1)),0);label=`${n} days`}
   const len=Math.max(b-a,60000),pa=a-len,days=Math.min(400,Math.ceil((now-pa)/864e5)+1);
   return {a,b,pa,pb:a,days,label}}
-function renderReports(){
+function renderReports(){try{layoutReports()}catch(e){}
   if($("#tab-reports").hidden)return;
   $("#rpDoor").innerHTML=doorFilterOpts(RP.door);
   document.querySelectorAll("#rpPer [data-per]").forEach(x=>x.classList.toggle("on",x.dataset.per===RP.per));
@@ -4341,7 +4385,40 @@ function drawReports(j,r){
     {name:"Door changes",rows:[["When","Door","Changed to","Rules"],...[...M].sort((a,b)=>b.t-a.t).map(e=>{const o=onSchedule(e.door,e.t,e.mode);return [whenX(e.t),doorName(e.door),modeLabel(e.mode),o===null?"":o?"On schedule":"Not from the rules"]})]},
     {name:"Every entry",rows:[["When","Door","Door number","Who","Result"],...shown.map(e=>[whenX(e.t),doorName(e.door),e.door,e.who,e.ok?"Granted":"Denied"])]}];
   RP_XBASE=`door-report-${per.replace(/ to /,"_to_")}`;
+  {const byDay={};ok.forEach(e=>{const d=nyDate(e.t);byDay[d]=byDay[d]||{n:0,den:0};byDay[d].n++});den.forEach(e=>{const d=nyDate(e.t);byDay[d]=byDay[d]||{n:0,den:0};byDay[d].den++});
+   const hm=[...Array(7)].map(()=>new Array(24).fill(0));ok.forEach(e=>{hm[dow(nyDate(e.t))][Math.floor(nyMinutes(e.t)/60)]++});
+   RP_X.push({name:"Entries per day",rows:[["Day","Weekday","Entries","Denied"],...Object.keys(byDay).sort().map(d=>[d,WDN[dow(d)],byDay[d].n,byDay[d].den])]},
+     {name:"Busy times",rows:[["Day",...[...Array(24)].map((_,h)=>fmt(h*60))],...hm.map((r,i)=>[WDN[i],...r])]})}
 }
+// each report on its own, for its own download button
+const REP_SHEET={trend:"Entries per day",heat:"Busy times",late:"After hours",doors:"By door",people:"People",denied:"Denied",modes:"Door changes",log:"Every entry"};
+const REP_FILE={trend:"entries-per-day",heat:"busy-times",late:"after-hours",doors:"by-door",people:"people",denied:"denied",modes:"door-changes",log:"every-entry"};
+function repPins(){const u=(S.users||[]).find(x=>x.name===S.me);return (u&&u.prefs&&Array.isArray(u.prefs.pinRep)?u.prefs.pinRep:[]).filter(k=>REP_SHEET[k])}
+const REP_DESC={trend:"How many came in each day",heat:"The busiest days and hours",late:"Who came in while the main doors were locked",doors:"Every door: entries, people, denied",people:"Every person: entries and doors",denied:"Cards or PINs that did not open",modes:"When each door changed, and why",log:"Every card and PIN, newest first"};
+const REP_ICO={trend:"cal",heat:"grid",late:"clock",doors:"door",people:"people",denied:"warn",modes:"lock",log:"card"};
+const REP_ORDER=["doors","people","late","denied","trend","heat","modes","log"];
+let RP_VIEW=(()=>{try{return localStorage.getItem("sdRpView")||"overview"}catch(e){return "overview"}})();
+function layoutReports(){const pins=repPins(),all=$("#rpAll"),pin=$("#rpPinned");if(!all)return;
+  if(RP_VIEW!=="overview"&&!REP_SHEET[RP_VIEW])RP_VIEW="overview";
+  const blocks=[...document.querySelectorAll("#tab-reports .rpb")];
+  blocks.forEach(b=>{const k=b.dataset.rep,h=b.querySelector(".rpb-h");let a=h.querySelector(".rpb-a");
+    if(!a){a=document.createElement("div");a.className="rpb-a";h.appendChild(a)}
+    const on=pins.includes(k);a.innerHTML=`<button type="button" class="rpi${on?" on":""}" data-rpin="${k}" aria-pressed="${on}" title="${on?"Unpin":"Pin to Overview"}" aria-label="${on?"Unpin":"Pin"} ${esc(REP_SHEET[k])}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z"/><path d="M12 13v8"/></svg></button><span class="rpdl"><button type="button" class="rpi" data-rdl="${k}" title="Download" aria-label="Download ${esc(REP_SHEET[k])}" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></button><span class="rpdm" hidden><button type="button" data-rx="xlsx" data-k="${k}">Excel</button><button type="button" data-rx="csv" data-k="${k}">CSV</button></span></span>`;
+    all.appendChild(b)});
+  const ov=RP_VIEW==="overview";
+  $("#rpViews").innerHTML=[["overview","Overview"],...REP_ORDER.map(k=>[k,REP_SHEET[k]==="Denied"?"Denied":REP_SHEET[k]])].map(([k,l])=>`<button type="button" role="tab" aria-selected="${RP_VIEW===k}" class="${RP_VIEW===k?"on":""}" data-rview="${k}">${k!=="overview"&&pins.includes(k)?'<i class="pdot"></i>':""}${esc(l)}</button>`).join("");
+  $("#rpKpi").hidden=!ov;
+  if(ov){pins.forEach(k=>{const b=blocks.find(x=>x.dataset.rep===k);if(b)pin.appendChild(b)});
+    $("#rpPinWrap").hidden=!pins.length;all.hidden=true;$("#rpPickWrap").hidden=false;$("#rpPickH").textContent=pins.length?"More reports":"Reports";
+    $("#rpPick").innerHTML=REP_ORDER.filter(k=>!pins.includes(k)).map(k=>`<button type="button" class="rpk" data-rview="${k}"><span class="ic" style="--c:var(--b)">${ico(REP_ICO[k])}</span><span class="rt"><b>${esc(REP_SHEET[k])}</b><span>${esc(REP_DESC[k])}</span></span><span class="chev"></span></button>`).join("")}
+  else{$("#rpPinWrap").hidden=true;$("#rpPickWrap").hidden=true;all.hidden=false;all.classList.add("one");blocks.forEach(b=>b.hidden=b.dataset.rep!==RP_VIEW)}
+  if(ov){all.classList.remove("one");blocks.forEach(b=>b.hidden=false)}}
+document.addEventListener("click",ev=>{const v=ev.target.closest("[data-rview]");if(!v)return;RP_VIEW=v.dataset.rview;try{localStorage.setItem("sdRpView",RP_VIEW)}catch(e){}layoutReports();scrollTo({top:0,behavior:"smooth"})});
+document.addEventListener("click",ev=>{const t=ev.target;
+  const pn=t.closest("[data-rpin]");if(pn){const k=pn.dataset.rpin,p=repPins();setPref("pinRep",p.includes(k)?p.filter(x=>x!==k):[...p,k]);layoutReports();toast(p.includes(k)?"Unpinned from Overview":"Pinned to Overview");return}
+  const dl=t.closest("[data-rdl]");if(dl){const m=dl.parentElement.querySelector(".rpdm");const open=m.hidden;document.querySelectorAll(".rpdm").forEach(x=>x.hidden=true);m.hidden=!open;dl.setAttribute("aria-expanded",open);return}
+  const rx=t.closest("[data-rx]");if(rx){const k=rx.dataset.k,sh=(RP_X||[]).filter(x=>x.name===REP_SHEET[k]||x.name==="Summary");rx.parentElement.hidden=true;exportSheets(rx.dataset.rx,sh.sort((a,b)=>(a.name==="Summary")-(b.name==="Summary")),RP_XBASE.replace("door-report",REP_FILE[k]));return}
+  if(!t.closest(".rpdl"))document.querySelectorAll(".rpdm:not([hidden])").forEach(x=>x.hidden=true)});
 let RP_X=null,RP_XBASE="door-report";
 let RP_SHOWN=[];
 function drawTrend(ok,den,r){
@@ -4403,7 +4480,35 @@ function xlsxBlob(sheets){
   const wbr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${names.map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join("")}<Relationship Id="rId${names.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
   const sty=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
   return zipStore([{name:"[Content_Types].xml",data:enc.encode(ct)},{name:"_rels/.rels",data:enc.encode(rels)},{name:"xl/workbook.xml",data:enc.encode(wb)},{name:"xl/_rels/workbook.xml.rels",data:enc.encode(wbr)},{name:"xl/styles.xml",data:enc.encode(sty)},...files])}
+// a plain PDF with the report tables: landscape, one section per sheet, headings on every page
+function pdfBlob(sheets,title){
+  const W=792,H=612,M=36,FS=8.5,LH=13,enc=t=>String(t==null?"":t).replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"').replace(/[\u2013\u2014]/g,"-").replace(/\u2026/g,"...").replace(/\u00a0/g," ").replace(/[^\x20-\x7e]/g,"").replace(/([\\()])/g,"\\$1");
+  const wid=(t,b,sz)=>String(t).length*sz*(b?0.56:0.5),fit=(t,w,b,sz)=>{t=String(t==null?"":t);if(wid(t,b,sz)<=w)return t;while(t.length>1&&wid(t+"...",b,sz)>w)t=t.slice(0,-1);return t+"..."};
+  const pages=[];let ops=null,y=0,pn=0;
+  const newPage=()=>{ops=[];pages.push(ops);pn++;y=H-M;ops.push(`BT /F2 9 Tf ${M} ${H-22} Td (${enc(title)}) Tj ET`,`BT /F1 8 Tf ${W-M-60} ${H-22} Td (Page ${pn}) Tj ET`);y=H-M-14};
+  const text=(x,yy,t,b,sz)=>ops.push(`BT /${b?"F2":"F1"} ${sz} Tf ${x.toFixed(1)} ${yy.toFixed(1)} Td (${enc(t)}) Tj ET`);
+  sheets.filter(sh=>sh.rows.length).forEach(sh=>{newPage();text(M,y,sh.name,true,14);y-=22;
+    const head=sh.rows[0],body=sh.rows.slice(1),n=head.length;
+    const want=head.map((h,i)=>Math.min(260,Math.max(wid(h,true,FS),...body.slice(0,300).map(r=>wid(r[i]==null?"":r[i],false,FS)))+10));
+    const tot=want.reduce((a,b)=>a+b,0),sc=Math.min(1,(W-2*M)/tot),cw=want.map(w=>w*sc);
+    const hdr=()=>{let x=M;head.forEach((h,i)=>{text(x,y,fit(h,cw[i]-4,true,FS),true,FS);x+=cw[i]});ops.push(`0.75 G 0.5 w ${M} ${(y-4).toFixed(1)} m ${W-M} ${(y-4).toFixed(1)} l S 0 G`);y-=LH+2};
+    hdr();
+    body.forEach((r,ri)=>{if(y<M+LH){newPage();text(M,y,sh.name+" (continued)",true,10);y-=18;hdr()}
+      if(ri%2===1)ops.push(`0.96 g ${M} ${(y-3.5).toFixed(1)} ${W-2*M} ${LH} re f 0 g`);
+      let x=M;r.forEach((c,i)=>{if(i<n)text(x,y,fit(c,cw[i]-4,false,FS),false,FS);x+=cw[i]});y-=LH})});
+  if(!pages.length)newPage();
+  // assemble the file
+  const objs=[];const add=o=>{objs.push(o);return objs.length};
+  const cat=add(""),pagesId=add(""),f1=add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"),f2=add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+  const kids=pages.map(o=>{const st=o.join("\n");const c=add(`<< /Length ${st.length} >>\nstream\n${st}\nendstream`);return add(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> >> /Contents ${c} 0 R >>`)});
+  objs[cat-1]=`<< /Type /Catalog /Pages ${pagesId} 0 R >>`;objs[pagesId-1]=`<< /Type /Pages /Kids [${kids.map(k=>k+" 0 R").join(" ")}] /Count ${kids.length} >>`;
+  let out="%PDF-1.4\n";const offs=[];objs.forEach((o,i)=>{offs.push(out.length);out+=`${i+1} 0 obj\n${o}\nendobj\n`});
+  const xref=out.length;out+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`+offs.map(o=>String(o).padStart(10,"0")+" 00000 n \n").join("")+`trailer\n<< /Size ${objs.length+1} /Root ${cat} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  const bytes=new Uint8Array(out.length);for(let i=0;i<out.length;i++)bytes[i]=out.charCodeAt(i)&255;return new Blob([bytes],{type:"application/pdf"})}
 function exportSheets(kind,sheets,base){if(!sheets||!sheets.some(s=>s.rows.length>1)){toast("Nothing to download in this period.");return}
+  if(kind==="pdf"){const m=base.match(/^(.*?)-?(\d{4}-\d\d-\d\d)?(?:_to_(\d{4}-\d\d-\d\d))?$/)||[];const nm=(m[1]||base).replace(/-/g," ").replace(/^./,c=>c.toUpperCase());
+    const when=m[2]?(m[3]?`${shortDate(m[2])} to ${shortDate(m[3])}`:shortDate(m[2])):"";
+    dlBlob(pdfBlob(sheets.map(x=>x.rows.length>1501?{name:x.name,rows:[...x.rows.slice(0,1501),[`and ${x.rows.length-1501} more rows. Download Excel to get all of them.`]]}:x),`Shul Doors   ${nm}${when?"   "+when:""}`),base+".pdf");return}
   if(kind==="xlsx")dlBlob(xlsxBlob(sheets),base+".xlsx");else dlBlob(new Blob([csvText(sheets)],{type:"text/csv;charset=utf-8"}),base+".csv")}
 const dlCtl=id=>`<span class="dl2" id="${id}"><span>Download</span><button type="button" class="btn sm" data-dl="xlsx">Excel</button><button type="button" class="btn sm" data-dl="csv">CSV</button></span>`;
 const whenX=t=>new Date(t).toLocaleString("en-US",{timeZone:TZ,month:"short",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"});
@@ -4803,7 +4908,8 @@ $("#rpDoor").addEventListener("change",e=>{RP.door=e.target.value;RP.page=1;rend
 $("#rpRes").addEventListener("change",e=>{RP.res=e.target.value;RP.page=1;renderReports()});
 {let t=null;$("#rpWho").addEventListener("input",e=>{clearTimeout(t);t=setTimeout(()=>{RP.who=e.target.value;RP.page=1;renderReports()},250)})}
 ["#rpAhFrom","#rpAhTo"].forEach(id=>$(id).addEventListener("change",()=>{ahSet({a:+$("#rpAhFrom").value,b:+$("#rpAhTo").value});renderReports()}));
-$("#rpDlWrap").innerHTML=dlCtl("rpDl");
+$("#lvDlWrap").innerHTML=dlCtl("lvDl");$("#lvDl").addEventListener("click",ev=>{const b=ev.target.closest("[data-dl]");if(b)exportSheets(b.dataset.dl,LV_X,"live-"+todayNY())});
+$("#rpDlWrap").innerHTML=dlCtl("rpDl").replace("<span>Download</span>","<span>Download all</span>");
 $("#rpDl").addEventListener("click",ev=>{const b=ev.target.closest("[data-dl]");if(b)exportSheets(b.dataset.dl,RP_X,RP_XBASE)});
 $("#hsDlWrap").innerHTML=dlCtl("hsDl");
 $("#hsDl").addEventListener("click",ev=>{const b=ev.target.closest("[data-dl]");if(b)exportSheets(b.dataset.dl,HS_X,HS_XBASE)});
