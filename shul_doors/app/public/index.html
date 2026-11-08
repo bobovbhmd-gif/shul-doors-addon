@@ -4524,7 +4524,7 @@ const HELP={
  preview:["Schedule","What every door does, hour by hour, on any day.","Tap a day at the top, then a colored bar to see which rule made it.","Week sheet shows a whole week on one page, ready to print."],
  sheet:["Week sheet","One week on one page. Only doors with changes get a row; the rest are listed at the bottom.","Use the arrows to move a week. Print gives a clean paper copy."],
  rules:["Rules","A rule is a standing instruction, like \u201cOpen the main doors for Maariv every weekday\u201d.","Quick schedule is the easy way to open or lock doors for one date. It asks one question at a time.","Before anything is saved you see exactly what changes on the doors. You can undo for 10 minutes.","Not sure? Ask before you change. These are real doors."],
- special:["Rav and situations","When the Rav is away: add the dates, and rules set to \u201cOnly when the Rav is away\u201d run on those days.","Situations are switches for special times, like Building closed. Turn one on and the rules made for it take over."],
+ special:["Special times","When the Rav is away: add the dates, and rules set to \u201cOnly when the Rav is away\u201d run on those days.","Situations are switches for special times, like Building closed. Turn one on and the rules made for it take over."],
  events:["Events","Weddings, sheva brachos and other dates. Add the event and the doors follow that event type's rules.","Yearly dates are the shul's own dates that come back every year."],
  codes:["Guest codes","A PIN for a visitor that works only on the doors and times you pick, then removes itself.","Add their mobile number and tick that they agreed, and the system texts them the code.","Vendors keep the same PIN each visit."],
  msgs:["Messages","Ask a teammate to make a change, and see changes others made.","You get a note here whenever someone changes the schedule."],
@@ -4637,7 +4637,7 @@ function buildBnav(){const bar=document.querySelector(".bnav");if(!bar)return;
 }
 
 // pages that share one menu item get tabs under the title
-const PAGE_TABS=[[["rules","Rules"],["events","Events"],["special","Rav and situations"]],[["activity","History"],["live","Live"],["reports","Reports"]],[["preview","Day"],["sheet","Week sheet"]]];
+const PAGE_TABS=[[["rules","Rules"],["events","Events"],["special","Special times"]],[["activity","History"],["live","Live"],["reports","Reports"]],[["preview","Day"],["sheet","Week sheet"]]];
 function tabOk(k){if(k==="special")return isAdmin()||can("rabbi");if(k==="live")return isAdmin();if(k==="reports")return isAdmin()&&!SIMPLE;if(k==="activity")return !SIMPLE;return true}
 function drawPageTabs(t){const el=$("#pageTabs");if(!el)return;const grp=PAGE_TABS.find(g=>g.some(x=>x[0]===t)&&g[0][0]!=="preview");
   if(t==="people"){el.hidden=false;el.innerHTML=`<button type="button" class="pback" data-pt="setup">\u2039 Settings</button>`;return}
