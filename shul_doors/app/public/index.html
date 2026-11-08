@@ -1649,7 +1649,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 .board .dc .id .hint{font-size:14.5px;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-width:100%;overflow-wrap:anywhere}
 .board .dc .id b,.board .dc .dhow{display:none}
 .board .dc .st{font-size:13px;line-height:1.3}
-.board .dc .nx{font-size:12px;margin-top:0;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board .dc .nx{font-size:12px;margin-top:0;color:var(--muted);line-height:1.3}
 .board .dc .bd{font-size:11.5px}
 .dlist .drow3{min-height:46px;padding-top:7px;padding-bottom:7px}
 .dlist .drow3 .ic{width:28px;height:28px}
@@ -3484,9 +3484,9 @@ function renderBoard(){
   const tile=f=>{const d=f.d;
     const pk=DSEL.has(d.id),dis=SELMODE&&!selectable(d.id);
     return `<div class="dc ${f.cls}${pk?" picked":""}${dis?" nosel":""}" data-door="${esc(d.id)}" tabindex="0" role="button" aria-label="${esc(d.name)}, ${esc(f.label)}"${SELMODE?` aria-pressed="${pk}"`:""}><span class="pick" aria-hidden="true"></span><div class="id"><span class="hint">${esc(d.name)}</span><b>${esc(d.id)}</b></div>
-      <div class="st">${esc(f.label)}</div><div class="dhow">${esc(f.how)}</div>
+      <div class="st">${esc(tileLabel(f))}</div><div class="dhow">${esc(f.how)}</div>
       ${f.attn?`<div class="bd alert">Propped open ${f.st.sensor.propped} min</div>`:""}${f.hand?`<div class="bd handb">Changed by hand</div>`:""}
-      <div class="nx">${esc(f.nx)}</div></div>`};
+      <div class="nx">${esc(tileNext(f))}</div></div>`};
   const grid=list.map(tile).join("");
   // by door area: each group with its doors; doors in no group at the end
   const area=(()=>{const inG=new Set();const parts=S.groups.map(g=>{const fs=list.filter(f=>g.doors.includes(f.d.id));fs.forEach(f=>inG.add(f.d.id));return fs.length?`<h3 class="gh da-h">${esc(g.name)}<span>${fs.length}</span></h3><div class="board">${fs.map(tile).join("")}</div>`:""});
@@ -3653,6 +3653,10 @@ function nextVerb(door,next){const m=next.mode,f=next.from;
   if(m==="Unlock")return "opens";if(m==="Lockdown")return "goes into lockdown";
   if(f==="Unlock")return `locks (${MODE_WORD[m]||m})`;if(f==="Lockdown")return `comes out of lockdown (${MODE_WORD[m]||m})`;
   return `changes to ${MODE_WORD[m]||m}`}
+// short words for the small door tiles, so the time is never cut off
+function tileLabel(f){const m=f.st&&f.st.mode;return m&&m!=="Unlock"&&m!=="Lockdown"&&m!=="Card or Pin"&&MODE_WORD[m]&&!f.attn?`${f.label}, ${MODE_WORD[m]}`:f.label}
+function tileNext(f){const n=f.st&&f.st.next;if(!n)return f.nx==="No more changes today"?"No more changes":f.nx;const m=n.mode,w=whenWord(n.t);
+  const v=m==="Unlock"?"Opens":m==="Lockdown"?"Lockdown":n.from==="Unlock"?"Locks":(MODE_WORD[m]||m).replace(/^./,c=>c.toUpperCase());return `${v} ${w}`}
 function whenWord(t){return t>=1440?`tomorrow at ${fmt(t-1440)}`:`at ${fmt(t)}`}
 // every real mode change in the next 24 hours, doors changing the same way at the same minute grouped
 function upcomingChanges(ds){
