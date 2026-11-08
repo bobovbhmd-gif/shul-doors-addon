@@ -1702,6 +1702,38 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 .rpk .rt span{font-size:13px;color:var(--muted)}
 .rp-grid.one .rpb{grid-column:1 / -1!important}
 #rpAll[hidden],#rpPickWrap[hidden],#rpKpi[hidden]{display:none}
+
+/* History: one filter row, one summary line, compact rows */
+.hs-bar{flex-wrap:wrap;align-items:center}
+.hs-bar .sp{flex:1}
+.hs-sum{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13.5px;color:var(--muted);margin:2px 2px 10px}
+.hs-sum b{color:var(--text);font-weight:650}
+.hs-dot{width:3px;height:3px;border-radius:50%;background:var(--muted);display:inline-block;opacity:.6}
+.hs-moment{margin:0 0 12px}
+.hs-moment>summary{cursor:pointer;color:var(--accent);font-size:14px;font-weight:500;list-style:none;padding:4px 2px}
+.hs-moment>summary::-webkit-details-marker{display:none}
+.hs-moment[open]>summary{margin-bottom:8px}
+#tab-activity .hs-day{margin:14px 2px 6px}
+#tab-activity .hs-day .gh{font-size:15px;margin:0}
+#tab-activity .hs-row{min-height:44px;padding-top:7px;padding-bottom:7px;gap:10px}
+#tab-activity .hs-row .ic,#tab-activity .hs-row .avatar{width:26px!important;height:26px!important;font-size:11px;border-radius:8px}
+#tab-activity .hs-row .avatar{border-radius:50%}
+#tab-activity .hs-row .rt{display:flex;flex-direction:row;flex-wrap:wrap;align-items:baseline;column-gap:8px;row-gap:0}
+#tab-activity .hs-row .rt>b{flex:1 1 100%}
+#tab-activity .hs-det{display:inline;margin:0}
+#tab-activity .hs-det>summary{display:inline;font-size:12.5px}
+#tab-activity .hs-det[open]{display:block;flex:1 1 100%}
+#tab-activity .hs-row .ic svg{width:15px;height:15px}
+#tab-activity .hs-row .rt b{font-size:14px;font-weight:550}
+#tab-activity .hs-row .rt>span{font-size:12.5px}
+#tab-activity .hs-row .hs-t{font-size:12.5px;min-width:62px;color:var(--muted)}
+#tab-activity .hs-row.hs-box:not(.bad) .rt b{font-weight:400;color:var(--muted)}
+#tab-activity .hs-row .okm,#tab-activity .hs-row .warnm{font-size:12.5px}
+
+.homemsg{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;background:var(--surface);border-radius:14px;padding:12px 14px;margin:0 0 14px;font:inherit;color:var(--text);cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.homemsg[hidden]{display:none}
+.homemsg .rt{display:flex;flex-direction:column;flex:1}
+.homemsg .rt span{font-size:13px;color:var(--muted)}
 </style>
 
 <button class="ask-fab" type="button" id="askOpen" hidden aria-label="Ask the assistant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Ask the assistant</span></button>
@@ -1733,7 +1765,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
     <button type="button" class="navbtn" data-tab="preview" data-also="sheet"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></i>Schedule</button>
     <button type="button" class="navbtn" data-tab="rules" data-also="events special"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></i>Rules and events</button>
     <button type="button" class="navbtn cap-codes" data-tab="codes"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg></i>Guest codes</button>
-    <button type="button" class="navbtn" data-tab="msgs"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></i>Messages <span class="badge" id="msgBadge" hidden></span></button>
+    <button type="button" class="navbtn" data-tab="msgs" hidden><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></i>Messages <span class="badge" id="msgBadge" hidden></span></button>
     <button type="button" class="navbtn" data-tab="activity" data-also="live reports" id="actNav"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i>Activity</button>
     <div class="ng"></div>
     <button type="button" class="navbtn" data-tab="setup" data-also="people"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></i>Settings</button>
@@ -1763,6 +1795,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
   </div>
 
   <section id="tab-board">
+    <button type="button" class="homemsg" id="homeMsg" hidden></button>
     <div class="homegrid">
       <div class="hcol">
         <section class="hero" id="hero" aria-live="polite"></section>
@@ -1974,23 +2007,21 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
   </section>
 
   <section id="tab-activity" hidden>
-    <h2 class="gh">See any moment</h2>
-    <div class="glist">
-      <div class="row lbrow"><span class="ic" style="--c:var(--b)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div class="rt"><b>What was each door doing?</b><span>Pick a date and time</span></div>
-        <input type="date" id="hDate" aria-label="Date"><input type="time" id="hTime" aria-label="Time"><button class="btn sm pri" type="button" id="hGo">Show</button></div>
-    </div>
-    <div id="hOut"></div>
-    <div class="hs-head"><h2 class="gh">What happened</h2></div>
     <div class="rp-bar hs-bar">
       <div class="seg" role="group" aria-label="Show" id="hsKind"><button type="button" data-k="all">All</button><button type="button" data-k="people">People</button><button type="button" data-k="box">Box</button><button type="button" data-k="doors">Doors</button></div>
       <select id="hsDays" aria-label="Period"><option value="1">Today</option><option value="y">Yesterday</option><option value="7">7 days</option><option value="30">30 days</option><option value="90">90 days</option></select>
       <select id="hsWho" aria-label="Who"></select>
       <label class="search sm rp-who"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="hsQ" placeholder="Search" aria-label="Search history"></label>
+      <span class="sp"></span><span id="hsDlWrap"></span>
     </div>
-    <div class="rp-dlrow"><span></span><span id="hsDlWrap"></span></div>
-    <div class="kpis rp-kpis" id="hsKpi"></div>
+    <p class="hs-sum" id="hsKpi"></p>
+    <details class="hs-moment"><summary>What was each door doing at a set time?</summary>
+    <div class="glist">
+      <div class="row lbrow"><span class="ic" style="--c:var(--b)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div class="rt"><b>What was each door doing?</b><span>Pick a date and time</span></div>
+        <input type="date" id="hDate" aria-label="Date"><input type="time" id="hTime" aria-label="Time"><button class="btn sm pri" type="button" id="hGo">Show</button></div>
+    </div>
+    <div id="hOut"></div></details>
     <div id="logRows"></div>
-    <p class="gf">People: every change someone made, and who. Box: each time the box sent changes to the doors, or had a problem. Doors: when each door's mode really changed, read from the door panels, and whether that matched the rules.</p>
   </section>
   <section id="tab-special" hidden>
         <div class="card spc cap-rabbi" id="spAway">
@@ -4108,6 +4139,8 @@ function renderRequests(){
   {const oq=S.requests.find(q=>q.id===OPENQ);if(oq&&seeReq(oq)&&(forMe(oq)||oq.from===S.me)){oq.read=oq.read||{};oq.read[S.me]=Date.now()}}
   $("#rqTo").innerHTML=recipOptions();
   const n=S.requests.filter(unread).length+chgUnseen().length;["#msgBadge","#msgBadge2"].forEach(id=>{const b=$(id);if(!b)return;b.hidden=!n;b.textContent=n});
+  // Messages is out of the menu: when something is waiting, Home says so
+  {const hm=$("#homeMsg"),rq=S.requests.filter(unread).length,ch=chgUnseen().length;if(hm){hm.hidden=!n;hm.innerHTML=n?`<span class="ic" style="--c:var(--accent)">${ico("chat")}</span><span class="rt"><b>${[rq?`${rq} request${rq>1?"s":""} waiting`:"",ch?`${ch} change${ch>1?"s":""} by others`:""].filter(Boolean).join(" and ")}</b><span>Tap to see</span></span><span class="chev"></span>`:""}}
   renderChanges();
   $("#rqOpen").classList.toggle("on",!RQ_ALL);$("#rqAll").classList.toggle("on",RQ_ALL);
   const list=S.requests.filter(seeReq).filter(q=>RQ_ALL||q.status==="open").sort((a,b)=>b.msgs[b.msgs.length-1].t-a.msgs[a.msgs.length-1].t);
@@ -4543,13 +4576,13 @@ function renderLog(){
     HS_XBASE=`history-${HS.days==="1"?todayNY():Y?addDays(todayNY(),-1):"last-"+HS.days+"-days"}`;
     // numbers for the period
     const cnt=k=>list.filter(x=>x.k===k).length,runsN=Object.values(quiet).reduce((t,x)=>t+x.n,0),runsBad=Object.values(quiet).reduce((t,x)=>t+x.bad,0);
-    $("#hsKpi").innerHTML=(want("people")?kpi("Changes by people",fmtN(cnt("people")),""):"")+(want("box")?kpi("Box checks",fmtN(runsN),`<span class="dl${runsBad?" bad":""}">${runsBad?runsBad+" with a problem":"no problems"}</span>`):"")
-      +(want("doors")?kpi("Door changes",fmtN(md.length),md.length?`<span class="dl${list.some(x=>x.k==="doors"&&x.bad)?" bad":""}">${list.some(x=>x.k==="doors"&&x.bad)?"some not from the rules":"all on schedule"}</span>`:""):"");
+    {const off=list.some(x=>x.k==="doors"&&x.bad);
+     $("#hsKpi").innerHTML=[want("people")?`<span><b>${fmtN(cnt("people"))}</b> change${cnt("people")===1?"":"s"} by people</span>`:"",want("box")?`<span><b>${fmtN(runsN)}</b> box checks, <span class="${runsBad?"warnm":"okm"}">${runsBad?runsBad+" with a problem":"no problems"}</span></span>`:"",want("doors")?`<span><b>${fmtN(md.length)}</b> door changes${md.length?`, <span class="${off?"warnm":"okm"}">${off?"some not from the rules":"all on schedule"}</span>`:""}</span>`:""].filter(Boolean).join('<i class="hs-dot"></i>')}
     if(!list.length){$("#logRows").innerHTML=emptyState("clock","Nothing here",q?"Nothing matches that search.":"Nothing happened in this period, or nothing that matches.");return}
     const groups=[];list.slice(0,HS.lim).forEach(x=>{const k=nyDate(x.t);let g=groups[groups.length-1];if(!g||g.k!==k){g={k,items:[]};groups.push(g)}g.items.push(x)});
     const icon=x=>x.k==="people"?`<span class="avatar">${esc(initials(x.u))}</span>`:x.k==="box"?`<span class="ic" style="--c:${x.bad?"var(--r)":"var(--b)"}">${ico(x.bad?"warn":"check")}</span>`:`<span class="ic" style="--c:${modeColor(x.mode)}">${ico(modeIco(x.mode))}</span>`;
     $("#logRows").innerHTML=groups.map(g=>{const qd=quiet[g.k];return `<div class="hs-day"><h3 class="gh">${esc(dayLabel(nyToMs(g.k,720)))}</h3>${qd&&want("box")?`<span class="hint">Box checked ${qd.n} time${qd.n===1?"":"s"}${qd.bad?`, ${qd.bad} with a problem`:", all fine"}</span>`:""}</div>
-      <div class="glist">${g.items.map(x=>`<div class="row hs-row"><span class="hs-t time">${tm(x.t)}</span>${icon(x)}<div class="rt"><b class="lw">${esc(x.title)}</b>${x.sub?`<span>${esc(x.sub)}</span>`:""}${x.list&&x.list.length?`<details class="hs-det"><summary>Show what it did</summary><ul>${x.list.map(a=>`<li>${esc(a)}</li>`).join("")}</ul></details>`:""}</div>${x.tag?`<span class="${x.bad?"warnm":"okm"}">${esc(x.tag)}</span>`:""}</div>`).join("")}</div>`}).join("")
+      <div class="glist">${g.items.map(x=>`<div class="row hs-row hs-${x.k}${x.bad?" bad":""}"><span class="hs-t time">${tm(x.t)}</span>${icon(x)}<div class="rt"><b class="lw">${esc(x.title)}</b>${x.sub?`<span>${esc(x.sub)}</span>`:""}${x.list&&x.list.length?`<details class="hs-det"><summary>Show what it did</summary><ul>${x.list.map(a=>`<li>${esc(a)}</li>`).join("")}</ul></details>`:""}</div>${x.tag?`<span class="${x.bad?"warnm":"okm"}">${esc(x.tag)}</span>`:""}</div>`).join("")}</div>`}).join("")
       +(list.length>HS.lim?`<div class="rp-more"><span class="hint">Showing ${HS.lim} of ${fmtN(list.length)}</span><button class="btn sm" type="button" id="hsMore">Show more</button></div>`:"");
   });
 }
@@ -4638,6 +4671,7 @@ function showWhatChanges(el,ch,go){
   $("#wcBack").onclick=()=>{el.innerHTML=""};
   $("#wcGo").onclick=()=>{el.innerHTML="";go()}}
 /* ---------- wiring ---------- */
+$("#homeMsg").onclick=()=>showTab("msgs");
 // on touch screens the keyboard covers the bottom half: bring the box being typed in to the middle
 if(window.matchMedia&&matchMedia("(pointer:coarse)").matches){
   const lift=el=>{if(!el||!/INPUT|TEXTAREA|SELECT/.test(el.tagName)||/checkbox|radio|file/.test(el.type))return;el.scrollIntoView({block:"center",behavior:"smooth"})};
@@ -4764,7 +4798,7 @@ var BNAV_KEY="";
 function buildBnav(){const bar=document.querySelector(".bnav");if(!bar)return;
   let u={};try{u=JSON.parse(localStorage.getItem(useKey())||"{}")}catch(e){}
   const vis=t=>{const b=document.querySelector(`#sideNav .navbtn[data-tab="${t}"]`);return b&&getComputedStyle(b).display!=="none"&&!b.hidden};
-  const dflt=["doors","preview","msgs"],total=Object.values(u).reduce((a,b)=>a+b,0);
+  const dflt=["doors","preview","rules"],total=Object.values(u).reduce((a,b)=>a+b,0);
   let pick=total>=12?Object.keys(u).filter(vis).sort((a,b)=>u[b]-u[a]||dflt.indexOf(b)-dflt.indexOf(a)).slice(0,3):[];
   dflt.forEach(t=>{if(pick.length<3&&!pick.includes(t)&&vis(t))pick.push(t)});
   const tabs=["board",...pick],key=tabs.join(",");if(key===BNAV_KEY)return;BNAV_KEY=key;
