@@ -4538,11 +4538,11 @@ const HOW_RULES='<p><b>The schedule</b> is every rule for weekdays, holidays, da
 function showHelp(){const h=HELP[CUR_TAB]||HELP.board;$("#mHpT").textContent=h[0];
   $("#hpBody").innerHTML=`<div class="glist">${h.slice(1).map(x=>`<div class="row"><div class="rt"><span style="font-size:15px;line-height:1.5;color:var(--text)">${esc(x)}</span></div></div>`).join("")}</div>
    ${CUR_TAB==="rules"?`<h3 class="gh">How rules work together</h3><div class="glist"><div class="row"><div class="rt hpHow">${HOW_RULES}</div></div></div>`:""}
-   <p class="gf">Still not sure? <a href="#" id="hpAsk">Ask the assistant</a> or <a href="#" id="hpTour">take the 1 minute tour</a>.</p>`;openModal("mHelp")}
+   <p class="gf">Still not sure? <a href="#" id="hpAsk">Ask the assistant</a> or <a href="#" id="hpTour">take the quick tour</a>.</p>`;openModal("mHelp")}
 $("#pageHelp").onclick=showHelp;
 document.addEventListener("click",ev=>{if(ev.target.id==="hpAsk"){ev.preventDefault();closeModal("mHelp");const a=$("#askOpen");if(a&&!a.hidden)a.click()}if(ev.target.id==="hpTour"){ev.preventDefault();closeModal("mHelp");startTour()}});
 // a short first-time tour, once per person
-const TOUR=[["Welcome to Shul Doors","This runs the shul's real doors. Here is the 1 minute version.","board"],
+const TOUR=[["Quick tour","Welcome to Shul Doors. It runs the shul's real doors. Here are the basics.","board"],
  ["Home","Tells you if anything is wrong, which doors are open, and what changes next.","board"],
  ["Doors","Tap any door to open or lock it by hand. It goes back to its schedule at the time you pick.","doors"],
  ["Rules and events","The standing instructions. Use Quick schedule for one date. You always see what changes before it is saved, and you can undo for 10 minutes.","rules"],
