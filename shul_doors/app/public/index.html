@@ -1639,6 +1639,25 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 
 #tab-special .row .erN{flex:1;min-width:0;font:inherit;font-size:16px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--fill2);color:var(--text)}
 #tab-special .row{flex-wrap:wrap;gap:8px}
+
+/* Doors: compact tiles and rows, so more fit on one screen */
+.board{grid-template-columns:repeat(auto-fill,minmax(185px,1fr))!important;gap:8px!important}
+@media (max-width:600px){.board{grid-template-columns:1fr 1fr!important}.board .dc{grid-template-columns:28px minmax(0,1fr);column-gap:8px;padding:9px 10px!important}.board .dc::before{width:28px;height:28px;background-size:15px}.board .dc .id .hint{font-size:13.5px}}
+.board .dc{display:grid!important;grid-template-columns:34px minmax(0,1fr);column-gap:10px;row-gap:1px;padding:10px 12px!important;align-items:center;align-content:center;min-height:62px}
+.board .dc::before{grid-row:1 / span 4;width:34px;height:34px;margin:0;background-size:18px}
+.board .dc>*{grid-column:2}
+.board .dc .id .hint{font-size:14.5px;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-width:100%;overflow-wrap:anywhere}
+.board .dc .id b,.board .dc .dhow{display:none}
+.board .dc .st{font-size:13px;line-height:1.3}
+.board .dc .nx{font-size:12px;margin-top:0;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board .dc .bd{font-size:11.5px}
+.dlist .drow3{min-height:46px;padding-top:7px;padding-bottom:7px}
+.dlist .drow3 .ic{width:28px;height:28px}
+.dlist .drow3 .rt span:not(.nxm){display:none}
+.dlist .drow3 .rv{flex-direction:row;align-items:baseline;gap:10px}
+.da-h{display:flex;align-items:baseline;gap:8px;margin:18px 2px 8px}
+.da-h:first-child{margin-top:0}
+.da-h span{font-size:13px;color:var(--muted);font-weight:500}
 </style>
 
 <button class="ask-fab" type="button" id="askOpen" hidden aria-label="Ask the assistant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Ask the assistant</span></button>
@@ -1748,7 +1767,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
       <label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="dSearch" type="search" placeholder="Search by door name or number" aria-label="Search doors"></label>
       <select id="bGroup" aria-label="Door group"></select>
       <button type="button" class="btn" id="dSelBtn">Select</button>
-      <div class="seg viewtg" id="dView" role="group" aria-label="Layout"><button type="button" data-dv="grid" aria-label="Tiles"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></button><button type="button" data-dv="list" aria-label="List"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg></button></div>
+      <div class="seg viewtg" id="dView" role="group" aria-label="Layout"><button type="button" data-dv="grid" aria-label="Tiles"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></button><button type="button" data-dv="list" aria-label="List"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg></button><button type="button" data-dv="area" aria-label="By door area" title="By door area"><svg viewBox="0 0 24 24"><path d="M4 5h7M4 13h7"/><rect x="4" y="8" width="5" height="3" rx="1"/><rect x="11" y="8" width="5" height="3" rx="1"/><rect x="4" y="16" width="5" height="3" rx="1"/><rect x="11" y="16" width="5" height="3" rx="1"/></svg></button></div>
     </div>
     <div id="board" class="board"></div>
     <div class="selbar" id="selBar" hidden role="toolbar" aria-label="Selected doors">
@@ -3462,19 +3481,23 @@ function renderBoard(){
     return `<button type="button" class="fchip f-${k}${DF===k?" on":""}" data-df="${k}" aria-pressed="${DF===k}"${!n&&k!=="all"&&DF!==k?" disabled":""}><span>${l}</span><b>${n}</b></button>`}).join("");
   const list=facts.filter(f=>dMatch(f,DF));
   document.querySelectorAll("#dView [data-dv]").forEach(b=>b.classList.toggle("on",b.dataset.dv===DV));
-  const grid=list.map(f=>{const d=f.d;
+  const tile=f=>{const d=f.d;
     const pk=DSEL.has(d.id),dis=SELMODE&&!selectable(d.id);
     return `<div class="dc ${f.cls}${pk?" picked":""}${dis?" nosel":""}" data-door="${esc(d.id)}" tabindex="0" role="button" aria-label="${esc(d.name)}, ${esc(f.label)}"${SELMODE?` aria-pressed="${pk}"`:""}><span class="pick" aria-hidden="true"></span><div class="id"><span class="hint">${esc(d.name)}</span><b>${esc(d.id)}</b></div>
       <div class="st">${esc(f.label)}</div><div class="dhow">${esc(f.how)}</div>
       ${f.attn?`<div class="bd alert">Propped open ${f.st.sensor.propped} min</div>`:""}${f.hand?`<div class="bd handb">Changed by hand</div>`:""}
-      <div class="nx">${esc(f.nx)}</div></div>`}).join("");
+      <div class="nx">${esc(f.nx)}</div></div>`};
+  const grid=list.map(tile).join("");
+  // by door area: each group with its doors; doors in no group at the end
+  const area=(()=>{const inG=new Set();const parts=S.groups.map(g=>{const fs=list.filter(f=>g.doors.includes(f.d.id));fs.forEach(f=>inG.add(f.d.id));return fs.length?`<h3 class="gh da-h">${esc(g.name)}<span>${fs.length}</span></h3><div class="board">${fs.map(tile).join("")}</div>`:""});
+    const rest=list.filter(f=>!inG.has(f.d.id));if(rest.length)parts.push(`<h3 class="gh da-h">Other doors<span>${rest.length}</span></h3><div class="board">${rest.map(tile).join("")}</div>`);return parts.join("")})();
   const rows=list.map(f=>{const d=f.d;const col=f.attn?"var(--o)":f.st.mode==="Unlock"?"var(--g)":f.st.mode==="Lockdown"?"var(--r)":"var(--b)";
     const pk=DSEL.has(d.id),dis=SELMODE&&!selectable(d.id);
     return `<div class="row tap drow3${pk?" picked":""}${dis?" nosel":""}" data-door="${esc(d.id)}" tabindex="0" role="button"${SELMODE?` aria-pressed="${pk}"`:""}><span class="pick" aria-hidden="true"></span><span class="ic" style="--c:${col}">${ico(f.attn?"warn":modeIco(f.st.mode))}</span>
       <div class="rt"><b>${esc(d.name)}</b><span>${esc(d.id)}${f.attn?`, <span class="tw-o">propped open ${f.st.sensor.propped} min</span>`:""}${f.hand?", changed by hand":""}</span><span class="nxm">${esc(f.nx)}</span></div>
       <div class="rv"><span class="stt" style="--c:${col}">${esc(f.label)}</span><span class="hint">${esc(f.nx)}</span></div><span class="chev"></span></div>`}).join("");
-  $("#board").className=DV==="list"?"":"board";
-  $("#board").innerHTML=list.length?(DV==="list"?`<div class="glist">${rows}</div>`:grid)
+  $("#board").className=DV==="grid"?"board":"";
+  $("#board").innerHTML=list.length?(DV==="list"?`<div class="glist dlist">${rows}</div>`:DV==="area"?area:grid)
     :emptyState("door",q?"No doors match":"No doors here",q?"Try a different name or number.":"Nothing is in this state right now.",DF!=="all"?`<button class="btn" type="button" data-df="all">Show all doors</button>`:"");
   renderSelBar();
   $("#bSum").textContent="";
