@@ -1630,6 +1630,11 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 .adddate .dyr{justify-content:space-between}
 #ruleForm .frow>.tline{justify-content:flex-end}
 #ruleForm #sA,#ruleForm #eA{width:auto;flex:0 1 200px}
+
+#tab-special .spc{margin-bottom:26px;padding:0;background:none;box-shadow:none;border:0}
+#tab-special .spc h2.gh{margin:0 0 4px;font-size:18px}
+.setnav .si-h{margin:14px 4px 6px;font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+.setnav .si-h:first-child{margin-top:0}
 </style>
 
 <button class="ask-fab" type="button" id="askOpen" hidden aria-label="Ask the assistant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Ask the assistant</span></button>
@@ -1659,7 +1664,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
     <button type="button" class="navbtn on" data-tab="board"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></i>Home</button>
     <button type="button" class="navbtn" data-tab="doors"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4.5L14 3v18M14 21h5V6h-5M3 21h18"/><circle cx="11" cy="12.5" r=".9"/></svg></i>Doors</button>
     <button type="button" class="navbtn" data-tab="preview" data-also="sheet"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></i>Schedule</button>
-    <button type="button" class="navbtn" data-tab="rules" data-also="events"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></i>Rules and events</button>
+    <button type="button" class="navbtn" data-tab="rules" data-also="events special"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></i>Rules and events</button>
     <button type="button" class="navbtn cap-codes" data-tab="codes"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg></i>Guest codes</button>
     <button type="button" class="navbtn" data-tab="msgs"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></i>Messages <span class="badge" id="msgBadge" hidden></span></button>
     <button type="button" class="navbtn" data-tab="activity" data-also="live reports" id="actNav"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i>Activity</button>
@@ -1921,6 +1926,22 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
     <div id="logRows"></div>
     <p class="gf">People: every change someone made, and who. Box: each time the box sent changes to the doors, or had a problem. Doors: when each door's mode really changed, read from the door panels, and whether that matched the rules.</p>
   </section>
+  <section id="tab-special" hidden>
+        <div class="card spc cap-rabbi" id="spAway">
+      <h2 class="gh">When the Rav is away</h2>
+      <p class="gf top">Rules set to "Only when the Rav is away" run on these days.</p>
+      <div class="glist" id="awayRows"></div>
+      <div class="glist addrow"><div class="row"><span class="rt"><b>Add dates</b></span><input type="date" id="awayFrom" aria-label="Away from"><span class="hint">to</span><input type="date" id="awayTo" aria-label="Away to"><button class="btn sm pri" type="button" id="addAway">Add</button></div></div>
+    </div>
+
+    <div class="card spc admin-only" id="spSits">
+      <h2 class="gh">Situations</h2>
+      <p class="gf top">Switches you turn on when something special is going on. Rules set to "Only when this is on" take over while it is on.</p>
+      <div id="sitRows"></div>
+      <div class="glist addrow"><div class="row"><input id="newSit" placeholder="New situation, like Pesach cleaning" aria-label="New situation"><button class="btn sm pri" type="button" id="addSit">Add</button></div></div>
+    </div>
+
+  </section>
   <section id="tab-setup" hidden>
     <p class="notice editor-note">Most settings are managed by a super admin.</p>
     <div class="split" id="split">
@@ -1948,20 +1969,6 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
           <p class="gf top">Rename any holiday or special day to the name your shul uses. The new name shows everywhere: rules, the schedule, the week sheet and the assistant. The schedule itself doesn't change. Tap Hide on any you never use and it drops out of the list when you pick days for a rule. A day that a rule uses can't be hidden.</p>
           <div class="glist addrow"><div class="row"><input type="search" id="hnSearch" placeholder="Search, like Shmini Atzeres" aria-label="Search holidays"></div></div>
           <div id="hnRows"></div>
-        </div>
-
-        <div class="panel admin-only" data-sp="sits" data-ic="flag" data-c="var(--o)">
-          <h2>Situations</h2>
-          <p class="gf top">Switches like the rabbi switch. Rules marked "Only when this is on" take over while it's on. A situation that beats everything wins even over holidays, for something like Building closed.</p>
-          <div id="sitRows"></div>
-          <div class="glist addrow"><div class="row"><input id="newSit" placeholder="New situation, like Pesach cleaning" aria-label="New situation"><button class="btn sm pri" type="button" id="addSit">Add</button></div></div>
-        </div>
-
-        <div class="panel cap-rabbi" data-sp="away" data-ic="person" data-c="var(--p)">
-          <h2>Rabbi away dates</h2>
-          <p class="gf top">Any day in these ranges counts as away. The switch on Home marks every day from today as away until you switch it back.</p>
-          <div class="glist" id="awayRows"></div>
-          <div class="glist addrow"><div class="row"><span class="rt"><b>Add dates</b></span><input type="date" id="awayFrom" aria-label="Away from"><span class="hint">to</span><input type="date" id="awayTo" aria-label="Away to"><button class="btn sm pri" type="button" id="addAway">Add</button></div></div>
         </div>
 
         <div class="panel admin-only" data-sp="doors" data-ic="door" data-c="var(--b)">
@@ -4517,6 +4524,7 @@ const HELP={
  preview:["Schedule","What every door does, hour by hour, on any day.","Tap a day at the top, then a colored bar to see which rule made it.","Week sheet shows a whole week on one page, ready to print."],
  sheet:["Week sheet","One week on one page. Only doors with changes get a row; the rest are listed at the bottom.","Use the arrows to move a week. Print gives a clean paper copy."],
  rules:["Rules","A rule is a standing instruction, like \u201cOpen the main doors for Maariv every weekday\u201d.","Quick schedule is the easy way to open or lock doors for one date. It asks one question at a time.","Before anything is saved you see exactly what changes on the doors. You can undo for 10 minutes.","Not sure? Ask before you change. These are real doors."],
+ special:["Rav and situations","When the Rav is away: add the dates, and rules set to \u201cOnly when the Rav is away\u201d run on those days.","Situations are switches for special times, like Building closed. Turn one on and the rules made for it take over."],
  events:["Events","Weddings, sheva brachos and other dates. Add the event and the doors follow that event type's rules.","Yearly dates are the shul's own dates that come back every year."],
  codes:["Guest codes","A PIN for a visitor that works only on the doors and times you pick, then removes itself.","Add their mobile number and tick that they agreed, and the system texts them the code.","Vendors keep the same PIN each visit."],
  msgs:["Messages","Ask a teammate to make a change, and see changes others made.","You get a note here whenever someone changes the schedule."],
@@ -4607,7 +4615,7 @@ $("#gdNew").onclick=openGuide;
 $("#undoBtn").onclick=doUndo;$("#undoX").onclick=()=>{UNDO=null;showUndo()};
 
 // phone bar: Home plus the three places this person opens most
-const NAV_HOME={sheet:"preview",events:"rules",live:"activity",reports:"activity",people:"setup"};
+const NAV_HOME={sheet:"preview",events:"rules",special:"rules",live:"activity",reports:"activity",people:"setup"};
 function useKey(){return "sdUse:"+(S.me||"")}
 function useCount(t){t=NAV_HOME[t]||t;if(t==="board")return;try{const k=useKey(),u=JSON.parse(localStorage.getItem(k)||"{}");u[t]=(u[t]||0)+1;localStorage.setItem(k,JSON.stringify(u))}catch(e){}}
 var BNAV_KEY="";
@@ -4629,8 +4637,8 @@ function buildBnav(){const bar=document.querySelector(".bnav");if(!bar)return;
 }
 
 // pages that share one menu item get tabs under the title
-const PAGE_TABS=[[["rules","Rules"],["events","Events"]],[["activity","History"],["live","Live"],["reports","Reports"]],[["preview","Day"],["sheet","Week sheet"]]];
-function tabOk(k){if(k==="live")return isAdmin();if(k==="reports")return isAdmin()&&!SIMPLE;if(k==="activity")return !SIMPLE;return true}
+const PAGE_TABS=[[["rules","Rules"],["events","Events"],["special","Rav and situations"]],[["activity","History"],["live","Live"],["reports","Reports"]],[["preview","Day"],["sheet","Week sheet"]]];
+function tabOk(k){if(k==="special")return isAdmin()||can("rabbi");if(k==="live")return isAdmin();if(k==="reports")return isAdmin()&&!SIMPLE;if(k==="activity")return !SIMPLE;return true}
 function drawPageTabs(t){const el=$("#pageTabs");if(!el)return;const grp=PAGE_TABS.find(g=>g.some(x=>x[0]===t)&&g[0][0]!=="preview");
   if(t==="people"){el.hidden=false;el.innerHTML=`<button type="button" class="pback" data-pt="setup">\u2039 Settings</button>`;return}
   const ok=grp?grp.filter(x=>tabOk(x[0])):[];el.hidden=ok.length<2;
@@ -4640,7 +4648,7 @@ document.addEventListener("click",ev=>{const b=ev.target.closest("#pageTabs [dat
 function actFirst(){return ["activity","live","reports"].find(tabOk)}
 function fixActNav(){const n=$("#actNav");if(n)n.hidden=!actFirst()}
 
-const TITLES={people:"People",live:"Activity",board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules and events",events:"Rules and events",codes:"Guest codes",msgs:"Messages",reports:"Activity",activity:"Activity",setup:"Settings"};
+const TITLES={people:"People",live:"Activity",board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules and events",events:"Rules and events",special:"Rules and events",codes:"Guest codes",msgs:"Messages",reports:"Activity",activity:"Activity",setup:"Settings"};
 document.querySelectorAll(".navbtn[data-tab]").forEach(b=>b.onclick=()=>showTab(b.dataset.tab==="activity"?actFirst()||"board":b.dataset.tab));
 function setDrawer(open){document.body.classList.toggle("drawer",open);$("#scrim").hidden=!open;$("#menuBtn").setAttribute("aria-expanded",open)}
 document.querySelectorAll(".viewseg button").forEach(b=>b.onclick=()=>{SIMPLE=b.dataset.view==="simple";try{localStorage.setItem("shulDoorSimple",SIMPLE?"1":"0")}catch(e){}renderView();fixActNav();if(!tabOk(CUR_TAB))showTab(actFirst()||"board");else drawPageTabs(CUR_TAB);if(CUR_TAB==="setup")renderSetupIndex()});
@@ -4658,16 +4666,22 @@ function showTab(t){CUR_TAB=t;useCount(t);if(t!=="doors"&&typeof SELMODE!=="unde
   $("#pageTitle").textContent=TITLES[t]||"";$("#pageSub").textContent=SUBS[t]||"";$("#pageSub").hidden=!SUBS[t];
   document.querySelectorAll("#pageAct [data-for]").forEach(b=>b.hidden=b.dataset.for!==t||(b.dataset.tcv&&b.dataset.tcv!==TCV)||(b.id==="gdNew"&&(sched()==="none"||!visDoors().some(d=>perm(d.id)==="edit"))));
   setDrawer(false);hideTip();
-  ["board","doors","live","people","preview","rules","events","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);liveRun(t==="live");if(t==="doors")renderBoard();if(t==="codes"&&ON_BOX)renderCodes();if(t==="people")ppFetch(false);
+  ["board","doors","live","people","preview","rules","events","special","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);liveRun(t==="live");if(t==="doors")renderBoard();if(t==="codes"&&ON_BOX)renderCodes();if(t==="people")ppFetch(false);
   if(t==="codes")setTCV(TCV);if(t==="reports")renderReports();if(t==="activity")renderLog();if(t==="setup"){$("#split").classList.remove("detail");renderSetupIndex()}
   scrollTo({top:0})}
 let SP=null;
 function spAvailable(p){if(p.hasAttribute("data-gone"))return false;if(p.classList.contains("admin-only")&&!isAdmin())return false;if(p.classList.contains("adv")&&SIMPLE)return false;if(p.classList.contains("cap-rabbi")&&!can("rabbi"))return false;return true}
 function renderSetupIndex(){
   const panels=[...document.querySelectorAll("#tab-setup .panel")], ok=panels.filter(spAvailable);
-  if(!ok.some(p=>p.dataset.sp===SP))SP=(ok[1]||ok[0]||{dataset:{}}).dataset.sp;
+  if(!ok.some(p=>p.dataset.sp===SP))SP=(["doors","users","view"].map(k=>ok.find(p=>p.dataset.sp===k)).find(Boolean)||ok[0]||{dataset:{}}).dataset.sp;
   panels.forEach(p=>p.classList.toggle("sp-off",p.dataset.sp!==SP));
-  $("#setupIdx").innerHTML=`<div class="glist">${ok.map(p=>`<button type="button" class="row tap${p.dataset.sp===SP?" on":""}" data-sp="${p.dataset.sp}"><span class="ic" style="--c:${p.dataset.c}">${ico(p.dataset.ic)}</span><div class="rt"><b>${esc(p.querySelector("h2").textContent)}</b></div>${p.dataset.sp==="teach"&&isAdmin()&&S.notes.some(n=>n.status==="pending")?`<span class="pill blue">${S.notes.filter(n=>n.status==="pending").length} waiting</span>`:""}<span class="chev"></span></button>`).join("")}${isAdmin()?`<button type="button" class="row tap" data-goto="people"><span class="ic" style="--c:var(--green)">${ico("people")}</span><div class="rt"><b>People</b><small class="hint" style="display:block">Cards and PINs in Protector.Net</small></div><span class="chev"></span></button>`:""}</div>${window.__SD_ADDON?`<p class="gf" style="text-align:center;margin-top:10px">Shul Doors version ${esc(window.__SD_ADDON)}</p>`:""}`;
+  const GRP=[["The doors",["doors","groups","magnet","zmanim","holnames"]],["People and alerts",["users","people","alerts"]],["You",["view","teach"]],["System",["backup","reset"]]];
+  const row=p=>`<button type="button" class="row tap${p.dataset.sp===SP?" on":""}" data-sp="${p.dataset.sp}"><span class="ic" style="--c:${p.dataset.c}">${ico(p.dataset.ic)}</span><div class="rt"><b>${esc(p.querySelector("h2").textContent)}</b></div>${p.dataset.sp==="teach"&&isAdmin()&&S.notes.some(n=>n.status==="pending")?`<span class="pill blue">${S.notes.filter(n=>n.status==="pending").length} waiting</span>`:""}<span class="chev"></span></button>`;
+  const peopleRow=isAdmin()?`<button type="button" class="row tap" data-goto="people"><span class="ic" style="--c:var(--green)">${ico("people")}</span><div class="rt"><b>People</b><small class="hint" style="display:block">Cards and PINs in Protector.Net</small></div><span class="chev"></span></button>`:"";
+  const by=Object.fromEntries(ok.map(p=>[p.dataset.sp,p])),used=new Set();
+  let html=GRP.map(([g,ks])=>{const rows=ks.map(k=>{if(k==="people")return peopleRow;const p=by[k];if(!p)return "";used.add(k);return row(p)}).join("");return rows?`<h3 class="gh si-h">${g}</h3><div class="glist">${rows}</div>`:""}).join("");
+  const rest=ok.filter(p=>!used.has(p.dataset.sp));if(rest.length)html+=`<div class="glist">${rest.map(row).join("")}</div>`;
+  $("#setupIdx").innerHTML=html+(window.__SD_ADDON?`<p class="gf" style="text-align:center;margin-top:10px">Shul Doors version ${esc(window.__SD_ADDON)}</p>`:"");
 }
 $("#setupIdx").addEventListener("click",ev=>{if(ev.target.closest("[data-goto]")){showTab(ev.target.closest("[data-goto]").dataset.goto);return}const b=ev.target.closest("[data-sp]");if(!b)return;SP=b.dataset.sp;renderSetupIndex();$("#split").classList.add("detail");if(innerWidth<700)scrollTo({top:0})});
 $("#setBack").onclick=()=>{$("#split").classList.remove("detail");scrollTo({top:0})};
