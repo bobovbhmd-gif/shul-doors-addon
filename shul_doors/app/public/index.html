@@ -1734,6 +1734,81 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 .homemsg[hidden]{display:none}
 .homemsg .rt{display:flex;flex-direction:column;flex:1}
 .homemsg .rt span{font-size:13px;color:var(--muted)}
+
+/* Open a door page */
+.op-q{width:100%;max-width:640px;min-height:48px;font-size:17px;margin-bottom:6px}
+.op-q input{font-size:17px}
+.op-h{margin:20px 2px 10px}
+.op-tip{color:var(--muted);font-size:14px;margin:14px 2px 0}
+.op-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.op-grid.small{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.op-tw{position:relative}
+.op-t{width:100%;text-align:left;border:0;background:var(--surface);border-radius:16px;padding:16px 44px 16px 16px;font:inherit;color:var(--text);cursor:pointer;display:flex;flex-direction:column;gap:6px;box-shadow:0 1px 2px rgba(0,0,0,.05);min-height:84px;justify-content:center;transition:transform .1s,box-shadow .2s;border-left:4px solid var(--c)}
+.op-t:hover{box-shadow:0 8px 24px rgba(0,0,0,.08)}
+.op-t:active{transform:scale(.98)}
+.op-t b{font-size:16.5px;font-weight:650;line-height:1.25}
+.op-t span{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.op-t .dot{width:8px;height:8px;border-radius:50%;background:var(--c);display:inline-block}
+.op-grid.small .op-t{min-height:58px;padding:11px 40px 11px 12px;border-radius:12px;gap:3px}
+.op-grid.small .op-t b{font-size:14.5px;font-weight:600}
+.op-pin{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--muted);opacity:.55;display:grid;place-items:center;cursor:pointer;padding:0}
+.op-pin svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linejoin:round}
+.op-pin.on{color:var(--accent);opacity:1}.op-pin.on svg{fill:currentColor}
+.op-pin:hover{opacity:1}
+.op-sheet .mbody{padding-top:8px}
+.op-now{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:15px;margin:4px 2px 16px}
+.op-now .dot{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.op-now span{color:var(--muted);font-size:14px}
+.op-buzz{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;border:0;border-radius:18px;background:var(--g);color:#fff;font:inherit;padding:20px;cursor:pointer;min-height:76px;box-shadow:0 6px 18px color-mix(in srgb,var(--g) 35%,transparent)}
+.op-buzz svg{width:28px;height:28px;fill:none;stroke:#fff;stroke-width:2}
+.op-buzz span{display:flex;flex-direction:column;text-align:left}
+.op-buzz b{font-size:20px}.op-buzz small{font-size:13px;opacity:.9}
+.op-buzz:active{transform:scale(.98)}
+.op-sh{font-size:14px;color:var(--muted);font-weight:600;margin:22px 2px 10px}
+.op-mins{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.op-mins button{border:0;border-radius:14px;background:var(--surface);color:var(--text);font:inherit;font-size:16px;font-weight:600;min-height:56px;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.op-mins button:hover{background:color-mix(in srgb,var(--g) 12%,var(--surface))}
+.op-back{width:100%;margin-top:12px;border:0;border-radius:14px;background:var(--surface);color:var(--accent);font:inherit;font-size:15px;font-weight:600;min-height:50px;cursor:pointer}
+@media (max-width:600px){.op-grid{grid-template-columns:1fr 1fr}.op-grid.small{grid-template-columns:1fr 1fr}.op-t{min-height:76px;padding:13px 36px 13px 13px}.op-t b{font-size:15px}.op-mins{grid-template-columns:repeat(3,1fr)}}
+
+.op-mins{grid-template-columns:repeat(6,1fr)}
+.op-mins .op-cbtn{color:var(--accent)}
+.op-custom{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding:12px;border-radius:14px;background:var(--surface)}
+.op-custom[hidden]{display:none}
+.op-custom input{width:90px;font:inherit;font-size:20px;font-weight:600;text-align:center;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--fill2);color:var(--text)}
+.op-custom .btn{min-height:46px;min-width:100px;margin-left:auto}
+@media (max-width:600px){.op-mins{grid-template-columns:repeat(3,1fr)}}
+
+.op-custom .op-n{display:flex;align-items:center;gap:6px;font-size:15px;color:var(--muted)}
+.op-custom .op-n input{width:76px}
+.op-emerg{margin-top:28px}
+.op-eb{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.op-lk{display:flex;align-items:center;gap:12px;text-align:left;border:1.5px solid color-mix(in srgb,var(--r) 45%,transparent);background:color-mix(in srgb,var(--r) 6%,var(--surface));color:var(--r);border-radius:16px;padding:16px;font:inherit;cursor:pointer;min-height:72px}
+.op-lk svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;flex:none}
+.op-lk span{display:flex;flex-direction:column;gap:2px}.op-lk b{font-size:16px}.op-lk small{font-size:12.5px;color:var(--muted)}
+.op-lk.all{background:var(--r);color:#fff;border-color:var(--r)}.op-lk.all small{color:rgba(255,255,255,.85)}
+.op-lk[disabled]{opacity:.5;cursor:default}
+.op-buzz.red{background:var(--r);box-shadow:0 6px 18px color-mix(in srgb,var(--r) 35%,transparent)}
+.op-warn{display:flex;gap:10px;align-items:flex-start;background:color-mix(in srgb,var(--r) 8%,var(--surface));border-radius:14px;padding:14px;margin:4px 0 16px;font-size:15px;line-height:1.45}
+.op-warn svg{width:22px;height:22px;flex:none;fill:none;stroke:var(--r);stroke-width:2}
+.op-lockon{display:flex;align-items:center;gap:12px;background:var(--r);color:#fff;border-radius:16px;padding:14px 16px;margin:4px 0 8px}
+.op-lockon .ic{background:rgba(255,255,255,.2)!important}
+.op-lockon .rt{display:flex;flex-direction:column;flex:1}.op-lockon .rt span{font-size:13px;opacity:.9}
+.op-lockon .btn{background:#fff;color:var(--r);font-weight:700}
+@media (max-width:600px){.op-eb{grid-template-columns:1fr}}
+
+.side .navbtn.lkbtn{color:var(--r)}
+.side .navbtn.lkbtn i svg{stroke:var(--r)}
+.side .navbtn.lkbtn.on{background:var(--r);color:#fff}
+.side .navbtn.lkbtn.on i svg{stroke:#fff}
+.homelk{width:100%;border:0;text-align:left;font:inherit;cursor:pointer;margin:0 0 14px}
+.homelk[hidden]{display:none}
+.homelk .chev{border-color:#fff}
+.homelk .rt b,.homelk .rt span{color:#fff!important}
+.op-lockon .ic svg{stroke:#fff}
+#tab-lockdown .op-eb{grid-template-columns:1fr;max-width:560px}
+#tab-lockdown .op-lk{min-height:96px;padding:20px}
+#tab-lockdown .op-lk b{font-size:19px}
 </style>
 
 <button class="ask-fab" type="button" id="askOpen" hidden aria-label="Ask the assistant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Ask the assistant</span></button>
@@ -1761,6 +1836,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 
   <nav class="side" id="sideNav" aria-label="Sections">
     <button type="button" class="navbtn on" data-tab="board"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></i>Home</button>
+    <button type="button" class="navbtn" data-tab="open" id="openNav"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg></i>Open a door</button>
     <button type="button" class="navbtn" data-tab="doors"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4.5L14 3v18M14 21h5V6h-5M3 21h18"/><circle cx="11" cy="12.5" r=".9"/></svg></i>Doors</button>
     <button type="button" class="navbtn" data-tab="preview" data-also="sheet"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></i>Schedule</button>
     <button type="button" class="navbtn" data-tab="rules" data-also="events special"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></i>Rules and events</button>
@@ -1768,6 +1844,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
     <button type="button" class="navbtn" data-tab="msgs" hidden><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></i>Messages <span class="badge" id="msgBadge" hidden></span></button>
     <button type="button" class="navbtn" data-tab="activity" data-also="live reports" id="actNav"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i>Activity</button>
     <div class="ng"></div>
+    <button type="button" class="navbtn lkbtn admin-only" data-tab="lockdown"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><path d="M12 15v2"/></svg></i>Lockdown</button>
     <button type="button" class="navbtn" data-tab="setup" data-also="people"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></i>Settings</button>
   </nav>
   <div class="scrim" id="scrim" hidden></div>
@@ -1795,6 +1872,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
   </div>
 
   <section id="tab-board">
+    <button type="button" class="op-lockon homelk" id="homeLock" hidden></button>
     <button type="button" class="homemsg" id="homeMsg" hidden></button>
     <div class="homegrid">
       <div class="hcol">
@@ -1838,6 +1916,14 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
     </div>
   </section>
 
+  <section id="tab-open" hidden>
+    <label class="search op-q"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="opQ" placeholder="Find a door" aria-label="Find a door" autocomplete="off"></label>
+    <div id="opBody"></div>
+  </section>
+  <section id="tab-lockdown" hidden>
+    <div id="opLock"></div>
+    <div class="op-emerg" id="opEmerg"></div>
+  </section>
   <section id="tab-doors" hidden>
     <div class="fchips" id="dFilters" role="group" aria-label="Show doors"></div>
     <div class="searchbar dsearch">
@@ -2208,6 +2294,12 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
     </div>
   </div>
   <div class="tour" id="tour" hidden role="dialog" aria-modal="true" aria-labelledby="tourT"><div class="tcard"><div class="tstep" id="tourN"></div><h2 id="tourT"></h2><p id="tourP"></p><div class="tbtns"><button type="button" class="btn" id="tourSkip">Skip</button><button type="button" class="btn pri" id="tourNext">Next</button></div></div></div>
+  <div class="modal" id="mOpen" hidden role="dialog" aria-modal="true" aria-labelledby="opT">
+    <div class="mbox op-sheet">
+      <header class="mhead"><button type="button" class="mbtn" data-close>Cancel</button><b id="opT">Open a door</b><span class="mbtn" aria-hidden="true"></span></header>
+      <div class="mbody" id="opSheet"></div>
+    </div>
+  </div>
   <div class="modal" id="mEvent" hidden role="dialog" aria-modal="true" aria-labelledby="mEvT">
     <div class="mbox">
       <header class="mhead"><button type="button" class="mbtn" data-close>Cancel</button><b id="mEvT">New event</b><button type="button" class="mbtn pri cap-events" id="addEv">Add</button></header>
@@ -3672,7 +3764,7 @@ function renderBuzzCard(){
   const doors=S.doors.filter(d=>mayBuzz||mayOpen(d.id));
   if(!doors.length){el.hidden=true;el.innerHTML="";return}el.hidden=false;
   el.classList.toggle("closed",!BZ_OPEN);
-  if(!BZ_OPEN){el.innerHTML=`<button type="button" class="bz-open" id="bzOpen" aria-expanded="false"><span class="ic" style="--c:var(--g)">${ico("open")}</span><span class="rt"><b>Open or buzz a door</b><span>Buzz open, or open for 5 to 60 minutes</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>`;return}
+  if(true){el.innerHTML=`<button type="button" class="bz-open" id="homeOpen" aria-expanded="false"><span class="ic" style="--c:var(--g)">${ico("open")}</span><span class="rt"><b>Open a door</b><span>Buzz open, or open for 5 to 60 minutes</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>`;return}
   // pinned first, then the ones this person opened lately, then the main entrances
   const has=id=>doors.some(d=>d.id===id),pins=buzzPins().filter(has),rec=buzzRecent().filter(id=>has(id)&&!pins.includes(id)).slice(0,8);
   const defs=[...doors.filter(d=>/main ent/i.test(d.name)),...doors.filter(d=>/entrance/i.test(d.name))].map(d=>d.id).filter(id=>!pins.includes(id)&&!rec.includes(id));
@@ -3710,7 +3802,7 @@ document.addEventListener("click",async ev=>{
   if(k==="back"){endOverridesFor(id);buzzRemember(id);BZ_OPEN=false;BZ_SEL=null;BUZZ_ALL=false;BUZZ_Q="";commit(`${name}: back to the schedule`);toast(`${name} is back on its schedule`);return}
   const mins=+k,now=Date.now(),o={id:"o"+now,doors:[id],mode:"Unlock",from:now,to:now+mins*60e3,by:S.me,why:"Quick open from Home"};
   endOverridesFor(id);S.overrides.push(o);buzzRemember(id);BZ_OPEN=false;BZ_SEL=null;BUZZ_ALL=false;BUZZ_Q="";
-  commit(`By hand: Open on ${name} until ${whenText(o.to)} (quick open, ${mins} min)`);toast(`${name} is now open for ${mins} minutes`);
+  commit(`By hand: Open on ${name} until ${whenText(o.to)} (quick open, ${durText(mins)})`);toast(`${name} is now open for ${mins} minutes`);
 });
 function endOverridesFor(id){const now=Date.now();
   S.overrides.filter(o=>o.from<=now&&(!o.to||o.to>now)&&expandDoors(o.doors).includes(id)).forEach(o=>{
@@ -3726,7 +3818,7 @@ function myUser(){return (S.users||[]).find(x=>x.name===S.me)}
 function setPref(k,v){const u=myUser();if(!u)return;if(u.prefs&&u.prefs[k]===v)return;u.prefs={...(u.prefs||{}),[k]:v};save()}
 function applyPrefs(){if(PREFS_FOR===S.me)return;PREFS_FOR=S.me;const p=(myUser()||{}).prefs||{};
   if(typeof p.simple==="boolean")SIMPLE=p.simple;if(["grid","list","area"].includes(p.doorView))DV=p.doorView;if(["kind","area"].includes(p.ruleGroup))RGROUP=p.ruleGroup}
-function renderView(){try{applyPrefs()}catch(e){}document.body.classList.toggle("simple",SIMPLE);try{fixActNav();buildBnav()}catch(e){}document.querySelectorAll(".viewseg button").forEach(b=>b.classList.toggle("on",(b.dataset.view==="simple")===SIMPLE))}
+function renderView(){try{applyPrefs()}catch(e){}document.body.classList.toggle("simple",SIMPLE);try{fixOpenNav();fixActNav();buildBnav()}catch(e){}document.querySelectorAll(".viewseg button").forEach(b=>b.classList.toggle("on",(b.dataset.view==="simple")===SIMPLE))}
 function plainMode(m){return m==="Unlock"?"open":m==="Lockdown"?"in lockdown":m==="Card or Pin"?"locked (card or PIN)":"locked ("+m.toLowerCase()+")"}
 const MODE_WORD={"Card or Pin":"card or PIN","Card":"card only","Pin":"PIN only","Card and Pin":"card and PIN","First Credential In":"first credential in"};
 function nextVerb(door,next){const m=next.mode,f=next.from;
@@ -4586,7 +4678,7 @@ function renderLog(){
       +(list.length>HS.lim?`<div class="rp-more"><span class="hint">Showing ${HS.lim} of ${fmtN(list.length)}</span><button class="btn sm" type="button" id="hsMore">Show more</button></div>`:"");
   });
 }
-function renderAll(){renderView();renderSituations();renderHealth();renderReports();renderRequests();renderCodes();renderVendors();renderNotes();renderStatus();renderOverride();renderBoard();renderHero();renderBuzzCard();renderPreview();renderRules();renderBulk();renderEvents();renderSheet();renderSetup();renderAg();renderLog()}
+function renderAll(){try{renderHomeLock();renderLockBits()}catch(e){}renderView();renderSituations();renderHealth();renderReports();renderRequests();renderCodes();renderVendors();renderNotes();renderStatus();renderOverride();renderBoard();renderHero();renderBuzzCard();renderPreview();renderRules();renderBulk();renderEvents();renderSheet();renderSetup();renderAg();renderLog()}
 /* ---------- history: every change saves a dated copy of the settings ---------- */
 const CFG=["outputs","situations","rules","doors","groups","accessGroups","types","events","hdates","gdates","away","rabbiAwayNow","rabbiAwaySince","candleOff","havOff","rtOff"];
 function snapshot(){const c={};CFG.forEach(k=>c[k]=structuredClone(S[k]));return c}
@@ -4671,6 +4763,70 @@ function showWhatChanges(el,ch,go){
   $("#wcBack").onclick=()=>{el.innerHTML=""};
   $("#wcGo").onclick=()=>{el.innerHTML="";go()}}
 /* ---------- wiring ---------- */
+// Emergency lockdown: outside doors, or every door, until someone ends it
+function outsideDoors(){const g=S.groups.find(x=>/outdoor|outside|exterior|street/i.test(x.name));return g?expandDoors(["g:"+g.id]):[]}
+function lockdownNow(){const now=Date.now();return S.overrides.filter(o=>o.mode==="Lockdown"&&o.from<=now&&(!o.to||o.to>now))}
+function renderLockBits(){const el=$("#opLock"),em=$("#opEmerg");if(!el||!em)return;const L=lockdownNow(),n=new Set(L.flatMap(o=>expandDoors(o.doors))).size;
+  el.innerHTML=L.length?`<div class="op-lockon"><span class="ic" style="--c:var(--r)">${ico("lockdown")}</span><span class="rt"><b>Lockdown is on: ${n} door${n>1?"s":""}</b><span>No one gets in, not even with a card or PIN. Started by ${esc(L[0].by||"someone")} ${esc(whenText(L[0].from))}.</span></span><button type="button" class="btn" data-lkend>End lockdown</button></div>`:"";
+  const out=outsideDoors();
+  em.innerHTML=`<div class="op-eb"><button type="button" class="op-lk" data-lk="out"${out.length?"":" disabled"}>${ico("lockdown")}<span><b>Lock down outside doors</b><small>${out.length?out.length+" doors":"Make a door group named Outdoor first"}</small></span></button><button type="button" class="op-lk all" data-lk="all">${ico("lockdown")}<span><b>Lock down every door</b><small>Inside and outside, ${S.doors.length} doors</small></span></button></div>`}
+function lockSheet(kind){const ids=kind==="all"?S.doors.map(d=>d.id):outsideDoors();
+  $("#opT").textContent=kind==="all"?"Lock down every door":"Lock down outside doors";
+  $("#opSheet").innerHTML=`<div class="op-warn">${ico("warn")}<span><b>No one will get in through ${ids.length} doors, not even with a card or PIN.</b> It stays on until someone taps End lockdown.</span></div>
+    <button type="button" class="op-buzz red" data-lkgo="${kind}">${ico("lockdown")}<span><b>Lock down now</b><small>${kind==="all"?"Every door, inside and outside":"Outside doors only"}</small></span></button>
+    <p class="gf">${esc(ids.map(doorName).slice(0,12).join(", "))}${ids.length>12?` and ${ids.length-12} more`:""}</p>`;OP_SEL=null;openModal("mOpen")}
+document.addEventListener("click",ev=>{const t=ev.target;
+  const lk=t.closest("[data-lk]");if(lk&&!lk.disabled){lockSheet(lk.dataset.lk);return}
+  const go=t.closest("[data-lkgo]");if(go){const kind=go.dataset.lkgo,ids=kind==="all"?S.doors.map(d=>d.id):outsideDoors(),now=Date.now();
+    ids.forEach(endOverridesFor);S.overrides.push({id:"lk"+now,doors:ids,mode:"Lockdown",from:now,to:null,by:S.me,why:kind==="all"?"Emergency: every door":"Emergency: outside doors"});
+    commit(`LOCKDOWN: ${kind==="all"?"every door":"outside doors"} (${ids.length} doors), until ended`);closeModal("mOpen");toast("Lockdown is on");renderLockBits();renderHomeLock();return}
+  if(t.closest("[data-lkend]")){const L=lockdownNow(),now=Date.now();L.forEach(o=>o.to=now);commit("Ended the lockdown. Doors are back on their schedule");toast("Lockdown ended");renderLockBits();renderHomeLock();return}});
+// Home: a red bar while a lockdown is on
+function renderHomeLock(){const el=$("#homeLock");if(!el)return;const L=lockdownNow(),n=new Set(L.flatMap(o=>expandDoors(o.doors))).size;el.hidden=!L.length;
+  el.innerHTML=L.length?`<span class="ic" style="--c:var(--r)">${ico("lockdown")}</span><span class="rt"><b>Lockdown is on: ${n} door${n>1?"s":""}</b><span>Tap to see or end it</span></span><span class="chev"></span>`:""}
+$("#homeLock").onclick=()=>showTab("lockdown");
+
+// Open a door: its own page, made for quick taps
+let OP_SEL=null;
+function opDoors(){const mayBuzz=isAdmin();return S.doors.filter(d=>mayBuzz||canChangeDoor(d.id))}
+function fixOpenNav(){const n=$("#openNav");if(n)n.hidden=!opDoors().length}
+function opTile(id,big){const f=doorFacts(id),pn=buzzPins().includes(id);
+  return `<div class="op-tw${big?" big":""}"><button type="button" class="op-t" data-op="${esc(id)}" style="--c:${modeColor(f.st.mode)}"><b>${esc(doorName(id))}</b><span><i class="dot"></i>${esc(f.label)}${f.hand?" · by hand":""}</span></button><button type="button" class="op-pin${pn?" on":""}" data-oppin="${esc(id)}" aria-pressed="${pn}" aria-label="${pn?"Unpin":"Pin"} ${esc(doorName(id))}" title="${pn?"Unpin":"Pin to the top"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z"/><path d="M12 13v8"/></svg></button></div>`}
+function renderOpen(){const body=$("#opBody");if(!body)return;fixOpenNav();
+  const ds=opDoors(),has=id=>ds.some(d=>d.id===id),q=($("#opQ").value||"").trim().toLowerCase();
+  if(!ds.length){body.innerHTML=emptyState("door","No doors to open","You don't have permission to open doors.","");return}
+  if(q){const f=ds.filter(d=>(d.name+" "+d.id).toLowerCase().includes(q));body.innerHTML=f.length?`<h2 class="gh op-h">Results</h2><div class="op-grid">${f.map(d=>opTile(d.id,true)).join("")}</div>`:`<p class="none">No door matches \u201c${esc(q)}\u201d.</p>`;return}
+  const pins=buzzPins().filter(has),rec=buzzRecent().filter(id=>has(id)&&!pins.includes(id)).slice(0,6);
+  const main=ds.filter(d=>/main ent/i.test(d.name)&&!pins.includes(d.id)&&!rec.includes(d.id)).map(d=>d.id);
+  const rest=ds.filter(d=>!pins.includes(d.id)).sort((a,b)=>doorName(a.id).localeCompare(doorName(b.id)));
+  body.innerHTML=(pins.length?`<h2 class="gh op-h">Pinned</h2><div class="op-grid">${pins.map(id=>opTile(id,true)).join("")}</div>`:`<p class="op-tip">Tip: tap the pin on any door to keep it at the top.</p>`)
+    +(rec.length?`<h2 class="gh op-h">Recent</h2><div class="op-grid">${rec.map(id=>opTile(id,true)).join("")}</div>`:"")
+    +(!pins.length&&!rec.length&&main.length?`<h2 class="gh op-h">Main doors</h2><div class="op-grid">${main.map(id=>opTile(id,true)).join("")}</div>`:"")
+    +`<h2 class="gh op-h">All doors</h2><div class="op-grid small">${rest.map(d=>opTile(d.id,false)).join("")}</div>`}
+function opSheet(id){OP_SEL=id;const f=doorFacts(id),mayBuzz=isAdmin(),mayOpen=canChangeDoor(id);
+  $("#opT").textContent=doorName(id);
+  $("#opSheet").innerHTML=`<div class="op-now" style="--c:${modeColor(f.st.mode)}"><i class="dot"></i><b>${esc(f.label)} now</b><span>${esc(f.nx)}</span></div>
+    ${mayBuzz?`<button type="button" class="op-buzz" data-opa="buzz">${ico("open")}<span><b>Buzz open</b><small>Unlocks for a few seconds</small></span></button>`:""}
+    ${mayOpen?`<h3 class="op-sh">Keep it open for</h3><div class="op-mins">${[5,10,20,30,60].map(m=>`<button type="button" data-opa="${m}">${m===60?"1 hour":m+" min"}</button>`).join("")}<button type="button" class="op-cbtn" data-opc>Other</button></div>
+    <div class="op-custom" id="opCustom" hidden><label class="op-n"><input type="number" id="opH" min="0" max="168" value="1" inputmode="numeric" aria-label="Hours"><span>hours</span></label><label class="op-n"><input type="number" id="opM" min="0" max="59" value="30" step="5" inputmode="numeric" aria-label="Minutes"><span>min</span></label><button type="button" class="btn pri" id="opCGo">Open</button></div>${f.hand?`<button type="button" class="op-back" data-opa="back">Back to schedule</button>`:""}`:""}
+    <p class="gf">Every buzz and open is saved in Activity.</p>`;openModal("mOpen")}
+function durText(m){const h=Math.floor(m/60),r=m%60;return h?`${h} hour${h>1?"s":""}${r?` ${r} min`:""}`:`${m} min`}
+async function opAct(k,btn){const id=OP_SEL;if(!id)return;const name=doorName(id);
+  if(k==="buzz"){btn.disabled=true;const t=btn.innerHTML;btn.innerHTML=`<span><b>Buzzing…</b></span>`;const j=await buzzDoor(id);btn.disabled=false;
+    if(j&&j.sent){buzzRemember(id);commit(`Buzzed ${name} open`);toast(`${name} buzzed open`);closeModal("mOpen");renderOpen()}else{btn.innerHTML=t;toast((j&&(j.message||j.error))||"Not sent")}return}
+  if(k==="back"){endOverridesFor(id);buzzRemember(id);commit(`${name}: back to the schedule`);toast(`${name} is back on its schedule`);closeModal("mOpen");renderOpen();return}
+  const mins=+k,now=Date.now(),o={id:"o"+now,doors:[id],mode:"Unlock",from:now,to:now+mins*60e3,by:S.me,why:"Quick open"};
+  endOverridesFor(id);S.overrides.push(o);buzzRemember(id);commit(`By hand: Open on ${name} until ${whenText(o.to)} (quick open, ${mins} min)`);toast(`${name} is open for ${durText(mins)}`);closeModal("mOpen");renderOpen()}
+document.addEventListener("click",ev=>{const t=ev.target;
+  const pn=t.closest("[data-oppin]");if(pn){const id=pn.dataset.oppin,u=S.users.find(x=>x.name===S.me);if(u){const p=buzzPins();u.buzzPins=p.includes(id)?p.filter(x=>x!==id):[...p,id];save()}renderOpen();return}
+  const d=t.closest("[data-op]");if(d){opSheet(d.dataset.op);return}
+  const a=t.closest("[data-opa]");if(a&&!a.disabled){opAct(a.dataset.opa,a);return}
+  if(t.closest("[data-opc]")){const c=$("#opCustom");c.hidden=!c.hidden;if(!c.hidden){$("#opH").focus();$("#opH").select()}return}
+  if(t.closest("#opCGo")){const m=Math.round((+$("#opH").value||0)*60+(+$("#opM").value||0));
+    if(!(m>=1)){$("#opN").focus();return}if(m>7*1440){toast("That is more than a week. Use a rule for that.");return}opAct(String(m),t.closest("#opCGo"));return}
+  if(t.closest("#homeOpen")){showTab("open")}});
+$("#opQ").addEventListener("input",renderOpen);
+
 $("#homeMsg").onclick=()=>showTab("msgs");
 // on touch screens the keyboard covers the bottom half: bring the box being typed in to the middle
 if(window.matchMedia&&matchMedia("(pointer:coarse)").matches){
@@ -4791,18 +4947,18 @@ $("#gdNew").onclick=openGuide;
 $("#undoBtn").onclick=doUndo;$("#undoX").onclick=()=>{UNDO=null;showUndo()};
 
 // phone bar: Home plus the three places this person opens most
-const NAV_HOME={sheet:"preview",events:"rules",special:"rules",live:"activity",reports:"activity",people:"setup"};
+const NAV_HOME={lockdown:"lockdown",sheet:"preview",events:"rules",special:"rules",live:"activity",reports:"activity",people:"setup"};
 function useKey(){return "sdUse:"+(S.me||"")}
 function useCount(t){t=NAV_HOME[t]||t;if(t==="board")return;try{const k=useKey(),u=JSON.parse(localStorage.getItem(k)||"{}");u[t]=(u[t]||0)+1;localStorage.setItem(k,JSON.stringify(u))}catch(e){}}
 var BNAV_KEY="";
 function buildBnav(){const bar=document.querySelector(".bnav");if(!bar)return;
   let u={};try{u=JSON.parse(localStorage.getItem(useKey())||"{}")}catch(e){}
   const vis=t=>{const b=document.querySelector(`#sideNav .navbtn[data-tab="${t}"]`);return b&&getComputedStyle(b).display!=="none"&&!b.hidden};
-  const dflt=["doors","preview","rules"],total=Object.values(u).reduce((a,b)=>a+b,0);
+  const dflt=["open","doors","preview"],total=Object.values(u).reduce((a,b)=>a+b,0);
   let pick=total>=12?Object.keys(u).filter(vis).sort((a,b)=>u[b]-u[a]||dflt.indexOf(b)-dflt.indexOf(a)).slice(0,3):[];
   dflt.forEach(t=>{if(pick.length<3&&!pick.includes(t)&&vis(t))pick.push(t)});
   const tabs=["board",...pick],key=tabs.join(",");if(key===BNAV_KEY)return;BNAV_KEY=key;
-  const short={preview:"Schedule",rules:"Rules",codes:"Codes",setup:"Settings",activity:"Activity"};
+  const short={open:"Open",preview:"Schedule",rules:"Rules",codes:"Codes",setup:"Settings",activity:"Activity"};
   const more=$("#moreBtn");
   bar.querySelectorAll("[data-tab]").forEach(b=>b.remove());
   tabs.forEach(t=>{const src=document.querySelector(`#sideNav .navbtn[data-tab="${t}"]`);const b=document.createElement("button");b.type="button";const cur=(()=>{try{return CUR_TAB}catch(e){return "board"}})();b.className="navbtn"+(t===cur||(src.dataset.also||"").split(" ").includes(cur)?" on":"");b.dataset.tab=t;if(src.dataset.also)b.dataset.also=src.dataset.also;
@@ -4824,7 +4980,7 @@ document.addEventListener("click",ev=>{const b=ev.target.closest("#pageTabs [dat
 function actFirst(){return ["activity","live","reports"].find(tabOk)}
 function fixActNav(){const n=$("#actNav");if(n)n.hidden=!actFirst()}
 
-const TITLES={people:"People",live:"Activity",board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules and events",events:"Rules and events",special:"Rules and events",codes:"Guest codes",msgs:"Messages",reports:"Activity",activity:"Activity",setup:"Settings"};
+const TITLES={open:"Open a door",lockdown:"Lockdown",people:"People",live:"Activity",board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules and events",events:"Rules and events",special:"Rules and events",codes:"Guest codes",msgs:"Messages",reports:"Activity",activity:"Activity",setup:"Settings"};
 document.querySelectorAll(".navbtn[data-tab]").forEach(b=>b.onclick=()=>showTab(b.dataset.tab==="activity"?actFirst()||"board":b.dataset.tab));
 function setDrawer(open){document.body.classList.toggle("drawer",open);$("#scrim").hidden=!open;$("#menuBtn").setAttribute("aria-expanded",open)}
 document.querySelectorAll(".viewseg button").forEach(b=>b.onclick=()=>{SIMPLE=b.dataset.view==="simple";try{localStorage.setItem("shulDoorSimple",SIMPLE?"1":"0")}catch(e){}setPref("simple",SIMPLE);renderView();fixActNav();if(!tabOk(CUR_TAB))showTab(actFirst()||"board");else drawPageTabs(CUR_TAB);if(CUR_TAB==="setup")renderSetupIndex()});
@@ -4834,7 +4990,7 @@ $("#moreBtn").onclick=()=>setDrawer(true);
 $("#scrim").onclick=()=>setDrawer(false);
 document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab(b.dataset.go));
 addEventListener("keydown",ev=>{if(ev.key==="Escape")setDrawer(false)});
-const SUBS={people:"Everyone with a card or PIN in Protector.Net",live:"Who is coming in, at every door, as it happens",board:"",doors:"Live status of every door. Tap one to change it.",preview:"What every door does, hour by hour",sheet:"One week on one page, ready to print or email",rules:"The standing instructions the doors follow",events:"Weddings, sheva brachos and the shul's own dates",codes:"PINs for visitors that expire on their own",msgs:"Ask a teammate to make a change",reports:"How the doors are used",activity:"What changed, and what the doors were doing at any moment",setup:""};
+const SUBS={lockdown:"For an emergency. No one gets in, not even with a card or PIN, until you end it",open:"Tap a door, then buzz it or open it for a few minutes",people:"Everyone with a card or PIN in Protector.Net",live:"Who is coming in, at every door, as it happens",board:"",doors:"Live status of every door. Tap one to change it.",preview:"What every door does, hour by hour",sheet:"One week on one page, ready to print or email",rules:"The standing instructions the doors follow",events:"Weddings, sheva brachos and the shul's own dates",codes:"PINs for visitors that expire on their own",msgs:"Ask a teammate to make a change",reports:"How the doors are used",activity:"What changed, and what the doors were doing at any moment",setup:""};
 function showTab(t){CUR_TAB=t;useCount(t);if(t!=="doors"&&typeof SELMODE!=="undefined"&&SELMODE){SELMODE=false;DSEL.clear();document.body.classList.remove("selmode")}document.querySelectorAll(".navbtn[data-tab]").forEach(x=>x.classList.toggle("on",x.dataset.tab===t||(x.dataset.also||"").split(" ").includes(t)));
   drawPageTabs(t);
   const inBar=[...document.querySelectorAll(".bnav [data-tab]")].some(x=>x.dataset.tab===t||(x.dataset.also||"").split(" ").includes(t));
@@ -4842,7 +4998,7 @@ function showTab(t){CUR_TAB=t;useCount(t);if(t!=="doors"&&typeof SELMODE!=="unde
   $("#pageTitle").textContent=TITLES[t]||"";$("#pageSub").textContent=SUBS[t]||"";$("#pageSub").hidden=!SUBS[t];
   document.querySelectorAll("#pageAct [data-for]").forEach(b=>b.hidden=b.dataset.for!==t||(b.dataset.tcv&&b.dataset.tcv!==TCV)||(b.id==="gdNew"&&(sched()==="none"||!visDoors().some(d=>perm(d.id)==="edit"))));
   setDrawer(false);hideTip();
-  ["board","doors","live","people","preview","rules","events","special","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);liveRun(t==="live");if(t==="doors")renderBoard();if(t==="codes"&&ON_BOX)renderCodes();if(t==="people")ppFetch(false);
+  ["board","open","lockdown","doors","live","people","preview","rules","events","special","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);liveRun(t==="live");if(t==="open")renderOpen();if(t==="lockdown")renderLockBits();if(t==="doors")renderBoard();if(t==="codes"&&ON_BOX)renderCodes();if(t==="people")ppFetch(false);
   if(t==="codes")setTCV(TCV);if(t==="reports")renderReports();if(t==="activity")renderLog();if(t==="setup"){$("#split").classList.remove("detail");renderSetupIndex()}
   scrollTo({top:0})}
 let SP=null;
