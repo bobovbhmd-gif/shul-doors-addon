@@ -3646,7 +3646,13 @@ function endOverridesFor(id){const now=Date.now();
 function openDoor(id){DOOR_OPEN=id;DM_PICK=null;renderDoorSheet();openModal("mDoor");$("#doorBody").scrollTop=0}
 /* ---------- home hero (plain-language summary) ---------- */
 let SIMPLE=true;try{SIMPLE=localStorage.getItem("shulDoorSimple")!=="0"}catch(e){}
-function renderView(){document.body.classList.toggle("simple",SIMPLE);try{fixActNav();buildBnav()}catch(e){}document.querySelectorAll(".viewseg button").forEach(b=>b.classList.toggle("on",(b.dataset.view==="simple")===SIMPLE))}
+// each person's views (Simple or Full, door layout, rule grouping) follow them to every device
+let PREFS_FOR=null;
+function myUser(){return (S.users||[]).find(x=>x.name===S.me)}
+function setPref(k,v){const u=myUser();if(!u)return;if(u.prefs&&u.prefs[k]===v)return;u.prefs={...(u.prefs||{}),[k]:v};save()}
+function applyPrefs(){if(PREFS_FOR===S.me)return;PREFS_FOR=S.me;const p=(myUser()||{}).prefs||{};
+  if(typeof p.simple==="boolean")SIMPLE=p.simple;if(["grid","list","area"].includes(p.doorView))DV=p.doorView;if(["kind","area"].includes(p.ruleGroup))RGROUP=p.ruleGroup}
+function renderView(){try{applyPrefs()}catch(e){}document.body.classList.toggle("simple",SIMPLE);try{fixActNav();buildBnav()}catch(e){}document.querySelectorAll(".viewseg button").forEach(b=>b.classList.toggle("on",(b.dataset.view==="simple")===SIMPLE))}
 function plainMode(m){return m==="Unlock"?"open":m==="Lockdown"?"in lockdown":m==="Card or Pin"?"locked (card or PIN)":"locked ("+m.toLowerCase()+")"}
 const MODE_WORD={"Card or Pin":"card or PIN","Card":"card only","Pin":"PIN only","Card and Pin":"card and PIN","First Credential In":"first credential in"};
 function nextVerb(door,next){const m=next.mode,f=next.from;
@@ -4682,7 +4688,7 @@ function fixActNav(){const n=$("#actNav");if(n)n.hidden=!actFirst()}
 const TITLES={people:"People",live:"Activity",board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules and events",events:"Rules and events",special:"Rules and events",codes:"Guest codes",msgs:"Messages",reports:"Activity",activity:"Activity",setup:"Settings"};
 document.querySelectorAll(".navbtn[data-tab]").forEach(b=>b.onclick=()=>showTab(b.dataset.tab==="activity"?actFirst()||"board":b.dataset.tab));
 function setDrawer(open){document.body.classList.toggle("drawer",open);$("#scrim").hidden=!open;$("#menuBtn").setAttribute("aria-expanded",open)}
-document.querySelectorAll(".viewseg button").forEach(b=>b.onclick=()=>{SIMPLE=b.dataset.view==="simple";try{localStorage.setItem("shulDoorSimple",SIMPLE?"1":"0")}catch(e){}renderView();fixActNav();if(!tabOk(CUR_TAB))showTab(actFirst()||"board");else drawPageTabs(CUR_TAB);if(CUR_TAB==="setup")renderSetupIndex()});
+document.querySelectorAll(".viewseg button").forEach(b=>b.onclick=()=>{SIMPLE=b.dataset.view==="simple";try{localStorage.setItem("shulDoorSimple",SIMPLE?"1":"0")}catch(e){}setPref("simple",SIMPLE);renderView();fixActNav();if(!tabOk(CUR_TAB))showTab(actFirst()||"board");else drawPageTabs(CUR_TAB);if(CUR_TAB==="setup")renderSetupIndex()});
 let CUR_TAB="board";
 $("#menuBtn").onclick=()=>setDrawer(!document.body.classList.contains("drawer"));
 $("#moreBtn").onclick=()=>setDrawer(true);
@@ -4763,7 +4769,7 @@ function searchSel(sel){if(!sel||sel.dataset.spk)return;sel.dataset.spk="1";
 ["#rqDoorF","#pvDoorF","#shDoorF","#rpDoor","#lvDoor"].forEach(id=>searchSel($(id)));
 ["#pvDoorF","#shDoorF"].forEach(id=>{const el=$(id);if(el)el.addEventListener("change",ev=>{PV_DOOR=ev.target.value;try{localStorage.setItem("shulPvDoor",PV_DOOR)}catch(e){}renderPreview();renderSheet()})});
 $("#vList").onclick=()=>setView("list");
-$("#rqGroup").addEventListener("click",ev=>{const b=ev.target.closest("[data-rg]");if(!b)return;RGROUP=b.dataset.rg;try{localStorage.setItem("sdRuleGroup",RGROUP)}catch(e){}renderRules()});$("#rqSearch").addEventListener("input",renderRules);$("#rqDoorF").addEventListener("change",renderRules);$("#rqModeF").addEventListener("change",renderRules);
+$("#rqGroup").addEventListener("click",ev=>{const b=ev.target.closest("[data-rg]");if(!b)return;RGROUP=b.dataset.rg;try{localStorage.setItem("sdRuleGroup",RGROUP)}catch(e){}setPref("ruleGroup",RGROUP);renderRules()});$("#rqSearch").addEventListener("input",renderRules);$("#rqDoorF").addEventListener("change",renderRules);$("#rqModeF").addEventListener("change",renderRules);
 // situations
 $("#sitChips").addEventListener("click",ev=>{const b=ev.target.closest("[data-sit]");if(!b)return;const x=sitOf(b.dataset.sit);const t=todayNY();
   if(x.ranges.some(r=>t<=r.to&&t>=r.from)&&!x.on){$("#sitChips").title=`"${x.name}" is on by its dates. Edit them in Settings.`;return}
@@ -5028,7 +5034,7 @@ $("#dFilters").addEventListener("click",ev=>{const b=ev.target.closest("[data-df
 $("#board").addEventListener("click",ev=>{const e=ev.target.closest("[data-df]");if(e){DF=e.dataset.df;renderBoard();return}if(ev.target.closest("a"))return;const d=ev.target.closest("[data-door]");if(!d)return;if(SELMODE){const id=d.dataset.door;if(!selectable(id)){toast("You can view this door but not change it");return}DSEL.has(id)?DSEL.delete(id):DSEL.add(id);renderBoard();return}openDoor(d.dataset.door)});
 $("#board").addEventListener("keydown",ev=>{if((ev.key==="Enter"||ev.key===" ")&&ev.target.matches("[data-door]")){ev.preventDefault();ev.target.click()}});
 $("#dSearch").addEventListener("input",renderBoard);
-document.querySelectorAll("#dView [data-dv]").forEach(b=>b.onclick=()=>{DV=b.dataset.dv;try{localStorage.setItem("shulDoorView2",DV)}catch(e){}renderBoard()});
+document.querySelectorAll("#dView [data-dv]").forEach(b=>b.onclick=()=>{DV=b.dataset.dv;try{localStorage.setItem("shulDoorView2",DV)}catch(e){}setPref("doorView",DV);renderBoard()});
 $("#doorBody").addEventListener("mousemove",ev=>{const el=ev.target.closest("[data-tip]");el?showTip(el,ev.clientX,ev.clientY):hideTip()});
 $("#doorBody").addEventListener("mouseleave",hideTip);
 $("#doorBody").addEventListener("click",ev=>{
