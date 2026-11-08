@@ -1536,7 +1536,8 @@ body.simple .hsys.ok{display:none}
 .wk-none{color:var(--muted);opacity:.6}
 
 .ptitle{display:flex;align-items:center;gap:10px}
-.phelp{flex:none;width:28px;height:28px;border-radius:50%;border:0;background:var(--fill2);color:var(--muted);font:inherit;font-size:15px;font-weight:700;cursor:pointer;line-height:1;padding:0}
+.phelp{flex:none;width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--muted);cursor:pointer;padding:0;display:grid;place-items:center}
+.phelp svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
 .phelp:hover{color:var(--accent)}
 .tour{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center;padding:16px 16px calc(96px + env(safe-area-inset-bottom))}
 .tour[hidden]{display:none}
@@ -1684,7 +1685,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
   <main class="main">
     <div id="sdBanner" class="sdbanner" hidden></div>
   <div class="pagehead">
-    <div class="ph-txt"><h1 class="ptitle"><span id="pageTitle">Home</span><button type="button" class="phelp" id="pageHelp" aria-label="Help for this page">?</button></h1><p class="psub" id="pageSub"></p><div class="ptabs" id="pageTabs" role="tablist" hidden></div></div>
+    <div class="ph-txt"><h1 class="ptitle"><span id="pageTitle">Home</span><button type="button" class="phelp" id="pageHelp" aria-label="About this page" title="About this page"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></button></h1><p class="psub" id="pageSub"></p><div class="ptabs" id="pageTabs" role="tablist" hidden></div></div>
     <div class="pact" id="pageAct">
       <button class="btn pri" type="button" id="addRule" data-for="rules"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New rule</button>
       <button class="btn" type="button" id="gdNew" data-for="rules"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>Quick schedule</button>
@@ -4545,7 +4546,7 @@ const TOUR=[["Welcome to Shul Doors","This runs the shul's real doors. Here is t
  ["Home","Tells you if anything is wrong, which doors are open, and what changes next.","board"],
  ["Doors","Tap any door to open or lock it by hand. It goes back to its schedule at the time you pick.","doors"],
  ["Rules and events","The standing instructions. Use Quick schedule for one date. You always see what changes before it is saved, and you can undo for 10 minutes.","rules"],
- ["When in doubt, ask","Tap ? on any page, or ask the assistant. If you are not sure, ask before you change. These are real doors.","board"]];
+ ["When in doubt, ask","Tap the i next to any page title, or ask the assistant. If you are not sure, ask before you change. These are real doors.","board"]];
 let TOUR_I=0;
 function startTour(){TOUR_I=0;drawTour();$("#tour").hidden=false}
 function drawTour(){const [t,p,tab]=TOUR[TOUR_I];if(tab&&CUR_TAB!==tab)showTab(tab);$("#tourT").textContent=t;$("#tourP").textContent=p;$("#tourN").textContent=`${TOUR_I+1} of ${TOUR.length}`;$("#tourNext").textContent=TOUR_I===TOUR.length-1?"Got it":"Next";$("#tourSkip").hidden=TOUR_I===TOUR.length-1}
