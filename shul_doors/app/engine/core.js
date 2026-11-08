@@ -28,7 +28,7 @@ const WDN=["Sun","Mon","Tue","Wed","Thu","Fri","Shabbos"];
 const HMONTHS=[[7,"Tishrei"],[8,"Cheshvan"],[9,"Kislev"],[10,"Teves"],[11,"Shvat"],[14,"Adar I"],[12,"Adar"],[1,"Nissan"],[2,"Iyar"],[3,"Sivan"],[4,"Tammuz"],[5,"Av"],[6,"Elul"]];
 const HMN={1:"Nissan",2:"Iyar",3:"Sivan",4:"Tammuz",5:"Av",6:"Elul",7:"Tishrei",8:"Cheshvan",9:"Kislev",10:"Teves",11:"Shvat",12:"Adar",13:"Adar II"};
 const MODES=["Unlock","Card or Pin","Card","Pin","Card and Pin","First Credential In","Lockdown"];
-const ANCHORS={clock:"Clock time",alos:"Alos",sunrise:"Netz (sunrise)",chatzos:"Chatzos",plag:"Plag hamincha",sunset:"Shkiah (sunset)",candles:"Candle lighting",tzeis:"Tzeis",havdalah:"Havdalah (same as Rabbeinu Tam)",rt:"Rabbeinu Tam"};
+const ANCHORS={clock:"Clock time",alos:"Alos",sunrise:"Netz (sunrise)",chatzos:"Chatzos",plag:"Plag hamincha",sunset:"Shkiah (sunset)",candles:"Candle lighting",tzeis:"Tzeis",havdalah:"Havdalah",rt:"Rabbeinu Tam"};
 const ALERTS=[["offline","A panel goes offline"],["ups","Power goes out and the box runs on the UPS battery"],["batt","The UPS battery drops below 50%"],["push","The nightly push to the doors fails"],["heartbeat","This system stops responding (checked from outside every 5 min)"],["held","A door is held open longer than"],["conflicts","The preview finds a conflict in the next 14 days"]];
 
 const W5=[0,1,2,3,4];
@@ -135,7 +135,7 @@ S.users.forEach(u=>{if(u.role==="Restricted"&&!u.sched)u.sched=(u.can||{}).rules
 function sched(){return isAdmin()?"both":(me().sched||"none")}
 function can(k){if(k==="rules")return sched()!=="none";return isAdmin()||!!(me().can||{})[k]}
 // a temporary rule runs only on specific one-time dates or one specific event; anything that repeats is permanent
-function isTempRule(r){const n=r.inc;return !n.wd.length&&!n.hr.length&&n.fest.every(k=>k.startsWith("ev:"))&&n.dates.every(d=>!d.yearly)&&(n.dates.length+n.fest.length)>0}
+function isTempRule(r){const n=r.inc;return !n.wd.length&&n.hr.every(h=>h.y)&&n.fest.every(k=>k.startsWith("ev:"))&&n.dates.every(d=>!d.yearly)&&(n.dates.length+n.fest.length+n.hr.length)>0}
 function ruleLastDay(r){let last="";r.inc.dates.forEach(d=>{if(d.to>last)last=d.to});r.inc.fest.forEach(k=>{const e=S.events.find(x=>"ev:"+x.id===k);if(e&&e.to>last)last=e.to});return last}
 function isArchived(r){if(r.until&&addDays(r.until,(+r.end.days||0)+1)<todayNY())return true;if(!isTempRule(r))return false;const last=ruleLastDay(r);return !!last&&addDays(last,(+r.end.days||0)+1)<todayNY()}
 function canSchedule(r){const sc=sched();return sc==="both"||(sc==="temp"&&isTempRule(r))}
@@ -216,8 +216,9 @@ function hdMatches(hd,h){
 // position inside the Hebrew year (Tishrei first), for date ranges
 const MORD={7:0,8:1,9:2,10:3,11:4,14:5,12:6,13:6,1:7,2:8,3:9,4:10,5:11,6:12};
 function hOrd(h){const m=(h.leap&&h.m===12)?14:h.m;return MORD[m]*31+h.d}
-function hrMatches(r,h){if(!h)return false;const a=MORD[r.fm]*31+r.fd,b=MORD[r.tm]*31+r.td,x=hOrd(h);return a<=b?(x>=a&&x<=b):(x>=a||x<=b)}
-function hrText(r){return `${r.fd} ${monthName(r.fm)} to ${r.td} ${monthName(r.tm)}`}
+function hrMatches(r,h,s){if(!h)return false;const a=MORD[r.fm]*31+r.fd,b=MORD[r.tm]*31+r.td,x=hOrd(h);const inR=a<=b?(x>=a&&x<=b):(x>=a||x<=b);
+  if(!inR||!r.y||!s)return inR;const hy=hebYear(s);return a<=b||x>=a?hy===+r.y:hy===+r.y+1}   // r.y: only that Hebrew year
+function hrText(r){const one=r.fd===r.td&&r.fm===r.tm;return `${r.fd} ${monthName(r.fm)}${one?"":` to ${r.td} ${monthName(r.tm)}`}${r.y?`, ${r.y} only`:", every year"}`}
 function monthName(m){return (HMONTHS.find(x=>x[0]===m)||[0,"?"])[1]}
 const RH_DAYS=Object.keys(CAL).filter(k=>CAL[k].includes("rh1")).sort();   // Rosh Hashana of 5787, 5788, ...
 function hebYear(s){let y=5786;RH_DAYS.forEach(d=>{if(s>=d)y++});return y}
@@ -316,11 +317,11 @@ function evalRule(r,info,door,seen){
   if(info.plain) return r.inc.wd.includes(info.w)&&!givesWay(r,info,door,seen)?{score:10+(r.rabbi!=="any"?10:0)+(r.season!=="any"?5:0),via:WDN[info.w]}:null;
   if(x.fest.some(k=>info.keys.has(k))) return null;
   if(x.dates.some(d=>dateMatch(d,info.s))) return null;
-  if(x.hr.some(hr=>hrMatches(hr,info.h))) return null;
+  if(x.hr.some(hr=>hrMatches(hr,info.h,info.s))) return null;
   let best=-1, via="";
   const n=r.inc;
   if(n.wd.includes(info.w)&&10>best){best=10;via=WDN[info.w]}
-  n.hr.forEach(hr=>{ if(hrMatches(hr,info.h)&&55>best){best=55;via=hrText(hr)} });
+  n.hr.forEach(hr=>{ if(hrMatches(hr,info.h,info.s)&&55>best){best=55;via=hrText(hr)} });
   n.fest.forEach(k=>{ if(info.keys.has(k)&&keyRank(k)>best){best=keyRank(k);via=keyLabel(k)} });
   n.dates.forEach(d=>{ const r=d.yearly?55:100; if(dateMatch(d,info.s)&&r>best){best=r;via=dateText(d)} });
   if(best<0) return null;
