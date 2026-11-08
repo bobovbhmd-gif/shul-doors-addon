@@ -1636,6 +1636,9 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 #tab-special .spc h2.gh{margin:0 0 4px;font-size:18px}
 .setnav .si-h{margin:14px 4px 6px;font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
 .setnav .si-h:first-child{margin-top:0}
+
+#tab-special .row .erN{flex:1;min-width:0;font:inherit;font-size:16px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--fill2);color:var(--text)}
+#tab-special .row{flex-wrap:wrap;gap:8px}
 </style>
 
 <button class="ask-fab" type="button" id="askOpen" hidden aria-label="Ask the assistant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Ask the assistant</span></button>
@@ -3313,7 +3316,7 @@ function renderSetup(){
     <div class="row"><div class="checks plist">${S.doors.map(d=>`<label><input type="checkbox" data-gid="${esc(g.id)}" value="${esc(d.id)}"${g.doors.includes(d.id)?" checked":""}>${esc(d.name)}</label>`).join("")}</div></div>
     <div class="row"><span class="rt"><span>Set the default for all of them</span></span><select data-gdefsel="${esc(g.id)}" aria-label="Default for ${esc(g.name)}">${MODES.map(m=>`<option value="${m}">${esc(modeLabel(m))}</option>`).join("")}</select><button class="btn sm" type="button" data-gdef="${esc(g.id)}">Apply</button></div></div>`).join("")||`<div class="glist"><div class="row"><span class="hint">No groups yet.</span></div></div>`;
   $("#candleOff").value=S.candleOff;$("#havOff").value=S.rtOff;
-  $("#awayRows").innerHTML=S.away.length?S.away.map((a,i)=>`<div class="row"><span class="ic" style="--c:var(--p)">${ico("cal")}</span><div class="rt"><b>${esc(rangeText(a.from,a.to))}</b></div><button class="btn sm danger" type="button" data-adel="${i}">Remove</button></div>`).join(""):`<div class="row"><span class="hint">No away dates set.</span></div>`;
+  $("#awayRows").innerHTML=S.away.length?S.away.map((a,i)=>`<div class="row"><span class="ic" style="--c:var(--p)">${ico("cal")}</span><div class="rt"><b>${esc(rangeText(a.from,a.to))}</b></div><button class="btn sm" type="button" data-aed="${i}">Change</button><button class="btn sm danger" type="button" data-adel="${i}">Remove</button></div>`).join(""):`<div class="row"><span class="hint">No away dates set.</span></div>`;
   $("#contactRows").innerHTML=S.contacts.map((c,i)=>`<div class="row"><span class="avatar">${esc(initials(c.name))}</span><div class="rt"><b>${esc(c.name)}</b><span>${esc(c.to)} · ${c.sms&&c.consentAt?`gets texts, agreed ${esc(shortDate(nyDate(c.consentAt)))}`:`<span class="warnm">no texts until they agree</span>`}</span></div>${c.sms&&c.consentAt?`<button class="btn sm" type="button" data-cstop="${i}">Stop texts</button>`:`<button class="btn sm" type="button" data-cok="${i}">They agreed</button>`}<button class="btn sm danger" type="button" data-cdel="${i}">Remove</button></div>`).join("")||`<div class="row"><span class="hint">No one gets alerts yet.</span></div>`;
   const NOTYET=ON_BOX?["offline","ups","batt","heartbeat"]:[];
   $("#alertChecks").innerHTML=ALERTS.map(([k,l])=>`<label class="row swrow" for="al-${k}"><span class="rt"><b>${esc(l)}</b>${k==="held"?`<span>After <input type="number" id="heldMin" min="1" max="120" value="${S.alerts.heldMin}" aria-label="Minutes"> minutes</span>`:""}${NOTYET.includes(k)?`<span>Not connected yet</span>`:""}</span><input type="checkbox" class="switch" id="al-${k}" data-alert="${k}"${S.alerts[k]?" checked":""}></label>`).join("");
@@ -4058,9 +4061,9 @@ function renderSituations(){
   $("#sitChips").innerHTML=S.situations.map(x=>{const on=act.has(x.id),byDate=x.ranges.some(r=>t>=r.from&&t<=r.to);
     return `<div class="row"><span class="ic" style="--c:${x.top?"var(--r)":"var(--o)"}">${ico("flag")}</span><div class="rt"><b>${esc(x.name)}</b>${byDate?'<span>On by its dates</span>':x.top?'<span>Beats everything</span>':""}</div>
     <button type="button" class="sit tgl${on?" on":""}" data-sit="${esc(x.id)}" role="switch" aria-checked="${on}" aria-label="${esc(x.name)}"${may?"":" disabled"}><i></i></button></div>`}).join("");
-  $("#sitRows").innerHTML=S.situations.map(x=>`<div class="glist gblock"><div class="row"><span class="ic" style="--c:${x.top?"var(--r)":"var(--o)"}">${ico("flag")}</span><div class="rt"><b>${esc(x.name)}</b><span>${(n=>n===1?"1 rule uses it":n+" rules use it")(S.rules.filter(r=>r.sit===x.id).length)}</span></div><button class="btn sm danger" type="button" data-sitdel="${esc(x.id)}">Remove</button></div>
+  $("#sitRows").innerHTML=S.situations.map(x=>`<div class="glist gblock"><div class="row"><span class="ic" style="--c:${x.top?"var(--r)":"var(--o)"}">${ico("flag")}</span><div class="rt"><b>${esc(x.name)}</b><span>${(n=>n===1?"1 rule uses it":n+" rules use it")(S.rules.filter(r=>r.sit===x.id).length)}</span></div><button class="btn sm" type="button" data-sitren="${esc(x.id)}">Rename</button><button class="btn sm danger" type="button" data-sitdel="${esc(x.id)}">Remove</button></div>
     <label class="row swrow"><span class="rt"><b>Beats everything</b><span>Wins even over holidays</span></span><input type="checkbox" class="switch" data-sittop="${esc(x.id)}"${x.top?" checked":""}></label>
-    ${x.ranges.map((r,i)=>`<div class="row"><span class="rt"><span>On ${esc(rangeText(r.from,r.to))}</span></span><button class="btn sm danger" type="button" data-sitrm="${esc(x.id)}|${i}">Remove</button></div>`).join("")}
+    ${x.ranges.map((r,i)=>`<div class="row"><span class="rt"><span>On ${esc(rangeText(r.from,r.to))}</span></span><button class="btn sm" type="button" data-sited="${esc(x.id)}|${i}">Change</button><button class="btn sm danger" type="button" data-sitrm="${esc(x.id)}|${i}">Remove</button></div>`).join("")}
     <div class="row"><span class="rt"><span>Add dates</span></span><input type="date" data-sitf="${esc(x.id)}" aria-label="From"><span class="hint">to</span><input type="date" data-sitt="${esc(x.id)}" aria-label="To"><button class="btn sm" type="button" data-sitadd="${esc(x.id)}">Add</button></div></div>`).join("");
 }
 /* ---------- system health (sample values in the prototype) ---------- */
@@ -4739,7 +4742,14 @@ $("#sitChips").addEventListener("click",ev=>{const b=ev.target.closest("[data-si
   if(x.ranges.some(r=>t<=r.to&&t>=r.from)&&!x.on){$("#sitChips").title=`"${x.name}" is on by its dates. Edit them in Settings.`;return}
   x.on=!x.on;if(x.on)x.since=todayNY();else delete x.since;commit(`"${x.name}" turned ${x.on?"on":"off"}`)});
 $("#addSit").onclick=()=>{const n=$("#newSit").value.trim();if(!n)return;S.situations.push({id:"s"+Date.now(),name:n,on:false,top:false,ranges:[]});$("#newSit").value="";commit(`Added situation "${n}"`)};
+// change a date range in place: two dates, Save or Cancel
+function editRange(row,r,save){row.innerHTML=`<span class="rt"><span>From</span></span><input type="date" class="erF" value="${esc(r.from)}" aria-label="From"><span class="hint">to</span><input type="date" class="erT" value="${esc(r.to)}" aria-label="To"><button class="btn sm pri" type="button" data-ersave>Save</button><button class="btn sm" type="button" data-ercancel>Cancel</button>`;
+  row.querySelector("[data-ersave]").onclick=ev=>{ev.stopPropagation();const f=row.querySelector(".erF").value,t=row.querySelector(".erT").value||f;if(!f||t<f){row.querySelector(".erT").focus();return}save(f,t)};
+  row.querySelector("[data-ercancel]").onclick=ev=>{ev.stopPropagation();renderAll()};row.querySelector(".erF").focus()}
 $("#sitRows").addEventListener("click",ev=>{const t=ev.target.closest("button");if(!t)return;const d=t.dataset;
+  if(d.sited){const [id,i]=d.sited.split("|");const x=sitOf(id),r=x.ranges[+i];editRange(t.closest(".row"),r,(f,to)=>{const was=rangeText(r.from,r.to);r.from=f;r.to=to;commit(`"${x.name}" dates changed to ${rangeText(f,to)} (was ${was})`)});return}
+  if(d.sitren){const x=sitOf(d.sitren),row=t.closest(".row");row.innerHTML=`<input class="erN" value="${esc(x.name)}" aria-label="Name"><button class="btn sm pri" type="button" data-nsave>Save</button><button class="btn sm" type="button" data-ncancel>Cancel</button>`;const inp=row.querySelector(".erN");inp.focus();inp.select();
+    row.querySelector("[data-nsave]").onclick=e2=>{e2.stopPropagation();const n=inp.value.trim();if(!n||n===x.name){renderAll();return}const was=x.name;x.name=n;commit(`Renamed situation "${was}" to "${n}"`)};row.querySelector("[data-ncancel]").onclick=e2=>{e2.stopPropagation();renderAll()};return}
   if(d.sitdel){const x=sitOf(d.sitdel);if(S.rules.some(r=>r.sit===x.id)){t.textContent="Used by rules";return}S.situations=S.situations.filter(y=>y!==x);commit(`Removed situation "${x.name}"`)}
   if(d.sitadd){const x=sitOf(d.sitadd),f=document.querySelector(`[data-sitf="${x.id}"]`).value,to=document.querySelector(`[data-sitt="${x.id}"]`).value||f;if(!f||to<f)return;x.ranges.push({from:f,to});commit(`"${x.name}" on ${shortDate(f)} to ${shortDate(to)}`)}
   if(d.sitrm){const [id,i]=d.sitrm.split("|");const x=sitOf(id);x.ranges.splice(+i,1);commit(`Removed dates from "${x.name}"`)}});
@@ -4933,7 +4943,8 @@ $("#mgExtra").addEventListener("click",e=>{const b=e.target.closest("[data-mgx]"
 $("#candleOff").addEventListener("change",e=>{S.candleOff=+e.target.value||0;commit(`Candle lighting set to ${S.candleOff} min`)});
 $("#havOff").addEventListener("change",e=>{const n=Math.max(0,Math.min(120,+e.target.value||0));S.havOff=n;S.rtOff=n;commit(`Havdalah (Rabbeinu Tam) set to ${n} min after shkiah`)});
 $("#addAway").onclick=()=>{const f=$("#awayFrom").value,t=$("#awayTo").value||f;if(!f||t<f)return;S.away.push({from:f,to:t});commit(`Rabbi away ${shortDate(f)} to ${shortDate(t)}`)};
-$("#awayRows").addEventListener("click",ev=>{const i=ev.target.dataset.adel;if(i!==undefined){S.away.splice(i,1);commit("Removed rabbi away dates")}});
+$("#awayRows").addEventListener("click",ev=>{const i=ev.target.dataset.adel;if(i!==undefined){S.away.splice(i,1);commit("Removed rabbi away dates");return}
+  const e=ev.target.dataset.aed;if(e!==undefined){const a=S.away[+e];editRange(ev.target.closest(".row"),a,(f,t)=>{const was=rangeText(a.from,a.to);a.from=f;a.to=t;S.away.sort((x,y)=>x.from<y.from?-1:1);commit(`Rav away dates changed to ${rangeText(f,t)} (was ${was})`)})}});
 $("#addContact").onclick=()=>{const n=$("#cName").value.trim(),t=$("#cTo").value.trim(),ok=$("#cAgree").checked;if(!n||!t)return;
   const digits=t.replace(/\D/g,"");if(!(digits.length===10||(digits.length===11&&digits[0]==="1"))){toast("Enter a US mobile number, like 718-555-0142");return}
   S.contacts.push({name:n,to:t,sms:ok,consentAt:ok?Date.now():null,consentBy:ok?S.me:null});$("#cName").value="";$("#cTo").value="";$("#cAgree").checked=false;
