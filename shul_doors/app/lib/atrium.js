@@ -31,7 +31,10 @@ function decrypt(text, key) {
 }
 const attrs = (s) => { const o = {}; const re = /([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g; let m; while ((m = re.exec(s))) o[m[1]] = m[2] !== undefined ? m[2] : m[3]; return o; };
 const tags = (xml, name) => { const out = []; const re = new RegExp(`<${name}\\b([^>]*?)\\/?>`, "g"); let m; while ((m = re.exec(xml))) out.push(attrs(m[1])); return out; };
-const tagText = (xml, name) => { const m = xml.match(new RegExp(`<${name}\\b[^>]*>([^<]*)</${name}>`)); return m ? m[1].trim() : ""; };
+const tagText = (xml, name) => { const m = xml.match(new RegExp(`<${name}\\b[^>]*>([^<]*)</${name}>`, "i")); if (m) return m[1].trim(); const a = xml.match(new RegExp(`\\b${name}\\s*=\\s*["']([^"']+)["']`, "i")); return a ? a[1].trim() : ""; };
+const md5u = (t) => md5(t).toUpperCase();
+// a short, safe look at what the controller sent back, for the error message
+const peek = (t) => String(t || "").replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<[^>]+>/g, " ").replace(/[A-F0-9]{12,}/gi, "…").replace(/\s+/g, " ").trim().slice(0, 90) || "(empty)";
 
 function createAtrium({ url, username, password, log = () => {}, fetchImpl = (...a) => fetch(...a) }) {
   const base = String(url || "").replace(/\/+$/, "");
@@ -49,13 +52,40 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
   async function login() {
     if (!base) throw new Error("The parking lot controller's address isn't set in the add-on settings.");
     if (!username || !password) throw new Error("Add the parking lot username and password in the add-on settings.");
-    cookie = ""; key = "";
-    const k1 = tagText(await req("login.xml?_=" + Date.now()), "KEY");
-    if (!k1) throw new Error("The parking lot controller didn't hand out a sign-in key.");
+    cookie = ""; key = ""; mode = "web";
+    let first = "";
+    try { first = await req("login.xml?_=" + Date.now()); } catch (e) { first = "ERR " + e.message; }
+    const k1 = tagText(first, "KEY");
+    if (!k1) {
+      // newer controllers: the official SDK sign-in (turn on "SDK login" for the user)
+      try { await sdkLogin(); return; }
+      catch (e) { throw new Error(`The parking lot controller didn't hand out a sign-in key. It answered: ${peek(first)}. SDK sign-in: ${e.message}`); }
+    }
     const r2 = await req("login.xml", { method: "POST", body: `login_user=${rc4Hex(k1, username)}&login_pass=${md5(k1 + password)}` });
     const k2 = tagText(r2, "KEY"), err = (tags(r2, "LOGIN")[0] || {}).err;
     if (!k2 || (err && err !== "ok")) throw new Error(err === "err_password" || !k2 ? "The parking lot username or password isn't right." : "The parking lot controller refused the sign-in (" + err + ").");
     key = k2; at = Date.now();
+  }
+  let mode = "web", sid = "", serial = "";
+  async function sdkLogin() {
+    const t1 = await req("login_sdk.xml?_=" + Date.now());
+    const conn = tags(t1, "CONNECTION")[0] || {}, dev = tags(t1, "DEVICE")[0] || {};
+    if (!conn.session) throw new Error("no session (" + peek(t1) + ")");
+    serial = dev.serial || ""; const sk = md5u(serial + conn.session);
+    const body = new URLSearchParams({ sid: conn.session, cmd: "login", login_user: rc4Hex(sk, username), login_pass: md5u(sk + password) }).toString();
+    const t2 = await req("login_sdk.xml?_=" + Date.now(), { method: "POST", body });
+    const c2 = tags(t2, "CONNECTION")[0] || {}, cfg = tags(t2, "SDK_CFG")[0] || {};
+    if (c2.err && c2.err !== "ok") throw new Error(c2.err === "err_password" ? "the username or password isn't right" : c2.err);
+    if (c2.lock === "1") throw new Error("locked after too many tries; sign in once on the controller's web page");
+    if (!cfg.user_id || cfg.user_id === "-1") throw new Error("the controller refused the sign-in. Turn on SDK login for this user");
+    sid = c2.session || conn.session; key = md5u(serial + sid); mode = "sdk"; at = Date.now();
+  }
+  async function sdk(xml) {
+    const body = `post_enc=${rc4Hex(key, xml)}&post_chk=${chk(xml)}`;
+    const t = await req("sdk.xml", { method: "POST", body });
+    const plain = decrypt(t, key); if (plain === null) throw new Error("couldn't read the controller's answer");
+    const err = (tags(plain, "REC")[0] || {}).err; if (err && err !== "ok") throw new Error("the controller said " + err);
+    return plain;
   }
   async function call(path, { body } = {}) {
     for (let tryNo = 0; tryNo < 2; tryNo++) {
@@ -70,11 +100,17 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
   const ok = (x) => { last = { ok: true, at: Date.now(), why: "" }; return x; };
   const bad = (e) => { last = { ok: false, at: Date.now(), why: e.message }; throw e; };
   return {
+    mode: () => mode,
     configured: !!base,
     status: () => ({ ...last, configured: !!base }),
     async test() { try { await login(); return ok({ ok: true }); } catch (e) { return bad(e); } },
     async doors() {
       try {
+        if (!key) await login();
+        if (mode === "sdk") {
+          const xml = await sdk(`<?xml version="1.0" encoding="utf-8"?><SDK xmlns='https://www.cdvi.ca/'><RECORDS><REC trans_id='1' cmd='read' sernum='${serial}' type='door' id_min='0' id_max='16' rec='cfg'/></RECORDS></SDK>`);
+          return ok(tags(xml, "DATA").filter((d) => d.valid === undefined || d.valid === "1").map((d, i) => ({ id: d.guid || d.id || `${serial}:${i}`, name: d.name || d.label || `Door ${i + 1}`, state: d.status || d.state || "", raw: d })));
+        }
         const xml = await call("doors.xml?_=" + Date.now());
         const list = tags(xml, "DOOR").map((d) => ({ id: d.id || d.door_id || "", name: d.name || d.label || d.id || "", state: (d.state || d.status || d.lock || "").toString(), raw: d })).filter((d) => d.id);
         return ok(list);
