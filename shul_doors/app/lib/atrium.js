@@ -77,13 +77,14 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
       for (const m of t.matchAll(/[\w\/.-]{1,50}\.xml\b/gi)) if (seen.size < 25) seen.add(m[0]);
       for (const m of t.matchAll(/.{0,30}(?:login|\.ajax\(|\$\.(?:get|post)\(|XMLHttpRequest|url\s*:).{0,40}/gi)) if (snips.length < 6) snips.push(m[0].replace(/\s+/g, " "));
     };
+    notes.push("page: " + html.replace(/\s+/g, " ").slice(0, 700));
     for (const sp of ["js/app.js", "js/lib.js", ...srcs.filter((x) => !/app\.js|lib\.js|^https?:/i.test(x))].slice(0, 6)) {
       try { const t = await req(sp.replace(/^\.?\//, "")); notes.push(`${sp} ${t.length}`); scan(t.slice(0, 6e6)); } catch (e) { notes.push(sp + ": " + e.message); }
     }
     if (seen.size) notes.push("xml: " + [...seen].join(" "));
     if (snips.length) notes.push("calls: " + snips.join(" | "));
     try { const host = new URL(base).hostname; for (const alt of [`http://${host}:2000`, `http://${host}:8080`]) { const ac = new AbortController(), t = setTimeout(() => ac.abort(), 4000); try { const r = await fetchImpl(alt + "/login_sdk.xml?_=" + Date.now(), { signal: ac.signal }); const x = await r.text(); notes.push(`${alt}: ${r.status} ${/CONNECTION/i.test(x) ? "SDK ANSWERS" : peek(x).slice(0, 30)}`); } catch (e) { notes.push(`${alt}: ${e.name === "AbortError" ? "no answer" : "closed"}`); } finally { clearTimeout(t); } } } catch { /* bad url */ }
-    return notes.join(" ; ").slice(0, 1200);
+    return notes.join(" ; ").slice(0, 1600);
   }
   async function sdkLogin() {
     const t1 = await req("login_sdk.xml?_=" + Date.now());
