@@ -123,7 +123,7 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
     const out = { mode, doors: lastDoorXml.replace(/\s+/g, " ").slice(0, 400), last: lastAnswer, page: [] };
     try {
       const js = await req("js/app.js");
-      for (const word of ["doors_cmd", "unlock_T", "doors.xml"]) {
+      for (const word of ["doors_cmd", "unlock_T", "doors.xml", "cmd:\"override\""]) {
         let i = js.indexOf(word), n = 0;
         while (i >= 0 && n < 3) { out.page.push(js.slice(Math.max(0, i - 160), i + 160).replace(/\s+/g, " ")); i = js.indexOf(word, i + 400); n++; }
       }
@@ -145,7 +145,7 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
           return ok(tags(xml, "DATA").filter((d) => d.valid === undefined || d.valid === "1").map((d, i) => ({ id: d.guid || d.id || `${serial}:${i}`, name: d.name || d.label || `Door ${i + 1}`, state: d.status || d.state || "", raw: d })));
         }
         const xml = await call("doors.xml?_=" + Date.now());
-        const list = tags(xml, "DOOR").map((d) => ({ id: d.id || d.door_id || "", name: String(d.name || d.label || d.id || "").replace(/^[A-F0-9]{2}(?:-[A-F0-9]{2}){3}:\s*/i, ""), state: (d.state || d.status || d.lock || "").toString(), raw: d })).filter((d) => d.id);
+        const list = tags(xml, "DOOR").map((d) => ({ id: d.sn && d.id != null ? `${d.sn}:${d.id}` : (d.id || d.door_id || ""), name: String(d.name || d.label || d.id || "").replace(/^[A-F0-9]{2}(?:-[A-F0-9]{2}){3}:\s*/i, ""), state: d.lock === "0" ? "unlocked" : d.lock === "1" ? "locked" : (d.state || d.status || "").toString(), raw: d })).filter((d) => d.id);
         known = new Set(list.map((d) => d.id)); lastDoorXml = xml.slice(0, 400);
         return ok(list);
       } catch (e) { return bad(e); }
