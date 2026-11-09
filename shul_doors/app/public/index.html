@@ -4588,7 +4588,7 @@ function renderMt(){const b=$("#mtBody");if(!b)return;mtLoad();const c=mtCfg(),L
     return `<div class="mt-c${!x.online?" off":st[0]==="bad"?" warn":""}"><div class="mt-top"><div><b>${esc(x.name)}</b></div><span class="mt-st ${st[0]}">${st[1]}</span></div>
       <div class="mt-now">${x.online&&x.cur!=null?x.cur.toFixed(1):"--"}<span>${esc(x.unit||"°F")}</span></div>
       ${mtSpark(x.hist,x.set)}
-      <div class="mt-set"><span>Set to <b>${x.set!=null?x.set:"--"}${esc(x.unit||"°F")}</b></span><button type="button" data-mtset="${k}" data-d="-1" aria-label="Lower"${MT.allow&&x.online?"":" disabled"}>−</button><button type="button" data-mtset="${k}" data-d="1" aria-label="Raise"${MT.allow&&x.online?"":" disabled"}>+</button></div></div>`}).join("");
+      <div class="mt-set"><span>Set to <b>${x.set!=null?x.set:"--"}${esc(x.unit||"°F")}</b></span><button type="button" data-mtset="${k}" data-d="-1" aria-label="Lower"${x.online?"":" disabled"}>−</button><button type="button" data-mtset="${k}" data-d="1" aria-label="Raise"${x.online?"":" disabled"}>+</button></div></div>`}).join("");
   const ro=MT.allow?"":`<p class="gf top mk-ro">Showing the thermostats. Changing the set point from here is off. A super admin can turn it on under Settings, Controllers.</p>`;
   const al=`<h3 class="gh mk-h">Alerts</h3><div class="glist mt-al">
     <label class="row swrow"><span class="rt"><b>Temperature alerts</b><span>Text the people who have Mikva temperature alerts turned on in Users and permissions</span></span><input type="checkbox" class="switch" data-mtc="on"${c.on?" checked":""}></label>
@@ -4604,9 +4604,10 @@ function renderMt(){const b=$("#mtBody");if(!b)return;mtLoad();const c=mtCfg(),L
   if(MTT==="alerts"){b.innerHTML=seg+al.replace('<h3 class="gh mk-h">Alerts</h3>','');return}
   b.innerHTML=seg+ro+`<div class="mt-grid">${cards}</div><p class="gf">Each thermostat follows its own schedule in the Meross app (for example heating to 106° from 2 AM, resting at 68° in the day). The set point shown is what it's aiming for right now.</p><h3 class="gh mk-h">Last 24 hours</h3>${mtChart(L)}`}
 document.addEventListener("click",async ev=>{const t=ev.target;if(t.closest("[data-mtre]")){MT.err="";mtLoad(true);return}
-  const s=t.closest("[data-mtset]");if(!s)return;const x=MT.list[+s.dataset.mtset];if(x.set==null)return;const nv=Math.round((x.set+ +s.dataset.d*(+x.step||1))*10)/10;if(nv<x.min||nv>x.max)return;
+  const s=t.closest("[data-mtset]");if(!s)return;const x=MT.list[+s.dataset.mtset];if(x.set==null)return;
+  if(!MT.allow&&!(S.ctrl&&S.ctrl.mtempWrites)){toast("Changing the temperature from here is off. Turn on Mikva thermostats under Settings, Controllers.");return}const nv=Math.round((x.set+ +s.dataset.d*(+x.step||1))*10)/10;if(nv<x.min||nv>x.max)return;
   if(ON_BOX){s.disabled=true;let j;try{j=await (await fetch("api/mtemp/set",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:x.id,temp:nv})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}s.disabled=false;if(!j.ok){toast(j.error||"Not changed");return}}
-  x.set=nv;ctrlNote(`Mikva ${x.name}: set to ${nv}${x.unit||"°F"}`);renderMt()});
+  x.set=nv;ctrlNote(`Mikva ${x.name}: set to ${nv}${x.unit||"°F"}`);renderMt();MT.t=0;setTimeout(()=>mtLoad(true),4000)});
 document.addEventListener("change",ev=>{const t=ev.target;if(!t.dataset||!t.dataset.mtc)return;const k=t.dataset.mtc;S.mtemp={...mtCfg(),[k]:t.type==="checkbox"?t.checked:t.type==="number"?+t.value:t.value};commit(k==="on"?(t.checked?"Turned on mikva temperature alerts":"Turned off mikva temperature alerts"):"Changed the mikva temperature alerts");renderMt()});
 
 // ---------- Mikvah controller (X-600M). It works out the calendar and sunset itself; we only read and save its settings ----------

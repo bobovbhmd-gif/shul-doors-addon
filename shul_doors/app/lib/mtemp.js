@@ -22,6 +22,8 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
     // when Meross LAN is installed, each thermostat shows up twice (HomeKit and Meross LAN): keep the Meross LAN one
     const mlAreas = new Set(found.filter((st) => A(st.entity_id).uuid).map((st) => A(st.entity_id).area).filter(Boolean));
     found = found.filter((st) => A(st.entity_id).uuid || !mlAreas.has(A(st.entity_id).area));
+    // once Meross LAN is in, show only the thermostats it was given (others on the same Meross account stay out)
+    if (found.some((st) => A(st.entity_id).uuid)) found = found.filter((st) => A(st.entity_id).uuid);
     return found.map((st) => {
       const a = st.attributes || {}, online = !["unavailable", "unknown"].includes(st.state);
       return { id: st.entity_id, name: nice(A(st.entity_id).area, st), area: A(st.entity_id).area || "", uuid: A(st.entity_id).uuid || "", cur: online && a.current_temperature != null ? Number(a.current_temperature) : null, set: a.temperature != null ? Number(a.temperature) : null,
