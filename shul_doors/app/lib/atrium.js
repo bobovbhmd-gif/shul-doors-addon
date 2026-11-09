@@ -72,19 +72,18 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
     const notes = [];
     let html = ""; try { html = await req(""); } catch (e) { notes.push("page: " + e.message); }
     const srcs = [...html.matchAll(/<script[^>]*\ssrc=["']?([^"'\s>]+)/gi)].map((m) => m[1]).slice(0, 8);
-    notes.push(`page ${html.length} chars, scripts: ${srcs.join(" ") || "none"}`);
     const seen = new Set(), snips = [];
     const scan = (t) => {
-      for (const m of t.matchAll(/["'`]([\w\/.-]{0,40}(?:\.xml|\.json|\.cgi|api\/|sdk|login)[\w\/.-]{0,40})["'`]/gi)) if (seen.size < 30) seen.add(m[1]);
-      for (const m of t.matchAll(/.{0,40}login.{0,40}/gi)) if (snips.length < 4) snips.push(m[0].replace(/\s+/g, " "));
+      for (const m of t.matchAll(/[\w\/.-]{1,50}\.xml\b/gi)) if (seen.size < 25) seen.add(m[0]);
+      for (const m of t.matchAll(/.{0,30}(?:login|\.ajax\(|\$\.(?:get|post)\(|XMLHttpRequest|url\s*:).{0,40}/gi)) if (snips.length < 6) snips.push(m[0].replace(/\s+/g, " "));
     };
-    scan(html);
-    for (const sp of srcs) { if (/^https?:\/\//i.test(sp) && !sp.startsWith(base)) continue; try { scan((await req(sp.replace(base + "/", "").replace(/^\//, ""))).slice(0, 4e6)); } catch (e) { notes.push(sp + ": " + e.message); } }
-    if (seen.size) notes.push("addresses: " + [...seen].join(" "));
-    if (snips.length) notes.push("near login: " + snips.join(" | "));
-    // the XML sign-in may live on the controller's normal web port
-    try { const host = new URL(base).hostname; for (const alt of [`http://${host}`, `https://${host}`]) { if (alt === base) continue; const ac = new AbortController(), t = setTimeout(() => ac.abort(), 4000); try { const r = await fetchImpl(alt + "/login.xml?_=" + Date.now(), { signal: ac.signal }); const x = await r.text(); notes.push(`${alt}/login.xml: ${r.status} ${/<KEY>/i.test(x) ? "HAS KEY" : peek(x).slice(0, 40)}`); } catch (e) { notes.push(`${alt}: ${e.name === "AbortError" ? "no answer" : e.message}`); } finally { clearTimeout(t); } } } catch { /* bad url */ }
-    return notes.join(" ; ").slice(0, 900);
+    for (const sp of ["js/app.js", "js/lib.js", ...srcs.filter((x) => !/app\.js|lib\.js|^https?:/i.test(x))].slice(0, 6)) {
+      try { const t = await req(sp.replace(/^\.?\//, "")); notes.push(`${sp} ${t.length}`); scan(t.slice(0, 6e6)); } catch (e) { notes.push(sp + ": " + e.message); }
+    }
+    if (seen.size) notes.push("xml: " + [...seen].join(" "));
+    if (snips.length) notes.push("calls: " + snips.join(" | "));
+    try { const host = new URL(base).hostname; for (const alt of [`http://${host}:2000`, `http://${host}:8080`]) { const ac = new AbortController(), t = setTimeout(() => ac.abort(), 4000); try { const r = await fetchImpl(alt + "/login_sdk.xml?_=" + Date.now(), { signal: ac.signal }); const x = await r.text(); notes.push(`${alt}: ${r.status} ${/CONNECTION/i.test(x) ? "SDK ANSWERS" : peek(x).slice(0, 30)}`); } catch (e) { notes.push(`${alt}: ${e.name === "AbortError" ? "no answer" : "closed"}`); } finally { clearTimeout(t); } } } catch { /* bad url */ }
+    return notes.join(" ; ").slice(0, 1200);
   }
   async function sdkLogin() {
     const t1 = await req("login_sdk.xml?_=" + Date.now());
