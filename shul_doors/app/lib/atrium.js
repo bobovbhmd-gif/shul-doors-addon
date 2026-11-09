@@ -37,7 +37,7 @@ const md5u = (t) => md5(t).toUpperCase();
 const peek = (t) => String(t || "").replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<[^>]+>/g, " ").replace(/[A-F0-9]{12,}/gi, "…").replace(/\s+/g, " ").trim().slice(0, 90) || "(empty)";
 
 function createAtrium({ url, username, password, log = () => {}, fetchImpl = (...a) => fetch(...a) }) {
-  const base = String(url || "").replace(/\/+$/, "");
+  const base = (() => { const raw = String(url || "").trim(); if (!raw) return ""; try { const u = new URL(/^https?:\/\//i.test(raw) ? raw : "http://" + raw); return (u.origin + u.pathname.replace(/\/(index\.html?)?$/i, "")).replace(/\/+$/, ""); } catch { return raw.replace(/#.*$/, "").replace(/\/+$/, ""); } })();   // drop "#/doors" and the like
   let cookie = "", key = "", at = 0, last = { ok: false, at: 0, why: base ? "Not checked yet" : "Not set up" };
   const jar = (r) => { const sc = r.headers.get("set-cookie"); if (sc) cookie = sc.split(/,(?=\s*[\w-]+=)/).map((c) => c.split(";")[0].trim()).join("; "); };
   async function req(path, { method = "GET", body } = {}) {

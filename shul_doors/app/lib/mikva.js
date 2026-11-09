@@ -24,7 +24,7 @@ function parsePresets(txt) {
 }
 
 function createMikva({ url, username = "admin", password = "", log = () => {}, fetchImpl = (...a) => fetch(...a) }) {
-  const base = String(url || "").replace(/\/+$/, "");
+  const base = (() => { const raw = String(url || "").trim(); if (!raw) return ""; try { const u = new URL(/^https?:\/\//i.test(raw) ? raw : "http://" + raw); return (u.origin + u.pathname.replace(/\/(index\.html?)?$/i, "")).replace(/\/+$/, ""); } catch { return raw.replace(/#.*$/, "").replace(/\/+$/, ""); } })();   // drop "#/doors" and the like
   const headers = password ? { Authorization: "Basic " + Buffer.from(`${username || "admin"}:${password}`).toString("base64") } : {};
   let last = { ok: false, at: 0, why: base ? "Not checked yet" : "Not set up" };
   async function get(path, ms = 6000) {
