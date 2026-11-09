@@ -521,7 +521,7 @@ async function ctrlApi(req, res, p, u) {
     if (req.method === "POST" && p === "/api/controllers/test") {
       const b = (await readBody(req)) || {};
       if (b.which === "mikva") { await mikva.read(); return send(res, 200, { ok: true }); }
-      if (b.which === "parking") { const r = await atrium.test(); return send(res, 200, r); }
+      if (b.which === "parking") { const r = await atrium.test(); if (r.ok) { try { await atrium.doors(); } catch { /* shown below */ } r.info = await atrium.diag(); } return send(res, 200, r); }
       if (b.which === "logins") { const l = await haAuth.list(); return send(res, 200, { ok: true, count: l.length }); }
       return send(res, 400, { error: "Which one?" });
     }

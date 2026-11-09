@@ -66,7 +66,7 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
     if (!k2 || (err && err !== "ok")) throw new Error(err === "err_password" || !k2 ? "The parking lot username or password isn't right." : "The parking lot controller refused the sign-in (" + err + ").");
     key = k2; at = Date.now();
   }
-  let mode = "web", sid = "", serial = "", known = new Set(), lastDoorXml = "";
+  let mode = "web", sid = "", serial = "", known = new Set(), lastDoorXml = "", lastAnswer = "";
   // when sign-in fails: read the controller's own web page to see which addresses it talks to
   async function probe() {
     const notes = [];
@@ -118,7 +118,21 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
   }
   const ok = (x) => { last = { ok: true, at: Date.now(), why: "" }; return x; };
   const bad = (e) => { last = { ok: false, at: Date.now(), why: e.message }; throw e; };
+  // what the controller's own page sends to open a door, and what it answered us last time
+  async function diag() {
+    const out = { mode, doors: lastDoorXml.replace(/\s+/g, " ").slice(0, 400), last: lastAnswer, page: [] };
+    try {
+      const js = await req("js/app.js");
+      for (const word of ["doors_cmd", "unlock_T", "doors.xml"]) {
+        let i = js.indexOf(word), n = 0;
+        while (i >= 0 && n < 3) { out.page.push(js.slice(Math.max(0, i - 160), i + 160).replace(/\s+/g, " ")); i = js.indexOf(word, i + 400); n++; }
+      }
+      out.pageSize = js.length;
+    } catch (e) { out.page.push("couldn't read the page: " + e.message); }
+    return out;
+  }
   return {
+    diag,
     mode: () => mode,
     configured: !!base,
     status: () => ({ ...last, configured: !!base }),
@@ -151,6 +165,7 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
         const ans = await call("doors.xml", { body: `doors_cmd=${c}&doors_id=${doorId}` });
         const err = (tags(ans, "DOORS")[0] || tags(ans, "DOOR")[0] || {}).err;
         if (err && err !== "ok") throw new Error(`The parking lot controller said "${err}" for door ${doorId}.`);
+        lastAnswer = `${c} ${doorId} -> ${ans.replace(/\s+/g, " ").slice(0, 300)}`;
         log("info", `parking lot: ${cmd} ${doorId}: ${peek(ans).slice(0, 80)}`); return ok({ ok: true, answer: peek(ans).slice(0, 120) });
       }
       catch (e) { return bad(e); }
