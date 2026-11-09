@@ -3488,7 +3488,7 @@ function ruleArea(r){const g=r.doors.find(x=>x.startsWith("g:"));if(g){const G=S
   return best&&bn?best.name:"Other doors"}
 function renderRules(){
   renderClashBanner();try{rqFDot()}catch(e){}
-  const vis=[...S.rules].filter(canSeeRule);
+  const vis=[...S.rules].filter(canSeeRule).filter(r=>!((r.doors||[]).length&&r.doors.every(isPk)));   // parking times live on the Parking page
   const fd=$("#rqDoorF").value, fm=$("#rqModeF").value, q=$("#rqSearch").value.trim().toLowerCase();
   $("#rqModeF").innerHTML=`<option value="">Any door state</option>`+MODES.map(m=>`<option value="${esc(m)}"${fm===m?" selected":""}>${esc(modeLabel(m))}</option>`).join("");
   const visF=new Set(visDoors().map(d=>d.id)),grps=S.groups.filter(g=>expandDoors(["g:"+g.id]).some(id=>visF.has(id)));
@@ -3600,31 +3600,32 @@ function edSummary(){const el=$("#rSum");if(!el||!E)return;let r;try{r={...E,...
   const days=condText(r.inc),ex=condText(r.exc),acc=r.kind==="access";
   if(!r.doors.length&&!days){el.innerHTML=`<span class="hint">Pick the doors, the time and the days. This line will read your rule back to you.</span>`;return}
   const pkOnly=r.doors.length&&r.doors.every(isPk);
-  el.innerHTML=`<span class="mtag" style="--c:${acc?"var(--o)":modeColor(r.mode)}">${esc(acc?r.group+" cards":pkOnly?PK_MODES[pkModeOf(r.mode)][0]:modeLabel(r.mode))}</span> ${esc(ruleTime(r))}${days?", "+esc(days):", <span class=\"warnm\">no days yet</span>"}${ex?`, except ${esc(ex)}`:""}${r.doors.length?`, at ${esc(doorsText(r.doors))}`:`, <span class="warnm">no doors yet</span>`}.`}
+  el.innerHTML=`<span class="mtag" style="--c:${acc?"var(--o)":modeColor(r.mode)}">${esc(acc?r.group+" cards":pkOnly?PK_MODES[pkModeOf(r.mode)][0]:modeLabel(r.mode))}</span> ${esc(ruleTime(r))}${days?", "+esc(days):", <span class=\"warnm\">no days yet</span>"}${ex?`, except ${esc(ex)}`:""}${r.doors.length?`, at ${esc(pkOnly?pkWhere(r.doors):doorsText(r.doors))}`:`, <span class="warnm">no doors yet</span>`}.`}
 function drawEditor(){
   const e=E, canSave=can("rules")||isAdmin();
   $("#editorSlot").innerHTML=`<form id="ruleForm" class="mform">
-   <header class="mhead"><button type="button" class="mbtn" id="cancelEdit">Cancel</button><b>${e.isNew?"New rule":`Edit rule${e.no?" #"+e.no:""}`}</b>${canSave?`<button type="submit" class="mbtn pri">Save</button>`:`<button type="button" class="mbtn pri" id="asReq">Request</button>`}</header>
+   <header class="mhead"><button type="button" class="mbtn" id="cancelEdit">Cancel</button><b>${e.pk?(e.isNew?"New parking time":"Parking time"):e.isNew?"New rule":`Edit rule${e.no?" #"+e.no:""}`}</b>${canSave?`<button type="submit" class="mbtn pri">Save</button>`:`<button type="button" class="mbtn pri" id="asReq">Request</button>`}</header>
    <div class="mbody">
     <div class="glist form">
       <div class="frow"><input id="rName" class="big" value="${esc(e.name)}" placeholder="Rule name, like Weekday Maariv" aria-label="Name"></div>
       <div class="frow rsum" id="rSum"></div>
     </div>
-    <h3 class="gh">What should the doors do?</h3>
+    <h3 class="gh">${e.pk?"What should the parking lot do?":"What should the doors do?"}</h3>
     <div class="glist form">
       <div class="frow" id="modeField"${e.kind==="access"?" hidden":""}><label for="rMode">Door is</label><select id="rMode">${MODES.map(m=>`<option value="${m}"${m===e.mode?" selected":""}>${esc(modeLabel(m))}</option>`).join("")}</select></div>
       <div class="frow" id="agField"${e.kind!=="access"?" hidden":""}><label for="rGroup">Cards that work</label><select id="rGroup">${S.accessGroups.map(g=>`<option${g===e.group?" selected":""}>${esc(g)}</option>`).join("")}</select></div>
       <div class="frow"${e.kind==="access"?"":" hidden"}><label for="rKind">Controls</label><select id="rKind"><option value="door"${e.kind!=="access"?" selected":""}>Door mode</option><option value="access"${e.kind==="access"?" selected":""}>Badge access</option></select></div>
     </div>
-    <h3 class="gh">Which doors?</h3>
+    ${e.pk?`<h3 class="gh">Which entrances?</h3>
+    <div class="glist form"><div class="frow"><div class="checks" id="rDoorMore">${pkDoors().map(d=>`<label><input type="checkbox" name="rDoor" value="${esc(d.id)}"${e.doors.includes(d.id)?" checked":""}>${esc(d.name)}</label>`).join("")}</div></div><span class="dp-sum" id="rDoorSum" hidden></span></div>`:`<h3 class="gh">Which doors?</h3>
     <div class="glist form dpick">
       <div class="frow"><label class="search sm"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="rDoorQ" placeholder="Find a door or group" aria-label="Find a door or group" value="${esc(DPQ)}"></label><span class="dp-sum" id="rDoorSum"></span></div>
       <div class="frow dp-sec"><div class="checks plist" id="rDoorMore">
       ${(()=>{const gs=S.groups.filter(g=>isAdmin()||g.doors.length&&g.doors.every(d=>perm(d)!=="hidden"));return gs.length?`<div class="pl-h">Groups</div>`+gs.map(g=>`<label class="grp" data-dpn="${esc(g.name.toLowerCase())}"><input type="checkbox" name="rDoor" value="g:${esc(g.id)}"${e.doors.includes("g:"+g.id)?" checked":""}>${esc(g.name)} <span class="hint">${g.doors.length} door${g.doors.length===1?"":"s"}</span></label>`).join(""):""})()}
       <div class="pl-h">Doors</div>
       ${visDoors().map(d=>`<label data-dpn="${esc((d.name+" "+d.id).toLowerCase())}"><input type="checkbox" name="rDoor" value="${esc(d.id)}"${e.doors.includes(d.id)?" checked":""}>${esc(d.name)}${perm(d.id)!=="edit"?` <span class="hint">by request</span>`:""}</label>`).join("")}
-      ${pkDoors().length&&isAdmin()?`<div class="pl-h">Parking lot</div>`+pkDoors().map(d=>`<label data-dpn="${esc(("parking "+d.name).toLowerCase())}"><input type="checkbox" name="rDoor" value="${esc(d.id)}"${e.doors.includes(d.id)?" checked":""}>${esc(d.name)}</label>`).join(""):""}</div></div>
-    </div>
+      </div></div>
+    </div>`}
     <h3 class="gh">When?</h3>
     <div class="glist form">
       <div class="frow"><label for="sA">Starts</label>${anchorFields("s",e.start)}</div>
@@ -3659,7 +3660,7 @@ function drawEditor(){
       edPkModes(v);
       $("#rDoorSum").textContent=v.length?[g?`${g} group${g>1?"s":""}`:"",d?`${d} door${d>1?"s":""}`:""].filter(Boolean).join(", ")+` · ${total} door${total===1?"":"s"} in all`:"None chosen"};
     const filt=()=>{const q=DPQ.trim().toLowerCase();document.querySelectorAll(".dpick [data-dpn]").forEach(l=>{l.hidden=!!q&&!l.dataset.dpn.includes(q)&&!l.querySelector("input").checked});document.querySelectorAll(".dpick .pl-h").forEach(h=>{let n=h.nextElementSibling,any=false;while(n&&!n.classList.contains("pl-h")){if(!n.hidden)any=true;n=n.nextElementSibling}h.hidden=!any})};
-    $("#rDoorQ").addEventListener("input",ev=>{DPQ=ev.target.value;filt()});
+    if($("#rDoorQ"))$("#rDoorQ").addEventListener("input",ev=>{DPQ=ev.target.value;filt()});
     document.querySelectorAll("input[name=rDoor]").forEach(x=>x.addEventListener("change",sum));sum();filt(); }
   $("#rUntilK").addEventListener("change",ev=>{const d=ev.target.value==="date";$("#rUntil").hidden=!d;if(d&&!$("#rUntil").value)$("#rUntil").value=addDays(todayNY(),29)});
   ["s","e"].forEach(p=>$(`#${p}A`).addEventListener("change",ev=>{const c=ev.target.value==="clock";$(`#${p}TW`).hidden=!c;$(`#${p}OW`).hidden=c;const on=$(`#${p}NBK`).value==="on";$(`#${p}NBX`).hidden=c||!on;if($(`#${p}NBA`))$(`#${p}NBA`).hidden=c||on}));
@@ -3752,11 +3753,11 @@ function drawEditor(){
 }
 let DPQ="",DPOPEN=false;
 // a rule only for the parking lot gets the parking lot's three choices
-function edPkModes(v){const sel=$("#rMode");if(!sel)return;const pk=v.length>0&&v.every(isPk),cur=sel.value,was=sel.dataset.pk==="1";if(pk===was)return;sel.dataset.pk=pk?"1":"0";
+function edPkModes(v){const sel=$("#rMode");if(!sel)return;const pk=!!(E&&E.pk)||(v.length>0&&v.every(isPk)),cur=sel.value,was=sel.dataset.pk==="1";if(pk===was)return;sel.dataset.pk=pk?"1":"0";
   const opts=pk?[["Card","Normal: key tags open it"],["Unlock","Open: anyone can drive in"],["Lockdown","Locked: no one, not even key tags"]]:MODES.map(m=>[m,modeLabel(m)]);
   const val=pk?(cur==="Unlock"||cur==="Lockdown"?cur:"Card"):cur;sel.innerHTML=opts.map(([m,l])=>`<option value="${m}"${m===val?" selected":""}>${esc(l)}</option>`).join("");
   const lb=document.querySelector('label[for="rMode"]');if(lb)lb.textContent=pk?"Entrance is":"Door is"}
-function openEditor(r,isNew){DPQ="";DPOPEN=false;E_ORIG=null;E={...structuredClone(r),isNew};E.inc=Object.assign(C(),E.inc);E.exc=Object.assign(C(),E.exc);drawEditor();openModal("mRule");$("#editorSlot").scrollTop=0}
+function openEditor(r,isNew){DPQ="";DPOPEN=false;E_ORIG=null;E={...structuredClone(r),isNew};E.pk=(r.doors||[]).length>0&&r.doors.every(isPk);E.inc=Object.assign(C(),E.inc);E.exc=Object.assign(C(),E.exc);drawEditor();openModal("mRule");$("#editorSlot").scrollTop=0}
 function closeEditor(){E=null;$("#editorSlot").innerHTML="";closeModal("mRule")}
 
 function nextGreg(g){const t=todayNY();let y=+t.slice(0,4);let s=iso(y,g.m,g.d);if(s<t)s=iso(y+1,g.m,g.d);return shortDate(s)}
@@ -4650,6 +4651,7 @@ let PKT="now";
 // The parking lot entrances are scheduled with the same rules as the doors: weekdays, Yom Tov, events like a
 // wedding, the Rav away, summer or winter clock, situations and special dates are all shared.
 // A rule's "Open" opens the entrance, "Lockdown" locks it, anything else is Normal (key tags work).
+function pkWhere(ids){const L=pkDoors().filter(d=>ids.includes(d.id));return L.length===pkDoors().length&&L.length>1?"both parking lot entrances":L.length?L.map(d=>d.name).join(", "):"no entrance yet"}
 function pkModeOf(m){return m==="Unlock"?"open":m==="Lockdown"?"locked":"normal"}
 const PK_TO_MODE={normal:"Card",open:"Unlock",locked:"Lockdown"};
 function pkRules(){return (S.rules||[]).filter(r=>(r.kind||"door")==="door"&&expandDoors(r.doors||[]).some(isPk))}
