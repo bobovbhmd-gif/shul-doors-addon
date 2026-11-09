@@ -145,7 +145,7 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
     },
     async command(doorId, cmd) {
       doorId = String(doorId || "");
-      if (!/^[\w:.-]{3,40}$/.test(doorId) || (known.size && !known.has(doorId))) throw new Error("That isn't a parking lot door.");
+      if (!/^[\w:. -]{1,40}$/.test(doorId) || (known.size && !known.has(doorId))) throw new Error(`That isn't a parking lot door (asked for "${doorId.slice(0, 40)}"; the controller lists: ${lastDoorXml.replace(/\s+/g, " ").slice(0, 300)}).`);
       const c = { buzz: "unlock_T", open: "unlock", reset: "reset" }[cmd]; if (!c) throw new Error("Not a door command.");
       try {
         const ans = await call("doors.xml", { body: `doors_cmd=${c}&doors_id=${doorId}` });
