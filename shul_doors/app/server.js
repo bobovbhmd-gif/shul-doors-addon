@@ -18,7 +18,7 @@ const { createActivity } = require("./lib/activity");
 const { createHaAuth } = require("./lib/hauth");
 const { createMikva } = require("./lib/mikva");
 const { createAtrium } = require("./lib/atrium");
-const { createMtemp, createTempLog, usualRate } = require("./lib/mtemp");
+const { createMtemp, createTempLog, usualRate, nyParts, nextChange } = require("./lib/mtemp");
 const sched = require("./lib/sched");
 
 const DATA = process.env.SD_DATA || "/data";
@@ -504,12 +504,38 @@ async function mtTick() {
   let list; try { list = await mtemp.list(); } catch { return; }
   if (!list.length) return;
   tempLog.record(list);
+  await mtHandTick(list).catch((e) => log("warn", "thermostats: " + e.message));
   const cfg = state.mtemp; if (!cfg || !cfg.on) return;
   const found = mtemp.check(list, cfg, mtRates(list)); if (!found.length) return;
   const phones = (state.users || []).filter((u) => u.mtAlert && u.phone).map((u) => u.phone);
   for (const a of found) { log("info", "mikva temperature: " + a.text); if (sms && phones.length) { try { await sms.alertTo(state, phones, a.key, a.text, "mikva", 3600e3); } catch (e) { log("warn", "mikva alert text: " + e.message); } } }
 }
 if (HA_URL) setInterval(() => mtTick().catch(() => {}), +process.env.SD_MT_MS || 60000).unref();
+// a temperature set by hand lasts until the thermostat's next scheduled change, then it goes back to its schedule,
+// unless someone chose to keep it. Changes made in the Meross app count too.
+const mtWeekCache = {};
+async function mtWeek(x) {
+  const cfg = state && state.mtSched; if (cfg && cfg.base && cfg.base[x.id]) { const r = mtResolve(cfg, x.id); if (r) return r.week; }
+  const c = mtWeekCache[x.id]; if (c && Date.now() - c.at < 3600e3) return c.week;
+  if (!x.uuid) return null;
+  try { const w = (await mtemp.getSchedule(x)).week; mtWeekCache[x.id] = { at: Date.now(), week: w }; return w; } catch { return null; }
+}
+async function mtHandBack(x, at = Date.now()) { const w = await mtWeek(x); if (!w) return null; const p = nyParts(at); return nextChange(w, p.d, p.m, (d, n) => engine.addDays(d, n)); }
+async function mtHandTick(list) {
+  if (!store) return; store.mtHand = store.mtHand || {}; let dirty = false; const p = nyParts(Date.now());
+  for (const x of list) {
+    const h = store.mtHand[x.id];
+    if (x.sched === true) { if (h && Date.now() - h.at > 3 * 60e3) { delete store.mtHand[x.id]; dirty = true; } continue; }
+    if (x.sched !== false || !x.online) continue;
+    if (!h) { store.mtHand[x.id] = { at: Date.now(), hold: false, back: await mtHandBack(x), by: "" }; dirty = true; log("info", `thermostat ${x.name}: set by hand, back to its schedule at its next change`); continue; }
+    if (h.hold || !h.back) continue;
+    if (p.d > h.back.d || (p.d === h.back.d && p.m >= h.back.m)) {
+      if (!ctrlAllow("mtempWrites")) continue;
+      try { await mtemp.resume(x.id); delete store.mtHand[x.id]; dirty = true; log("info", `thermostat ${x.name}: back to its schedule`); } catch (e) { log("warn", `thermostat ${x.name}: couldn't put it back on its schedule: ${e.message}`); }
+    }
+  }
+  if (dirty) writeJson("store.json", store);
+}
 // heat-ups from the last 31 days of the minute log, worked out at most every 15 minutes
 let huCache = { at: 0, by: {} };
 function heatups() { if (Date.now() - huCache.at > 15 * 60e3) huCache = { at: Date.now(), by: tempLog.heatups(Date.now() - 31 * 864e5, Date.now() + 60e3) }; return huCache.by; }
@@ -620,7 +646,8 @@ async function ctrlApi(req, res, p, u) {
     // mikva thermostats (through Home Assistant)
     if (req.method === "GET" && p === "/api/mtemp") {
       const list = await mtemp.list(); const h = await mtemp.history(list.map((x) => x.id));
-      return send(res, 200, { ok: true, list: list.map((x) => ({ ...x, hist: h[x.id] || [] })), allow: ctrlAllow("mtempWrites") });
+      const hand = (store && store.mtHand) || {};
+      return send(res, 200, { ok: true, list: list.map((x) => ({ ...x, hist: h[x.id] || [], hand: x.sched === false && hand[x.id] ? { hold: !!hand[x.id].hold, back: hand[x.id].back || null } : null })), allow: ctrlAllow("mtempWrites") });
     }
     if (req.method === "GET" && p === "/api/mtemp/log") {
       const to = Math.min(Date.now() + 60e3, +u.searchParams.get("to") || Date.now()), from = Math.max(to - 3 * 366 * 864e5, +u.searchParams.get("from") || to - 864e5);
@@ -662,7 +689,21 @@ async function ctrlApi(req, res, p, u) {
       if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can change the mikva temperature." });
       if (!ctrlAllow("mtempWrites")) return send(res, 200, { ok: false, error: "Changing the mikva temperature from here is turned off. Turn it on under Settings, Controllers." });
       const b = (await readBody(req)) || {};
-      return send(res, 200, await mtemp.set(String(b.id || ""), b.temp));
+      const r = await mtemp.set(String(b.id || ""), b.temp);
+      const x = (await mtemp.list()).find((y) => y.id === b.id), prev = (store.mtHand || {})[b.id];
+      store.mtHand = store.mtHand || {}; store.mtHand[b.id] = { at: Date.now(), hold: prev ? !!prev.hold : !!b.hold, back: x ? await mtHandBack(x) : null, by: haUser(req) || "" }; writeJson("store.json", store);
+      return send(res, 200, { ...r, hand: { hold: store.mtHand[b.id].hold, back: store.mtHand[b.id].back } });
+    }
+    if (req.method === "POST" && (p === "/api/mtemp/resume" || p === "/api/mtemp/hold")) {
+      if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can change the mikva temperature." });
+      if (!ctrlAllow("mtempWrites")) return send(res, 200, { ok: false, error: "Changing the mikva temperature from here is turned off. Turn it on under Settings, Controllers." });
+      const b = (await readBody(req)) || {}, id = String(b.id || "");
+      store.mtHand = store.mtHand || {};
+      if (p.endsWith("resume")) { await mtemp.resume(id); delete store.mtHand[id]; writeJson("store.json", store); return send(res, 200, { ok: true }); }
+      const x = (await mtemp.list()).find((y) => y.id === id); if (!x) return send(res, 200, { ok: false, error: "That isn't a mikva thermostat." });
+      const h = store.mtHand[id] || { at: Date.now(), back: await mtHandBack(x), by: haUser(req) || "" };
+      h.hold = !!b.hold; if (!h.hold) h.back = await mtHandBack(x); store.mtHand[id] = h; writeJson("store.json", store);
+      return send(res, 200, { ok: true, hand: { hold: h.hold, back: h.back } });
     }
     // mikva magnet
     if (req.method === "GET" && p === "/api/mikva") return send(res, 200, { ...(await mikva.read()), allow: ctrlAllow("mikvaWrites") });

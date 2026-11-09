@@ -27,7 +27,9 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
     return found.map((st) => {
       const a = st.attributes || {}, online = !["unavailable", "unknown"].includes(st.state);
       return { id: st.entity_id, name: nice(A(st.entity_id).area, st), area: A(st.entity_id).area || "", uuid: A(st.entity_id).uuid || "", cur: online && a.current_temperature != null ? Number(a.current_temperature) : null, set: a.temperature != null ? Number(a.temperature) : null,
-        heat: a.hvac_action || (st.state === "heat" ? "heating" : st.state), mode: st.state, online, min: a.min_temp != null ? Number(a.min_temp) : 40, max: a.max_temp != null ? Number(a.max_temp) : 110, step: a.target_temp_step || 0.5, unit, changed: Date.parse(st.last_changed) || 0 };
+        heat: a.hvac_action || (st.state === "heat" ? "heating" : st.state), mode: st.state, online, min: a.min_temp != null ? Number(a.min_temp) : 40, max: a.max_temp != null ? Number(a.max_temp) : 110, step: a.target_temp_step || 0.5, unit, changed: Date.parse(st.last_changed) || 0,
+        // Meross LAN: "schedule_heating" follows the thermostat's schedule, "heating" was set by hand
+        sched: /^schedule/.test(a.preset_mode || "") ? true : /^(heating|cooling)$/.test(a.preset_mode || "") ? false : null };
     }).sort((x, y) => x.name.localeCompare(y.name));
   }
   // the last day, as 49 points (every 30 minutes), from Home Assistant's history
@@ -53,6 +55,14 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
     const v = Number(temp); if (!Number.isFinite(v) || v < t.min || v > t.max) throw new Error(`Pick a temperature between ${t.min} and ${t.max}.`);
     await ha("/services/climate/set_temperature", { method: "POST", body: JSON.stringify({ entity_id: id, temperature: v }) });
     log("info", `thermostat ${id} set to ${v}`);
+    return { ok: true };
+  }
+  // back to following its own schedule
+  async function resume(id) {
+    const t = (await list()).find((x) => x.id === id);
+    if (!t) throw new Error("That isn't a mikva thermostat.");
+    await ha("/services/climate/set_preset_mode", { method: "POST", body: JSON.stringify({ entity_id: id, preset_mode: "schedule_heating" }) });
+    log("info", `thermostat ${id} back to its schedule`);
     return { ok: true };
   }
   // ---- the thermostat's own weekly schedule (Meross LAN: Appliance.Control.Thermostat.ScheduleB) ----
@@ -141,7 +151,7 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
     }
     return out;
   }
-  return { list, history, set, check, inWindow, STANDBY, getSchedule, setSchedule };
+  return { list, history, set, resume, check, inWindow, STANDBY, getSchedule, setSchedule };
 }
 module.exports = { createMtemp };
 
@@ -226,3 +236,16 @@ function usualRate(rows, set) {
 }
 module.exports.createTempLog = createTempLog;
 module.exports.usualRate = usualRate;
+module.exports.nyParts = nyParts;
+// the next time a day plan changes temperature after (d, m). week: { sun: [[start, temp], ...], ... }
+function nextChange(week, d, m, addDays) {
+  const DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"], dayOf = (x) => (week[DAYS[new Date(x + "T12:00:00Z").getUTCDay()]] || []).slice().sort((a, b) => a[0] - b[0]);
+  const today = dayOf(d); if (!today.length) return null;
+  let last = (today.filter((e) => e[0] <= m).pop() || today[0])[1];
+  for (let i = 0; i <= 7; i++) {
+    const dd = i ? addDays(d, i) : d;
+    for (const e of dayOf(dd)) { if (i === 0 && e[0] <= m) continue; if (e[1] !== last) return { d: dd, m: e[0] }; last = e[1]; }
+  }
+  return null;
+}
+module.exports.nextChange = nextChange;

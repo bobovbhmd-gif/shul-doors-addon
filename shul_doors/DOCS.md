@@ -47,6 +47,7 @@ The portal says so where they appear.
 - `atrium_url`: the parking lot controller (CDVI Atrium), like `http://192.168.1.60:8081`, with `atrium_username` / `atrium_password` of a user made for Shul Manager. Type these here yourself.
 - Changes to the mikva magnet and opening the parking lot stay off until a super admin turns them on under Settings, Controllers.
 - Parking lot schedule: each entrance can be Normal (key tags), Open (anyone) or Locked, by weekly times, Yom Tov, one-off dates, or by hand. Times can follow the zmanim (for example Shkiah minus 30). Locked isn't connected to the controller yet; until it is, a Locked entrance is left as it was.
+- Mikva thermostats set by hand (here or in the Meross app) go back to their schedule at the next scheduled change, unless someone taps Keep it.
 - Mikva heat-ups: from the temperature log, how long each pool takes for the preheat and for the heat to the temperature people use, with a suggested start time. The "isn't warming up" alert compares the rise with each pool's usual speed.
 - Sign-in accounts: Shul Manager makes and resets Home Assistant logins for the people you add. It never changes a Home Assistant administrator, and passwords are never stored.
 

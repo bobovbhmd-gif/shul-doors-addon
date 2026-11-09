@@ -1831,6 +1831,8 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 @media (max-width:600px){.pk-week .dn{width:64px}.pk-modes button small{display:none}}
 /* heat-up */
 .ts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.ts select,.ts input{width:auto!important;min-width:0}.ts input[type=number]{width:72px!important}
+.mt-hand{display:flex;flex-direction:column;align-items:stretch;gap:8px;background:color-mix(in srgb,var(--warn,#c80) 12%,var(--fill));border-radius:10px;padding:8px 10px;margin-top:10px}.mt-hand span{display:flex;flex-direction:column;font-size:12.5px;color:var(--muted)}.mt-hand b{font-size:13.5px;color:var(--fg)}.mt-hb{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.mt-hb .lnk{background:none;border:0;color:var(--b);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:4px}
+.mt-sch{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12.5px;color:var(--muted)}.mt-sch i{width:7px;height:7px;border-radius:50%;background:var(--ok)}
 .hu-k{font-size:12.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.hu-pre{font-size:13.5px;color:var(--muted);background:var(--fill);border-radius:10px;padding:8px 10px}.hu-pre b{color:var(--fg)}
 .hu-det summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:4px 0}
 .hu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
@@ -4485,7 +4487,13 @@ document.addEventListener("change",ev=>{const t=ev.target;if(!t.dataset||!t.data
 // ---------- Mikva temperature: the Meross thermostats, read through Home Assistant ----------
 const MT_COL=["#0a84ff","#ff9f0a","#30b0c7","#bf5af2"];
 let MT={list:null,err:"",allow:false,hist:null,t:0};
-function mtDemo(){const mk=(id,name,area,cur,set,heat)=>{const pts=[];let v=set-1.5;for(let i=0;i<=48;i++){v+=(set-v)*0.15+(Math.sin(i/3+cur)*0.25);if(i===30&&name.includes("16 Ave hot"))v-=2.5;pts.push(+v.toFixed(1))}pts[48]=cur;return {id,name,area,cur,set,heat,online:true,unit:"°F",min:40,max:110,hist:pts}};
+function mtDemo(){return mtDemo0().map((x,i)=>({...x,sched:i!==1,hand:i===1?{hold:false,back:{d:todayNY(),m:Math.min(1425,(Math.floor(mkNowMin()/60)+2)*60)}}:null}))}
+// when a pool set by hand goes back to its schedule
+function mtBackText(b){if(!b)return "";const t=todayNY(),when=b.d===t?"":b.d===addDays(t,1)?"tomorrow ":`${dayInfo(b.d).w===6?"Shabbos":WDN[dayInfo(b.d).w]} `;return `${when}${fmt(b.m)}`}
+function mtHandHtml(x,k){const h=x.hand||{},dis=x.online?"":" disabled";
+  const sub=h.hold?"Kept until you put it back":h.back?`Back on its schedule ${/^\d/.test(mtBackText(h.back))?"at ":""}${mtBackText(h.back)}`:"Not following its schedule";
+  return `<div class="mt-hand"><span><b>Set by hand</b>${esc(sub)}</span><div class="mt-hb">${h.hold?`<button class="lnk" type="button" data-mthold="${k}" data-v="0"${dis}>Let it go back</button>`:h.back?`<button class="lnk" type="button" data-mthold="${k}" data-v="1"${dis}>Keep it</button>`:""}<button class="btn sm" type="button" data-mtback="${k}"${dis}>${h.back&&!h.hold?"Back now":"Back to the schedule"}</button></div></div>`}
+function mtDemo0(){const mk=(id,name,area,cur,set,heat)=>{const pts=[];let v=set-1.5;for(let i=0;i<=48;i++){v+=(set-v)*0.15+(Math.sin(i/3+cur)*0.25);if(i===30&&name.includes("16 Ave hot"))v-=2.5;pts.push(+v.toFixed(1))}pts[48]=cur;return {id,name,area,cur,set,heat,online:true,unit:"°F",min:40,max:110,hist:pts}};
   return [mk("climate.mts960_9d9d","15 Ave, hot","Mikva 15 Ave hot",99.1,99,"idle"),mk("climate.mts960_9de7","15 Ave, warm","Mikva 15 Ave warm",95.8,96,"heating"),mk("climate.mts960_84a9","16 Ave, warm","Mikva 16 Ave warm",96.2,96,"idle"),mk("climate.mts960_ed9c","16 Ave, hot","Mikva 16 Ave hot",95.4,99,"heating")]}
 function mtCfg(){const c={on:false,deg:3,mins:15,heatMins:240,rateMins:45,when:"times",from:"23:30",to:"02:30",offline:true,...(S.mtemp||{})};if(c.when==="mikva")c.when="always";return c}
 async function mtLoad(force){if(!ON_BOX){if(!MT.list){MT.list=mtDemo();MT.allow=true}return}
@@ -4712,7 +4720,8 @@ function renderMt(){const b=$("#mtBody");if(!b)return;const ae=document.activeEl
     return `<div class="mt-c${!x.online?" off":st[0]==="bad"?" warn":""}"><div class="mt-top"><div><b>${esc(x.name)}</b></div><span class="mt-st ${st[0]}">${st[1]}</span></div>
       <div class="mt-now">${x.online&&x.cur!=null?x.cur.toFixed(1):"--"}<span>${esc(x.unit||"°F")}</span></div>
       ${mtSpark(x.hist,x.set)}
-      <div class="mt-set"><span>Set to <b>${x.set!=null?x.set:"--"}${esc(x.unit||"°F")}</b></span><button type="button" data-mtset="${k}" data-d="-1" aria-label="Lower"${x.online?"":" disabled"}>−</button><button type="button" data-mtset="${k}" data-d="1" aria-label="Raise"${x.online?"":" disabled"}>+</button></div></div>`}).join("");
+      <div class="mt-set"><span>Set to <b>${x.set!=null?x.set:"--"}${esc(x.unit||"°F")}</b></span><button type="button" data-mtset="${k}" data-d="-1" aria-label="Lower"${x.online?"":" disabled"}>−</button><button type="button" data-mtset="${k}" data-d="1" aria-label="Raise"${x.online?"":" disabled"}>+</button></div>
+      ${x.sched===false?mtHandHtml(x,k):x.sched===true?`<div class="mt-sch"><i></i>Following its schedule</div>`:""}</div>`}).join("");
   const ro=MT.allow?"":`<p class="gf top mk-ro">Showing the thermostats. Changing the set point from here is off. A super admin can turn it on under Settings, Controllers.</p>`;
   const al=`<h3 class="gh mk-h">Alerts</h3><div class="glist mt-al">
     <label class="row swrow"><span class="rt"><b>Temperature alerts</b><span>Text the people who have Mikva temperature alerts turned on in Users and permissions</span></span><input type="checkbox" class="switch" data-mtc="on"${c.on?" checked":""}></label>
@@ -4728,12 +4737,19 @@ function renderMt(){const b=$("#mtBody");if(!b)return;const ae=document.activeEl
   if(MTT==="heat"){b.innerHTML=seg+huHtml();return}
   if(MTT==="log"){if(!MTL.rows&&!MTL.loading)setTimeout(mtlLoad);b.innerHTML=seg+mtlHtml();return}
   if(MTT==="alerts"){b.innerHTML=seg+al.replace('<h3 class="gh mk-h">Alerts</h3>','');return}
-  b.innerHTML=seg+ro+`<div class="mt-grid">${cards}</div><p class="gf">Each thermostat follows its own schedule in the Meross app (for example heating to 106° from 2 AM, resting at 68° in the day). The set point shown is what it's aiming for right now.</p><h3 class="gh mk-h">Last 24 hours</h3>${mtChart(L)}`}
+  b.innerHTML=seg+ro+`<div class="mt-grid">${cards}</div><p class="gf">Each thermostat follows its schedule (for example heating to 106° from 2 AM, resting at 68° in the day). A change by hand, here or in the Meross app, lasts until the next change in its schedule, unless you tap Keep it.</p><h3 class="gh mk-h">Last 24 hours</h3>${mtChart(L)}`}
 document.addEventListener("click",async ev=>{const t=ev.target;if(t.closest("[data-mtre]")){MT.err="";mtLoad(true);return}
+  const bk=t.closest("[data-mtback]");if(bk){const x=MT.list[+bk.dataset.mtback];if(!MT.allow&&!(S.ctrl&&S.ctrl.mtempWrites)){toast("Changing the thermostats from here is off. Turn on Mikva thermostats under Settings, Controllers.");return}
+    if(ON_BOX){bk.disabled=true;let j;try{j=await (await fetch("api/mtemp/resume",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:x.id})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}bk.disabled=false;if(!j.ok){toast(j.error||"Not changed");return}}
+    x.sched=true;x.hand=null;ctrlNote(`Mikva ${x.name}: back to its schedule`);renderMt();MT.t=0;setTimeout(()=>mtLoad(true),4000);return}
+  const hd=t.closest("[data-mthold]");if(hd){const x=MT.list[+hd.dataset.mthold],v=hd.dataset.v==="1";if(!MT.allow&&!(S.ctrl&&S.ctrl.mtempWrites)){toast("Changing the thermostats from here is off. Turn on Mikva thermostats under Settings, Controllers.");return}
+    let hand={...(x.hand||{}),hold:v};if(ON_BOX){hd.disabled=true;let j;try{j=await (await fetch("api/mtemp/hold",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:x.id,hold:v})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}hd.disabled=false;if(!j.ok){toast(j.error||"Not changed");return}hand=j.hand}
+    x.hand=hand;ctrlNote(v?`Mikva ${x.name}: kept at ${x.set}${x.unit||"°F"} until someone puts it back`:`Mikva ${x.name}: goes back to its schedule at the next change`);renderMt();return}
   const s=t.closest("[data-mtset]");if(!s)return;const x=MT.list[+s.dataset.mtset];if(x.set==null)return;
   if(!MT.allow&&!(S.ctrl&&S.ctrl.mtempWrites)){toast("Changing the temperature from here is off. Turn on Mikva thermostats under Settings, Controllers.");return}const nv=Math.round((x.set+ +s.dataset.d*(+x.step||1))*10)/10;if(nv<x.min||nv>x.max)return;
-  if(ON_BOX){s.disabled=true;let j;try{j=await (await fetch("api/mtemp/set",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:x.id,temp:nv})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}s.disabled=false;if(!j.ok){toast(j.error||"Not changed");return}}
-  x.set=nv;ctrlNote(`Mikva ${x.name}: set to ${nv}${x.unit||"°F"}`);renderMt();MT.t=0;setTimeout(()=>mtLoad(true),4000)});
+  let hand=null;if(ON_BOX){s.disabled=true;let j;try{j=await (await fetch("api/mtemp/set",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:x.id,temp:nv})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}s.disabled=false;if(!j.ok){toast(j.error||"Not changed");return}hand=j.hand||null}
+  else hand=x.hand||{hold:false,back:{d:todayNY(),m:Math.min(1425,(Math.floor(mkNowMin()/60)+2)*60)}};
+  const was=x.sched;x.set=nv;if(x.sched!=null){x.sched=false;x.hand=hand}ctrlNote(`Mikva ${x.name}: set to ${nv}${x.unit||"°F"} by hand`);renderMt();if(was)toast(hand&&hand.back&&!hand.hold?`${x.name} is set by hand until ${mtBackText(hand.back)}, then it goes back to its schedule. Tap Keep it to hold it longer.`:`${x.name} is set by hand now.`);MT.t=0;setTimeout(()=>mtLoad(true),4000)});
 document.addEventListener("change",ev=>{const t=ev.target;if(!t.dataset||!t.dataset.mtc)return;const k=t.dataset.mtc;S.mtemp={...mtCfg(),[k]:t.type==="checkbox"?t.checked:t.type==="number"?+t.value:t.value};commit(k==="on"?(t.checked?"Turned on mikva temperature alerts":"Turned off mikva temperature alerts"):"Changed the mikva temperature alerts");renderMt()});
 
 // ---------- Mikvah controller (X-600M). It works out the calendar and sunset itself; we only read and save its settings ----------
