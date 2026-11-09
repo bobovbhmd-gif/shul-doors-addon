@@ -1809,6 +1809,36 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 #tab-lockdown .op-eb{grid-template-columns:1fr;max-width:560px}
 
 
+
+/* Parking lot page */
+.pk-now{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.pk-c{background:var(--surface);border-radius:18px;box-shadow:0 0 0 1px var(--line) inset;padding:16px;display:flex;flex-direction:column;gap:12px}
+.pk-c .mk-head b{font-size:17px}
+.pk-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pk-modes button{border:0;border-radius:14px;background:var(--fill);padding:10px 8px;font:inherit;cursor:pointer;display:flex;flex-direction:column;gap:2px;text-align:left}
+.pk-modes button b{font-size:14.5px}.pk-modes button small{font-size:12px;color:var(--muted)}
+.pk-modes button.on{background:var(--c);color:#fff}.pk-modes button.on small{color:rgba(255,255,255,.85)}
+.pk-tl{position:relative;height:22px;border-radius:7px;background:color-mix(in srgb,var(--b) 18%,var(--fill));overflow:hidden}
+.pk-tl span{position:absolute;top:0;bottom:0}
+.pk-tl .now{width:2px;background:var(--fg);opacity:.6}
+.pk-leg{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin:8px 2px}.pk-leg i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:5px;vertical-align:-2px}
+.pk-week .row{gap:12px}.pk-week .dn{width:96px;flex:none}.pk-week .dn b{display:block}.pk-week .dn span{font-size:12.5px;color:var(--muted)}
+.pk-week .pk-tl{flex:1}
+.pk-rule .rt span{white-space:normal}
+.pk-pill{font-size:12px;font-weight:650;border-radius:999px;padding:3px 10px;color:#fff;white-space:nowrap}
+.pk-days{display:flex;gap:6px;flex-wrap:wrap}.pk-days label{display:flex;align-items:center;justify-content:center;min-width:44px;padding:8px 6px;border-radius:10px;background:var(--fill);font-weight:600;font-size:13.5px;cursor:pointer;color:var(--fg)!important}
+.pk-days input{display:none}.pk-days label:has(input:checked){background:var(--accent);color:#fff!important}
+@media (max-width:600px){.pk-week .dn{width:64px}.pk-modes button small{display:none}}
+/* heat-up */
+.ts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.ts select,.ts input{width:auto!important;min-width:0}.ts input[type=number]{width:72px!important}
+.hu-k{font-size:12.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.hu-pre{font-size:13.5px;color:var(--muted);background:var(--fill);border-radius:10px;padding:8px 10px}.hu-pre b{color:var(--fg)}
+.hu-det summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:4px 0}
+.hu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.hu-c{background:var(--surface);border-radius:18px;box-shadow:0 0 0 1px var(--line) inset;padding:16px;display:flex;flex-direction:column;gap:10px}
+.hu-big{font-size:28px;font-weight:700;letter-spacing:-.01em}.hu-big span{font-size:14px;font-weight:500;color:var(--muted);margin-left:6px}
+.hu-tip{background:var(--ok-soft);color:var(--ok);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.4}
+.hu-tip.warn{background:color-mix(in srgb,var(--o) 14%,transparent);color:var(--o)}
+.hu-c table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}.hu-c th{text-align:left;color:var(--muted);font-weight:600;padding:4px 6px;border-bottom:1px solid var(--line)}.hu-c td{padding:5px 6px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
 /* Mikva temperature */
 .ms-hol{margin-top:10px}.ms-hol summary{cursor:pointer;font-weight:600;color:var(--accent);padding:8px 2px}.ms-hol h4{margin:12px 4px 6px;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .ms-week{background:var(--surface);border-radius:18px;box-shadow:0 0 0 1px var(--line) inset;padding:10px 12px}
@@ -1822,7 +1852,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 .ms-axis span:nth-child(6){text-align:right;margin-left:-40px}
 .ms-leg{display:flex;gap:14px;font-size:12.5px;color:var(--muted);margin:8px 2px}.ms-leg i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:5px;vertical-align:-2px}
 .ms-link{margin:0 0 12px;padding:4px 14px}
-.ms-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;padding:10px 0;border-bottom:1px solid var(--line)}
+.ms-row{display:grid;grid-template-columns:1.5fr 1fr auto;gap:10px;align-items:end;padding:10px 0;border-bottom:1px solid var(--line)}
 .ms-temp{display:flex;align-items:center;gap:6px}.ms-first{font-size:12.5px;color:var(--muted);padding-bottom:12px}
 .ms-copy{display:flex;flex-direction:column;gap:8px;margin-top:6px}.ms-copy div{display:flex;flex-wrap:wrap;gap:8px 14px}.ms-copy label{flex-direction:row!important;align-items:center;gap:6px!important;font-weight:500!important;color:var(--fg)!important}
 @media (max-width:600px){.ms-day{grid-template-columns:36px 1fr;gap:8px}.ms-ch{display:none}.ms-axis{grid-template-columns:36px repeat(4,1fr) 0;gap:8px}.ms-axis span:last-child{display:none}.ms-row{grid-template-columns:1fr 1fr}.ms-row .btn,.ms-first{grid-column:1/-1}}
@@ -2070,6 +2100,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
     <button type="button" class="navbtn cap-codes" data-tab="codes"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg></i>Guest codes</button>
     <button type="button" class="navbtn" data-tab="msgs" hidden><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></i>Messages <span class="badge" id="msgBadge" hidden></span></button>
     <button type="button" class="navbtn" data-tab="activity" data-also="live reports" id="actNav"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i>Activity</button>
+    <button type="button" class="navbtn admin-only" data-tab="parking"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 16V11l2-5h10l2 5v5M5 16h14M5 16v2M19 16v2"/><circle cx="8" cy="13" r=".8"/><circle cx="16" cy="13" r=".8"/></svg></i>Parking</button>
     <button type="button" class="navbtn admin-only" data-tab="mikvah"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z"/></svg></i>Mikva</button>
     <div class="ng"></div>
     <button type="button" class="navbtn lkbtn admin-only" data-tab="lockdown"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><path d="M12 15v2"/></svg></i>Lockdown</button>
@@ -2148,6 +2179,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
     <div class="op-top"><label class="search op-q"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="opQ" placeholder="Find a door" aria-label="Find a door" autocomplete="off"></label><div class="fchips" id="opF" role="group" aria-label="Show"></div></div>
     <div id="opBody"></div>
   </section>
+  <section id="tab-parking" hidden><div id="pkBody"></div></section>
   <section id="tab-mikvah" hidden><div id="mkBody"></div></section>
   <section id="tab-mtemp" hidden><div id="mtBody"></div></section>
   <section id="tab-lockdown" hidden>
@@ -4455,7 +4487,7 @@ const MT_COL=["#0a84ff","#ff9f0a","#30b0c7","#bf5af2"];
 let MT={list:null,err:"",allow:false,hist:null,t:0};
 function mtDemo(){const mk=(id,name,area,cur,set,heat)=>{const pts=[];let v=set-1.5;for(let i=0;i<=48;i++){v+=(set-v)*0.15+(Math.sin(i/3+cur)*0.25);if(i===30&&name.includes("16 Ave hot"))v-=2.5;pts.push(+v.toFixed(1))}pts[48]=cur;return {id,name,area,cur,set,heat,online:true,unit:"°F",min:40,max:110,hist:pts}};
   return [mk("climate.mts960_9d9d","15 Ave, hot","Mikva 15 Ave hot",99.1,99,"idle"),mk("climate.mts960_9de7","15 Ave, warm","Mikva 15 Ave warm",95.8,96,"heating"),mk("climate.mts960_84a9","16 Ave, warm","Mikva 16 Ave warm",96.2,96,"idle"),mk("climate.mts960_ed9c","16 Ave, hot","Mikva 16 Ave hot",95.4,99,"heating")]}
-function mtCfg(){const c={on:false,deg:3,mins:15,heatMins:120,when:"always",from:"16:00",to:"02:00",offline:true,...(S.mtemp||{})};if(c.when==="mikva")c.when="always";return c}
+function mtCfg(){const c={on:false,deg:3,mins:15,heatMins:240,rateMins:45,when:"times",from:"23:30",to:"02:30",offline:true,...(S.mtemp||{})};if(c.when==="mikva")c.when="always";return c}
 async function mtLoad(force){if(!ON_BOX){if(!MT.list){MT.list=mtDemo();MT.allow=true}return}
   if(!force&&Date.now()-MT.t<20000)return;MT.t=Date.now();
   try{const j=await (await fetch("api/mtemp")).json();if(!j.ok)throw new Error(j.error||"no answer");MT={...MT,list:j.list,allow:!!j.allow,err:""}}catch(e){MT.err=e.message}
@@ -4518,7 +4550,7 @@ async function msLoad(force){if(!ON_BOX){if(!Object.keys(MS.data).length)msDemoL
 const msTwin=id=>{const L=MT.list||[],me=L.find(x=>x.id===id);if(!me)return null;const kind=/hot/i.test(me.name)?"hot":/warm/i.test(me.name)?"warm":null;return kind?L.find(x=>x.id!==id&&new RegExp(kind,"i").test(x.name))||null:null};
 const msDirty=id=>JSON.stringify(MS.data[id])!==MS.orig[id];
 function msColor(t){const f=Math.max(0,Math.min(1,(t-68)/(106-68)));const h=210-f*200;return `hsl(${h} 80% ${f>0.5?52:58}%)`}
-function msBar(day,label){const segs=day.map((e,i)=>({a:e[0],b:i+1<day.length?day[i+1][0]:1440,t:e[1]})).filter(x=>x.b>x.a);
+function msBar(day0,k){const rd=msResolveDay(day0,k);const segs=rd.map((e,i)=>({a:e[0],b:i+1<rd.length?rd[i+1][0]:1440,t:e[1]})).filter(x=>x.b>x.a);
   return `<div class="ms-bar">${segs.map(x=>`<span style="left:${x.a/14.4}%;width:${(x.b-x.a)/14.4}%;background:${msColor(x.t)}" title="${fmt(x.a)} ${x.t}°">${x.b-x.a>=150?`<em>${x.t}°</em>`:""}</span>`).join("")}</div>`}
 
 // ---- Yom Tov for the thermostats: each special day runs like another day of that pool's normal week ----
@@ -4543,13 +4575,25 @@ document.addEventListener("change",ev=>{const t=ev.target;if(!t.dataset)return;i
   if(t.dataset.mshol!==undefined){const c=msCfg(),hol=c.hol.map(r=>({...r}));hol[+t.dataset.mshol].use=t.value;S.mtSched={...(S.mtSched||{}),hol,base:c.base,closedTemp:c.closedTemp};commit(`Mikva thermostats: ${hol[+t.dataset.mshol].name} runs ${MS_USE.find(x=>x[0]===t.value)[1].toLowerCase()}`);msApply();renderMt()}});
 async function msApply(loud){if(!ON_BOX)return;if(!loud&&!(S.ctrl&&S.ctrl.mtempWrites))return false;await boxSaved();let j;try{j=await (await fetch("api/mtemp/apply",{method:"POST"})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}
   if(!j.ok){toast(j.error||((j.out||[]).filter(o=>o.ok===false).map(o=>`${o.name}: ${o.error}`).join("; "))||"Not written to the thermostats");return false}return true}
+
+// ---- times that follow the zmanim: "18:00", or "sunset-30", "alos+15", "candles", "havdalah+10" ----
+const ZT=[["time","At a set time"],["alos","Alos"],["sunrise","Netz"],["candles","Candle lighting"],["sunset","Shkiah"],["tzeis","Tzeis"],["havdalah","Havdalah"]];
+function tsParse(v){if(typeof v==="number")return {z:"time",t:v};const m=String(v||"").match(/^([a-z]+)([+-]\d+)?$/);if(m&&ZT.some(x=>x[0]===m[1]))return {z:m[1],off:+(m[2]||0)};return {z:"time",t:toMin(v||"0:00")}}
+function tsMin(v,d){const p=tsParse(v);if(p.z==="time")return p.t;const z=(dayInfo(d)||{}).z||{};let b=z[p.z];
+  if(b==null&&p.z==="candles")b=z.sunset!=null?z.sunset-18:null;if(b==null&&p.z==="havdalah")b=z.tzeis!=null?z.tzeis:z.sunset!=null?z.sunset+50:null;if(b==null)b=z.sunset||1080;return Math.round(b+p.off)}
+function tsLabel(v){const p=tsParse(v);if(p.z==="time")return fmt(p.t);const n=ZT.find(x=>x[0]===p.z)[1];return p.off?`${n} ${p.off<0?"−":"+"} ${Math.abs(p.off)} min`:n}
+function tsField(id,v,{dis}={}){const p=tsParse(v);return `<span class="ts" data-ts="${id}"><select data-tsz aria-label="Time kind"${dis?" disabled":""}>${ZT.map(([k,n])=>`<option value="${k}"${p.z===k?" selected":""}>${n}</option>`).join("")}</select>${p.z==="time"?`<input type="time" step="900" value="${hhmm(p.t)}" data-tst${dis?" disabled":""}>`:`<select data-tsd aria-label="Before or after"><option value="-"${p.off<0?" selected":""}>minus</option><option value="+"${p.off>=0?" selected":""}>plus</option></select><input type="number" min="0" max="600" step="5" value="${Math.abs(p.off)}" data-tso aria-label="Minutes">min`}</span>`}
+function tsRead(el){const z=el.querySelector("[data-tsz]").value;if(z==="time"){const t=el.querySelector("[data-tst]");return t?t.value:"00:00"}const o=+((el.querySelector("[data-tso]")||{}).value||0),sg=((el.querySelector("[data-tsd]")||{}).value||"+");return o?`${z}${sg}${o}`:z}
+document.addEventListener("change",ev=>{const t=ev.target;if(t.dataset&&t.dataset.tsz!==undefined){const w=t.closest(".ts");const v=t.value==="time"?"18:00":t.value;w.outerHTML=tsField(w.dataset.ts,v)}});
+function msDayDate(k){const t=todayNY(),w=MS_DAYS.findIndex(x=>x[0]===k);for(let i=0;i<7;i++){const d=addDays(t,i);if(dayInfo(d).w===w)return d}return t}
+function msResolveDay(day,k){const d=msDayDate(k);return (day||[]).map((e,i)=>[i===0?0:Math.round(tsMin(e[0],d)/15)*15,e[1],e[0]]).sort((a,b)=>a[0]-b[0])}
 function msHtml(){const L=MT.list||[];if(!L.length)return `<p class="none">Reading the thermostats…</p>`;msLoad();
   if(MS.err)return `<div class="mk-card mk-warn"><b>Can't read the thermostat schedules</b><p>${esc(MS.err)}</p><button class="btn sm" type="button" data-msre>Try again</button></div>`;
   if(!MS.pool||!L.some(x=>x.id===MS.pool))MS.pool=L[0].id;const id=MS.pool,w=MS.data[id];if(!w)return `<p class="none">Reading the schedules…</p>`;
   const tw=msTwin(id),u=(L[0]||{}).unit||"°F";
   let h=`<div class="ua-per">${L.map(x=>`<button type="button" class="${x.id===id?"on":""}" data-mspool="${esc(x.id)}">${esc(x.name)}${msDirty(x.id)?" •":""}</button>`).join("")}</div>`;
   if(tw)h+=`<label class="row swrow ms-link glist"><span class="rt"><b>Keep ${esc(tw.name)} the same</b><span>Saving writes this schedule to both thermostats</span></span><input type="checkbox" class="switch" data-mslink${MS.link?" checked":""}></label>`;
-  h+=`<div class="ms-week">${MS_DAYS.map(([k,n])=>`<button type="button" class="ms-day${k===MS_DAYS[dow(todayNY())][0]?" today":""}" data-msday="${k}"><span class="ms-dn">${n.slice(0,3)}</span>${msBar(w[k]||[],n)}<span class="ms-ch">${(w[k]||[]).length} change${(w[k]||[]).length===1?"":"s"}</span></button>`).join("")}
+  h+=`<div class="ms-week">${MS_DAYS.map(([k,n])=>`<button type="button" class="ms-day${k===MS_DAYS[dow(todayNY())][0]?" today":""}" data-msday="${k}"><span class="ms-dn">${n.slice(0,3)}</span>${msBar(w[k]||[],k)}<span class="ms-ch">${(w[k]||[]).length} change${(w[k]||[]).length===1?"":"s"}</span></button>`).join("")}
     <div class="ms-axis"><span></span><span>12 AM</span><span>6 AM</span><span>Noon</span><span>6 PM</span><span>12 AM</span><span></span></div></div>
     <div class="ms-leg"><span><i style="background:${msColor(68)}"></i>68°</span><span><i style="background:${msColor(80)}"></i>80°</span><span><i style="background:${msColor(93)}"></i>93°</span><span><i style="background:${msColor(106)}"></i>106°</span></div>
     <p class="gf">This is the normal week. Tap a day to change it. Each day can have up to ${MS.max} changes, in 15-minute steps. The thermostat keeps the schedule itself, so it keeps running even if this box is off.</p>`;
@@ -4558,16 +4602,16 @@ function msHtml(){const L=MT.list||[];if(!L.length)return `<p class="none">Readi
   return h}
 function msSheet(day){const id=MS.pool,w=MS.data[id],L=MT.list||[],u=(L[0]||{}).unit||"°F",x=L.find(y=>y.id===id);MS.sel=day;
   $("#mkT").textContent=`${x?x.name:""}, ${MS_DAYS.find(d=>d[0]===day)[1]}`;
-  const rows=(w[day]||[]).map((e,i)=>`<div class="ms-row" data-i="${i}"><label>From<input type="time" step="900" value="${hhmm(e[0])}" data-msf="t"${i===0?" disabled":""}></label><label>Temperature<span class="ms-temp"><input type="number" step="0.5" min="40" max="110" value="${e[1]}" data-msf="v">${esc(u)}</span></label>${i>0?`<button type="button" class="btn sm danger" data-msdel="${i}" aria-label="Remove">Remove</button>`:`<span class="ms-first">Starts the day</span>`}</div>`).join("");
+  const rows=(w[day]||[]).map((e,i)=>`<div class="ms-row" data-i="${i}"><label>From${i===0?`<span class="ms-first" style="padding:10px 0">12:00 AM</span>`:tsField("ms"+i,e[0])}</label><label>Temperature<span class="ms-temp"><input type="number" step="0.5" min="40" max="110" value="${e[1]}" data-msf="v">${esc(u)}</span></label>${i>0?`<button type="button" class="btn sm danger" data-msdel="${i}" aria-label="Remove">Remove</button>`:`<span class="ms-first">Starts the day</span>`}</div>`).join("");
   $("#mkSheet").innerHTML=`<div class="nu-f"><div id="msRows">${rows}</div>${(w[day]||[]).length<MS.max?`<button type="button" class="btn sm" data-msadd>Add a change</button>`:`<p class="gf">That's the most this thermostat allows in one day (${MS.max}).</p>`}
     <div class="ms-copy"><b>Also use this day for</b><div>${MS_DAYS.filter(d=>d[0]!==day).map(([k,n])=>`<label><input type="checkbox" value="${k}" data-mscopy> ${n.slice(0,3)}</label>`).join("")}</div></div></div>`;openModal("mMk")}
-function msReadSheet(){const rows=[...document.querySelectorAll("#msRows .ms-row")].map((r,i)=>[i===0?0:toMin(r.querySelector('[data-msf="t"]').value),+r.querySelector('[data-msf="v"]').value]);
-  return rows.filter((e,i)=>i===0||e[0]>0).sort((a,b)=>a[0]-b[0])}
+function msReadSheet(){const d=msDayDate(MS.sel||"sun");const rows=[...document.querySelectorAll("#msRows .ms-row")].map((r,i)=>{if(i===0)return [0,+r.querySelector('[data-msf="v"]').value];const v=tsRead(r.querySelector(".ts"));return [/^\d+:\d+$/.test(v)?toMin(v):v,+r.querySelector('[data-msf="v"]').value]});
+  return rows.filter((e,i)=>i===0||tsMin(e[0],d)>0).sort((a,b)=>tsMin(a[0],d)-tsMin(b[0],d))}
 document.addEventListener("click",async ev=>{const t=ev.target;
   const p=t.closest("[data-mspool]");if(p){MS.pool=p.dataset.mspool;renderMt();return}
   const d=t.closest("[data-msday]");if(d){msSheet(d.dataset.msday);return}
   if(t.closest("[data-msre]")){MS.err="";msLoad(true);return}
-  if(t.closest("[data-msadd]")){const dd=msReadSheet(),last=dd[dd.length-1];dd.push([Math.min(1425,last[0]+60),last[1]]);MS.data[MS.pool][MS.sel]=dd;msSheet(MS.sel);return}
+  if(t.closest("[data-msadd]")){const dd=msReadSheet(),last=dd[dd.length-1],lm=tsMin(last[0],msDayDate(MS.sel));dd.push([Math.min(1425,lm+60),last[1]]);MS.data[MS.pool][MS.sel]=dd;msSheet(MS.sel);return}
   const del=t.closest("[data-msdel]");if(del){const dd=msReadSheet();dd.splice(+del.dataset.msdel,1);MS.data[MS.pool][MS.sel]=dd;msSheet(MS.sel);return}
   if(t.closest("#mkGo")&&MS.sel&&$("#msRows")){const dd=msReadSheet();if(dd.some(e=>!(e[1]>=40&&e[1]<=110))){toast("Use temperatures between 40 and 110.");return}
     const copy=[...document.querySelectorAll("[data-mscopy]:checked")].map(c=>c.value);[MS.sel,...copy].forEach(k=>{MS.data[MS.pool][k]=dd.map(e=>[...e])});
@@ -4579,6 +4623,84 @@ document.addEventListener("click",async ev=>{const t=ev.target;
     if(ON_BOX){await boxSaved();const ok=await msApply(true);if(ok)toast("Saved and written to the thermostat"+(ids.length>1?"s":""))}else toast("Saved to the thermostat"+(ids.length>1?"s":""));renderMt();return}
 });
 document.addEventListener("change",ev=>{if(ev.target.dataset&&ev.target.dataset.mslink!==undefined){MS.link=ev.target.checked;renderMt()}});
+
+// ---------- Parking lot page: Normal (key tags work), Open (anyone), Locked (no one, not even key tags) ----------
+const PK_MODES={normal:["Normal","Key tags open it","var(--b)"],open:["Open","Anyone can drive in","var(--ok)"],locked:["Locked","No one, not even key tags","var(--r)"]};
+let PKT="now";
+function pkCfg(){return {rules:[],dates:[],...(S.park||{})}}
+function pkDemo(){if(S.park||ON_BOX)return;S.park={rules:[{id:1,name:"Shabbos morning",mode:"open",doors:"all",days:[6],hol:true,from:"07:00",to:"13:00"},{id:2,name:"Overnight",mode:"normal",doors:"all",days:[0,1,2,3,4,5,6],hol:false,from:"00:00",to:"05:00"}],dates:[{id:3,name:"Klein wedding",date:addDays(todayNY(),6),mode:"locked",doors:"all",from:"18:00",to:"23:30"}]}}
+// what each entrance should be at minute m of date d
+function pkModeAt(d,m,doorId){const c=pkCfg(),di=dayInfo(d),isYT=["yt","shabbos"].some(k=>false)||(di.keys&&[...di.keys].some(k=>/rh1|rh2|yk$|succos1|succos2|shmini|simchas|pesach1|pesach2|shvii|acharon|shavuos1|shavuos2/.test(k)));
+  const hm=x=>tsMin(x,d);const inT=r=>{const a=hm(r.from),b=hm(r.to);return a===b||(a<b?m>=a&&m<b:m>=a||m<b)};const forDoor=r=>r.doors==="all"||(r.doors||[]).includes(doorId);
+  const pick=list=>list.find(r=>r.mode==="locked")||list.find(r=>r.mode==="open")||list[0];
+  const dl=c.dates.filter(r=>r.date===d&&forDoor(r)&&inT(r));if(dl.length)return {mode:pick(dl).mode,by:pick(dl).name};
+  const rl=c.rules.filter(r=>forDoor(r)&&inT(r)&&((r.days||[]).includes(di.w)||(r.hol&&isYT)));if(rl.length)return {mode:pick(rl).mode,by:pick(rl).name};
+  return {mode:"normal",by:""}}
+function pkTimeline(d,doorId,now){let segs=[],cur=null,start=0;for(let m=0;m<=1440;m+=15){const x=m<1440?pkModeAt(d,m,doorId).mode:null;if(x!==cur){if(cur)segs.push([start,m,cur]);cur=x;start=m}}
+  return `<div class="pk-tl">${segs.filter(s=>s[2]!=="normal").map(s=>`<span style="left:${s[0]/14.4}%;width:${(s[1]-s[0])/14.4}%;background:${PK_MODES[s[2]][2]}" title="${PK_MODES[s[2]][0]} ${fmt(s[0])} to ${fmt(s[1])}"></span>`).join("")}${now!=null?`<span class="now" style="left:${now/14.4}%"></span>`:""}</div>`}
+function pkRuleText(r){const days=r.days&&r.days.length===7?"Every day":(r.days||[]).map(w=>w===6?"Shabbos":WDN[w].slice(0,3)).join(", ");return `${r.date?esc(shortDate(r.date)):esc(days||"")}${r.hol?(r.days&&r.days.length?" and Yom Tov":"Yom Tov"):""}, ${esc(tsLabel(r.from))} to ${esc(tsLabel(r.to))}`}
+function renderPk(){const b=$("#pkBody");if(!b)return;pkDemo();pkLoad();const ds=PK.doors||[],c=pkCfg(),t=todayNY(),nm=mkNowMin();
+  const seg=`<div class="mk-seg" role="tablist">${[["now","Now"],["sched","Schedule"],["dates","Events and dates"]].map(([k,l])=>`<button type="button" class="${PKT===k?"on":""}" data-pkt="${k}">${l}</button>`).join("")}</div>`;
+  const ro=PK.allow?"":`<p class="gf top mk-ro">Changes from here are off. A super admin can turn them on under Settings, Controllers.</p>`;
+  let h="";
+  if(PKT==="now"){h=`<div class="pk-now">${ds.map(d=>{const want=pkModeAt(t,nm,d.id),man=(S.parkMan||{})[d.id],mode=man?man.mode:want.mode;
+      return `<div class="pk-c"><div class="mk-head" style="--c:${PK_MODES[mode][2]}"><span class="oi">${ico(mode==="open"?"open":"lock")}</span><div><b>${esc(d.name)}</b><span>${PK_MODES[mode][0]}: ${PK_MODES[mode][1]}${man?` · set by hand${man.to?" until "+fmt(nyMin(man.to)):""}`:want.by?` · ${esc(want.by)}`:""}</span></div></div>
+      <div class="pk-modes">${Object.entries(PK_MODES).map(([k,[n,sub,col]])=>`<button type="button" class="${mode===k?"on":""}" style="--c:${col}" data-pkmode="${k}" data-pkid="${esc(d.id)}"><b>${n}</b><small>${sub}</small></button>`).join("")}</div>
+      ${man?`<button class="btn sm" type="button" data-pkback="${esc(d.id)}">Back to the schedule</button>`:""}
+      <div><span class="hint">Today</span>${pkTimeline(t,d.id,nm)}<div class="mk-axis"><span>12 AM</span><span>6 AM</span><span>Noon</span><span>6 PM</span><span>12 AM</span></div></div></div>`}).join("")}</div>
+    <div class="pk-leg"><span><i style="background:color-mix(in srgb,var(--b) 18%,var(--fill))"></i>Normal</span><span><i style="background:var(--ok)"></i>Open</span><span><i style="background:var(--r)"></i>Locked</span></div>
+    <p class="gf">A change by hand stays until you tap Back to the schedule. Every change is saved in Activity.</p>`}
+  if(PKT==="sched"){h=`<div class="glist">${c.rules.map(r=>`<button type="button" class="row tap pk-rule" data-pkedit="r${r.id}"><span class="pk-pill" style="background:${PK_MODES[r.mode][2]}">${PK_MODES[r.mode][0]}</span><div class="rt"><b>${esc(r.name)}</b><span>${pkRuleText(r)} · ${r.doors==="all"?"Both entrances":esc((r.doors||[]).map(id=>(ds.find(x=>x.id===id)||{}).name||id).join(", "))}</span></div><span class="chev"></span></button>`).join("")||`<div class="row"><span class="hint">No schedule yet. The entrances stay Normal.</span></div>`}</div>
+    <button class="btn" type="button" data-pkadd="r" style="margin-top:12px">Add a time</button>
+    <h3 class="gh mk-h">The coming week</h3><div class="glist pk-week">${Array.from({length:7},(_,i)=>{const d=addDays(t,i),di=dayInfo(d);return `<div class="row"><div class="dn"><b>${i===0?"Today":di.w===6?"Shabbos":WDN[di.w]}</b><span>${esc(shortDate(d))}</span></div>${pkTimeline(d,(ds[0]||{}).id,i===0?nm:null)}</div>`}).join("")}</div>
+    <p class="gf">Anything not in the schedule is Normal: key tags work. When two times overlap, Locked wins over Open.</p>`}
+  if(PKT==="dates"){const up=c.dates.filter(r=>r.date>=t).sort((a,b)=>a.date.localeCompare(b.date)),past=c.dates.filter(r=>r.date<t);
+    h=`<p class="gf top">For a wedding, a levaya or any one day. These win over the normal schedule.</p><div class="glist">${up.map(r=>`<button type="button" class="row tap pk-rule" data-pkedit="d${r.id}"><span class="pk-pill" style="background:${PK_MODES[r.mode][2]}">${PK_MODES[r.mode][0]}</span><div class="rt"><b>${esc(r.name)}</b><span>${pkRuleText(r)}</span></div><span class="chev"></span></button>`).join("")||`<div class="row"><span class="hint">Nothing coming up.</span></div>`}</div>
+    <button class="btn" type="button" data-pkadd="d" style="margin-top:12px">Add a date</button>${past.length?`<p class="gf">${past.length} past date${past.length>1?"s":""} kept in Activity.</p>`:""}`}
+  const usesLock=c.rules.concat(c.dates).some(r=>r.mode==="locked")||Object.values(S.parkMan||{}).some(m=>m.mode==="locked");
+  const lk=usesLock?`<p class="gf top mk-ro">Locked isn't connected to the parking lot controller yet. Until it is, an entrance set to Locked stays as it was.</p>`:"";
+  b.innerHTML=seg+ro+lk+h}
+function pkSheetEdit(kind,r){const ds=PK.doors||[],isD=kind==="d";$("#mkT").textContent=r.id?"Change":(isD?"Add a date":"Add a time");PK_ED={kind,r:{...r}};
+  $("#mkSheet").innerHTML=`<div class="nu-f"><label>Name<input id="peName" value="${esc(r.name||"")}" placeholder="${isD?"For example: Klein wedding":"For example: Shabbos morning"}"></label>
+    <label>The entrances should be<select id="peMode">${Object.entries(PK_MODES).map(([k,[n,sub]])=>`<option value="${k}"${r.mode===k?" selected":""}>${n}: ${sub}</option>`).join("")}</select></label>
+    <label>Which entrances<select id="peDoors"><option value="all">Both entrances</option>${ds.map(d=>`<option value="${esc(d.id)}"${Array.isArray(r.doors)&&r.doors[0]===d.id?" selected":""}>${esc(d.name)}</option>`).join("")}</select></label>
+    ${isD?`<label>Date<input type="date" id="peDate" value="${r.date||todayNY()}"></label>`:`<label>Days</label><div class="pk-days">${[0,1,2,3,4,5,6].map(w=>`<label><input type="checkbox" value="${w}" data-ped${(r.days||[]).includes(w)?" checked":""}>${w===6?"Shab":WDN[w].slice(0,3)}</label>`).join("")}<label><input type="checkbox" id="peHol"${r.hol?" checked":""}>Yom Tov</label></div>`}
+    <label>From${tsField("peFrom",r.from||"18:00")}</label><label>To${tsField("peTo",r.to||"23:00")}</label>
+    ${r.id?`<button class="btn sm danger" type="button" data-pkdel>Remove</button>`:""}</div>`;openModal("mMk")}
+let PK_ED=null;
+document.addEventListener("click",ev=>{const t=ev.target;
+  const tb=t.closest("[data-pkt]");if(tb){PKT=tb.dataset.pkt;renderPk();return}
+  const a=t.closest("[data-pkadd]");if(a){pkSheetEdit(a.dataset.pkadd,{mode:a.dataset.pkadd==="d"?"locked":"open",doors:"all",days:[],from:"18:00",to:"23:00"});return}
+  const e=t.closest("[data-pkedit]");if(e){const k=e.dataset.pkedit[0],id=+e.dataset.pkedit.slice(1),c=pkCfg(),r=(k==="d"?c.dates:c.rules).find(x=>x.id===id);if(r)pkSheetEdit(k,r);return}
+  if(t.closest("[data-pkdel]")&&PK_ED){const c=pkCfg(),k=PK_ED.kind==="d"?"dates":"rules";S.park={...c,[k]:c[k].filter(x=>x.id!==PK_ED.r.id)};commit(`Parking lot: removed ${PK_ED.r.name}`);closeModal("mMk");PK_ED=null;renderPk();pkPush();return}
+  if(t.closest("#mkGo")&&PK_ED&&$("#peName")){const c=pkCfg(),isD=PK_ED.kind==="d",dv=$("#peDoors").value;
+    const r={...PK_ED.r,name:$("#peName").value.trim()||(isD?"Event":"Time"),mode:$("#peMode").value,doors:dv==="all"?"all":[dv],from:tsRead(document.querySelector('[data-ts="peFrom"]')),to:tsRead(document.querySelector('[data-ts="peTo"]'))};
+    if(isD)r.date=$("#peDate").value;else{r.days=[...document.querySelectorAll("[data-ped]:checked")].map(x=>+x.value);r.hol=$("#peHol").checked;if(!r.days.length&&!r.hol){toast("Pick at least one day.");return}}
+    const k=isD?"dates":"rules",list=c[k].slice();if(r.id){const i=list.findIndex(x=>x.id===r.id);list[i]=r}else{r.id=Date.now();list.push(r)}
+    S.park={...c,[k]:list};commit(`Parking lot: ${r.name}, ${PK_MODES[r.mode][0].toLowerCase()} ${pkRuleText(r).replace(/<[^>]+>/g,"")}`);closeModal("mMk");PK_ED=null;renderPk();pkPush();return}
+  const mb=t.closest("[data-pkmode]");if(mb){const id=mb.dataset.pkid,mode=mb.dataset.pkmode,d=(PK.doors||[]).find(x=>x.id===id);S.parkMan={...(S.parkMan||{}),[id]:{mode,at:Date.now()}};commit(`Parking lot ${d?d.name:id}: ${PK_MODES[mode][0]} by hand`);renderPk();pkPush();return}
+  const bk=t.closest("[data-pkback]");if(bk){const m={...(S.parkMan||{})};delete m[bk.dataset.pkback];S.parkMan=m;commit("Parking lot: back to the schedule");renderPk();pkPush();return}
+});
+async function pkPush(){if(!ON_BOX)return;await boxSaved();try{const j=await (await fetch("api/parking/apply",{method:"POST"})).json();if(!j.ok&&j.error)toast(j.error)}catch(e){}}
+
+// ---------- Heat-up: how long each pool takes to reach its set point, from the log ----------
+let HU={list:null,need:null};
+const hm2=m=>{m=Math.round(m);const h=Math.floor(m/60),r=m%60;return h?`${h}h ${String(r).padStart(2,"0")}m`:`${r}m`};
+function huDemo(){const L=MT.list||mtDemo(),out={};L.forEach(x=>{const hot=/hot/.test(x.name),rows=[];for(let i=1;i<=10;i++){const d=addDays(todayNY(),-i);
+  const pt=hot?186+Math.round(Math.sin(i)*20):150+Math.round(Math.cos(i)*15),pf=68,pto=hot?93:88.5;rows.push({d,kind:"pre",start:0,from:pf,to:pto,startCur:pf+3.4+Math.sin(i),took:pt,ready:pt,rate:+((pto-pf-3.4)/(pt/60)).toFixed(1)});
+  const mt=hot?170+Math.round(Math.sin(i)*25):95+Math.round(Math.cos(i)*15),mf=pto,mto=hot?106:99;rows.push({d,kind:"main",start:120,from:mf,to:mto,startCur:mf-0.4+Math.sin(i)*0.3,took:mt,ready:120+mt,rate:+((mto-mf)/(mt/60)).toFixed(1)})}out[x.id]=rows});return out}
+async function huLoad(){if(HU.list)return;if(!ON_BOX){HU.list=huDemo();return}try{const j=await (await fetch("api/mtemp/heatups")).json();HU.list=j.ok?j.byId:{};}catch(e){HU.list={}}renderMt()}
+function huHtml(){huLoad();const L=MT.list||[];if(!HU.list)return `<p class="none">Working it out from the log…</p>`;const need=(S.mtemp&&S.mtemp.need)||{};
+  return `<p class="gf top">From the log: how long each pool takes from the preheat to the temperature people use. Tell it when each pool must be ready, and it shows how much later the heating could start.</p><div class="hu-grid">${L.map(x=>{const all=HU.list[x.id]||[],rows=all.filter(r=>r.kind!=="pre").slice(0,14),pre=all.filter(r=>r.kind==="pre").slice(0,14);
+    if(!rows.length)return `<div class="hu-c"><b>${esc(x.name)}</b><p class="gf">No heat-ups in the log yet. Check back after a few days.</p></div>`;
+    const avg=Math.round(rows.reduce((a,r)=>a+r.took,0)/rows.length),worst=Math.max(...rows.map(r=>r.took)),ready=Math.round(rows.reduce((a,r)=>a+r.ready,0)/rows.length),start=rows[0].start,nd=need[x.id]||"",ndm=nd?toMin(nd):null;
+    const spare=ndm!=null?ndm-(start+worst)-15:null;
+    const tip=ndm==null?"":spare>=15?`<div class="hu-tip">Ready by ${fmt(ndm)} even on its slowest day. The heating could start about <b>${durText(Math.floor(spare/15)*15)} later</b>, at ${fmt(start+Math.floor(spare/15)*15)}.</div>`:spare>=0?`<div class="hu-tip">The start time is about right for ${fmt(ndm)}.</div>`:`<div class="hu-tip warn">On its slowest day it was ready ${durText(-spare)} after ${fmt(ndm)}. Start ${durText(Math.ceil(-spare/15)*15)} earlier.</div>`;
+    return `<div class="hu-c"><b>${esc(x.name)}</b><div class="hu-k">Heating for the mikva</div><div class="hu-big">${hm2(avg)}<span>from ${rows[0].from}° to ${rows[0].to}°, starting ${fmt(start)}</span></div>
+      ${pre.length?`<div class="hu-pre"><b>Preheat</b> ${pre[0].from}° to ${pre[0].to}° from ${fmt(pre[0].start)}: ${hm2(pre.reduce((a,r)=>a+r.took,0)/pre.length)} on average, about ${(pre.reduce((a,r)=>a+r.rate,0)/pre.length).toFixed(1)}° an hour</div>`:""}
+      <div class="tline"><span class="hint">Must be ready by</span><input type="time" step="900" value="${nd}" data-huneed="${esc(x.id)}" aria-label="Ready by"><span class="hint">Usually ready at ${fmt(ready)} · slowest ${hm2(worst)}</span></div>${tip}
+      <details class="hu-det"><summary>Each day</summary><table><thead><tr><th>Day</th><th>Preheat took</th><th>Heat started at</th><th>Heat took</th><th>Ready</th></tr></thead><tbody>${rows.map(r=>{const p=pre.find(q=>q.d===r.d);return `<tr><td>${esc(shortDate(r.d).replace(/, \d{4}$/,""))}</td><td>${p?hm2(p.took):"--"}</td><td>${r.startCur.toFixed(1)}°</td><td>${hm2(r.took)}</td><td>${fmt(r.ready%1440)}</td></tr>`}).join("")}</tbody></table></details></div>`}).join("")}</div>`}
+document.addEventListener("change",ev=>{const t=ev.target;if(!t.dataset||t.dataset.huneed===undefined)return;S.mtemp={...mtCfg(),need:{...((S.mtemp||{}).need||{}),[t.dataset.huneed]:t.value}};commit("Changed when a mikva pool must be ready");renderMt.force=true;renderMt()});
 function renderMt(){const b=$("#mtBody");if(!b)return;const ae=document.activeElement;if(ae&&b.contains(ae)&&/SELECT|INPUT/.test(ae.tagName)&&ae.type!=="checkbox"&&!renderMt.force){renderMt.later=true;return}renderMt.force=false;const sy=window.scrollY;requestAnimationFrame(()=>{if(Math.abs(window.scrollY-sy)>2)window.scrollTo(0,sy)});mtLoad();const c=mtCfg(),L=MT.list||[];
   if(MT.err&&!L.length){b.innerHTML=`<div class="mk-card mk-warn"><b>Can't read the thermostats</b><p>${esc(MT.err)}</p><button class="btn sm" type="button" data-mtre>Try again</button></div>`;return}
   if(!L.length){b.innerHTML=`<p class="gf top">Reading the thermostats…</p>`;return}
@@ -4595,13 +4717,15 @@ function renderMt(){const b=$("#mtBody");if(!b)return;const ae=document.activeEl
   const al=`<h3 class="gh mk-h">Alerts</h3><div class="glist mt-al">
     <label class="row swrow"><span class="rt"><b>Temperature alerts</b><span>Text the people who have Mikva temperature alerts turned on in Users and permissions</span></span><input type="checkbox" class="switch" data-mtc="on"${c.on?" checked":""}></label>
     ${c.on?`<div class="row"><span class="rt"><b>When a pool is off</b><span>From its set point, for at least</span></span><span class="tline"><input type="number" class="mt-in" min="1" max="20" step="0.5" value="${c.deg}" data-mtc="deg" aria-label="Degrees">°<input type="number" class="mt-in" min="5" max="240" step="5" value="${c.mins}" data-mtc="mins" aria-label="Minutes">min</span></div>
+    <div class="row"><span class="rt"><b>When the water isn't warming up</b><span>Heating for this long but rising less than half its usual speed${(()=>{const r=Object.values(HU.list||{}).flat().filter(x=>x.kind==="pre");return r.length?` (usually about ${(r.reduce((a,b)=>a+b.rate,0)/r.length).toFixed(1)}° an hour in the preheat)`:""})()}</span></span><span class="tline"><input type="number" class="mt-in" min="15" max="240" step="15" value="${c.rateMins}" data-mtc="rateMins" aria-label="Minutes heating">min</span></div>
     <div class="row"><span class="rt"><b>When the boiler can't keep up</b><span>Heating this long and still not at the set point</span></span><span class="tline"><input type="number" class="mt-in" min="15" max="600" step="15" value="${c.heatMins}" data-mtc="heatMins" aria-label="Minutes heating">min</span></div>
     <div class="row"><span class="rt"><b>Only alert</b></span><select data-mtc="when"><option value="always"${c.when==="always"?" selected":""}>Any time</option><option value="times"${c.when==="times"?" selected":""}>Between set times</option></select></div>
     ${c.when==="times"?`<div class="row"><span class="rt"><b>Between</b></span><span class="tline"><input type="time" value="${c.from}" data-mtc="from" aria-label="From"> and <input type="time" value="${c.to}" data-mtc="to" aria-label="To"></span></div>`:""}
     <label class="row swrow"><span class="rt"><b>Also when a thermostat goes offline</b></span><input type="checkbox" class="switch" data-mtc="offline"${c.offline?" checked":""}></label>`:""}
-    </div><p class="gf">Texts start once texting is live. Each person also needs to agree to texts under Settings, Alerts. An alert goes out once, then again only if it's still a problem an hour later.</p>`;
-  const seg=`<div class="mk-seg" role="tablist">${[["now","Now"],["sched","Schedule"],["log","Log"],["alerts","Alerts"]].map(([k,t])=>`<button type="button" class="${MTT===k?"on":""}" data-mtt="${k}">${t}</button>`).join("")}</div>`;
+    </div><p class="gf">The preheat after midnight is when a problem can still be fixed, so alerts go out between 11:30 PM and 2:30 AM unless you change it. Texts start once texting is live. Each person also needs to agree to texts under Settings, Alerts. An alert goes out once, then again only if it's still a problem an hour later.</p>`;
+  const seg=`<div class="mk-seg" role="tablist">${[["now","Now"],["sched","Schedule"],["heat","Heat-up"],["log","Log"],["alerts","Alerts"]].map(([k,t])=>`<button type="button" class="${MTT===k?"on":""}" data-mtt="${k}">${t}</button>`).join("")}</div>`;
   if(MTT==="sched"){b.innerHTML=seg+(MT.allow?"":`<p class="gf top mk-ro">Showing the thermostat schedules. Saving them from here is off. A super admin can turn it on under Settings, Controllers.</p>`)+msHtml();return}
+  if(MTT==="heat"){b.innerHTML=seg+huHtml();return}
   if(MTT==="log"){if(!MTL.rows&&!MTL.loading)setTimeout(mtlLoad);b.innerHTML=seg+mtlHtml();return}
   if(MTT==="alerts"){b.innerHTML=seg+al.replace('<h3 class="gh mk-h">Alerts</h3>','');return}
   b.innerHTML=seg+ro+`<div class="mt-grid">${cards}</div><p class="gf">Each thermostat follows its own schedule in the Meross app (for example heating to 106° from 2 AM, resting at 68° in the day). The set point shown is what it's aiming for right now.</p><h3 class="gh mk-h">Last 24 hours</h3>${mtChart(L)}`}
@@ -5722,7 +5846,7 @@ document.addEventListener("click",ev=>{const b=ev.target.closest("#pageTabs [dat
 function actFirst(){return ["activity","live","reports"].find(tabOk)}
 function fixActNav(){const n=$("#actNav");if(n)n.hidden=!actFirst()}
 
-const TITLES={mtemp:"Mikva",mikvah:"Mikva",open:"Open a door",lockdown:"Lockdown",people:"People",live:"Activity",board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules and events",events:"Rules and events",special:"Rules and events",codes:"Guest codes",msgs:"Messages",reports:"Activity",activity:"Activity",setup:"Settings"};
+const TITLES={parking:"Parking lot",mtemp:"Mikva",mikvah:"Mikva",open:"Open a door",lockdown:"Lockdown",people:"People",live:"Activity",board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules and events",events:"Rules and events",special:"Rules and events",codes:"Guest codes",msgs:"Messages",reports:"Activity",activity:"Activity",setup:"Settings"};
 document.querySelectorAll(".navbtn[data-tab]").forEach(b=>b.onclick=()=>showTab(b.dataset.tab==="activity"?actFirst()||"board":b.dataset.tab));
 function setDrawer(open){document.body.classList.toggle("drawer",open);$("#scrim").hidden=!open;$("#menuBtn").setAttribute("aria-expanded",open)}
 document.querySelectorAll(".viewseg button").forEach(b=>b.onclick=()=>{SIMPLE=b.dataset.view==="simple";try{localStorage.setItem("shulDoorSimple",SIMPLE?"1":"0")}catch(e){}setPref("simple",SIMPLE);renderView();fixActNav();if(!tabOk(CUR_TAB))showTab(actFirst()||"board");else drawPageTabs(CUR_TAB);if(CUR_TAB==="setup")renderSetupIndex()});
@@ -5732,7 +5856,7 @@ $("#moreBtn").onclick=()=>setDrawer(true);
 $("#scrim").onclick=()=>setDrawer(false);
 document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab(b.dataset.go));
 addEventListener("keydown",ev=>{if(ev.key==="Escape")setDrawer(false)});
-const SUBS={mtemp:"The water temperature in each pool",mikvah:"The mikva door magnet. It runs on its own, even if this box is off",lockdown:"For an emergency. No one gets in, not even with a card or PIN, until you end it",open:"Tap a door, then buzz it or open it for a few minutes",people:"Everyone with a card or PIN in Protector.Net",live:"Who is coming in, at every door, as it happens",board:"",doors:"Live status of every door. Tap one to change it.",preview:"What every door does, hour by hour",sheet:"One week on one page, ready to print or email",rules:"The standing instructions the doors follow",events:"Weddings, sheva brachos and the shul's own dates",codes:"PINs for visitors that expire on their own",msgs:"Ask a teammate to make a change",reports:"How the doors are used",activity:"What changed, and what the doors were doing at any moment",setup:""};
+const SUBS={parking:"The two parking lot entrances: who can get in, and when",mtemp:"The water temperature in each pool",mikvah:"The mikva door magnet. It runs on its own, even if this box is off",lockdown:"For an emergency. No one gets in, not even with a card or PIN, until you end it",open:"Tap a door, then buzz it or open it for a few minutes",people:"Everyone with a card or PIN in Protector.Net",live:"Who is coming in, at every door, as it happens",board:"",doors:"Live status of every door. Tap one to change it.",preview:"What every door does, hour by hour",sheet:"One week on one page, ready to print or email",rules:"The standing instructions the doors follow",events:"Weddings, sheva brachos and the shul's own dates",codes:"PINs for visitors that expire on their own",msgs:"Ask a teammate to make a change",reports:"How the doors are used",activity:"What changed, and what the doors were doing at any moment",setup:""};
 function showTab(t){CUR_TAB=t;useCount(t);if(t!=="doors"&&typeof SELMODE!=="undefined"&&SELMODE){SELMODE=false;DSEL.clear();document.body.classList.remove("selmode")}document.querySelectorAll(".navbtn[data-tab]").forEach(x=>x.classList.toggle("on",x.dataset.tab===t||(x.dataset.also||"").split(" ").includes(t)));
   drawPageTabs(t);
   const inBar=[...document.querySelectorAll(".bnav [data-tab]")].some(x=>x.dataset.tab===t||(x.dataset.also||"").split(" ").includes(t));
@@ -5740,7 +5864,7 @@ function showTab(t){CUR_TAB=t;useCount(t);if(t!=="doors"&&typeof SELMODE!=="unde
   $("#pageTitle").textContent=TITLES[t]||"";$("#pageSub").textContent=SUBS[t]||"";$("#pageSub").hidden=!SUBS[t];
   document.querySelectorAll("#pageAct [data-for]").forEach(b=>b.hidden=b.dataset.for!==t||(b.dataset.tcv&&b.dataset.tcv!==TCV)||(b.id==="gdNew"&&(sched()==="none"||!visDoors().some(d=>perm(d.id)==="edit"))));
   setDrawer(false);hideTip();
-  ["board","open","mikvah","mtemp","lockdown","doors","live","people","preview","rules","events","special","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);liveRun(t==="live");if(t==="open")renderOpen();if(t==="mikvah")renderMk();if(t==="mtemp")renderMt();if(t==="lockdown")renderLockBits();if(t==="doors")renderBoard();if(t==="codes"&&ON_BOX)renderCodes();if(t==="people")ppFetch(false);
+  ["board","open","parking","mikvah","mtemp","lockdown","doors","live","people","preview","rules","events","special","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);liveRun(t==="live");if(t==="open")renderOpen();if(t==="mikvah")renderMk();if(t==="parking")renderPk();if(t==="mtemp")renderMt();if(t==="lockdown")renderLockBits();if(t==="doors")renderBoard();if(t==="codes"&&ON_BOX)renderCodes();if(t==="people")ppFetch(false);
   if(t==="codes")setTCV(TCV);if(t==="reports")renderReports();if(t==="activity")renderLog();if(t==="setup"){$("#split").classList.remove("detail");renderSetupIndex()}
   scrollTo({top:0})}
 let SP=null;

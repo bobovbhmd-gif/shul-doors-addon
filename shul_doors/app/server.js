@@ -18,7 +18,8 @@ const { createActivity } = require("./lib/activity");
 const { createHaAuth } = require("./lib/hauth");
 const { createMikva } = require("./lib/mikva");
 const { createAtrium } = require("./lib/atrium");
-const { createMtemp, createTempLog } = require("./lib/mtemp");
+const { createMtemp, createTempLog, usualRate } = require("./lib/mtemp");
+const sched = require("./lib/sched");
 
 const DATA = process.env.SD_DATA || "/data";
 const PORT = +process.env.SD_PORT || 8099;
@@ -504,11 +505,15 @@ async function mtTick() {
   if (!list.length) return;
   tempLog.record(list);
   const cfg = state.mtemp; if (!cfg || !cfg.on) return;
-  const found = mtemp.check(list, cfg); if (!found.length) return;
+  const found = mtemp.check(list, cfg, mtRates(list)); if (!found.length) return;
   const phones = (state.users || []).filter((u) => u.mtAlert && u.phone).map((u) => u.phone);
   for (const a of found) { log("info", "mikva temperature: " + a.text); if (sms && phones.length) { try { await sms.alertTo(state, phones, a.key, a.text, "mikva", 3600e3); } catch (e) { log("warn", "mikva alert text: " + e.message); } } }
 }
 if (HA_URL) setInterval(() => mtTick().catch(() => {}), +process.env.SD_MT_MS || 60000).unref();
+// heat-ups from the last 31 days of the minute log, worked out at most every 15 minutes
+let huCache = { at: 0, by: {} };
+function heatups() { if (Date.now() - huCache.at > 15 * 60e3) huCache = { at: Date.now(), by: tempLog.heatups(Date.now() - 31 * 864e5, Date.now() + 60e3) }; return huCache.by; }
+function mtRates(list) { const h = heatups(), r = {}; for (const x of list) { const v = usualRate(h[x.id], x.set); if (v) r[x.id] = v; } return r; }
 // the thermostats hold one week; each night Shul Manager writes the coming 7 days onto them,
 // with Yom Tov days swapped for the day they should run like (for example Yom Tov runs like Shabbos)
 const MT_DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
@@ -520,7 +525,8 @@ function mtResolve(cfg, id) {
     let keys = []; try { keys = engine.raw(`[...dayInfo(${JSON.stringify(d)}).keys]`); } catch { /* plain day */ }
     const row = cfg.on ? (cfg.hol || []).find((r) => r.use && r.use !== "week" && (r.keys || []).some((k) => keys.includes(k))) : null;
     const day = row ? (row.use === "closed" ? [[0, +cfg.closedTemp || 68]] : base[row.use]) : base[slot];
-    week[slot] = day || base[slot]; plan.push({ d, slot, why: row ? row.name : "", use: row ? row.use : slot });
+    let z = {}; try { z = engine.info(d).z || {}; } catch { /* no zmanim */ }
+    week[slot] = sched.resolveDay(day || base[slot], z); plan.push({ d, slot, why: row ? row.name : "", use: row ? row.use : slot });
   }
   return { week, plan };
 }
@@ -561,10 +567,44 @@ function parkTimerTick() {
   if (!store) return; store.parkTimers = store.parkTimers || [];
   const now = Date.now(), due = store.parkTimers.filter((t) => t.to <= now);
   if (!due.length) return;
-  store.parkTimers = store.parkTimers.filter((t) => t.to > now); writeJson("store.json", store);
+  store.parkTimers = store.parkTimers.filter((t) => t.to > now); store.parkMode = store.parkMode || {}; due.forEach((t) => delete store.parkMode[t.id]); writeJson("store.json", store);
   due.forEach((t) => atrium.command(t.id, "reset").catch((e) => log("warn", "parking lot: couldn't lock again: " + e.message)));
 }
 if (atrium.configured) setInterval(parkTimerTick, 15000).unref();
+// the parking lot schedule: each minute, put each entrance in the mode it should be in.
+// Open unlocks it, Normal puts it back on key tags. A timed open or a change by hand wins until it's undone.
+const PARK_CMD = { open: "open", normal: "reset", locked: "" };   // the controller command for Locked is still to be found
+function parkWant(doorId, at = Date.now()) {
+  const p = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date(at));
+  const g = (k) => p.find((x) => x.type === k).value, d = `${g("year")}-${g("month")}-${g("day")}`, m = +g("hour") * 60 + +g("minute");
+  let info = {}; try { info = engine.info(d); } catch { /* plain day */ }
+  const man = (state.parkMan || {})[doorId];
+  if (man && man.mode) return { mode: man.mode, by: "by hand" };
+  return sched.parkModeAt(state.park || {}, d, m, doorId, info);
+}
+let parkBusy = false;
+async function parkApply(force) {
+  if (!atrium.configured || !state || !store) return { ok: false, error: "The parking lot isn't set up." };
+  if (!ctrlAllow("parkWrites")) return { ok: false, error: "Changing the parking lot from here is turned off. Turn it on under Settings, Controllers." };
+  if (parkBusy) return { ok: true, busy: true }; parkBusy = true;
+  try {
+    const doors = await atrium.doors(), out = []; store.parkMode = store.parkMode || {};
+    for (const dr of doors) {
+      if ((store.parkTimers || []).some((t) => t.id === dr.id && t.to > Date.now()) || (store.parkHold || {})[dr.id]) continue;   // opened from the door page: the schedule waits
+      const w = parkWant(dr.id), was = store.parkMode[dr.id];
+      if (!force && was && was.mode === w.mode) continue;
+      const cmd = PARK_CMD[w.mode];
+      if (!cmd) { if (!was || was.mode !== w.mode) log("warn", `parking lot ${dr.name}: Locked isn't connected to the controller yet, left as it is`); store.parkMode[dr.id] = { mode: w.mode, at: Date.now(), skipped: true }; out.push({ id: dr.id, name: dr.name, mode: w.mode, ok: false, error: "Locked isn't connected to the controller yet." }); continue; }
+      try { await atrium.command(dr.id, cmd); store.parkMode[dr.id] = { mode: w.mode, at: Date.now() }; out.push({ id: dr.id, name: dr.name, mode: w.mode, ok: true }); log("info", `parking lot ${dr.name}: ${w.mode}${w.by ? " (" + w.by + ")" : ""}`); }
+      catch (e) { out.push({ id: dr.id, name: dr.name, mode: w.mode, ok: false, error: e.message }); log("warn", `parking lot ${dr.name}: ${e.message}`); }
+    }
+    writeJson("store.json", store);
+    const bad = out.filter((o) => o.ok === false && !/Locked/.test(o.error));
+    return { ok: !bad.length, out, error: bad.length ? bad.map((o) => `${o.name}: ${o.error}`).join("; ") : "" };
+  } finally { parkBusy = false; }
+}
+const parkScheduled = () => !!(state && ((state.park && ((state.park.rules || []).length || (state.park.dates || []).length)) || Object.keys(state.parkMan || {}).length));
+if (atrium.configured) setInterval(() => { if (ctrlAllow("parkWrites") && parkScheduled()) parkApply(false).catch(() => {}); }, 60000).unref();
 function meAdmin(req) { return superAdmin(haUser(req)); }
 async function ctrlApi(req, res, p, u) {
   try {
@@ -601,7 +641,10 @@ async function ctrlApi(req, res, p, u) {
       if (!ctrlAllow("mtempWrites")) return send(res, 200, { ok: false, error: "Changing the thermostats from here is turned off. Turn it on under Settings, Controllers." });
       const b = (await readBody(req)) || {}, x = (await mtemp.list()).find((y) => y.id === b.id);
       if (!x) return send(res, 200, { ok: false, error: "That isn't a mikva thermostat." });
-      await mtemp.setSchedule(x, b.week || {});
+      const wk = {};
+      for (const [k, day] of Object.entries(b.week || {})) { const i = MT_DAYS.indexOf(k); let d = engine.today(); for (let n = 0; n < 7; n++) { const dd = engine.addDays(engine.today(), n); if (new Date(dd + "T12:00:00Z").getUTCDay() === i) { d = dd; break; } }
+        let z = {}; try { z = engine.info(d).z || {}; } catch { /* no zmanim */ } wk[k] = sched.resolveDay(day, z); }
+      await mtemp.setSchedule(x, wk);
       // read it back so what's shown is what the thermostat really has
       const back = await mtemp.getSchedule(x);
       return send(res, 200, { ok: true, week: back.week });
@@ -614,6 +657,7 @@ async function ctrlApi(req, res, p, u) {
       const cfg = (state && state.mtSched) || {}, list = await mtemp.list();
       return send(res, 200, { ok: true, plans: list.map((x) => ({ id: x.id, ...(mtResolve(cfg, x.id) || {}) })) });
     }
+    if (req.method === "GET" && p === "/api/mtemp/heatups") return send(res, 200, { ok: true, byId: heatups() });
     if (req.method === "POST" && p === "/api/mtemp/set") {
       if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can change the mikva temperature." });
       if (!ctrlAllow("mtempWrites")) return send(res, 200, { ok: false, error: "Changing the mikva temperature from here is turned off. Turn it on under Settings, Controllers." });
@@ -635,7 +679,11 @@ async function ctrlApi(req, res, p, u) {
       let doors = [], why = "";
       try { doors = await atrium.doors(); } catch (e) { why = e.message; }
       const days = Math.max(1, Math.min(400, +u.searchParams.get("days") || 7)), from = Date.now() - days * 864e5;
-      return send(res, 200, { ok: !why, why, doors, timers: store.parkTimers || [], events: (store.parkEvents || []).filter((e) => e.t >= from).slice(-1000), allow: ctrlAllow("parkWrites"), status: atrium.status() });
+      return send(res, 200, { ok: !why, why, doors, timers: store.parkTimers || [], modes: store.parkMode || {}, events: (store.parkEvents || []).filter((e) => e.t >= from).slice(-1000), allow: ctrlAllow("parkWrites"), status: atrium.status() });
+    }
+    if (req.method === "POST" && p === "/api/parking/apply") {
+      if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can change the parking lot." });
+      return send(res, 200, await parkApply(true));
     }
     if (req.method === "POST" && p === "/api/parking/door") {
       if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can open the parking lot." });
@@ -643,7 +691,9 @@ async function ctrlApi(req, res, p, u) {
       const b = (await readBody(req)) || {}, mins = Math.max(0, Math.min(24 * 60, +b.mins || 0));
       const cmd = b.cmd === "buzz" ? "buzz" : b.cmd === "reset" ? "reset" : "open";
       await atrium.command(String(b.id || ""), cmd);
-      store.parkTimers = (store.parkTimers || []).filter((t) => t.id !== b.id);
+      store.parkHold = store.parkHold || {}; store.parkMode = store.parkMode || {};
+      if (cmd !== "buzz") { store.parkTimers = (store.parkTimers || []).filter((t) => t.id !== b.id); delete store.parkMode[b.id]; delete store.parkHold[b.id]; }
+      if (cmd === "open" && !mins) store.parkHold[b.id] = true;   // open until someone puts it back: the schedule waits
       if (cmd === "open" && mins) store.parkTimers.push({ id: String(b.id), to: Date.now() + mins * 60e3, by: haUser(req) });
       writeJson("store.json", store);
       activityNote(haUser(req), `Parking lot ${b.name || b.id}: ${cmd === "buzz" ? "buzzed open" : cmd === "reset" ? "back to normal" : mins ? `open for ${mins} min` : "open"}`);

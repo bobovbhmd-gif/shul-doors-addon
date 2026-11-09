@@ -110,7 +110,8 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
     const a = toM(cfg.from), b = toM(cfg.to);
     return a <= b ? m >= a && m < b : m >= a || m < b;
   }
-  function check(list, cfg) {
+  // rates: { id: usual ° an hour for where it's heading } (from the heat-up log)
+  function check(list, cfg, rates = {}) {
     const out = [], t = now();
     if (!cfg || !cfg.on) return out;
     const deg = Math.max(0.5, +cfg.deg || 3), offMs = Math.max(5, +cfg.mins || 15) * 60e3, heatMs = Math.max(15, +cfg.heatMins || 120) * 60e3, active = inWindow(cfg);
@@ -124,8 +125,17 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
       const high = x.online && x.cur != null && x.set != null && x.cur - x.set >= deg && !standby;
       const gone = !x.online, off = low || high, heat = x.online && x.heat === "heating" && x.cur != null && x.set != null && x.cur < x.set;
       s.gone = gone ? s.gone || t : 0; s.off = off ? s.off || t : 0; s.heat = heat ? s.heat || t : 0;
+      // not warming up: heating for a while but rising less than half its usual speed
+      if (heat) { s.pts = (s.pts || []).filter((p) => t - p[0] <= 6 * 3600e3); s.pts.push([t, x.cur]); } else s.pts = [];
+      const rateMs = Math.max(15, +cfg.rateMins || 45) * 60e3, usual = rates[x.id];
+      let slow = null;
+      if (heat && usual > 0 && t - s.heat >= rateMs && x.set - x.cur >= 1.5) {
+        const back = s.pts.find((p) => t - p[0] <= rateMs);
+        if (back && t - back[0] >= rateMs * 0.9) { const rose = x.cur - back[1], hrs = (t - back[0]) / 3600e3; if (rose < usual * hrs * 0.5) slow = Math.round((rose / hrs) * 10) / 10; }
+      }
       if (!active) continue;
       if (gone && cfg.offline !== false && t - s.gone >= 5 * 60e3) out.push({ key: `mt:gone:${x.id}`, text: `Mikva ${x.name}: the thermostat is offline.` });
+      else if (slow != null) out.push({ key: `mt:slow:${x.id}`, text: `Mikva ${x.name} isn't warming up: ${Math.max(0, slow)}° an hour for the last ${Math.round(rateMs / 60e3)} minutes, it usually rises about ${usual}° an hour. It's ${x.cur}${x.unit}, set to ${x.set}${x.unit}. Check the boiler.` });
       else if (off && t - s.off >= offMs) out.push({ key: `mt:off:${x.id}`, text: `Mikva ${x.name} is ${x.cur}${x.unit}, ${Math.abs(x.cur - x.set).toFixed(1)}° ${x.cur < x.set ? "below" : "above"} its set point of ${x.set}${x.unit}.` });
       else if (heat && t - s.heat >= heatMs) out.push({ key: `mt:heat:${x.id}`, text: `Mikva ${x.name} has been heating for ${Math.round((t - s.heat) / 60e3)} minutes and is still ${x.cur}${x.unit} (set to ${x.set}${x.unit}). The boiler may not be keeping up.` });
     }
@@ -178,6 +188,41 @@ function createTempLog({ minFile, hourFile, now = () => Date.now() }) {
       return [...buckets.entries()].sort((a, b) => a[0] - b[0]).map(([t, B]) => ({ t, by: Object.fromEntries(Object.entries(B).map(([id, a]) => [id, { avg: r1(a.sum / a.n), lo: r1(a.lo), hi: r1(a.hi), set: r1(a.setSum / a.n), heatMin: a.heat }])) }));
     },
     flushHour,
+    // each time a pool's set point went up: how long the water took to get there.
+    // On a night with two rises (the preheat after midnight, then the heat for the mikva) the first is the preheat.
+    heatups(from, to) {
+      const by = {};
+      for (const o of read(minFile, from, to)) for (const [id, [cur, set]] of Object.entries(o.r)) (by[id] = by[id] || []).push([o.t, cur, set]);
+      const out = {};
+      for (const [id, pts] of Object.entries(by)) {
+        const ev = [];
+        for (let i = 1; i < pts.length; i++) {
+          const [t, , set] = pts[i], prev = pts[i - 1][2];
+          if (set == null || prev == null || set - prev < 2 || set < STANDBY_F - 20) continue;
+          const startCur = pts[i - 1][1]; let j = i, done = null;
+          for (; j < pts.length; j++) { if (pts[j][2] !== set) break; if (pts[j][1] >= set - 0.3) { done = pts[j][0]; break; } }
+          if (done == null || set - startCur < 1) continue;
+          const took = Math.round((done - t) / 60e3), at = nyParts(t);
+          ev.push({ t, d: at.d, start: at.m, from: prev, to: set, startCur: Math.round(startCur * 10) / 10, took, ready: at.m + took, rate: Math.round(((set - startCur) / (took / 60)) * 10) / 10 });
+        }
+        ev.forEach((e, i) => { const nx = ev[i + 1]; e.kind = nx && nx.t - e.t < 8 * 3600e3 && nx.to > e.to ? "pre" : "main"; });
+        out[id] = ev.sort((a, b) => b.t - a.t).map(({ t, ...e }) => e);
+      }
+      return out;
+    },
   };
 }
+const STANDBY_F = 80;
+function nyParts(t) {
+  const p = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date(t));
+  const g = (k) => p.find((x) => x.type === k).value;
+  return { d: `${g("year")}-${g("month")}-${g("day")}`, m: +g("hour") * 60 + +g("minute") };
+}
+// a pool's usual warming speed (° an hour) for the set point it's heading to, from its recent heat-ups
+function usualRate(rows, set) {
+  if (!rows || !rows.length) return null;
+  const near = rows.filter((r) => Math.abs(r.to - set) <= 3), use = (near.length >= 2 ? near : rows).slice(0, 14).map((r) => r.rate).filter((v) => v > 0).sort((a, b) => a - b);
+  return use.length ? use[Math.floor(use.length / 2)] : null;
+}
 module.exports.createTempLog = createTempLog;
+module.exports.usualRate = usualRate;
