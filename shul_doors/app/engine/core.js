@@ -92,7 +92,9 @@ if(!S||!S.rules||!S.groups) S=structuredClone(SAMPLE);
 if(!S.gdates) S.gdates=structuredClone(SAMPLE.gdates);
 if(!S.accessGroups) S.accessGroups=structuredClone(SAMPLE.accessGroups);
 S.doors.forEach(d=>{if(!d.def)d.def="Card or Pin"});
-function doorDef(id){const d=S.doors.find(x=>x.id===id);return d&&d.def||"Card or Pin"}
+function doorDef(id){if(isPk(id))return "Card";const d=S.doors.find(x=>x.id===id);return d&&d.def||"Card or Pin"}
+function isPk(id){return String(id).startsWith("P:")}
+function pkDoors(){return S.parkDoors||[]}
 const DEF_RULE=id=>({id:"def:"+id,name:"Default",mode:doorDef(id),isDef:true});
 // every rule keeps a permanent number (#1, #2...): new rules get the next one, numbers are never reused
 function ensureNos(){if(!S||!S.rules)return;let m=Math.max(0,...S.rules.map(r=>+r.no||0),+S.ruleNoMax||0);S.rules.forEach(r=>{if(!r.no)r.no=++m});S.ruleNoMax=m}
@@ -283,7 +285,7 @@ function dateText(d){
   if(d.yearly) return (d.from===d.to?mdText(d.from):`${mdText(d.from)} to ${mdText(d.to)}`)+", every year";
   return d.from===d.to?shortDate(d.from):`${shortDate(d.from)} to ${shortDate(d.to)}`;
 }
-function doorName(id){const d=S.doors.find(x=>x.id===id);return d?d.name:id}
+function doorName(id){const d=S.doors.find(x=>x.id===id);if(d)return d.name;const p=(S.parkDoors||[]).find(x=>x.id===id);return p?"Parking: "+p.name:id}
 function expandDoors(list){const out=new Set();list.forEach(x=>{if(x.startsWith("g:")){const g=S.groups.find(g=>"g:"+g.id===x);if(g)g.doors.forEach(d=>out.add(d))}else out.add(x)});return [...out]}
 function doorsText(list){return list.map(x=>x.startsWith("g:")?((S.groups.find(g=>"g:"+g.id===x)||{name:"(deleted group)"}).name):doorName(x)).join(", ")}
 

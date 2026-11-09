@@ -1833,6 +1833,8 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 .ts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.ts select,.ts input{width:auto!important;min-width:0}.ts input[type=number]{width:72px!important}
 .mt-hand{display:flex;flex-direction:column;align-items:stretch;gap:8px;background:color-mix(in srgb,var(--warn,#c80) 12%,var(--fill));border-radius:10px;padding:8px 10px;margin-top:10px}.mt-hand span{display:flex;flex-direction:column;font-size:12.5px;color:var(--muted)}.mt-hand b{font-size:13.5px;color:var(--fg)}.mt-hb{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.mt-hb .lnk{background:none;border:0;color:var(--b);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:4px}
 .mt-sch{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12.5px;color:var(--muted)}.mt-sch i{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.pk-evr{align-items:flex-start;gap:12px}.pk-evb{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}.pk-effs{display:flex;flex-direction:column;gap:3px;margin-top:6px}.pk-eff{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--fg)}.pk-eff i{width:9px;height:9px;border-radius:3px;flex:none}.pk-eff em{font-style:normal;color:var(--muted)}.pk-eff.none{color:var(--muted)}
+.pk-quick{display:flex;flex-wrap:wrap;gap:8px}.pk-tls{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}.pk-tls small{font-size:11.5px;color:var(--muted)}.pk-tls .pk-tl{flex:none;width:100%}
 .hu-k{font-size:12.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.hu-pre{font-size:13.5px;color:var(--muted);background:var(--fill);border-radius:10px;padding:8px 10px}.hu-pre b{color:var(--fg)}
 .hu-det summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:4px 0}
 .hu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
@@ -2842,7 +2844,9 @@ if(!S||!S.rules||!S.groups) S=structuredClone(SAMPLE);
 if(!S.gdates) S.gdates=structuredClone(SAMPLE.gdates);
 if(!S.accessGroups) S.accessGroups=structuredClone(SAMPLE.accessGroups);
 S.doors.forEach(d=>{if(!d.def)d.def="Card or Pin"});
-function doorDef(id){const d=S.doors.find(x=>x.id===id);return d&&d.def||"Card or Pin"}
+function doorDef(id){if(isPk(id))return "Card";const d=S.doors.find(x=>x.id===id);return d&&d.def||"Card or Pin"}
+function isPk(id){return String(id).startsWith("P:")}
+function pkDoors(){return S.parkDoors||[]}
 const DEF_RULE=id=>({id:"def:"+id,name:"Default",mode:doorDef(id),isDef:true});
 // every rule keeps a permanent number (#1, #2...): new rules get the next one, numbers are never reused
 function ensureNos(){if(!S||!S.rules)return;let m=Math.max(0,...S.rules.map(r=>+r.no||0),+S.ruleNoMax||0);S.rules.forEach(r=>{if(!r.no)r.no=++m});S.ruleNoMax=m}
@@ -3033,7 +3037,7 @@ function dateText(d){
   if(d.yearly) return (d.from===d.to?mdText(d.from):`${mdText(d.from)} to ${mdText(d.to)}`)+", every year";
   return d.from===d.to?shortDate(d.from):`${shortDate(d.from)} to ${shortDate(d.to)}`;
 }
-function doorName(id){const d=S.doors.find(x=>x.id===id);return d?d.name:id}
+function doorName(id){const d=S.doors.find(x=>x.id===id);if(d)return d.name;const p=(S.parkDoors||[]).find(x=>x.id===id);return p?"Parking: "+p.name:id}
 function expandDoors(list){const out=new Set();list.forEach(x=>{if(x.startsWith("g:")){const g=S.groups.find(g=>"g:"+g.id===x);if(g)g.doors.forEach(d=>out.add(d))}else out.add(x)});return [...out]}
 function doorsText(list){return list.map(x=>x.startsWith("g:")?((S.groups.find(g=>"g:"+g.id===x)||{name:"(deleted group)"}).name):doorName(x)).join(", ")}
 
@@ -3595,7 +3599,8 @@ function readEditor(){
 function edSummary(){const el=$("#rSum");if(!el||!E)return;let r;try{r={...E,...readEditor()}}catch(e){return}
   const days=condText(r.inc),ex=condText(r.exc),acc=r.kind==="access";
   if(!r.doors.length&&!days){el.innerHTML=`<span class="hint">Pick the doors, the time and the days. This line will read your rule back to you.</span>`;return}
-  el.innerHTML=`<span class="mtag" style="--c:${acc?"var(--o)":modeColor(r.mode)}">${esc(acc?r.group+" cards":modeLabel(r.mode))}</span> ${esc(ruleTime(r))}${days?", "+esc(days):", <span class=\"warnm\">no days yet</span>"}${ex?`, except ${esc(ex)}`:""}${r.doors.length?`, at ${esc(doorsText(r.doors))}`:`, <span class="warnm">no doors yet</span>`}.`}
+  const pkOnly=r.doors.length&&r.doors.every(isPk);
+  el.innerHTML=`<span class="mtag" style="--c:${acc?"var(--o)":modeColor(r.mode)}">${esc(acc?r.group+" cards":pkOnly?PK_MODES[pkModeOf(r.mode)][0]:modeLabel(r.mode))}</span> ${esc(ruleTime(r))}${days?", "+esc(days):", <span class=\"warnm\">no days yet</span>"}${ex?`, except ${esc(ex)}`:""}${r.doors.length?`, at ${esc(doorsText(r.doors))}`:`, <span class="warnm">no doors yet</span>`}.`}
 function drawEditor(){
   const e=E, canSave=can("rules")||isAdmin();
   $("#editorSlot").innerHTML=`<form id="ruleForm" class="mform">
@@ -3617,7 +3622,8 @@ function drawEditor(){
       <div class="frow dp-sec"><div class="checks plist" id="rDoorMore">
       ${(()=>{const gs=S.groups.filter(g=>isAdmin()||g.doors.length&&g.doors.every(d=>perm(d)!=="hidden"));return gs.length?`<div class="pl-h">Groups</div>`+gs.map(g=>`<label class="grp" data-dpn="${esc(g.name.toLowerCase())}"><input type="checkbox" name="rDoor" value="g:${esc(g.id)}"${e.doors.includes("g:"+g.id)?" checked":""}>${esc(g.name)} <span class="hint">${g.doors.length} door${g.doors.length===1?"":"s"}</span></label>`).join(""):""})()}
       <div class="pl-h">Doors</div>
-      ${visDoors().map(d=>`<label data-dpn="${esc((d.name+" "+d.id).toLowerCase())}"><input type="checkbox" name="rDoor" value="${esc(d.id)}"${e.doors.includes(d.id)?" checked":""}>${esc(d.name)}${perm(d.id)!=="edit"?` <span class="hint">by request</span>`:""}</label>`).join("")}</div></div>
+      ${visDoors().map(d=>`<label data-dpn="${esc((d.name+" "+d.id).toLowerCase())}"><input type="checkbox" name="rDoor" value="${esc(d.id)}"${e.doors.includes(d.id)?" checked":""}>${esc(d.name)}${perm(d.id)!=="edit"?` <span class="hint">by request</span>`:""}</label>`).join("")}
+      ${pkDoors().length&&isAdmin()?`<div class="pl-h">Parking lot</div>`+pkDoors().map(d=>`<label data-dpn="${esc(("parking "+d.name).toLowerCase())}"><input type="checkbox" name="rDoor" value="${esc(d.id)}"${e.doors.includes(d.id)?" checked":""}>${esc(d.name)}</label>`).join(""):""}</div></div>
     </div>
     <h3 class="gh">When?</h3>
     <div class="glist form">
@@ -3650,6 +3656,7 @@ function drawEditor(){
       const via=new Map();gs.forEach(x=>{const G=S.groups.find(y=>"g:"+y.id===x);if(G)G.doors.forEach(id=>{if(!via.has(id))via.set(id,G.name)})});
       document.querySelectorAll("#rDoorMore label[data-dpn]").forEach(l=>{const id=l.querySelector("input").value,on=via.has(id)&&!l.querySelector("input").checked;l.classList.toggle("via",on);l.title=on?`Included by the ${via.get(id)} group`:""});
       const total=new Set([...via.keys(),...v.filter(x=>!x.startsWith("g:"))]).size;
+      edPkModes(v);
       $("#rDoorSum").textContent=v.length?[g?`${g} group${g>1?"s":""}`:"",d?`${d} door${d>1?"s":""}`:""].filter(Boolean).join(", ")+` · ${total} door${total===1?"":"s"} in all`:"None chosen"};
     const filt=()=>{const q=DPQ.trim().toLowerCase();document.querySelectorAll(".dpick [data-dpn]").forEach(l=>{l.hidden=!!q&&!l.dataset.dpn.includes(q)&&!l.querySelector("input").checked});document.querySelectorAll(".dpick .pl-h").forEach(h=>{let n=h.nextElementSibling,any=false;while(n&&!n.classList.contains("pl-h")){if(!n.hidden)any=true;n=n.nextElementSibling}h.hidden=!any})};
     $("#rDoorQ").addEventListener("input",ev=>{DPQ=ev.target.value;filt()});
@@ -3744,6 +3751,11 @@ function drawEditor(){
   };
 }
 let DPQ="",DPOPEN=false;
+// a rule only for the parking lot gets the parking lot's three choices
+function edPkModes(v){const sel=$("#rMode");if(!sel)return;const pk=v.length>0&&v.every(isPk),cur=sel.value,was=sel.dataset.pk==="1";if(pk===was)return;sel.dataset.pk=pk?"1":"0";
+  const opts=pk?[["Card","Normal: key tags open it"],["Unlock","Open: anyone can drive in"],["Lockdown","Locked: no one, not even key tags"]]:MODES.map(m=>[m,modeLabel(m)]);
+  const val=pk?(cur==="Unlock"||cur==="Lockdown"?cur:"Card"):cur;sel.innerHTML=opts.map(([m,l])=>`<option value="${m}"${m===val?" selected":""}>${esc(l)}</option>`).join("");
+  const lb=document.querySelector('label[for="rMode"]');if(lb)lb.textContent=pk?"Entrance is":"Door is"}
 function openEditor(r,isNew){DPQ="";DPOPEN=false;E_ORIG=null;E={...structuredClone(r),isNew};E.inc=Object.assign(C(),E.inc);E.exc=Object.assign(C(),E.exc);drawEditor();openModal("mRule");$("#editorSlot").scrollTop=0}
 function closeEditor(){E=null;$("#editorSlot").innerHTML="";closeModal("mRule")}
 
@@ -4635,57 +4647,86 @@ document.addEventListener("change",ev=>{if(ev.target.dataset&&ev.target.dataset.
 // ---------- Parking lot page: Normal (key tags work), Open (anyone), Locked (no one, not even key tags) ----------
 const PK_MODES={normal:["Normal","Key tags open it","var(--b)"],open:["Open","Anyone can drive in","var(--ok)"],locked:["Locked","No one, not even key tags","var(--r)"]};
 let PKT="now";
-function pkCfg(){return {rules:[],dates:[],...(S.park||{})}}
-function pkDemo(){if(S.park||ON_BOX)return;S.park={rules:[{id:1,name:"Shabbos morning",mode:"open",doors:"all",days:[6],hol:true,from:"07:00",to:"13:00"},{id:2,name:"Overnight",mode:"normal",doors:"all",days:[0,1,2,3,4,5,6],hol:false,from:"00:00",to:"05:00"}],dates:[{id:3,name:"Klein wedding",date:addDays(todayNY(),6),mode:"locked",doors:"all",from:"18:00",to:"23:30"}]}}
-// what each entrance should be at minute m of date d
-function pkModeAt(d,m,doorId){const c=pkCfg(),di=dayInfo(d),isYT=["yt","shabbos"].some(k=>false)||(di.keys&&[...di.keys].some(k=>/rh1|rh2|yk$|succos1|succos2|shmini|simchas|pesach1|pesach2|shvii|acharon|shavuos1|shavuos2/.test(k)));
-  const hm=x=>tsMin(x,d);const inT=r=>{const a=hm(r.from),b=hm(r.to);return a===b||(a<b?m>=a&&m<b:m>=a||m<b)};const forDoor=r=>r.doors==="all"||(r.doors||[]).includes(doorId);
-  const pick=list=>list.find(r=>r.mode==="locked")||list.find(r=>r.mode==="open")||list[0];
-  const dl=c.dates.filter(r=>r.date===d&&forDoor(r)&&inT(r));if(dl.length)return {mode:pick(dl).mode,by:pick(dl).name};
-  const rl=c.rules.filter(r=>forDoor(r)&&inT(r)&&((r.days||[]).includes(di.w)||(r.hol&&isYT)));if(rl.length)return {mode:pick(rl).mode,by:pick(rl).name};
-  return {mode:"normal",by:""}}
-function pkTimeline(d,doorId,now){let segs=[],cur=null,start=0;for(let m=0;m<=1440;m+=15){const x=m<1440?pkModeAt(d,m,doorId).mode:null;if(x!==cur){if(cur)segs.push([start,m,cur]);cur=x;start=m}}
-  return `<div class="pk-tl">${segs.filter(s=>s[2]!=="normal").map(s=>`<span style="left:${s[0]/14.4}%;width:${(s[1]-s[0])/14.4}%;background:${PK_MODES[s[2]][2]}" title="${PK_MODES[s[2]][0]} ${fmt(s[0])} to ${fmt(s[1])}"></span>`).join("")}${now!=null?`<span class="now" style="left:${now/14.4}%"></span>`:""}</div>`}
-function pkRuleText(r){const days=r.days&&r.days.length===7?"Every day":(r.days||[]).map(w=>w===6?"Shabbos":WDN[w].slice(0,3)).join(", ");return `${r.date?esc(shortDate(r.date)):esc(days||"")}${r.hol?(r.days&&r.days.length?" and Yom Tov":"Yom Tov"):""}, ${esc(tsLabel(r.from))} to ${esc(tsLabel(r.to))}`}
-function renderPk(){const b=$("#pkBody");if(!b)return;pkDemo();pkLoad();const ds=PK.doors||[],c=pkCfg(),t=todayNY(),nm=mkNowMin();
-  const seg=`<div class="mk-seg" role="tablist">${[["now","Now"],["sched","Schedule"],["dates","Events and dates"]].map(([k,l])=>`<button type="button" class="${PKT===k?"on":""}" data-pkt="${k}">${l}</button>`).join("")}</div>`;
+// The parking lot entrances are scheduled with the same rules as the doors: weekdays, Yom Tov, events like a
+// wedding, the Rav away, summer or winter clock, situations and special dates are all shared.
+// A rule's "Open" opens the entrance, "Lockdown" locks it, anything else is Normal (key tags work).
+function pkModeOf(m){return m==="Unlock"?"open":m==="Lockdown"?"locked":"normal"}
+const PK_TO_MODE={normal:"Card",open:"Unlock",locked:"Lockdown"};
+function pkRules(){return (S.rules||[]).filter(r=>(r.kind||"door")==="door"&&expandDoors(r.doors||[]).some(isPk))}
+// old parking times (before they were rules): moved into Rules once, the first time the entrances are known
+function pkMigrate(){const c=S.park;if(!c||!pkDoors().length)return;const all=pkDoors().map(d=>d.id),out=[];
+  const anc=v=>{const p=tsParse(v);return p.z==="time"?{a:"clock",t:hhmm(p.t),o:0}:{a:p.z,o:p.off||0}};
+  const doorsOf=r=>r.doors==="all"?all:(r.doors||[]).map(x=>"P:"+x);
+  (c.rules||[]).forEach(r=>out.push(R({id:Date.now()+out.length,name:"Parking: "+(r.name||"time"),doors:doorsOf(r),inc:{wd:r.days||[],fest:r.hol?["yt_any"]:[]},start:anc(r.from),end:anc(r.to),mode:PK_TO_MODE[r.mode]||"Card"})));
+  (c.dates||[]).forEach(r=>out.push(R({id:Date.now()+out.length,name:"Parking: "+(r.name||"date"),doors:doorsOf(r),inc:{dates:[{from:r.date,to:r.date}]},start:anc(r.from),end:anc(r.to),mode:PK_TO_MODE[r.mode]||"Card"})));
+  delete S.park;if(out.length){S.rules=S.rules.concat(out);commit(`Parking lot: moved ${out.length} parking time${out.length>1?"s":""} into Rules`)}else save()}
+function pkDemo(){if(ON_BOX||S.pkDemoed)return;S.pkDemoed=true;S.parkDoors=PK_DEMO.map(d=>({id:"P:"+d.id,name:d.name}));const all=S.parkDoors.map(d=>d.id);
+  if(!S.types.includes("Wedding"))S.types.push("Wedding");
+  S.rules.push(R({id:9101,name:"Parking open Shabbos and Yom Tov morning",doors:all,inc:{wd:[6],fest:["yt_any"]},start:{a:"clock",t:"07:00",o:0},end:{a:"clock",t:"13:00",o:0},mode:"Unlock"}),
+    R({id:9102,name:"Parking locked for weddings",doors:all,stop:false,inc:{fest:["type:Wedding"]},start:{a:"clock",t:"18:00",o:0},end:{a:"clock",t:"23:30",o:0},mode:"Lockdown"}),
+    R({id:9103,name:"Parking open when the Rav is away",doors:[all[0]],rabbi:"away",inc:{wd:[0,1,2,3,4]},start:{a:"sunset",o:-30},end:{a:"clock",t:"21:30",o:0},mode:"Unlock"}))}
+// what an entrance should be at minute m of date d, from the rules
+function pkModeAt(d,m,doorId){let segs=[];try{segs=daySegments("P:"+doorId,d)}catch(e){}const g=segs.find(x=>m>=x.a&&m<x.b);
+  if(!g||g.c.isDef)return {mode:"normal",by:""};return {mode:pkModeOf(g.c.ov?g.c.ov.mode:g.c.r.mode),by:g.c.r?g.c.r.name:"",via:g.c.src||""}}
+function pkTimeline(d,doorId,now){let segs=[];try{segs=daySegments("P:"+doorId,d)}catch(e){}
+  return `<div class="pk-tl">${segs.filter(s=>!s.c.isDef&&pkModeOf(s.c.r.mode)!=="normal").map(s=>{const k=pkModeOf(s.c.r.mode);return `<span style="left:${s.a/14.4}%;width:${(s.b-s.a)/14.4}%;background:${PK_MODES[k][2]}" title="${PK_MODES[k][0]} ${fmt(s.a)} to ${fmt(s.b%1440)}: ${esc(s.c.r.name)}"></span>`}).join("")}${now!=null?`<span class="now" style="left:${now/14.4}%"></span>`:""}</div>`}
+function pkRuleText(r){const days=condText(r.inc),ex=condText(r.exc),cond=[];if(r.rabbi==="away")cond.push("only when the Rav is away");if(r.rabbi==="local")cond.push("only when the Rav is home");
+  if(r.season==="dst")cond.push("summer clock");if(r.season==="std")cond.push("winter clock");if(r.sit){const x=(S.situations||[]).find(y=>y.id===r.sit);if(x)cond.push(`while "${x.name}" is on`)}
+  return `${ruleTime(r)}, ${days||"no days yet"}${ex?`, except ${ex}`:""}${cond.length?", "+cond.join(", "):""}`}
+const PK_QUICK=[["wed","For a wedding or event"],["away","When the Rav is away"],["yt","Shabbos and Yom Tov"],["date","One date"],["week","Every week"]];
+function pkNewRule(kind){const all=pkDoors().map(d=>d.id),base={id:Date.now(),name:"",doors:all,rabbi:"any",season:"any",stop:false,inc:C(),exc:C(),start:{a:"clock",t:"18:00",o:0},end:{a:"clock",t:"23:00",o:0},mode:"Unlock"};
+  if(kind==="wed"){base.name="Parking for weddings";base.mode="Lockdown";base.inc.fest=[(S.types||[]).includes("Wedding")?"type:Wedding":"type:"+((S.types||[])[0]||"Wedding")]}
+  if(kind==="away"){base.name="Parking when the Rav is away";base.rabbi="away";base.inc.wd=[0,1,2,3,4];base.start={a:"sunset",o:-30};base.end={a:"clock",t:"21:30",o:0}}
+  if(kind==="yt"){base.name="Parking on Shabbos and Yom Tov";base.inc.wd=[6];base.inc.fest=["yt_any"];base.start={a:"clock",t:"07:00",o:0};base.end={a:"clock",t:"13:00",o:0}}
+  if(kind==="date"){base.name="Parking on ";base.mode="Lockdown";base.inc.dates=[{from:todayNY(),to:todayNY()}]}
+  if(kind==="week"){base.name="Parking ";base.inc.wd=[0,1,2,3,4]}
+  if(kind.startsWith("for:")){const k=kind.slice(4);base.mode="Lockdown";
+    if(k.startsWith("sit:")){const x=(S.situations||[]).find(y=>"sit:"+y.id===k);base.sit=k.slice(4);base.name=`Parking: ${x?x.name:"situation"}`;base.inc.wd=[0,1,2,3,4,5,6];base.start={a:"clock",t:"00:00",o:0};base.end={a:"clock",t:"23:59",o:0};base.stop=true}
+    else{base.inc.fest=[k];base.name=`Parking: ${keyLabel(k)}`}}
+  openEditor(base,true)}
+function renderPk(){const b=$("#pkBody");if(!b)return;pkDemo();pkLoad();pkMigrate();const ds=PK.doors||[],t=todayNY(),nm=mkNowMin(),rules=pkRules();
+  const seg=`<div class="mk-seg" role="tablist">${[["now","Now"],["sched","Schedule"],["ev","Events and dates"]].map(([k,l])=>`<button type="button" class="${PKT===k?"on":""}" data-pkt="${k}">${l}</button>`).join("")}</div>`;
   const ro=PK.allow?"":`<p class="gf top mk-ro">Changes from here are off. A super admin can turn them on under Settings, Controllers.</p>`;
   let h="";
   if(PKT==="now"){h=`<div class="pk-now">${ds.map(d=>{const want=pkModeAt(t,nm,d.id),man=(S.parkMan||{})[d.id],mode=man?man.mode:want.mode;
-      return `<div class="pk-c"><div class="mk-head" style="--c:${PK_MODES[mode][2]}"><span class="oi">${ico(mode==="open"?"open":"lock")}</span><div><b>${esc(d.name)}</b><span>${PK_MODES[mode][0]}: ${PK_MODES[mode][1]}${man?` · set by hand${man.to?" until "+fmt(nyMin(man.to)):""}`:want.by?` · ${esc(want.by)}`:""}</span></div></div>
+      return `<div class="pk-c"><div class="mk-head" style="--c:${PK_MODES[mode][2]}"><span class="oi">${ico(mode==="open"?"open":"lock")}</span><div><b>${esc(d.name)}</b><span>${PK_MODES[mode][0]}: ${PK_MODES[mode][1]}${man?" · set by hand":want.by?` · ${esc(want.by)}`:""}</span></div></div>
       <div class="pk-modes">${Object.entries(PK_MODES).map(([k,[n,sub,col]])=>`<button type="button" class="${mode===k?"on":""}" style="--c:${col}" data-pkmode="${k}" data-pkid="${esc(d.id)}"><b>${n}</b><small>${sub}</small></button>`).join("")}</div>
       ${man?`<button class="btn sm" type="button" data-pkback="${esc(d.id)}">Back to the schedule</button>`:""}
-      <div><span class="hint">Today</span>${pkTimeline(t,d.id,nm)}<div class="mk-axis"><span>12 AM</span><span>6 AM</span><span>Noon</span><span>6 PM</span><span>12 AM</span></div></div></div>`}).join("")}</div>
+      <div><span class="hint">Today</span>${pkTimeline(t,d.id,nm)}<div class="mk-axis"><span>12 AM</span><span>6 AM</span><span>Noon</span><span>6 PM</span><span>12 AM</span></div></div></div>`}).join("")||`<p class="none">Reading the parking lot…</p>`}</div>
     <div class="pk-leg"><span><i style="background:color-mix(in srgb,var(--b) 18%,var(--fill))"></i>Normal</span><span><i style="background:var(--ok)"></i>Open</span><span><i style="background:var(--r)"></i>Locked</span></div>
     <p class="gf">A change by hand stays until you tap Back to the schedule. Every change is saved in Activity.</p>`}
-  if(PKT==="sched"){h=`<div class="glist">${c.rules.map(r=>`<button type="button" class="row tap pk-rule" data-pkedit="r${r.id}"><span class="pk-pill" style="background:${PK_MODES[r.mode][2]}">${PK_MODES[r.mode][0]}</span><div class="rt"><b>${esc(r.name)}</b><span>${pkRuleText(r)} · ${r.doors==="all"?"Both entrances":esc((r.doors||[]).map(id=>(ds.find(x=>x.id===id)||{}).name||id).join(", "))}</span></div><span class="chev"></span></button>`).join("")||`<div class="row"><span class="hint">No schedule yet. The entrances stay Normal.</span></div>`}</div>
-    <button class="btn" type="button" data-pkadd="r" style="margin-top:12px">Add a time</button>
-    <h3 class="gh mk-h">The coming week</h3><div class="glist pk-week">${Array.from({length:7},(_,i)=>{const d=addDays(t,i),di=dayInfo(d);return `<div class="row"><div class="dn"><b>${i===0?"Today":di.w===6?"Shabbos":WDN[di.w]}</b><span>${esc(shortDate(d))}</span></div>${pkTimeline(d,(ds[0]||{}).id,i===0?nm:null)}</div>`}).join("")}</div>
-    <p class="gf">Anything not in the schedule is Normal: key tags work. When two times overlap, Locked wins over Open.</p>`}
-  if(PKT==="dates"){const up=c.dates.filter(r=>r.date>=t).sort((a,b)=>a.date.localeCompare(b.date)),past=c.dates.filter(r=>r.date<t);
-    h=`<p class="gf top">For a wedding, a levaya or any one day. These win over the normal schedule.</p><div class="glist">${up.map(r=>`<button type="button" class="row tap pk-rule" data-pkedit="d${r.id}"><span class="pk-pill" style="background:${PK_MODES[r.mode][2]}">${PK_MODES[r.mode][0]}</span><div class="rt"><b>${esc(r.name)}</b><span>${pkRuleText(r)}</span></div><span class="chev"></span></button>`).join("")||`<div class="row"><span class="hint">Nothing coming up.</span></div>`}</div>
-    <button class="btn" type="button" data-pkadd="d" style="margin-top:12px">Add a date</button>${past.length?`<p class="gf">${past.length} past date${past.length>1?"s":""} kept in Activity.</p>`:""}`}
-  const usesLock=c.rules.concat(c.dates).some(r=>r.mode==="locked")||Object.values(S.parkMan||{}).some(m=>m.mode==="locked");
+  if(PKT==="sched"){const up=(S.events||[]).filter(e=>e.to>=t).sort((a,b)=>a.from.localeCompare(b.from)).slice(0,4);
+    h=`<p class="gf top">The parking lot uses the same rules as the doors, so weddings and other events, the Rav away, Yom Tov, the summer and winter clock, situations and special dates all work here too.</p>
+    <div class="glist">${rules.map(r=>{const k=pkModeOf(r.mode);return `<button type="button" class="row tap pk-rule" data-pkrule="${esc(String(r.id))}"><span class="pk-pill" style="background:${PK_MODES[k][2]}">${PK_MODES[k][0]}</span><div class="rt"><b>${esc(r.name)}</b><span>${esc(pkRuleText(r))}${expandDoors(r.doors).filter(isPk).length<pkDoors().length?` · ${esc(expandDoors(r.doors).filter(isPk).map(id=>(pkDoors().find(x=>x.id===id)||{name:id}).name).join(", "))}`:""}</span></div><span class="chev"></span></button>`}).join("")||`<div class="row"><span class="hint">No parking times yet. The entrances stay Normal: key tags work.</span></div>`}</div>
+    <h3 class="gh mk-h">Add a parking time</h3><div class="pk-quick">${PK_QUICK.map(([k,l])=>`<button type="button" class="btn" data-pknew="${k}">${l}</button>`).join("")}</div>
+    <h3 class="gh mk-h">The coming week</h3><div class="glist pk-week">${Array.from({length:7},(_,i)=>{const d=addDays(t,i),di=dayInfo(d),ch=pkDayTags(d);return `<div class="row"><div class="dn"><b>${i===0?"Today":di.w===6?"Shabbos":WDN[di.w]}</b><span>${esc(shortDate(d).replace(/, \d{4}$/,""))}${ch?" · "+esc(ch):""}</span></div><div class="pk-tls">${ds.map(x=>`${ds.length>1?`<small>${esc(x.name)}</small>`:""}${pkTimeline(d,x.id,i===0?nm:null)}`).join("")}</div></div>`}).join("")}</div>
+    ${up.length?`<p class="gf">Coming up: ${up.map(e=>`${esc(e.name)} (${esc(shortDate(e.from).replace(/, \d{4}$/,""))})`).join(", ")}. Add or change events in Rules and events.</p>`:`<p class="gf">Add weddings and other events in Rules and events. A parking time for that kind of event runs on its own.</p>`}
+    <p class="gf">Outside these times an entrance is Normal. When two times overlap, the app asks which one runs, the same as for doors.</p>`}
+  if(PKT==="ev"){const sp=pkRules(),line=(list,why)=>list.length?list.map(r=>{const k=pkModeOf(r.mode);return `<span class="pk-eff"><i style="background:${PK_MODES[k][2]}"></i>${PK_MODES[k][0]} ${esc(ruleTime(r))}${why(r)?` <em>${esc(why(r))}</em>`:""}</span>`}).join(""):`<span class="pk-eff none">No parking change. Key tags work as usual.</span>`;
+    const btn=(key,r)=>r?`<button class="btn sm" type="button" data-pkrule="${esc(String(r.id))}">Change parking</button>`:`<button class="btn sm" type="button" data-pkfor="${esc(key)}">Set parking</button>`;
+    const up=(S.events||[]).filter(e=>e.to>=t).sort((a,b)=>a.from.localeCompare(b.from));
+    const evRow=e=>{const own=sp.find(r=>r.inc.fest.includes("ev:"+e.id)),byType=sp.filter(r=>r.inc.fest.includes("type:"+e.type)&&r!==own);
+      return `<div class="row pk-evr"><div class="rt"><b>${esc(e.name)}</b><span>${esc(rangeText(e.from,e.to))} · ${esc(e.type)}</span><div class="pk-effs">${line([own,...byType].filter(Boolean),r=>r===own?"":`for every ${e.type}`)}</div></div><div class="pk-evb">${btn("ev:"+e.id,own)}<button class="lnk" type="button" data-pkev="${esc(e.id)}">Edit event</button></div></div>`};
+    const yr=[...(S.hdates||[]).map(x=>["hd:"+x.id,x.name,"Every year, Hebrew date"]),...(S.gdates||[]).map(x=>["gd:"+x.id,x.name,`Every year, ${GMON[x.m-1]} ${x.d}`])];
+    const sits=(S.situations||[]).map(x=>["sit:"+x.id,x.name,x.on?"On now":"Off",x]);
+    h=`<p class="gf top">The shul's events and special dates, the same list as Rules and events. Add an event here and the doors and the parking lot both see it.</p>
+    <h3 class="gh mk-h">Coming up</h3><div class="glist">${up.map(evRow).join("")||`<div class="row"><span class="hint">No events coming up.</span></div>`}</div>
+    <button class="btn" type="button" data-pkevnew style="margin-top:12px">Add an event</button>
+    ${yr.length?`<h3 class="gh mk-h">Every year</h3><div class="glist">${yr.map(([k,n,sub])=>{const L=sp.filter(r=>r.inc.fest.includes(k));return `<div class="row pk-evr"><div class="rt"><b>${esc(n)}</b><span>${esc(sub)}</span><div class="pk-effs">${line(L,()=>"")}</div></div><div class="pk-evb">${btn(k,L[0])}</div></div>`}).join("")}</div>`:""}
+    ${sits.length?`<h3 class="gh mk-h">Situations</h3><div class="glist">${sits.map(([k,n,sub,x])=>{const L=sp.filter(r=>r.sit===x.id);return `<div class="row pk-evr"><div class="rt"><b>${esc(n)}</b><span>${esc(sub)}</span><div class="pk-effs">${line(L,()=>"")}</div></div><div class="pk-evb">${btn(k,L[0])}</div></div>`}).join("")}</div>`:""}
+    <p class="gf">The Rav away dates and the summer and winter clock are set once for the whole system. Use When the Rav is away on the Schedule tab for parking times that follow them.</p>`}
+  const usesLock=rules.some(r=>r.mode==="Lockdown")||Object.values(S.parkMan||{}).some(m=>m.mode==="locked");
   const lk=usesLock?`<p class="gf top mk-ro">Locked isn't connected to the parking lot controller yet. Until it is, an entrance set to Locked stays as it was.</p>`:"";
   b.innerHTML=seg+ro+lk+h}
-function pkSheetEdit(kind,r){const ds=PK.doors||[],isD=kind==="d";$("#mkT").textContent=r.id?"Change":(isD?"Add a date":"Add a time");PK_ED={kind,r:{...r}};
-  $("#mkSheet").innerHTML=`<div class="nu-f"><label>Name<input id="peName" value="${esc(r.name||"")}" placeholder="${isD?"For example: Klein wedding":"For example: Shabbos morning"}"></label>
-    <label>The entrances should be<select id="peMode">${Object.entries(PK_MODES).map(([k,[n,sub]])=>`<option value="${k}"${r.mode===k?" selected":""}>${n}: ${sub}</option>`).join("")}</select></label>
-    <label>Which entrances<select id="peDoors"><option value="all">Both entrances</option>${ds.map(d=>`<option value="${esc(d.id)}"${Array.isArray(r.doors)&&r.doors[0]===d.id?" selected":""}>${esc(d.name)}</option>`).join("")}</select></label>
-    ${isD?`<label>Date<input type="date" id="peDate" value="${r.date||todayNY()}"></label>`:`<label>Days</label><div class="pk-days">${[0,1,2,3,4,5,6].map(w=>`<label><input type="checkbox" value="${w}" data-ped${(r.days||[]).includes(w)?" checked":""}>${w===6?"Shab":WDN[w].slice(0,3)}</label>`).join("")}<label><input type="checkbox" id="peHol"${r.hol?" checked":""}>Yom Tov</label></div>`}
-    <label>From${tsField("peFrom",r.from||"18:00")}</label><label>To${tsField("peTo",r.to||"23:00")}</label>
-    ${r.id?`<button class="btn sm danger" type="button" data-pkdel>Remove</button>`:""}</div>`;openModal("mMk")}
-let PK_ED=null;
+// what's special about a day, in a few words (Yom Tov, events, the Rav away)
+function pkDayTags(d){const di=dayInfo(d),out=[];[...di.keys].forEach(k=>{if(/^ev:/.test(k)){const l=keyLabel(k);if(l&&!out.includes(l))out.push(l)}});if(di.keys.has("yt_any"))out.unshift("Yom Tov");if(di.away)out.push("Rav away");return out.slice(0,2).join(", ")}
 document.addEventListener("click",ev=>{const t=ev.target;
   const tb=t.closest("[data-pkt]");if(tb){PKT=tb.dataset.pkt;renderPk();return}
-  const a=t.closest("[data-pkadd]");if(a){pkSheetEdit(a.dataset.pkadd,{mode:a.dataset.pkadd==="d"?"locked":"open",doors:"all",days:[],from:"18:00",to:"23:00"});return}
-  const e=t.closest("[data-pkedit]");if(e){const k=e.dataset.pkedit[0],id=+e.dataset.pkedit.slice(1),c=pkCfg(),r=(k==="d"?c.dates:c.rules).find(x=>x.id===id);if(r)pkSheetEdit(k,r);return}
-  if(t.closest("[data-pkdel]")&&PK_ED){const c=pkCfg(),k=PK_ED.kind==="d"?"dates":"rules";S.park={...c,[k]:c[k].filter(x=>x.id!==PK_ED.r.id)};commit(`Parking lot: removed ${PK_ED.r.name}`);closeModal("mMk");PK_ED=null;renderPk();pkPush();return}
-  if(t.closest("#mkGo")&&PK_ED&&$("#peName")){const c=pkCfg(),isD=PK_ED.kind==="d",dv=$("#peDoors").value;
-    const r={...PK_ED.r,name:$("#peName").value.trim()||(isD?"Event":"Time"),mode:$("#peMode").value,doors:dv==="all"?"all":[dv],from:tsRead(document.querySelector('[data-ts="peFrom"]')),to:tsRead(document.querySelector('[data-ts="peTo"]'))};
-    if(isD)r.date=$("#peDate").value;else{r.days=[...document.querySelectorAll("[data-ped]:checked")].map(x=>+x.value);r.hol=$("#peHol").checked;if(!r.days.length&&!r.hol){toast("Pick at least one day.");return}}
-    const k=isD?"dates":"rules",list=c[k].slice();if(r.id){const i=list.findIndex(x=>x.id===r.id);list[i]=r}else{r.id=Date.now();list.push(r)}
-    S.park={...c,[k]:list};commit(`Parking lot: ${r.name}, ${PK_MODES[r.mode][0].toLowerCase()} ${pkRuleText(r).replace(/<[^>]+>/g,"")}`);closeModal("mMk");PK_ED=null;renderPk();pkPush();return}
+  const nw=t.closest("[data-pknew]");if(nw){pkNewRule(nw.dataset.pknew);return}
+  const pf=t.closest("[data-pkfor]");if(pf){pkNewRule("for:"+pf.dataset.pkfor);return}
+  if(t.closest("[data-pkevnew]")){openEventForm(null);return}
+  const pe=t.closest("[data-pkev]");if(pe){const e=S.events.find(x=>x.id===pe.dataset.pkev);if(e)openEventForm(e);return}
+  const e=t.closest("[data-pkrule]");if(e){const r=S.rules.find(x=>String(x.id)===e.dataset.pkrule);if(r)openEditor(r,false);return}
   const mb=t.closest("[data-pkmode]");if(mb){const id=mb.dataset.pkid,mode=mb.dataset.pkmode,d=(PK.doors||[]).find(x=>x.id===id);S.parkMan={...(S.parkMan||{}),[id]:{mode,at:Date.now()}};commit(`Parking lot ${d?d.name:id}: ${PK_MODES[mode][0]} by hand`);renderPk();pkPush();return}
   const bk=t.closest("[data-pkback]");if(bk){const m={...(S.parkMan||{})};delete m[bk.dataset.pkback];S.parkMan=m;commit("Parking lot: back to the schedule");renderPk();pkPush();return}
 });
@@ -5635,7 +5676,8 @@ let PK={doors:null,events:[],timers:[],allow:false,t:0,err:""};
 const PK_DEMO=[{id:"00A1B2C3:0",name:"Parking Entrance 1",state:"locked"},{id:"00A1B2C3:1",name:"Parking Entrance 2",state:"locked"}];
 async function pkLoad(force){if(!ON_BOX){if(!PK.doors){PK.doors=PK_DEMO.map(d=>({...d}));PK.allow=true;PK.events=[{t:Date.now()-40*60e3,text:"Access granted",who:"Aaron Krausz",door:"Parking Entrance 1"},{t:Date.now()-95*60e3,text:"Access granted",who:"Abish Geller",door:"Parking Entrance 2"}]}return}
   if(!force&&Date.now()-PK.t<20000)return;PK.t=Date.now();
-  try{const j=await (await fetch("api/parking?days=7")).json();PK={...PK,doors:j.doors||[],events:j.events||[],timers:j.timers||[],allow:!!j.allow,err:j.ok?"":(j.why||"")};}catch(e){PK.err="Can't reach the box."}
+  try{const j=await (await fetch("api/parking?days=7")).json();PK={...PK,doors:j.doors||[],events:j.events||[],timers:j.timers||[],allow:!!j.allow,err:j.ok?"":(j.why||"")};
+    if(j.ok&&PK.doors.length){const L=PK.doors.map(d=>({id:"P:"+d.id,name:d.name}));if(JSON.stringify(L)!==JSON.stringify(S.parkDoors||[])){S.parkDoors=L;save();pkMigrate()}}}catch(e){PK.err="Can't reach the box."}
   if($("#tab-open")&&!$("#tab-open").hidden)renderOpen();renderCtrl()}
 const pkOpen=d=>/unlock|open/i.test(d.state||"")||PK.timers.some(t=>t.id===d.id&&t.to>Date.now());
 function pkTimer(id){const t=PK.timers.find(x=>x.id===id&&x.to>Date.now());return t?t.to:0}
@@ -6109,10 +6151,10 @@ $("#addEv").onclick=()=>{const n=$("#evName").value.trim(),f=$("#evFrom").value,
   if(!f||t<f){$("#evMsg").innerHTML=`<p class="errline">${f?"The end can't be before the start.":"Pick the day it starts."}</p>`;return}
   const old=EV_EDIT&&S.events.find(x=>x.id===EV_EDIT);
   if(old){const prev={...old},a=prev.from<f?prev.from:f,z=prev.to>t?prev.to:t;
-    attempt({change:()=>Object.assign(S.events.find(x=>x.id===prev.id),{name:n,type:$("#evType").value,from:f,to:t}),doors:S.doors.map(d=>d.id),from:addDays(a,-1),days:daysBetween(a,z)+3,el:$("#evMsg"),
+    attempt({change:()=>Object.assign(S.events.find(x=>x.id===prev.id),{name:n,type:$("#evType").value,from:f,to:t}),doors:S.doors.map(d=>d.id).concat(pkDoors().map(d=>d.id)),from:addDays(a,-1),days:daysBetween(a,z)+3,el:$("#evMsg"),
       done:sum=>{$("#evMsg").innerHTML="";commit(`Changed event "${n}"${prev.from!==f||prev.to!==t?` to ${rangeText(f,t)} (was ${rangeText(prev.from,prev.to)})`:""}${sum}`);EV_EDIT=null;closeModal("mEvent");toast("Event saved")}});return}
   const ev={id:"e"+Date.now(),name:n,type:$("#evType").value,from:f,to:t};
-  attempt({change:()=>S.events.push(ev),doors:S.doors.map(d=>d.id),from:addDays(f,-1),days:daysBetween(f,t)+3,el:$("#evMsg"),done:sum=>{$("#evName").value="";$("#evFrom").value="";$("#evTo").value="";$("#evMsg").innerHTML="";commit(`Added event "${n}"${sum}`);closeModal("mEvent");toast("Event added")}})};
+  attempt({change:()=>S.events.push(ev),doors:S.doors.map(d=>d.id).concat(pkDoors().map(d=>d.id)),from:addDays(f,-1),days:daysBetween(f,t)+3,el:$("#evMsg"),done:sum=>{$("#evName").value="";$("#evFrom").value="";$("#evTo").value="";$("#evMsg").innerHTML="";commit(`Added event "${n}"${sum}`);closeModal("mEvent");toast("Event added")}})};
 
 $("#evRows").addEventListener("click",ev=>{if(ev.target.closest("[data-evnew]")){openEventForm(null);return}const ed=ev.target.closest("[data-evedit]");if(ed&&!ev.target.closest("[data-evdel]")){if(!can("events")&&!isAdmin())return;const e=S.events.find(x=>x.id===ed.dataset.evedit);if(e)openEventForm(e);return}const b=ev.target.closest("[data-evdel]");if(!b)return;if(inUse(b,"ev:"+b.dataset.evdel))return;const e=S.events.find(x=>x.id===b.dataset.evdel);S.events=S.events.filter(x=>x!==e);commit(`Removed event "${e.name}"`)});
 $("#addType").onclick=()=>{const t=$("#newType").value.trim();if(!t||S.types.includes(t))return;S.types.push(t);$("#newType").value="";commit(`Added event type "${t}"`)};

@@ -603,10 +603,12 @@ const PARK_CMD = { open: "open", normal: "reset", locked: "" };   // the control
 function parkWant(doorId, at = Date.now()) {
   const p = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date(at));
   const g = (k) => p.find((x) => x.type === k).value, d = `${g("year")}-${g("month")}-${g("day")}`, m = +g("hour") * 60 + +g("minute");
-  let info = {}; try { info = engine.info(d); } catch { /* plain day */ }
   const man = (state.parkMan || {})[doorId];
   if (man && man.mode) return { mode: man.mode, by: "by hand" };
-  return sched.parkModeAt(state.park || {}, d, m, doorId, info);
+  // the same rules as the doors (events, the Rav away, Yom Tov, summer or winter clock, situations, dates)
+  const segs = engine.day("P:" + doorId, d), seg = segs.find((x) => m >= x.a && m < x.b);
+  if (!seg || seg.rule === "Default") return { mode: "normal", by: "" };
+  return { mode: seg.mode === "Unlock" ? "open" : seg.mode === "Lockdown" ? "locked" : "normal", by: seg.rule };
 }
 let parkBusy = false;
 async function parkApply(force) {
@@ -629,7 +631,7 @@ async function parkApply(force) {
     return { ok: !bad.length, out, error: bad.length ? bad.map((o) => `${o.name}: ${o.error}`).join("; ") : "" };
   } finally { parkBusy = false; }
 }
-const parkScheduled = () => !!(state && ((state.park && ((state.park.rules || []).length || (state.park.dates || []).length)) || Object.keys(state.parkMan || {}).length));
+const parkScheduled = () => !!(state && ((state.rules || []).some((r) => (r.doors || []).some((x) => String(x).startsWith("P:") || ((state.groups || []).find((g) => "g:" + g.id === x) || { doors: [] }).doors.some((y) => String(y).startsWith("P:")))) || Object.keys(state.parkMan || {}).length));
 if (atrium.configured) setInterval(() => { if (ctrlAllow("parkWrites") && parkScheduled()) parkApply(false).catch(() => {}); }, 60000).unref();
 function meAdmin(req) { return superAdmin(haUser(req)); }
 async function ctrlApi(req, res, p, u) {
