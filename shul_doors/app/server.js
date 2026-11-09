@@ -18,6 +18,7 @@ const { createActivity } = require("./lib/activity");
 const { createHaAuth } = require("./lib/hauth");
 const { createMikva } = require("./lib/mikva");
 const { createAtrium } = require("./lib/atrium");
+const { createMtemp, createTempLog } = require("./lib/mtemp");
 
 const DATA = process.env.SD_DATA || "/data";
 const PORT = +process.env.SD_PORT || 8099;
@@ -494,6 +495,56 @@ const haAuth = createHaAuth({ url: process.env.SD_HA_WS || (SUP_TOKEN ? "ws://su
 const mikva = createMikva({ url: opts.mikva_url, username: opts.mikva_username, password: opts.mikva_password, log });
 const atrium = createAtrium({ url: opts.atrium_url, username: opts.atrium_username, password: opts.atrium_password, log });
 const ctrlAllow = (k) => !!(state && state.ctrl && state.ctrl[k]);
+const mtemp = createMtemp({ haUrl: HA_URL, token: HA_TOKEN, areas: () => haAuth.areas(), log });
+// mikva temperature alerts, checked every minute
+const tempLog = createTempLog({ minFile: file("mtemp-min.jsonl"), hourFile: file("mtemp-hour.jsonl") });
+async function mtTick() {
+  if (!HA_URL || !state) return;
+  let list; try { list = await mtemp.list(); } catch { return; }
+  if (!list.length) return;
+  tempLog.record(list);
+  const cfg = state.mtemp; if (!cfg || !cfg.on) return;
+  const found = mtemp.check(list, cfg); if (!found.length) return;
+  const phones = (state.users || []).filter((u) => u.mtAlert && u.phone).map((u) => u.phone);
+  for (const a of found) { log("info", "mikva temperature: " + a.text); if (sms && phones.length) { try { await sms.alertTo(state, phones, a.key, a.text, "mikva", 3600e3); } catch (e) { log("warn", "mikva alert text: " + e.message); } } }
+}
+if (HA_URL) setInterval(() => mtTick().catch(() => {}), +process.env.SD_MT_MS || 60000).unref();
+// the thermostats hold one week; each night Shul Manager writes the coming 7 days onto them,
+// with Yom Tov days swapped for the day they should run like (for example Yom Tov runs like Shabbos)
+const MT_DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+function mtResolve(cfg, id) {
+  const base = (cfg.base || {})[id]; if (!base) return null;
+  const today = engine.today(), week = {}, plan = [];
+  for (let i = 0; i < 7; i++) {
+    const d = engine.addDays(today, i), slot = MT_DAYS[new Date(d + "T12:00:00Z").getUTCDay()];
+    let keys = []; try { keys = engine.raw(`[...dayInfo(${JSON.stringify(d)}).keys]`); } catch { /* plain day */ }
+    const row = cfg.on ? (cfg.hol || []).find((r) => r.use && r.use !== "week" && (r.keys || []).some((k) => keys.includes(k))) : null;
+    const day = row ? (row.use === "closed" ? [[0, +cfg.closedTemp || 68]] : base[row.use]) : base[slot];
+    week[slot] = day || base[slot]; plan.push({ d, slot, why: row ? row.name : "", use: row ? row.use : slot });
+  }
+  return { week, plan };
+}
+async function mtApply(force) {
+  const cfg = state && state.mtSched; if (!cfg || !cfg.base) return { ok: false, error: "No schedules saved yet." };
+  if (!ctrlAllow("mtempWrites")) return { ok: false, error: "Changing the thermostats from here is turned off. Turn it on under Settings, Controllers." };
+  const out = []; store.mtWritten = store.mtWritten || {};
+  for (const x of (await mtemp.list()).filter((y) => y.uuid && cfg.base[y.id])) {
+    const r = mtResolve(cfg, x.id); if (!r) continue;
+    const h = JSON.stringify(r.week);
+    if (!force && store.mtWritten[x.id] === h) { out.push({ id: x.id, name: x.name, same: true }); continue; }
+    try { await mtemp.setSchedule(x, r.week); store.mtWritten[x.id] = h; out.push({ id: x.id, name: x.name, ok: true }); }
+    catch (e) { out.push({ id: x.id, name: x.name, ok: false, error: e.message }); log("warn", `thermostat schedule for ${x.name}: ${e.message}`); }
+  }
+  writeJson("store.json", store);
+  return { ok: out.every((o) => o.ok !== false), out };
+}
+let mtAppliedDay = "";
+if (HA_URL) setInterval(() => {
+  try { const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date());
+    const m = +p.find((x) => x.type === "hour").value * 60 + +p.find((x) => x.type === "minute").value, t = engine.today();
+    if (m >= 15 && m < 60 && mtAppliedDay !== t && state && state.mtSched) { mtAppliedDay = t; mtApply(false).then((r) => log("info", "thermostat schedules: nightly write " + (r.ok ? "done" : r.error || "had problems"))).catch(() => {}); }
+  } catch { /* try again later */ }
+}, 5 * 60e3).unref();
 // parking lot events: read every minute, kept on the box for Activity
 async function parkPoll() {
   if (!atrium.configured) return;
@@ -517,13 +568,57 @@ if (atrium.configured) setInterval(parkTimerTick, 15000).unref();
 function meAdmin(req) { return superAdmin(haUser(req)); }
 async function ctrlApi(req, res, p, u) {
   try {
-    if (req.method === "GET" && p === "/api/controllers") return send(res, 200, { mikva: mikva.status(), parking: atrium.status(), allow: { mikva: ctrlAllow("mikvaWrites"), parking: ctrlAllow("parkWrites") }, logins: !!SUP_TOKEN || !!process.env.SD_HA_WS });
+    if (req.method === "GET" && p === "/api/controllers") return send(res, 200, { mikva: mikva.status(), parking: atrium.status(), allow: { mikva: ctrlAllow("mikvaWrites"), parking: ctrlAllow("parkWrites"), mtemp: ctrlAllow("mtempWrites") }, mtemp: { configured: !!HA_URL }, logins: !!SUP_TOKEN || !!process.env.SD_HA_WS });
     if (req.method === "POST" && p === "/api/controllers/test") {
       const b = (await readBody(req)) || {};
       if (b.which === "mikva") { await mikva.read(); return send(res, 200, { ok: true }); }
       if (b.which === "parking") { const r = await atrium.test(); if (r.ok) { try { await atrium.doors(); } catch { /* shown below */ } r.info = await atrium.diag(); } return send(res, 200, r); }
+      if (b.which === "mtemp") { const l = await mtemp.list(); return send(res, 200, l.length ? { ok: true, count: l.length } : { ok: false, error: "No mikva thermostats found in Home Assistant." }); }
       if (b.which === "logins") { const l = await haAuth.list(); return send(res, 200, { ok: true, count: l.length }); }
       return send(res, 400, { error: "Which one?" });
+    }
+    // mikva thermostats (through Home Assistant)
+    if (req.method === "GET" && p === "/api/mtemp") {
+      const list = await mtemp.list(); const h = await mtemp.history(list.map((x) => x.id));
+      return send(res, 200, { ok: true, list: list.map((x) => ({ ...x, hist: h[x.id] || [] })), allow: ctrlAllow("mtempWrites") });
+    }
+    if (req.method === "GET" && p === "/api/mtemp/log") {
+      const to = Math.min(Date.now() + 60e3, +u.searchParams.get("to") || Date.now()), from = Math.max(to - 3 * 366 * 864e5, +u.searchParams.get("from") || to - 864e5);
+      let step = Math.max(1, Math.min(1440, +u.searchParams.get("step") || 60));
+      if (step < 60 && to - from > 31 * 864e5) step = 60;   // minute detail is kept for 31 days
+      if ((to - from) / (step * 60e3) > 20000) step = Math.ceil((to - from) / 60e3 / 20000 / 60) * 60;
+      return send(res, 200, { ok: true, step, rows: tempLog.query(from, to, step) });
+    }
+    if (req.method === "GET" && p === "/api/mtemp/schedule") {
+      const list = await mtemp.list();
+      if (!list.some((x) => x.uuid)) return send(res, 200, { ok: false, error: "To read and write the thermostat schedules, install Meross LAN in Home Assistant (through HACS) and add the four thermostats with it." });
+      const out = []; let max = 6;
+      for (const x of list.filter((y) => y.uuid)) { const r = await mtemp.getSchedule(x); max = r.max; out.push({ id: x.id, name: x.name, week: r.week }); }
+      return send(res, 200, { ok: true, list: out, max });
+    }
+    if (req.method === "POST" && p === "/api/mtemp/schedule") {
+      if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can change the thermostat schedules." });
+      if (!ctrlAllow("mtempWrites")) return send(res, 200, { ok: false, error: "Changing the thermostats from here is turned off. Turn it on under Settings, Controllers." });
+      const b = (await readBody(req)) || {}, x = (await mtemp.list()).find((y) => y.id === b.id);
+      if (!x) return send(res, 200, { ok: false, error: "That isn't a mikva thermostat." });
+      await mtemp.setSchedule(x, b.week || {});
+      // read it back so what's shown is what the thermostat really has
+      const back = await mtemp.getSchedule(x);
+      return send(res, 200, { ok: true, week: back.week });
+    }
+    if (req.method === "POST" && p === "/api/mtemp/apply") {
+      if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can change the thermostat schedules." });
+      return send(res, 200, await mtApply(true));
+    }
+    if (req.method === "GET" && p === "/api/mtemp/plan") {
+      const cfg = (state && state.mtSched) || {}, list = await mtemp.list();
+      return send(res, 200, { ok: true, plans: list.map((x) => ({ id: x.id, ...(mtResolve(cfg, x.id) || {}) })) });
+    }
+    if (req.method === "POST" && p === "/api/mtemp/set") {
+      if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can change the mikva temperature." });
+      if (!ctrlAllow("mtempWrites")) return send(res, 200, { ok: false, error: "Changing the mikva temperature from here is turned off. Turn it on under Settings, Controllers." });
+      const b = (await readBody(req)) || {};
+      return send(res, 200, await mtemp.set(String(b.id || ""), b.temp));
     }
     // mikva magnet
     if (req.method === "GET" && p === "/api/mikva") return send(res, 200, { ...(await mikva.read()), allow: ctrlAllow("mikvaWrites") });
@@ -787,7 +882,7 @@ const server = http.createServer((req, res) => {
     return send(res, 200, { visits: (store.visits || []).filter((x) => !who || x.u === who) });
   }
   if (p === "/api/chats" || p.startsWith("/api/chats/") || p === "/api/memory" || p === "/api/seen") { chatApi(req, res, p); return; }
-  if (p === "/api/controllers" || p.startsWith("/api/controllers/") || p.startsWith("/api/mikva") || p.startsWith("/api/parking") || p.startsWith("/api/logins")) { ctrlApi(req, res, p, u); return; }
+  if (p === "/api/controllers" || p.startsWith("/api/controllers/") || p.startsWith("/api/mikva") || p.startsWith("/api/mtemp") || p.startsWith("/api/parking") || p.startsWith("/api/logins")) { ctrlApi(req, res, p, u); return; }
   if (req.method === "GET" && p === "/api/status" && haUser(req)) visit(personOf(req));
   if (req.method === "GET" && p === "/api/status") return send(res, 200, { problem: stateProblem, mode: opts.mode, pilotDoors, version, last: lastReport && { at: lastReport.at, ok: lastReport.ok, actions: lastReport.actions, errors: lastReport.errors, warnings: lastReport.warnings, loadedThrough: lastReport.loadedThrough, compare: lastReport.compare }, codes: codeStatus() });
   if (req.method === "GET" && p === "/api/report") {

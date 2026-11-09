@@ -84,7 +84,18 @@ function createSms({ opts, file, store, save = () => {}, log = () => {}, now = (
     return toContacts(state, body, kind);
   }
 
-  return { mode, configured, sendOne, toContacts, alertOnce, list: (n = 50) => entries.slice(-n).reverse(), optedOut: () => store.smsOptOut.slice() };
+  // an alert for chosen people only; a number gets texts only if it agreed (it's a contact with consent)
+  async function alertTo(state, phones, key, body, kind, everyMs = 3600e3) {
+    const ok = new Set(((state && state.contacts) || []).filter((c) => c.sms && c.consentAt && e164(c.to)).map((c) => e164(c.to)));
+    const to = [...new Set((phones || []).map((x) => e164(x)).filter((x) => x && ok.has(x)))];
+    if (!to.length) return null;
+    const last = store.smsSentKeys[key];
+    if (last && now() - last < everyMs) return null;
+    store.smsSentKeys[key] = now(); save();
+    const out = []; for (const n of to) out.push(await sendOne(n, body, kind));
+    return out;
+  }
+  return { mode, configured, sendOne, toContacts, alertOnce, alertTo, list: (n = 50) => entries.slice(-n).reverse(), optedOut: () => store.smsOptOut.slice() };
 }
 
 module.exports = { createSms, e164, text };

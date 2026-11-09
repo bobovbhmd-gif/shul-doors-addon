@@ -79,6 +79,16 @@ function createHaAuth({ url, token, log = () => {}, connect = wsConnect }) {
     async list() {
       return session(async (call) => (await call("config/auth/list")).filter((u) => !u.system_generated).map((u) => ({ name: u.name, username: u.username || "", active: u.is_active !== false, admin: !!isAdmin(u), local: hasLocal(u) })));
     },
+    // which area each entity is in (entity's own area, else its device's area)
+    async areas() {
+      return session(async (call) => {
+        const [ents, devs, areas] = await Promise.all([call("config/entity_registry/list"), call("config/device_registry/list"), call("config/area_registry/list")]);
+        const an = new Map(areas.map((a) => [a.area_id, a.name])), dev = new Map(devs.map((d) => [d.id, d]));
+        const out = {}; for (const e of ents) { const d = dev.get(e.device_id) || {}; const a = e.area_id || d.area_id; const ml = (d.identifiers || []).find((x) => x[0] === "meross_lan");
+          if ((a && an.has(a)) || ml) out[e.entity_id] = { area: an.get(a) || "", platform: e.platform || "", uuid: ml ? String(ml[1]) : "", device: e.device_id || "" }; }
+        return out;
+      });
+    },
     async create({ name, username, password }) {
       if (!/^[a-z0-9._-]{2,32}$/i.test(String(username || ""))) throw new Error("Use a username of 2 to 32 letters, numbers, dots or dashes.");
       if (String(password || "").length < 8) throw new Error("Use a password of at least 8 characters.");

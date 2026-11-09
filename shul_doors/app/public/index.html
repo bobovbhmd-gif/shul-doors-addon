@@ -1808,6 +1808,56 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 .op-lockon .ic svg{stroke:#fff}
 #tab-lockdown .op-eb{grid-template-columns:1fr;max-width:560px}
 
+
+/* Mikva temperature */
+.ms-hol{margin-top:10px}.ms-hol summary{cursor:pointer;font-weight:600;color:var(--accent);padding:8px 2px}.ms-hol h4{margin:12px 4px 6px;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.ms-week{background:var(--surface);border-radius:18px;box-shadow:0 0 0 1px var(--line) inset;padding:10px 12px}
+.ms-day{display:grid;grid-template-columns:44px 1fr 82px;align-items:center;gap:10px;width:100%;border:0;background:none;font:inherit;padding:7px 4px;border-radius:10px;cursor:pointer;text-align:left}
+.ms-day:hover{background:var(--fill)}.ms-day.today .ms-dn{color:var(--accent)}
+.ms-dn{font-weight:650;font-size:14.5px}.ms-ch{font-size:12.5px;color:var(--muted);text-align:right}
+.ms-bar{position:relative;height:28px;border-radius:8px;background:var(--fill);overflow:hidden}
+.ms-bar span{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;border-right:2px solid var(--surface)}
+.ms-bar em{font-style:normal;font-size:12px;font-weight:650;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.ms-axis{display:grid;grid-template-columns:44px repeat(4,1fr) 0 82px;gap:10px;font-size:11.5px;color:var(--muted);padding:2px 4px 0}
+.ms-axis span:nth-child(6){text-align:right;margin-left:-40px}
+.ms-leg{display:flex;gap:14px;font-size:12.5px;color:var(--muted);margin:8px 2px}.ms-leg i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:5px;vertical-align:-2px}
+.ms-link{margin:0 0 12px;padding:4px 14px}
+.ms-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;padding:10px 0;border-bottom:1px solid var(--line)}
+.ms-temp{display:flex;align-items:center;gap:6px}.ms-first{font-size:12.5px;color:var(--muted);padding-bottom:12px}
+.ms-copy{display:flex;flex-direction:column;gap:8px;margin-top:6px}.ms-copy div{display:flex;flex-wrap:wrap;gap:8px 14px}.ms-copy label{flex-direction:row!important;align-items:center;gap:6px!important;font-weight:500!important;color:var(--fg)!important}
+@media (max-width:600px){.ms-day{grid-template-columns:36px 1fr;gap:8px}.ms-ch{display:none}.ms-axis{grid-template-columns:36px repeat(4,1fr) 0;gap:8px}.ms-axis span:last-child{display:none}.ms-row{grid-template-columns:1fr 1fr}.ms-row .btn,.ms-first{grid-column:1/-1}}
+
+.mt-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin-bottom:12px}
+.mt-sum .ua-tile{background:var(--surface);border-radius:14px;box-shadow:0 0 0 1px var(--line) inset;padding:10px 14px;display:flex;flex-direction:column;gap:2px}
+.mt-sum .ua-tile span{font-size:13px;color:var(--muted)}
+.mt-tw{overflow-x:auto;margin-top:12px;background:var(--surface);border-radius:14px;box-shadow:0 0 0 1px var(--line) inset}
+.mt-t{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
+.mt-t th{position:sticky;top:0;background:var(--surface);text-align:left;font-weight:600;color:var(--muted);padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+.mt-t td{padding:7px 12px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);white-space:nowrap}
+.mt-t td small{color:var(--muted);margin-left:4px}
+
+.mt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.mt-c{background:var(--surface);border-radius:18px;box-shadow:0 0 0 1px var(--line) inset;padding:16px 16px 12px;display:flex;flex-direction:column;gap:10px}
+.mt-c.warn{box-shadow:0 0 0 2px var(--o) inset}.mt-c.off{opacity:.65}
+.mt-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.mt-top b{font-size:16px}.mt-top small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.mt-st{font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 10px;white-space:nowrap;background:var(--fill);color:var(--muted)}
+.mt-st.heat{background:color-mix(in srgb,var(--o) 15%,transparent);color:var(--o)}
+.mt-st.ok{background:var(--ok-soft);color:var(--ok)}.mt-st.bad{background:color-mix(in srgb,var(--r) 12%,transparent);color:var(--r)}
+.mt-now{font-size:44px;font-weight:700;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+.mt-now span{font-size:20px;font-weight:600;color:var(--muted);margin-left:2px}
+.mt-set{display:flex;align-items:center;gap:10px;background:var(--fill);border-radius:12px;padding:6px 6px 6px 12px}
+.mt-set span{flex:1;font-size:14px;color:var(--muted)}.mt-set b{color:var(--fg);font-size:16px}
+.mt-set button{width:36px;height:36px;border-radius:10px;border:0;background:var(--surface);font:inherit;font-size:20px;font-weight:600;color:var(--accent);cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.mt-set button:disabled{color:var(--muted);opacity:.5;cursor:default}
+.mt-spark{width:100%;height:42px;display:block}
+.mt-spark path.l{fill:none;stroke:var(--accent);stroke-width:2}.mt-spark path.a{fill:color-mix(in srgb,var(--accent) 12%,transparent);stroke:none}.mt-spark line{stroke:var(--o);stroke-dasharray:3 3;stroke-width:1}
+.mt-chart{background:var(--surface);border-radius:18px;box-shadow:0 0 0 1px var(--line) inset;padding:14px 16px}
+.mt-chart svg{width:100%;height:220px;display:block}
+.mt-leg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);margin-top:8px}.mt-leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.mt-al .row .mt-in{width:72px;text-align:center}
+.mt-al input[type=number],.mt-al input[type=time],.mt-al select{font:inherit;font-size:15px;padding:7px 9px;border-radius:10px;border:1px solid var(--line);background:var(--fill2,var(--bg));color:var(--fg)}
+@media (max-width:600px){.mt-grid{grid-template-columns:1fr 1fr;gap:10px}.mt-c{padding:12px;gap:8px}.mt-now{font-size:32px}.mt-now span{font-size:15px}.mt-top b{font-size:14.5px}.mt-st{font-size:11px;padding:3px 8px}.mt-set{padding:4px 4px 4px 8px}.mt-set span{font-size:12.5px}.mt-set b{font-size:14px}.mt-set button{width:30px;height:30px}.mt-top{flex-direction:column;gap:6px}}
 /* Mikvah controller */
 .mk-seg{display:flex;gap:4px;background:var(--fill);border-radius:12px;padding:4px;margin:0 0 16px;max-width:560px}
 .mk-seg button{flex:1;border:0;background:none;border-radius:9px;padding:9px 6px;font:inherit;font-size:14.5px;font-weight:600;color:var(--muted);cursor:pointer}
@@ -2020,7 +2070,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
     <button type="button" class="navbtn cap-codes" data-tab="codes"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg></i>Guest codes</button>
     <button type="button" class="navbtn" data-tab="msgs" hidden><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></i>Messages <span class="badge" id="msgBadge" hidden></span></button>
     <button type="button" class="navbtn" data-tab="activity" data-also="live reports" id="actNav"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i>Activity</button>
-    <button type="button" class="navbtn admin-only" data-tab="mikvah"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z"/></svg></i>Mikva Magnet</button>
+    <button type="button" class="navbtn admin-only" data-tab="mikvah"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z"/></svg></i>Mikva</button>
     <div class="ng"></div>
     <button type="button" class="navbtn lkbtn admin-only" data-tab="lockdown"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><path d="M12 15v2"/></svg></i>Lockdown</button>
     <button type="button" class="navbtn" data-tab="setup" data-also="people"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></i>Settings</button>
@@ -2099,6 +2149,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
     <div id="opBody"></div>
   </section>
   <section id="tab-mikvah" hidden><div id="mkBody"></div></section>
+  <section id="tab-mtemp" hidden><div id="mtBody"></div></section>
   <section id="tab-lockdown" hidden>
     <div id="opLock"></div>
     <div class="op-emerg" id="opEmerg"></div>
@@ -3741,6 +3792,7 @@ function renderSetup(){
     return `<details class="ublock"${U_OPEN===u.name?" open":""} data-uname="${esc(u.name)}"><summary class="row"><span class="avatar">${esc(initials(u.name))}</span><div class="rt"><b>${esc(u.name)}${u.name===S.me?' <span class="mini">You</span>':""}</b><span>${esc(sub)}</span></div>${tag}<span class="chev"></span></summary>
       <div class="ubody">
       ${sec("Contact",`<div class="row"><span class="rt"><b>Mobile</b></span><input class="uphone" data-uphone="${i}" value="${esc(u.phone||"")}" placeholder="Add a number" inputmode="tel" aria-label="Mobile number for ${esc(u.name)}"></div>
+        <label class="row swrow"><span class="rt"><b>Mikva temperature alerts</b><span>By text, once texting is live</span></span><input type="checkbox" class="switch" data-umt="${i}"${u.mtAlert?" checked":""}></label>
         <div class="row"><span class="rt"><b>Email</b></span><input class="uphone uemail" data-uemail="${i}" value="${esc(u.email||"")}" placeholder="Add an email" inputmode="email" autocomplete="off" aria-label="Email for ${esc(u.name)}"></div>`)}
       ${sec("Sign-in",`<div class="row"><span class="rt"><b>${u.login===false?"Turned off":esc(u.login||loginName(u.name))}</b><span>${u.login===false?"They can't open Shul Manager":u.pwDone?"Picked their own password":"Still has the starting password"}</span></span><button class="btn sm" type="button" data-upw="${i}">Reset password</button></div>`)}
       ${sec("Access",`<div class="row"><span class="rt"><b>Role</b><span>${r?"Only what you choose below":"Sees and changes everything"}</span></span><select data-urole="${i}" aria-label="Role for ${esc(u.name)}"><option${!r?" selected":""}>Super admin</option><option${r?" selected":""}>Restricted</option></select></div>
@@ -4366,6 +4418,7 @@ document.addEventListener("input",ev=>{if(ev.target.id==="wmPw")renderWelMsg()})
 function wmPreview(){const u=S.users.find(x=>x.role==="Restricted")||S.users[0]||{name:"Moshe Klein"};const login=u.login||loginName(u.name);const m=welcomeEmail({...u,name:"Moshe Klein",email:"moshe@example.com"},"moshe.klein",S.me);
   $("#wmFrame").srcdoc=`<!doctype html><meta charset="utf-8"><body style="margin:0">${m.html}</body>`;$("#wmSms").textContent=fillMsg(MSGS().pwText,{name:"Moshe Klein"},"moshe.klein").replace(/\{password\}/g,"Cedar-Maple-4821");$("#wmPrevBox").hidden=false}
 document.addEventListener("click",ev=>{if(ev.target.closest("#wmPrev"))wmPreview();if(ev.target.closest("#wmReset")){S.msgs={};commit("Put the welcome messages back to the original wording");renderWelMsg();if(!$("#wmPrevBox").hidden)wmPreview()}});
+document.addEventListener("change",ev=>{const t=ev.target;if(!t.dataset||t.dataset.umt===undefined)return;const u=ud()[+t.dataset.umt];u.mtAlert=t.checked;uchg(`${t.checked?"Turned on":"Turned off"} mikva temperature alerts for ${u.name}`)});
 let PW_U=null,U_OPEN=null;const NEWPW=new Map();
 document.addEventListener("toggle",ev=>{const d=ev.target;if(d.classList&&d.classList.contains("ublock")){if(d.open){U_OPEN=d.dataset.uname;document.querySelectorAll("details.ublock[open]").forEach(x=>{if(x!==d)x.open=false})}else if(U_OPEN===d.dataset.uname)U_OPEN=null}},true);
 
@@ -4381,6 +4434,7 @@ function renderCtrl(){const el=$("#ctRows");if(!el)return;if(isAdmin())pkLoad();
     {k:"prot",ic:"door",n:"Protector.Net (Hartmann)",s:{ok:true,txt:`${S.doors.length} doors`}},
     {k:"mikva",ic:"drop",n:"Mikva magnet (X-600M)",s:st("mikva","Connected · relay 16"),allow:"mikvaWrites",what:"Allow saving settings and Release now or Hold open from here"},
     {k:"parking",ic:"car",n:"Parking lot (CDVI Atrium)",s:st("parking","Connected · 2 entrances"),allow:"parkWrites",what:"Allow buzzing and opening the parking lot from here"},
+    {k:"mtemp",ic:"drop",n:"Mikva thermostats (Home Assistant)",s:ON_BOX?(CT&&CT.mtemp?(CT.mtemp.configured?{ok:true,txt:"Read through Home Assistant"}:{ok:null,txt:"Not available on this box"}):{ok:null,txt:"Checking…"}):{ok:true,txt:"4 thermostats"},allow:"mtempWrites",what:"Allow changing the set point from here"},
     {k:"logins",ic:"person",n:"Sign-in accounts (Home Assistant)",s:ON_BOX?(CT&&CT.logins?{ok:true,txt:"Ready"}:{ok:null,txt:"Checking…"}):{ok:true,txt:"Ready"}}];
   el.innerHTML=rows.map(r=>`<div class="row ct-row"><span class="ic" style="--c:${r.s.ok?"var(--green)":r.s.ok===false?"var(--r)":"var(--gray)"}">${ico(r.ic)}</span><div class="rt"><b>${esc(r.n)}</b><span>${r.s.ok?`<span class="ct-ok">●</span> `:r.s.ok===false?`<span class="ct-bad">●</span> `:""}${esc(r.s.txt)}</span></div>${r.k!=="prot"?`<button class="btn sm" type="button" data-cttest="${r.k}">Test</button>`:""}</div>
     ${r.allow?`<label class="row swrow ct-allow"><span class="rt"><b>Changes from Shul Manager</b><span>${esc(r.what)}</span></span><input type="checkbox" class="switch" data-ctallow="${r.allow}"${allow(r.allow)?" checked":""}></label>`:""}`).join("")
@@ -4393,7 +4447,167 @@ document.addEventListener("click",async ev=>{const b=ev.target.closest("[data-ct
   if(j.info){const i=j.info,txt=[`Sign-in: ${i.mode}`,`Doors: ${i.doors||"(none)"}`,`Last command: ${i.last||"(none yet)"}`,`Page (${i.pageSize||0}):`,...(i.page||[])].join("\n\n");
     const el=document.createElement("div");el.className="nb-sheet";el.innerHTML=`<div class="nb-box" style="max-width:640px"><b>Parking lot details</b><p class="gf">Copy this and send it to whoever set up Shul Manager.</p><textarea readonly style="width:100%;height:280px;font:12px ui-monospace,Menlo,monospace;border-radius:10px;border:1px solid var(--line);padding:8px;box-sizing:border-box"></textarea><div class="tline" style="margin-top:10px"><button class="btn pri sm" type="button" data-c>Copy</button><button class="btn sm" type="button" data-x>Close</button></div></div>`;
     el.querySelector("textarea").value=txt;el.querySelector("[data-x]").onclick=()=>el.remove();el.querySelector("[data-c]").onclick=()=>{try{navigator.clipboard.writeText(txt);toast("Copied")}catch(e){el.querySelector("textarea").select()}};document.body.appendChild(el)}});
-document.addEventListener("change",ev=>{const t=ev.target;if(!t.dataset||!t.dataset.ctallow)return;S.ctrl=S.ctrl||{};S.ctrl[t.dataset.ctallow]=t.checked;commit(`${t.checked?"Turned on":"Turned off"} changes from Shul Manager for the ${t.dataset.ctallow==="mikvaWrites"?"mikva magnet":"parking lot"}`)});
+document.addEventListener("change",ev=>{const t=ev.target;if(!t.dataset||!t.dataset.ctallow)return;S.ctrl=S.ctrl||{};S.ctrl[t.dataset.ctallow]=t.checked;commit(`${t.checked?"Turned on":"Turned off"} changes from Shul Manager for the ${t.dataset.ctallow==="mikvaWrites"?"mikva magnet":t.dataset.ctallow==="mtempWrites"?"mikva thermostats":"parking lot"}`);MT.t=0});
+
+
+// ---------- Mikva temperature: the Meross thermostats, read through Home Assistant ----------
+const MT_COL=["#0a84ff","#ff9f0a","#30b0c7","#bf5af2"];
+let MT={list:null,err:"",allow:false,hist:null,t:0};
+function mtDemo(){const mk=(id,name,area,cur,set,heat)=>{const pts=[];let v=set-1.5;for(let i=0;i<=48;i++){v+=(set-v)*0.15+(Math.sin(i/3+cur)*0.25);if(i===30&&name.includes("16 Ave hot"))v-=2.5;pts.push(+v.toFixed(1))}pts[48]=cur;return {id,name,area,cur,set,heat,online:true,unit:"°F",min:40,max:110,hist:pts}};
+  return [mk("climate.mts960_9d9d","15 Ave, hot","Mikva 15 Ave hot",99.1,99,"idle"),mk("climate.mts960_9de7","15 Ave, warm","Mikva 15 Ave warm",95.8,96,"heating"),mk("climate.mts960_84a9","16 Ave, warm","Mikva 16 Ave warm",96.2,96,"idle"),mk("climate.mts960_ed9c","16 Ave, hot","Mikva 16 Ave hot",95.4,99,"heating")]}
+function mtCfg(){const c={on:false,deg:3,mins:15,heatMins:120,when:"always",from:"16:00",to:"02:00",offline:true,...(S.mtemp||{})};if(c.when==="mikva")c.when="always";return c}
+async function mtLoad(force){if(!ON_BOX){if(!MT.list){MT.list=mtDemo();MT.allow=true}return}
+  if(!force&&Date.now()-MT.t<20000)return;MT.t=Date.now();
+  try{const j=await (await fetch("api/mtemp")).json();if(!j.ok)throw new Error(j.error||"no answer");MT={...MT,list:j.list,allow:!!j.allow,err:""}}catch(e){MT.err=e.message}
+  if(!$("#tab-mtemp").hidden)renderMt()}
+function mtSpark(pts,set){pts=(pts||[]).filter(v=>v!=null);if(pts.length<2)return "";if(set==null)set=pts[pts.length-1];const lo=Math.min(...pts,set)-1,hi=Math.max(...pts,set)+1,W=240,H=42,X=i=>i/(pts.length-1)*W,Y=v=>H-(v-lo)/(hi-lo)*H;
+  const d=pts.map((v,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join("");return `<svg class="mt-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path class="a" d="${d}L${W},${H}L0,${H}Z"/><path class="l" d="${d}"/><line x1="0" x2="${W}" y1="${Y(set).toFixed(1)}" y2="${Y(set).toFixed(1)}"/></svg>`}
+function mtChart(list,times,step){list=list.map(x=>({...x,hist:(x.hist||[]).map((v,i,a)=>v!=null?v:(a.find(y=>y!=null)??null))})).filter(x=>x.hist.some(v=>v!=null));if(!list.length)return "";const all=list.flatMap(x=>x.hist.filter(v=>v!=null));if(!all.length)return "";const lo=Math.floor(Math.min(...all))-1,hi=Math.ceil(Math.max(...all))+1,W=800,H=220,P=34,n=(list[0].hist||[]).length;
+  const X=i=>P+i/(n-1)*(W-P-8),Y=v=>8+(hi-v)/(hi-lo)*(H-30);let g="";for(let v=Math.ceil(lo);v<=hi;v+=Math.max(1,Math.round((hi-lo)/5))){g+=`<line x1="${P}" x2="${W-8}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${P-6}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}°</text>`}
+  (times?[0,1,2,3,4].map(i=>{const tt=times[Math.round(i*(times.length-1)/4)];return tt==null?"":(step>=720||times[times.length-1]-times[0]>2*864e5?shortDate(nyDate(tt)).replace(/, \d{4}$/,""):fmt(nyMin(tt)))}):["24h ago","18h","12h","6h","Now"]).forEach((t,i)=>{g+=`<text x="${X(i*(n-1)/4)}" y="${H-4}" text-anchor="${i===0?"start":i===4?"end":"middle"}" font-size="11" fill="var(--muted)">${t}</text>`});
+  return `<div class="mt-chart"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Water temperature over the last day">${g}${list.map((x,k)=>`<path d="${(x.hist||[]).map((v,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join("")}" fill="none" stroke="${MT_COL[k%4]}" stroke-width="2"/>`).join("")}</svg><div class="mt-leg">${list.map((x,k)=>`<span><i style="background:${MT_COL[k%4]}"></i>${esc(x.name)}</span>`).join("")}</div></div>`}
+
+// ---- temperature log: any period, every minute up to every day; Excel and CSV ----
+let MTT="now",MTL={per:"1",from:"",to:"",step:0,pool:"all",rows:null,key:"",loading:false};
+const MTL_STEPS=[[1,"Every minute"],[5,"Every 5 minutes"],[15,"Every 15 minutes"],[60,"Every hour"],[720,"Every 12 hours"],[1440,"Every day"]];
+function mtlRange(){const t=todayNY();if(MTL.per==="custom"){const f=MTL.from||t,z=MTL.to||f;return [nyToMs(f,0),nyToMs(addDays(z,1),0)]}if(MTL.per==="y")return [nyToMs(addDays(t,-1),0),nyToMs(t,0)];return [nyToMs(addDays(t,-(+MTL.per-1)),0),Date.now()]}
+function mtlStep(){if(MTL.step)return MTL.step;const [a,b]=mtlRange(),d=(Math.min(b,Date.now())-a)/864e5;return d<=1.01?15:d<=7?60:d<=31?720:1440}
+function mtlDemo(a,b,step){const L=MT.list||mtDemo(),rows=[],ms=step*60e3;b=Math.min(b,Date.now());
+  for(let t=Math.floor(a/ms)*ms;t<b;t+=ms){const by={};L.forEach((x,k)=>{const m=nyMin(t),hot=/hot/.test(x.name),set=m>=120&&m<630?(hot?106:99):m<120?(hot?93:88.5):68;
+    const base=set>=80?set-0.6+Math.sin(t/3.6e6+k)*0.5:Math.max(set,set+18-((m-630+1440)%1440)/60*2.2),avg=Math.round(base*10)/10;by[x.id]={avg,lo:Math.round((avg-0.4*Math.min(step,60)/60)*10)/10,hi:Math.round((avg+0.4*Math.min(step,60)/60)*10)/10,set,heatMin:set>=80&&base<set?Math.round(step*0.55):0}});rows.push({t,by})}return rows}
+async function mtlLoad(){const [a,b]=mtlRange(),step=mtlStep(),key=[a,b,step].join("|");if(MTL.key===key&&MTL.rows)return;MTL.key=key;MTL.loading=true;MTL.rows=null;renderMt();
+  if(!ON_BOX){MTL.rows=mtlDemo(a,b,step);MTL.loading=false;renderMt();return}
+  try{const j=await (await fetch(`api/mtemp/log?from=${a}&to=${Math.min(b,Date.now()+60e3)}&step=${step}`)).json();MTL.rows=j.rows||[];MTL.usedStep=j.step}catch(e){MTL.rows=[];MTL.err="Can't reach the box."}
+  MTL.loading=false;renderMt()}
+function mtlWhen(t,step){const d=nyDate(t),hm=fmt(nyMin(t));return step>=1440?shortDate(d):`${shortDate(d)} ${hm}`}
+function mtlHtml(){const L=MT.list||[],step=mtlStep(),rows=MTL.rows,pools=MTL.pool==="all"?L:L.filter(x=>x.id===MTL.pool),u=(L[0]||{}).unit||"°F";
+  const per=[["1","Today"],["y","Yesterday"],["7","7 days"],["30","30 days"],["90","90 days"],["365","1 year"],["custom","Pick dates"]];
+  let h=`<div class="ua-per">${per.map(([k,l])=>`<button type="button" class="${MTL.per===k?"on":""}" data-mtlper="${k}">${l}</button>`).join("")}</div>
+    ${MTL.per==="custom"?`<div class="ua-bar"><label>From <input type="date" id="mtlFrom" value="${MTL.from||todayNY()}"></label><label>To <input type="date" id="mtlTo" value="${MTL.to||todayNY()}"></label></div>`:""}
+    <div class="ua-bar"><select id="mtlStep" aria-label="How often">${MTL_STEPS.map(([v,l])=>`<option value="${v}"${step===v?" selected":""}>${l}</option>`).join("")}</select><select id="mtlPool" aria-label="Which pool"><option value="all">All pools</option>${L.map(x=>`<option value="${esc(x.id)}"${MTL.pool===x.id?" selected":""}>${esc(x.name)}</option>`).join("")}</select>${dlCtl("mtlDl")}</div>`;
+  if(!rows){return h+`<p class="none">Loading the log…</p>`}
+  if(!rows.length)return h+`<p class="none">No readings in this period yet. The box keeps a reading every minute from now on.</p>`;
+  // summary per pool
+  const sum=pools.map(x=>{const v=rows.map(r=>r.by[x.id]).filter(Boolean);if(!v.length)return "";const avg=v.reduce((a,b)=>a+b.avg,0)/v.length,lo=Math.min(...v.map(y=>y.lo)),hi=Math.max(...v.map(y=>y.hi)),heat=v.reduce((a,b)=>a+b.heatMin,0);
+    return `<div class="ua-tile"><b>${esc(x.name)}</b><span>Average ${avg.toFixed(1)}${u} · low ${lo}${u} · high ${hi}${u} · heating ${heat>=60?Math.round(heat/6)/10+" h":heat+" min"}</span></div>`}).join("");
+  const chartList=pools.map(x=>({...x,hist:rows.map(r=>r.by[x.id]?r.by[x.id].avg:null)}));
+  const shown=rows.slice().reverse().slice(0,400);
+  const one=pools.length===1?pools[0]:null;
+  const head=one?`<tr><th>When</th><th>Average</th><th>Low</th><th>High</th><th>Set to</th><th>Heating</th></tr>`:`<tr><th>When</th>${pools.map(x=>`<th>${esc(x.name)}</th>`).join("")}</tr>`;
+  const body=shown.map(r=>one?(r.by[one.id]?`<tr><td>${esc(mtlWhen(r.t,step))}</td><td><b>${r.by[one.id].avg}</b></td><td>${r.by[one.id].lo}</td><td>${r.by[one.id].hi}</td><td>${r.by[one.id].set}</td><td>${r.by[one.id].heatMin} min</td></tr>`:""):`<tr><td>${esc(mtlWhen(r.t,step))}</td>${pools.map(x=>{const v=r.by[x.id];return `<td>${v?`<b>${v.avg}</b> <small>set ${v.set}</small>`:"--"}</td>`}).join("")}</tr>`).join("");
+  return h+`<div class="mt-sum">${sum}</div>${mtChart(chartList,rows.map(r=>r.t),step)}<div class="mt-tw"><table class="mt-t"><thead>${head}</thead><tbody>${body}</tbody></table></div>${rows.length>400?`<p class="gf">Showing the newest 400 of ${rows.length} rows. Download Excel to get all of them.</p>`:""}`}
+function mtlExport(kind){const L=MT.list||[],step=mtlStep(),rows=MTL.rows||[],pools=MTL.pool==="all"?L:L.filter(x=>x.id===MTL.pool);
+  const head=["When",...pools.flatMap(x=>[`${x.name} average`,`${x.name} low`,`${x.name} high`,`${x.name} set to`,`${x.name} heating (min)`])];
+  const data=rows.map(r=>[mtlWhen(r.t,step),...pools.flatMap(x=>{const v=r.by[x.id];return v?[v.avg,v.lo,v.hi,v.set,v.heatMin]:["","","","",""]})]);
+  exportSheets(kind,[{name:"Temperature log",rows:[head,...data]}],`mikva-temperature-${MTL.per==="custom"?(MTL.from||"")+"_to_"+(MTL.to||""):MTL.per}-every-${step}min`)}
+document.addEventListener("click",ev=>{const t=ev.target;const a=t.closest("[data-mtt]");if(a){MTT=a.dataset.mtt;renderMt();return}
+  const p=t.closest("[data-mtlper]");if(p){MTL.per=p.dataset.mtlper;MTL.step=0;mtlLoad();return}
+  const d=t.closest("#mtlDl [data-dl]");if(d){mtlExport(d.dataset.dl)}});
+document.addEventListener("change",ev=>{const t=ev.target;if(t.id==="mtlStep"){MTL.step=+t.value;mtlLoad()}if(t.id==="mtlPool"){MTL.pool=t.value;renderMt()}if(t.id==="mtlFrom"){MTL.from=t.value;mtlLoad()}if(t.id==="mtlTo"){MTL.to=t.value;mtlLoad()}});
+
+// ---- thermostat schedules: edited here, saved onto each thermostat (through Meross LAN in Home Assistant) ----
+const MS_DAYS=[["sun","Sunday"],["mon","Monday"],["tue","Tuesday"],["wed","Wednesday"],["thu","Thursday"],["fri","Friday"],["sat","Saturday"]];
+const MS_DEMO={warm:{sun:[[0,88.5],[120,99],[630,76.5],[1155,68]],mon:[[0,88.5],[120,99],[630,68],[1155,68]],tue:[[0,88.5],[120,99],[630,68],[1155,68]],wed:[[0,88.5],[120,99],[630,68],[1155,68]],thu:[[0,88.5],[120,99],[630,68],[1155,68]],fri:[[0,88.5],[120,99],[615,68],[675,99],[1170,68]],sat:[[0,88.5],[120,99],[585,68]]},
+  hot:{sun:[[0,93],[120,106],[660,79],[1110,68]],mon:[[0,93],[120,106],[615,75],[1110,68]],tue:[[0,93],[120,106],[615,74.5],[1110,68]],wed:[[0,93],[120,106],[630,68],[1170,68]],thu:[[0,80],[135,106],[630,68],[1110,68]],fri:[[0,86.5],[120,106],[600,74.5],[690,106],[1185,75]],sat:[[0,86.5],[210,106],[585,74.5]]}};
+let MS={pool:null,data:{},orig:{},max:6,link:true,err:"",loading:false,sel:null};
+function msFor(id){return MS.data[id]}
+function msDemoLoad(){const base=msCfg().base;(MT.list||mtDemo()).forEach(x=>{const k=/hot/.test(x.name)?"hot":"warm";MS.data[x.id]=JSON.parse(JSON.stringify(base[x.id]||MS_DEMO[k]));MS.orig[x.id]=JSON.stringify(MS.data[x.id])})}
+async function msLoad(){if(!ON_BOX){if(!Object.keys(MS.data).length)msDemoLoad();return}
+  if(MS.loading)return;MS.loading=true;try{const j=await (await fetch("api/mtemp/schedule")).json();if(!j.ok)throw new Error(j.error||"no answer");MS.max=j.max||6;const base=msCfg().base;(j.list||[]).forEach(x=>{const w=base[x.id]||x.week;MS.data[x.id]=JSON.parse(JSON.stringify(w));MS.orig[x.id]=JSON.stringify(w)});MS.err=""}catch(e){MS.err=e.message}
+  MS.loading=false;renderMt()}
+const msTwin=id=>{const L=MT.list||[],me=L.find(x=>x.id===id);if(!me)return null;const kind=/hot/i.test(me.name)?"hot":/warm/i.test(me.name)?"warm":null;return kind?L.find(x=>x.id!==id&&new RegExp(kind,"i").test(x.name))||null:null};
+const msDirty=id=>JSON.stringify(MS.data[id])!==MS.orig[id];
+function msColor(t){const f=Math.max(0,Math.min(1,(t-68)/(106-68)));const h=210-f*200;return `hsl(${h} 80% ${f>0.5?52:58}%)`}
+function msBar(day,label){const segs=day.map((e,i)=>({a:e[0],b:i+1<day.length?day[i+1][0]:1440,t:e[1]})).filter(x=>x.b>x.a);
+  return `<div class="ms-bar">${segs.map(x=>`<span style="left:${x.a/14.4}%;width:${(x.b-x.a)/14.4}%;background:${msColor(x.t)}" title="${fmt(x.a)} ${x.t}°">${x.b-x.a>=150?`<em>${x.t}°</em>`:""}</span>`).join("")}</div>`}
+
+// ---- Yom Tov for the thermostats: each special day runs like another day of that pool's normal week ----
+function msHolDefault(){const out=[];MK.hol.forEach(([g,rs])=>rs.forEach(([name,keys])=>{const k=keys.join(" ");
+  const use=/^(yk|tisha_bav)$/.test(k)?"closed":/erev_(rh|yk|succos|pesach|shavuos)|hoshana|pesach6/.test(k)?"fri":/rh1|rh2|succos1|succos2|shmini|simchas|pesach1|pesach2|shvii|acharon|shavuos1|shavuos2/.test(k)?"sat":"week";
+  out.push({group:g,name,keys,use})}));return out}
+function msCfg(){const c=S.mtSched||{};return {on:!!c.on,closedTemp:c.closedTemp||68,base:c.base||{},hol:c.hol&&c.hol.length?c.hol:msHolDefault()}}
+const MS_USE=[["week","Normal week"],["sun","Like Sunday"],["mon","Like Monday"],["tue","Like Tuesday"],["wed","Like Wednesday"],["thu","Like Thursday"],["fri","Like Friday"],["sat","Like Shabbos"],["closed","Closed"]];
+function msPlan(){const c=msCfg(),t=todayNY();return Array.from({length:8},(_,i)=>{const d=addDays(t,i),di=dayInfo(d),slot=MS_DAYS[di.w][0];const row=c.on?c.hol.find(r=>r.use!=="week"&&r.keys.some(k=>di.keys.has(k))):null;return {d,di,slot,row}})}
+function msHolHtml(){const c=msCfg(),u=((MT.list||[])[0]||{}).unit||"°F";
+  const plan=msPlan().map(p=>`<div class="row"><div class="dn" style="width:110px;flex:none"><b>${p.d===todayNY()?"Today":WDN[p.di.w]}</b><span style="display:block;font-size:12.5px;color:var(--muted)">${esc(shortDate(p.d))}</span></div><div class="rt"><b>${p.row?esc(p.row.name):"Normal "+(p.di.w===6?"Shabbos":MS_DAYS[p.di.w][1])}</b><span>${p.row?(p.row.use==="closed"?`Closed, kept at ${c.closedTemp}${u}`:"Runs like "+MS_DAYS.find(x=>x[0]===p.row.use)[1]):"The normal week"}</span></div></div>`).join("");
+  return `<h3 class="gh mk-h">Yom Tov and special days</h3><div class="glist">
+    <label class="row swrow"><span class="rt"><b>Change the schedule on Yom Tov</b><span>Each night Shul Manager writes the coming 7 days onto the thermostats, with special days swapped in</span></span><input type="checkbox" class="switch" data-mshon${c.on?" checked":""}></label>
+    ${c.on?`<div class="row"><span class="rt"><b>Closed means</b><span>The temperature to hold on a closed day</span></span><span class="tline"><input type="number" class="mt-in" min="40" max="90" step="0.5" value="${c.closedTemp}" data-msclosed aria-label="Closed temperature">${esc(u)}</span></div>`:""}</div>
+    ${c.on?`<details class="ms-hol"><summary>Which day each Yom Tov runs like</summary>${[...new Set(c.hol.map(r=>r.group))].map(g=>`<h4 class="gh">${esc(g)}</h4><div class="glist">${c.hol.map((r,i)=>r.group!==g?"":`<div class="row"><span class="rt"><b>${esc(r.name)}</b></span><select data-mshol="${i}" aria-label="${esc(r.name)}">${MS_USE.map(([k,l])=>`<option value="${k}"${r.use===k?" selected":""}>${l}</option>`).join("")}</select></div>`).join("")}</div>`).join("")}</details>`:""}
+    <h3 class="gh mk-h">Coming days</h3><div class="glist mk-days">${plan}</div>`}
+document.addEventListener("change",ev=>{const t=ev.target;if(!t.dataset)return;
+  if(t.dataset.mshon!==undefined){const c=msCfg();S.mtSched={...(S.mtSched||{}),on:t.checked,hol:c.hol,closedTemp:c.closedTemp,base:Object.keys(c.base).length?c.base:JSON.parse(JSON.stringify(MS.data))};commit(t.checked?"Turned on Yom Tov schedules for the mikva thermostats":"Turned off Yom Tov schedules for the mikva thermostats");msApply();renderMt()}
+  if(t.dataset.msclosed!==undefined){const c=msCfg();S.mtSched={...(S.mtSched||{}),hol:c.hol,base:c.base,closedTemp:+t.value||68};commit("Changed the closed-day temperature for the mikva");msApply();renderMt()}
+  if(t.dataset.mshol!==undefined){const c=msCfg(),hol=c.hol.map(r=>({...r}));hol[+t.dataset.mshol].use=t.value;S.mtSched={...(S.mtSched||{}),hol,base:c.base,closedTemp:c.closedTemp};commit(`Mikva thermostats: ${hol[+t.dataset.mshol].name} runs ${MS_USE.find(x=>x[0]===t.value)[1].toLowerCase()}`);msApply();renderMt()}});
+async function msApply(){if(!ON_BOX)return;let j;try{j=await (await fetch("api/mtemp/apply",{method:"POST"})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}
+  if(!j.ok){toast(j.error||((j.out||[]).filter(o=>o.ok===false).map(o=>`${o.name}: ${o.error}`).join("; "))||"Not written to the thermostats");return false}return true}
+function msHtml(){const L=MT.list||[];if(!L.length)return `<p class="none">Reading the thermostats…</p>`;msLoad();
+  if(MS.err)return `<div class="mk-card mk-warn"><b>Can't read the thermostat schedules</b><p>${esc(MS.err)}</p><button class="btn sm" type="button" data-msre>Try again</button></div>`;
+  if(!MS.pool||!L.some(x=>x.id===MS.pool))MS.pool=L[0].id;const id=MS.pool,w=MS.data[id];if(!w)return `<p class="none">Reading the schedules…</p>`;
+  const tw=msTwin(id),u=(L[0]||{}).unit||"°F";
+  let h=`<div class="ua-per">${L.map(x=>`<button type="button" class="${x.id===id?"on":""}" data-mspool="${esc(x.id)}">${esc(x.name)}${msDirty(x.id)?" •":""}</button>`).join("")}</div>`;
+  if(tw)h+=`<label class="row swrow ms-link glist"><span class="rt"><b>Keep ${esc(tw.name)} the same</b><span>Saving writes this schedule to both thermostats</span></span><input type="checkbox" class="switch" data-mslink${MS.link?" checked":""}></label>`;
+  h+=`<div class="ms-week">${MS_DAYS.map(([k,n])=>`<button type="button" class="ms-day${k===MS_DAYS[dow(todayNY())][0]?" today":""}" data-msday="${k}"><span class="ms-dn">${n.slice(0,3)}</span>${msBar(w[k]||[],n)}<span class="ms-ch">${(w[k]||[]).length} change${(w[k]||[]).length===1?"":"s"}</span></button>`).join("")}
+    <div class="ms-axis"><span></span><span>12 AM</span><span>6 AM</span><span>Noon</span><span>6 PM</span><span>12 AM</span><span></span></div></div>
+    <div class="ms-leg"><span><i style="background:${msColor(68)}"></i>68°</span><span><i style="background:${msColor(80)}"></i>80°</span><span><i style="background:${msColor(93)}"></i>93°</span><span><i style="background:${msColor(106)}"></i>106°</span></div>
+    <p class="gf">This is the normal week. Tap a day to change it. Each day can have up to ${MS.max} changes, in 15-minute steps. The thermostat keeps the schedule itself, so it keeps running even if this box is off.</p>`;
+  h+=msHolHtml();
+  if(L.some(x=>msDirty(x.id)))h+=`<div class="mk-save"><span>Changes not on the thermostat yet</span><button class="btn sm" type="button" data-msundo>Undo</button><button class="btn sm" type="button" data-mssave>Save to thermostat</button></div>`;
+  return h}
+function msSheet(day){const id=MS.pool,w=MS.data[id],L=MT.list||[],u=(L[0]||{}).unit||"°F",x=L.find(y=>y.id===id);MS.sel=day;
+  $("#mkT").textContent=`${x?x.name:""}, ${MS_DAYS.find(d=>d[0]===day)[1]}`;
+  const rows=(w[day]||[]).map((e,i)=>`<div class="ms-row" data-i="${i}"><label>From<input type="time" step="900" value="${hhmm(e[0])}" data-msf="t"${i===0?" disabled":""}></label><label>Temperature<span class="ms-temp"><input type="number" step="0.5" min="40" max="110" value="${e[1]}" data-msf="v">${esc(u)}</span></label>${i>0?`<button type="button" class="btn sm danger" data-msdel="${i}" aria-label="Remove">Remove</button>`:`<span class="ms-first">Starts the day</span>`}</div>`).join("");
+  $("#mkSheet").innerHTML=`<div class="nu-f"><div id="msRows">${rows}</div>${(w[day]||[]).length<MS.max?`<button type="button" class="btn sm" data-msadd>Add a change</button>`:`<p class="gf">That's the most this thermostat allows in one day (${MS.max}).</p>`}
+    <div class="ms-copy"><b>Also use this day for</b><div>${MS_DAYS.filter(d=>d[0]!==day).map(([k,n])=>`<label><input type="checkbox" value="${k}" data-mscopy> ${n.slice(0,3)}</label>`).join("")}</div></div></div>`;openModal("mMk")}
+function msReadSheet(){const rows=[...document.querySelectorAll("#msRows .ms-row")].map((r,i)=>[i===0?0:toMin(r.querySelector('[data-msf="t"]').value),+r.querySelector('[data-msf="v"]').value]);
+  return rows.filter((e,i)=>i===0||e[0]>0).sort((a,b)=>a[0]-b[0])}
+document.addEventListener("click",async ev=>{const t=ev.target;
+  const p=t.closest("[data-mspool]");if(p){MS.pool=p.dataset.mspool;renderMt();return}
+  const d=t.closest("[data-msday]");if(d){msSheet(d.dataset.msday);return}
+  if(t.closest("[data-msre]")){MS.err="";msLoad();return}
+  if(t.closest("[data-msadd]")){const dd=msReadSheet(),last=dd[dd.length-1];dd.push([Math.min(1425,last[0]+60),last[1]]);MS.data[MS.pool][MS.sel]=dd;msSheet(MS.sel);return}
+  const del=t.closest("[data-msdel]");if(del){const dd=msReadSheet();dd.splice(+del.dataset.msdel,1);MS.data[MS.pool][MS.sel]=dd;msSheet(MS.sel);return}
+  if(t.closest("#mkGo")&&MS.sel&&$("#msRows")){const dd=msReadSheet();if(dd.some(e=>!(e[1]>=40&&e[1]<=110))){toast("Use temperatures between 40 and 110.");return}
+    const copy=[...document.querySelectorAll("[data-mscopy]:checked")].map(c=>c.value);[MS.sel,...copy].forEach(k=>{MS.data[MS.pool][k]=dd.map(e=>[...e])});
+    const tw=msTwin(MS.pool);if(MS.link&&tw&&MS.data[tw.id])[MS.sel,...copy].forEach(k=>{MS.data[tw.id][k]=dd.map(e=>[...e])});MS.sel=null;closeModal("mMk");renderMt();return}
+  if(t.closest("[data-msundo]")){Object.keys(MS.data).forEach(k=>{MS.data[k]=JSON.parse(MS.orig[k])});renderMt();return}
+  if(t.closest("[data-mssave]")){const ids=(MT.list||[]).filter(x=>msDirty(x.id)).map(x=>x.id),names=ids.map(i=>(MT.list.find(x=>x.id===i)||{}).name),c=msCfg();
+    const base={...c.base};(MT.list||[]).forEach(x=>{if(MS.data[x.id])base[x.id]=MS.data[x.id]});S.mtSched={...(S.mtSched||{}),hol:c.hol,closedTemp:c.closedTemp,on:c.on,base};
+    commit(`Saved the thermostat schedule for ${names.join(" and ")}`);ids.forEach(i=>{MS.orig[i]=JSON.stringify(MS.data[i])});
+    if(ON_BOX){await boxSaved();const ok=await msApply();if(ok)toast("Saved and written to the thermostat"+(ids.length>1?"s":""))}else toast("Saved to the thermostat"+(ids.length>1?"s":""));renderMt();return}
+});
+document.addEventListener("change",ev=>{if(ev.target.dataset&&ev.target.dataset.mslink!==undefined){MS.link=ev.target.checked;renderMt()}});
+function renderMt(){const b=$("#mtBody");if(!b)return;mtLoad();const c=mtCfg(),L=MT.list||[];
+  if(MT.err&&!L.length){b.innerHTML=`<div class="mk-card mk-warn"><b>Can't read the thermostats</b><p>${esc(MT.err)}</p><button class="btn sm" type="button" data-mtre>Try again</button></div>`;return}
+  if(!L.length){b.innerHTML=`<p class="gf top">Reading the thermostats…</p>`;return}
+  // the thermostats follow their own schedule (Meross app): low set points mean the pool is resting
+  const status=x=>{if(!x.online)return ["bad","Offline"];if(x.cur==null||x.set==null)return ["","No reading"];
+    if(x.set<80)return ["","Resting"];if(x.set-x.cur>=0.5&&x.heat==="heating")return ["heat",x.set-x.cur>=c.deg?"Heating up":"Heating"];
+    if(x.set-x.cur>=c.deg)return ["bad",`${(x.set-x.cur).toFixed(1)}° low`];if(x.cur-x.set>=c.deg)return ["bad",`${(x.cur-x.set).toFixed(1)}° high`];return ["ok","At temperature"]};
+  const cards=L.map((x,k)=>{const st=status(x);
+    return `<div class="mt-c${!x.online?" off":st[0]==="bad"?" warn":""}"><div class="mt-top"><div><b>${esc(x.name)}</b></div><span class="mt-st ${st[0]}">${st[1]}</span></div>
+      <div class="mt-now">${x.online&&x.cur!=null?x.cur.toFixed(1):"--"}<span>${esc(x.unit||"°F")}</span></div>
+      ${mtSpark(x.hist,x.set)}
+      <div class="mt-set"><span>Set to <b>${x.set!=null?x.set:"--"}${esc(x.unit||"°F")}</b></span><button type="button" data-mtset="${k}" data-d="-1" aria-label="Lower"${MT.allow&&x.online?"":" disabled"}>−</button><button type="button" data-mtset="${k}" data-d="1" aria-label="Raise"${MT.allow&&x.online?"":" disabled"}>+</button></div></div>`}).join("");
+  const ro=MT.allow?"":`<p class="gf top mk-ro">Showing the thermostats. Changing the set point from here is off. A super admin can turn it on under Settings, Controllers.</p>`;
+  const al=`<h3 class="gh mk-h">Alerts</h3><div class="glist mt-al">
+    <label class="row swrow"><span class="rt"><b>Temperature alerts</b><span>Text the people who have Mikva temperature alerts turned on in Users and permissions</span></span><input type="checkbox" class="switch" data-mtc="on"${c.on?" checked":""}></label>
+    ${c.on?`<div class="row"><span class="rt"><b>When a pool is off</b><span>From its set point, for at least</span></span><span class="tline"><input type="number" class="mt-in" min="1" max="20" step="0.5" value="${c.deg}" data-mtc="deg" aria-label="Degrees">°<input type="number" class="mt-in" min="5" max="240" step="5" value="${c.mins}" data-mtc="mins" aria-label="Minutes">min</span></div>
+    <div class="row"><span class="rt"><b>When the boiler can't keep up</b><span>Heating this long and still not at the set point</span></span><span class="tline"><input type="number" class="mt-in" min="15" max="600" step="15" value="${c.heatMins}" data-mtc="heatMins" aria-label="Minutes heating">min</span></div>
+    <div class="row"><span class="rt"><b>Only alert</b></span><select data-mtc="when"><option value="always"${c.when==="always"?" selected":""}>Any time</option><option value="times"${c.when==="times"?" selected":""}>Between set times</option></select></div>
+    ${c.when==="times"?`<div class="row"><span class="rt"><b>Between</b></span><span class="tline"><input type="time" value="${c.from}" data-mtc="from" aria-label="From"> and <input type="time" value="${c.to}" data-mtc="to" aria-label="To"></span></div>`:""}
+    <label class="row swrow"><span class="rt"><b>Also when a thermostat goes offline</b></span><input type="checkbox" class="switch" data-mtc="offline"${c.offline?" checked":""}></label>`:""}
+    </div><p class="gf">Texts start once texting is live. Each person also needs to agree to texts under Settings, Alerts. An alert goes out once, then again only if it's still a problem an hour later.</p>`;
+  const seg=`<div class="mk-seg" role="tablist">${[["now","Now"],["sched","Schedule"],["log","Log"],["alerts","Alerts"]].map(([k,t])=>`<button type="button" class="${MTT===k?"on":""}" data-mtt="${k}">${t}</button>`).join("")}</div>`;
+  if(MTT==="sched"){b.innerHTML=seg+(MT.allow?"":`<p class="gf top mk-ro">Showing the thermostat schedules. Saving them from here is off. A super admin can turn it on under Settings, Controllers.</p>`)+msHtml();return}
+  if(MTT==="log"){if(!MTL.rows&&!MTL.loading)setTimeout(mtlLoad);b.innerHTML=seg+mtlHtml();return}
+  if(MTT==="alerts"){b.innerHTML=seg+al.replace('<h3 class="gh mk-h">Alerts</h3>','');return}
+  b.innerHTML=seg+ro+`<div class="mt-grid">${cards}</div><p class="gf">Each thermostat follows its own schedule in the Meross app (for example heating to 106° from 2 AM, resting at 68° in the day). The set point shown is what it's aiming for right now.</p><h3 class="gh mk-h">Last 24 hours</h3>${mtChart(L)}`}
+document.addEventListener("click",async ev=>{const t=ev.target;if(t.closest("[data-mtre]")){MT.err="";mtLoad(true);return}
+  const s=t.closest("[data-mtset]");if(!s)return;const x=MT.list[+s.dataset.mtset];if(x.set==null)return;const nv=Math.round((x.set+ +s.dataset.d*(+x.step||1))*10)/10;if(nv<x.min||nv>x.max)return;
+  if(ON_BOX){s.disabled=true;let j;try{j=await (await fetch("api/mtemp/set",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:x.id,temp:nv})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}s.disabled=false;if(!j.ok){toast(j.error||"Not changed");return}}
+  x.set=nv;ctrlNote(`Mikva ${x.name}: set to ${nv}${x.unit||"°F"}`);renderMt()});
+document.addEventListener("change",ev=>{const t=ev.target;if(!t.dataset||!t.dataset.mtc)return;const k=t.dataset.mtc;S.mtemp={...mtCfg(),[k]:t.type==="checkbox"?t.checked:t.type==="number"?+t.value:t.value};commit(k==="on"?(t.checked?"Turned on mikva temperature alerts":"Turned off mikva temperature alerts"):"Changed the mikva temperature alerts");renderMt()});
 
 // ---------- Mikvah controller (X-600M). It works out the calendar and sunset itself; we only read and save its settings ----------
 const MK_STD=[["wd","Weekday",0],["es","Erev Shabbos",1],["sb","Shabbos",0],["ey","Erev Yom Tov",1],["yt","Yom Tov day",0]];
@@ -5472,7 +5686,7 @@ $("#gdNew").onclick=openGuide;
 $("#undoBtn").onclick=doUndo;$("#undoX").onclick=()=>{UNDO=null;showUndo()};
 
 // phone bar: Home plus the three places this person opens most
-const NAV_HOME={lockdown:"lockdown",sheet:"preview",events:"rules",special:"rules",live:"activity",reports:"activity",people:"setup"};
+const NAV_HOME={mtemp:"mikvah",lockdown:"lockdown",sheet:"preview",events:"rules",special:"rules",live:"activity",reports:"activity",people:"setup"};
 function useKey(){return "sdUse:"+(S.me||"")}
 function useCount(t){t=NAV_HOME[t]||t;if(t==="board")return;try{const k=useKey(),u=JSON.parse(localStorage.getItem(k)||"{}");u[t]=(u[t]||0)+1;localStorage.setItem(k,JSON.stringify(u))}catch(e){}}
 var BNAV_KEY="";
@@ -5494,7 +5708,7 @@ function buildBnav(){const bar=document.querySelector(".bnav");if(!bar)return;
 }
 
 // pages that share one menu item get tabs under the title
-const PAGE_TABS=[[["rules","Rules"],["events","Events"],["special","Special times"]],[["activity","History"],["live","Live"],["reports","Reports"]],[["preview","Day"],["sheet","Week sheet"]]];
+const PAGE_TABS=[[["mikvah","Magnet"],["mtemp","Temperature"]],[["rules","Rules"],["events","Events"],["special","Special times"]],[["activity","History"],["live","Live"],["reports","Reports"]],[["preview","Day"],["sheet","Week sheet"]]];
 function tabOk(k){if(k==="special")return isAdmin()||can("rabbi");if(k==="live")return isAdmin();if(k==="reports")return isAdmin()&&!SIMPLE;if(k==="activity")return !SIMPLE;return true}
 function drawPageTabs(t){const el=$("#pageTabs");if(!el)return;const grp=PAGE_TABS.find(g=>g.some(x=>x[0]===t)&&g[0][0]!=="preview");
   if(t==="people"){el.hidden=false;el.innerHTML=`<button type="button" class="pback" data-pt="setup">\u2039 Settings</button>`;return}
@@ -5505,7 +5719,7 @@ document.addEventListener("click",ev=>{const b=ev.target.closest("#pageTabs [dat
 function actFirst(){return ["activity","live","reports"].find(tabOk)}
 function fixActNav(){const n=$("#actNav");if(n)n.hidden=!actFirst()}
 
-const TITLES={mikvah:"Mikva Magnet",open:"Open a door",lockdown:"Lockdown",people:"People",live:"Activity",board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules and events",events:"Rules and events",special:"Rules and events",codes:"Guest codes",msgs:"Messages",reports:"Activity",activity:"Activity",setup:"Settings"};
+const TITLES={mtemp:"Mikva",mikvah:"Mikva",open:"Open a door",lockdown:"Lockdown",people:"People",live:"Activity",board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules and events",events:"Rules and events",special:"Rules and events",codes:"Guest codes",msgs:"Messages",reports:"Activity",activity:"Activity",setup:"Settings"};
 document.querySelectorAll(".navbtn[data-tab]").forEach(b=>b.onclick=()=>showTab(b.dataset.tab==="activity"?actFirst()||"board":b.dataset.tab));
 function setDrawer(open){document.body.classList.toggle("drawer",open);$("#scrim").hidden=!open;$("#menuBtn").setAttribute("aria-expanded",open)}
 document.querySelectorAll(".viewseg button").forEach(b=>b.onclick=()=>{SIMPLE=b.dataset.view==="simple";try{localStorage.setItem("shulDoorSimple",SIMPLE?"1":"0")}catch(e){}setPref("simple",SIMPLE);renderView();fixActNav();if(!tabOk(CUR_TAB))showTab(actFirst()||"board");else drawPageTabs(CUR_TAB);if(CUR_TAB==="setup")renderSetupIndex()});
@@ -5515,7 +5729,7 @@ $("#moreBtn").onclick=()=>setDrawer(true);
 $("#scrim").onclick=()=>setDrawer(false);
 document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab(b.dataset.go));
 addEventListener("keydown",ev=>{if(ev.key==="Escape")setDrawer(false)});
-const SUBS={mikvah:"The mikva door magnet. It runs on its own, even if this box is off",lockdown:"For an emergency. No one gets in, not even with a card or PIN, until you end it",open:"Tap a door, then buzz it or open it for a few minutes",people:"Everyone with a card or PIN in Protector.Net",live:"Who is coming in, at every door, as it happens",board:"",doors:"Live status of every door. Tap one to change it.",preview:"What every door does, hour by hour",sheet:"One week on one page, ready to print or email",rules:"The standing instructions the doors follow",events:"Weddings, sheva brachos and the shul's own dates",codes:"PINs for visitors that expire on their own",msgs:"Ask a teammate to make a change",reports:"How the doors are used",activity:"What changed, and what the doors were doing at any moment",setup:""};
+const SUBS={mtemp:"The water temperature in each pool",mikvah:"The mikva door magnet. It runs on its own, even if this box is off",lockdown:"For an emergency. No one gets in, not even with a card or PIN, until you end it",open:"Tap a door, then buzz it or open it for a few minutes",people:"Everyone with a card or PIN in Protector.Net",live:"Who is coming in, at every door, as it happens",board:"",doors:"Live status of every door. Tap one to change it.",preview:"What every door does, hour by hour",sheet:"One week on one page, ready to print or email",rules:"The standing instructions the doors follow",events:"Weddings, sheva brachos and the shul's own dates",codes:"PINs for visitors that expire on their own",msgs:"Ask a teammate to make a change",reports:"How the doors are used",activity:"What changed, and what the doors were doing at any moment",setup:""};
 function showTab(t){CUR_TAB=t;useCount(t);if(t!=="doors"&&typeof SELMODE!=="undefined"&&SELMODE){SELMODE=false;DSEL.clear();document.body.classList.remove("selmode")}document.querySelectorAll(".navbtn[data-tab]").forEach(x=>x.classList.toggle("on",x.dataset.tab===t||(x.dataset.also||"").split(" ").includes(t)));
   drawPageTabs(t);
   const inBar=[...document.querySelectorAll(".bnav [data-tab]")].some(x=>x.dataset.tab===t||(x.dataset.also||"").split(" ").includes(t));
@@ -5523,7 +5737,7 @@ function showTab(t){CUR_TAB=t;useCount(t);if(t!=="doors"&&typeof SELMODE!=="unde
   $("#pageTitle").textContent=TITLES[t]||"";$("#pageSub").textContent=SUBS[t]||"";$("#pageSub").hidden=!SUBS[t];
   document.querySelectorAll("#pageAct [data-for]").forEach(b=>b.hidden=b.dataset.for!==t||(b.dataset.tcv&&b.dataset.tcv!==TCV)||(b.id==="gdNew"&&(sched()==="none"||!visDoors().some(d=>perm(d.id)==="edit"))));
   setDrawer(false);hideTip();
-  ["board","open","mikvah","lockdown","doors","live","people","preview","rules","events","special","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);liveRun(t==="live");if(t==="open")renderOpen();if(t==="mikvah")renderMk();if(t==="lockdown")renderLockBits();if(t==="doors")renderBoard();if(t==="codes"&&ON_BOX)renderCodes();if(t==="people")ppFetch(false);
+  ["board","open","mikvah","mtemp","lockdown","doors","live","people","preview","rules","events","special","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);liveRun(t==="live");if(t==="open")renderOpen();if(t==="mikvah")renderMk();if(t==="mtemp")renderMt();if(t==="lockdown")renderLockBits();if(t==="doors")renderBoard();if(t==="codes"&&ON_BOX)renderCodes();if(t==="people")ppFetch(false);
   if(t==="codes")setTCV(TCV);if(t==="reports")renderReports();if(t==="activity")renderLog();if(t==="setup"){$("#split").classList.remove("detail");renderSetupIndex()}
   scrollTo({top:0})}
 let SP=null;
