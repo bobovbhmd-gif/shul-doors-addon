@@ -66,7 +66,7 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
     if (!k2 || (err && err !== "ok")) throw new Error(err === "err_password" || !k2 ? "The parking lot username or password isn't right." : "The parking lot controller refused the sign-in (" + err + ").");
     key = k2; at = Date.now();
   }
-  let mode = "web", sid = "", serial = "";
+  let mode = "web", sid = "", serial = "", known = new Set(), lastDoorXml = "";
   // when sign-in fails: read the controller's own web page to see which addresses it talks to
   async function probe() {
     const notes = [];
@@ -131,7 +131,8 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
           return ok(tags(xml, "DATA").filter((d) => d.valid === undefined || d.valid === "1").map((d, i) => ({ id: d.guid || d.id || `${serial}:${i}`, name: d.name || d.label || `Door ${i + 1}`, state: d.status || d.state || "", raw: d })));
         }
         const xml = await call("doors.xml?_=" + Date.now());
-        const list = tags(xml, "DOOR").map((d) => ({ id: d.id || d.door_id || "", name: d.name || d.label || d.id || "", state: (d.state || d.status || d.lock || "").toString(), raw: d })).filter((d) => d.id);
+        const list = tags(xml, "DOOR").map((d) => ({ id: d.id || d.door_id || "", name: String(d.name || d.label || d.id || "").replace(/^[A-F0-9]{2}(?:-[A-F0-9]{2}){3}:\s*/i, ""), state: (d.state || d.status || d.lock || "").toString(), raw: d })).filter((d) => d.id);
+        known = new Set(list.map((d) => d.id)); lastDoorXml = xml.slice(0, 400);
         return ok(list);
       } catch (e) { return bad(e); }
     },
@@ -143,9 +144,15 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
       } catch (e) { return bad(e); }
     },
     async command(doorId, cmd) {
-      if (!/^[A-F0-9]{8}:\d{1,2}$/i.test(String(doorId))) throw new Error("That isn't a parking lot door.");
+      doorId = String(doorId || "");
+      if (!/^[\w:.-]{3,40}$/.test(doorId) || (known.size && !known.has(doorId))) throw new Error("That isn't a parking lot door.");
       const c = { buzz: "unlock_T", open: "unlock", reset: "reset" }[cmd]; if (!c) throw new Error("Not a door command.");
-      try { await call("doors.xml", { body: `doors_cmd=${c}&doors_id=${doorId}` }); log("info", `parking lot: ${cmd} ${doorId}`); return ok({ ok: true }); }
+      try {
+        const ans = await call("doors.xml", { body: `doors_cmd=${c}&doors_id=${doorId}` });
+        const err = (tags(ans, "DOORS")[0] || tags(ans, "DOOR")[0] || {}).err;
+        if (err && err !== "ok") throw new Error(`The parking lot controller said "${err}" for door ${doorId}.`);
+        log("info", `parking lot: ${cmd} ${doorId}: ${peek(ans).slice(0, 80)}`); return ok({ ok: true, answer: peek(ans).slice(0, 120) });
+      }
       catch (e) { return bad(e); }
     },
   };
