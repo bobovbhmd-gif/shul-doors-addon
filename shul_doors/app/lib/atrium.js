@@ -69,13 +69,22 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
   let mode = "web", sid = "", serial = "";
   // when sign-in fails: read the controller's own web page to see which addresses it talks to
   async function probe() {
-    const html = await req("");
-    const srcs = [...html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)].map((m) => m[1]).filter((x) => !/^https?:\/\//i.test(x) || x.startsWith(base)).slice(0, 6);
-    const seen = new Set();
-    const scan = (t) => { for (const m of t.matchAll(/["'`]((?:\/|\.\/)?[\w\/.-]{2,60}\.(?:xml|json|cgi|php|asp)|\/?(?:api|cgi-bin|sdk|rest)\/[\w\/.-]{1,60})(?=["'`?])/g)) { if (seen.size < 40) seen.add(m[1]); } };
+    const notes = [];
+    let html = ""; try { html = await req(""); } catch (e) { notes.push("page: " + e.message); }
+    const srcs = [...html.matchAll(/<script[^>]*\ssrc=["']?([^"'\s>]+)/gi)].map((m) => m[1]).slice(0, 8);
+    notes.push(`page ${html.length} chars, scripts: ${srcs.join(" ") || "none"}`);
+    const seen = new Set(), snips = [];
+    const scan = (t) => {
+      for (const m of t.matchAll(/["'`]([\w\/.-]{0,40}(?:\.xml|\.json|\.cgi|api\/|sdk|login)[\w\/.-]{0,40})["'`]/gi)) if (seen.size < 30) seen.add(m[1]);
+      for (const m of t.matchAll(/.{0,40}login.{0,40}/gi)) if (snips.length < 4) snips.push(m[0].replace(/\s+/g, " "));
+    };
     scan(html);
-    for (const sp of srcs) { try { const t = await req(sp.replace(base + "/", "").replace(/^\//, "")); scan(t.slice(0, 4e6)); } catch { /* skip */ } }
-    return [...seen].join(", ").slice(0, 600);
+    for (const sp of srcs) { if (/^https?:\/\//i.test(sp) && !sp.startsWith(base)) continue; try { scan((await req(sp.replace(base + "/", "").replace(/^\//, ""))).slice(0, 4e6)); } catch (e) { notes.push(sp + ": " + e.message); } }
+    if (seen.size) notes.push("addresses: " + [...seen].join(" "));
+    if (snips.length) notes.push("near login: " + snips.join(" | "));
+    // the XML sign-in may live on the controller's normal web port
+    try { const host = new URL(base).hostname; for (const alt of [`http://${host}`, `https://${host}`]) { if (alt === base) continue; const ac = new AbortController(), t = setTimeout(() => ac.abort(), 4000); try { const r = await fetchImpl(alt + "/login.xml?_=" + Date.now(), { signal: ac.signal }); const x = await r.text(); notes.push(`${alt}/login.xml: ${r.status} ${/<KEY>/i.test(x) ? "HAS KEY" : peek(x).slice(0, 40)}`); } catch (e) { notes.push(`${alt}: ${e.name === "AbortError" ? "no answer" : e.message}`); } finally { clearTimeout(t); } } } catch { /* bad url */ }
+    return notes.join(" ; ").slice(0, 900);
   }
   async function sdkLogin() {
     const t1 = await req("login_sdk.xml?_=" + Date.now());
