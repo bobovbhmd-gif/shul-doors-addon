@@ -59,7 +59,7 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
     if (!k1) {
       // newer controllers: the official SDK sign-in (turn on "SDK login" for the user)
       try { await sdkLogin(); return; }
-      catch (e) { throw new Error(`The parking lot controller didn't hand out a sign-in key. It answered: ${peek(first)}. SDK sign-in: ${e.message}`); }
+      catch (e) { let found = ""; try { found = await probe(); } catch { /* best effort */ } throw new Error(`The parking lot controller didn't hand out a sign-in key. It answered: ${peek(first)}. SDK sign-in: ${e.message}.${found ? " Its web page uses: " + found : ""}`); }
     }
     const r2 = await req("login.xml", { method: "POST", body: `login_user=${rc4Hex(k1, username)}&login_pass=${md5(k1 + password)}` });
     const k2 = tagText(r2, "KEY"), err = (tags(r2, "LOGIN")[0] || {}).err;
@@ -67,6 +67,16 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
     key = k2; at = Date.now();
   }
   let mode = "web", sid = "", serial = "";
+  // when sign-in fails: read the controller's own web page to see which addresses it talks to
+  async function probe() {
+    const html = await req("");
+    const srcs = [...html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)].map((m) => m[1]).filter((x) => !/^https?:\/\//i.test(x) || x.startsWith(base)).slice(0, 6);
+    const seen = new Set();
+    const scan = (t) => { for (const m of t.matchAll(/["'`]((?:\/|\.\/)?[\w\/.-]{2,60}\.(?:xml|json|cgi|php|asp)|\/?(?:api|cgi-bin|sdk|rest)\/[\w\/.-]{1,60})(?=["'`?])/g)) { if (seen.size < 40) seen.add(m[1]); } };
+    scan(html);
+    for (const sp of srcs) { try { const t = await req(sp.replace(base + "/", "").replace(/^\//, "")); scan(t.slice(0, 4e6)); } catch { /* skip */ } }
+    return [...seen].join(", ").slice(0, 600);
+  }
   async function sdkLogin() {
     const t1 = await req("login_sdk.xml?_=" + Date.now());
     const conn = tags(t1, "CONNECTION")[0] || {}, dev = tags(t1, "DEVICE")[0] || {};
