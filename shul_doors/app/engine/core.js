@@ -121,7 +121,7 @@ function boxPut(){
     if(BOX_TRY<=24){toast("The box isn't answering. Trying again…");setTimeout(()=>{if(!BOX_INFLIGHT)boxSave()},5000)}else{BOX_TRY=0;toast("Could not save. Check the connection to the box, then make the change again.")}})
   .finally(()=>{BOX_INFLIGHT=false;if(BOX_AGAIN&&!stop){BOX_AGAIN=false;boxPut();return}BOX_AGAIN=false;SAVING=false})}
 function log(text){
-  const e={t:Date.now(),u:S.me,text,push:"pending"};S.log.unshift(e);S.log=S.log.slice(0,500);
+  const e={t:Date.now(),u:S.me,text,push:"pending"};S.log.unshift(e);S.log=S.log.slice(0,3000);
   // prototype: pretend the push and the read-back check take a few seconds
   if(ON_BOX){e.push="box";return}
   setTimeout(()=>{e.push="sent";e.sentAt=Date.now();save();renderLog()},2500);

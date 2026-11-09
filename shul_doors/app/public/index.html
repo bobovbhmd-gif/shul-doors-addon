@@ -1807,8 +1807,185 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 .homelk .rt b,.homelk .rt span{color:#fff!important}
 .op-lockon .ic svg{stroke:#fff}
 #tab-lockdown .op-eb{grid-template-columns:1fr;max-width:560px}
+
+/* Mikvah controller */
+.mk-seg{display:flex;gap:4px;background:var(--fill);border-radius:12px;padding:4px;margin:0 0 16px;max-width:560px}
+.mk-seg button{flex:1;border:0;background:none;border-radius:9px;padding:9px 6px;font:inherit;font-size:14.5px;font-weight:600;color:var(--muted);cursor:pointer}
+.mk-seg button.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.mk-card{background:var(--surface);border-radius:18px;box-shadow:0 0 0 1px var(--line) inset;padding:18px;margin-bottom:14px}
+.mk-head{display:flex;align-items:center;gap:14px}
+.mk-head .oi{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c);flex:none}
+.mk-head .oi svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mk-head b{font-size:19px;display:block}
+.mk-head span{color:var(--muted);font-size:14px}
+.mk-conn{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ok);background:var(--ok-soft);border-radius:999px;padding:5px 11px;white-space:nowrap}
+.mk-conn i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.mk-today{margin:16px 0 8px;font-size:15.5px;line-height:1.45}
+.mk-today em{font-style:normal;color:var(--muted)}
+.mk-bar{position:relative;height:30px;border-radius:9px;background:var(--fill);overflow:hidden;margin-top:6px}
+.mk-bar .w{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--b) 28%,transparent);border-radius:6px}
+.mk-bar .w.all{background:color-mix(in srgb,var(--o) 30%,transparent)}
+.mk-bar .nb{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--fg) 18%,transparent) 0 4px,transparent 4px 8px)}
+.mk-bar .tk{position:absolute;top:7px;bottom:7px;width:2px;border-radius:2px;background:var(--b)}
+.mk-bar .now{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--r)}
+.mk-axis{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:4px}
+.mk-h{font-size:15px;margin:22px 2px 10px}
+.mk-man{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.mk-man button{border:0;border-radius:16px;background:var(--surface);box-shadow:0 0 0 1px var(--line) inset;padding:14px;font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:3px;min-height:74px}
+.mk-man button b{font-size:16px}.mk-man button small{color:var(--muted);font-size:13px}
+.mk-man button.on{background:var(--accent);color:var(--accent-fg);box-shadow:none}.mk-man button.on small{color:color-mix(in srgb,var(--accent-fg) 80%,transparent)}
+.mk-for{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.mk-for .hint{margin-right:4px}
+.mk-chip{border:0;border-radius:999px;background:var(--surface);box-shadow:0 0 0 1px var(--line) inset;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer}
+.mk-chip.on{background:var(--fg);color:var(--bg);box-shadow:none}
+.mk-days .row{gap:12px}
+.mk-days .dn{width:92px;flex:none}
+.mk-days .dn b{display:block}.mk-days .dn span{font-size:12.5px;color:var(--muted)}
+.mk-days .rt b{font-weight:600}
+.mk-days .mk-bar{height:16px;border-radius:6px;width:180px;flex:none;margin:0}
+.mk-days .mk-bar .tk{top:4px;bottom:4px;width:1.5px}
+.mk-sched{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.mk-sched .mk-card{margin:0}
+.mk-sched h3{margin:0 0 2px;font-size:16px;display:flex;align-items:center;gap:8px}
+.mk-sched .cap{font-size:13.5px;color:var(--muted);margin:0 0 10px}
+.mk-f{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.mk-f label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);font-weight:600;flex:1;min-width:120px}
+.mk-f input,.mk-f select{width:100%;box-sizing:border-box;min-width:0;font:inherit;font-size:15px;color:var(--fg);padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--fill2,var(--bg))}
+.mk-hol .row{cursor:pointer}
+.mk-hol .rt span{white-space:normal}
+.mk-save{position:sticky;bottom:12px;z-index:5;display:flex;align-items:center;gap:12px;background:var(--fg);color:var(--bg);border-radius:16px;padding:10px 10px 10px 18px;margin-top:18px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+.mk-save span{flex:1;font-size:14.5px}
+.mk-save .btn{background:var(--bg);color:var(--fg);border:0}
+.mk-warn{border-left:4px solid var(--o)}.mk-warn p{margin:6px 0 10px;color:var(--muted)}
+.mk-ro{background:var(--fill);border-radius:12px;padding:10px 14px}
+.mk-log .row .t{width:84px;flex:none;color:var(--muted);font-size:13.5px;font-variant-numeric:tabular-nums}
+@media (max-width:600px){.mk-man{grid-template-columns:1fr}.mk-days .mk-bar{display:none}.mk-sched{grid-template-columns:1fr}.mk-head b{font-size:17px}.mk-conn span{display:none}}
+/* Controllers panel */
+.ct-row .rt span{white-space:normal}
+.ct-ok{color:var(--ok);font-weight:600}
+.ct-bad{color:var(--r);font-weight:600}
+.ct-allow{padding-left:62px}
+.mk-t{width:84px;flex:none;color:var(--muted);font-size:13.5px}
+.nb-sheet{position:fixed;inset:0;background:rgba(0,0,0,.35);display:grid;place-items:center;z-index:200;padding:16px}
+.nb-box{background:var(--surface);border-radius:18px;padding:20px;max-width:440px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.nb-box ul{margin:10px 0 16px;padding-left:20px;line-height:1.5}
+/* Welcome messages */
+.wm-f .row{gap:14px}
+.wm-f .row.col{flex-direction:column;align-items:stretch}
+.wm-f input,.wm-f textarea{font:inherit;font-size:15px;color:var(--fg);padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:var(--fill2,var(--bg));flex:1;min-width:0;width:100%;box-sizing:border-box}
+.wm-f textarea{resize:vertical;line-height:1.45}
+.wm-f .row:not(.col) .rt{flex:0 0 96px}
+.wm-prev{margin-top:14px;display:grid;gap:12px}
+.wm-prev iframe{width:100%;height:520px;border:0;border-radius:14px;background:#f5f5f7}
+.wm-sms{justify-self:start;max-width:320px;background:#34c759;color:#fff;border-radius:18px 18px 18px 4px;padding:10px 14px;font-size:15px;line-height:1.4}
+/* Users: sign-in */
+.uhead{display:flex;align-items:center;gap:12px;justify-content:space-between;margin:4px 0 14px}
+.ulist{padding:0;overflow:hidden}
+.ulist>.ublock{display:block;margin:0;border-radius:0;box-shadow:none;background:none}
+.ulist>.ublock+.ublock{border-top:1px solid var(--line)}
+.ulist>.ublock>summary{list-style:none;cursor:pointer;padding:12px 16px}
+.ulist>.ublock>summary::-webkit-details-marker{display:none}
+.ulist>.ublock>summary .chev{transition:transform .2s}
+.ulist>.ublock[open]>summary .chev{transform:rotate(90deg)}
+.ulist>.ublock[open]>summary{background:var(--fill)}
+.utag{font-size:12px;font-weight:600;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.utag.off{color:var(--r);background:color-mix(in srgb,var(--r) 12%,transparent)}
+.utag.new{color:var(--o);background:color-mix(in srgb,var(--o) 14%,transparent)}
+.ubody{padding:6px 16px 16px;background:var(--fill)}
+.usec h4{margin:14px 4px 6px;font-size:12.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.usec .glist{margin:0}
+.uacts{display:flex;flex-wrap:wrap;gap:4px 18px;margin:16px 4px 2px}
+.lnk{border:0;background:none;padding:4px 0;font:inherit;font-size:14.5px;font-weight:600;color:var(--accent);cursor:pointer}
+.lnk.danger{color:var(--r)}
+.ubody .uphone{width:min(320px,100%);flex:0 1 320px;text-align:left}
+
+.ulogin{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pw-row{display:flex;gap:8px;align-items:center}
+.pw-row input{flex:1;width:auto!important;font-family:ui-monospace,Menlo,monospace;letter-spacing:.03em}
+.nu-f{display:flex;flex-direction:column;gap:14px}
+.nu-f label{min-width:0;display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:var(--muted)}
+.nu-f input,.nu-f select{width:100%;box-sizing:border-box;min-width:0;font:inherit;font-size:16px;color:var(--fg);padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--fill2,var(--bg))}
+.nu-f .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.nu-note{display:flex;gap:10px;align-items:flex-start;background:var(--fill);border-radius:12px;padding:12px;font-size:13.5px;line-height:1.45;color:var(--muted)}
+.nu-note svg{width:20px;height:20px;flex:none;fill:none;stroke:var(--ok);stroke-width:2}
+@media (max-width:600px){.nu-f .two{grid-template-columns:1fr}}
+/* Open a door, v2 */
+.op-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:0 4px}
+.op-areas{columns:300px;column-gap:14px;margin-top:22px}
+.op-ac{break-inside:avoid;background:var(--surface);border-radius:16px;box-shadow:0 0 0 1px var(--line) inset;margin:0 0 14px;padding:6px 0;display:inline-block;width:100%}
+.op-ac h3{display:flex;align-items:baseline;gap:8px;font-size:13px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:8px 16px 4px}
+.op-ac h3 span{font-weight:500;letter-spacing:0}
+.op-r{position:relative}
+.op-r .op-t{min-height:0;height:auto;border-radius:0;box-shadow:none;background:none;padding:9px 44px 9px 14px;gap:12px}
+.op-r .op-t:hover{box-shadow:none;background:var(--fill2,rgba(0,0,0,.03))}
+.op-r+.op-r .op-t{border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.op-r .op-t .oi{width:30px;height:30px;border-radius:9px}
+.op-r .op-t .oi svg{width:16px;height:16px}
+.op-r .op-t .ot{flex-direction:row;align-items:center;justify-content:space-between;flex:1;gap:10px}
+.op-r .op-t b{font-size:14.5px;font-weight:550;-webkit-line-clamp:2}
+.op-r .op-t .nx{display:none}
+.op-r .op-t span.os{font-size:12.5px;white-space:nowrap}
+.op-r .op-t.is-open{background:color-mix(in srgb,var(--c) 6%,transparent);box-shadow:none}
+.op-r .op-pin{right:6px}
+@media (max-width:600px){.op-areas{columns:1}}
+
+.op-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.op-top .op-q{flex:1;min-width:220px;margin:0}
+.op-top .fchips{margin:0}
+.op-sum{color:var(--muted);font-size:14px;margin:10px 2px 0}
+.op-sum b{color:var(--fg)}
+.op-h{display:flex;align-items:baseline;gap:8px;margin:22px 2px 10px;font-size:15px}
+.op-h span{color:var(--muted);font-weight:500;font-size:13px}
+.op-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));grid-auto-rows:1fr;gap:10px}
+.op-grid.small{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));grid-auto-rows:1fr;gap:8px}
+.op-tw{position:relative;height:100%}
+.op-t{height:100%;border-left:0;flex-direction:row;align-items:center;gap:12px;padding:14px 40px 14px 14px;min-height:76px;box-shadow:0 0 0 1px var(--line) inset;border-radius:16px;justify-content:flex-start}
+.op-t .oi{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 13%,transparent);color:var(--c)}
+.op-t .oi svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.op-t .ot{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
+.op-t b{font-size:15.5px;font-weight:650;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.op-t span.os{font-size:13px;color:var(--muted);display:block}
+.op-t span.os em{font-style:normal;color:var(--c);font-weight:600}
+.op-t.is-open{background:color-mix(in srgb,var(--c) 7%,var(--surface));box-shadow:0 0 0 1px color-mix(in srgb,var(--c) 35%,transparent) inset}
+.op-t .hb{font-size:11.5px;font-weight:600;color:var(--man,#7b55c7)}
+.op-grid.small .op-t{min-height:60px;padding:10px 36px 10px 10px;gap:10px;border-radius:14px}
+.op-grid.small .op-t .oi{width:32px;height:32px;border-radius:10px}
+.op-grid.small .op-t .oi svg{width:17px;height:17px}
+.op-grid.small .op-t b{font-size:14px;font-weight:600}
+.op-grid.small .op-t span.os{font-size:12px}
+.op-pin{top:50%;transform:translateY(-50%);opacity:.3;transition:opacity .15s}
+.op-tw:hover .op-pin,.op-pin.on,.op-pin:focus-visible{opacity:.7}
+.op-pin.on{opacity:1}
+@media (pointer:coarse){.op-pin{opacity:.35}.op-pin.on{opacity:1}}
+.op-big .op-t{min-height:88px}
+.op-big .op-t b{font-size:16.5px}
+.op-big .op-t .oi{width:46px;height:46px;border-radius:14px}
+@media (max-width:600px){.op-grid,.op-grid.small{grid-template-columns:1fr 1fr}.op-t{min-height:70px;padding:12px 30px 12px 10px;gap:9px}.op-t .oi{width:34px;height:34px}.op-big .op-t .oi{width:38px;height:38px}.op-top .op-q{min-width:100%}}
+
 #tab-lockdown .op-lk{min-height:96px;padding:20px}
 #tab-lockdown .op-lk b{font-size:19px}
+
+/* one person's activity */
+.ua-box{max-width:760px}
+.ua-head{display:flex;align-items:center;gap:12px;margin:2px 2px 14px}
+.ua-head .avatar.big{width:48px;height:48px;font-size:17px}
+.ua-head b{font-size:19px;display:block}.ua-head span{color:var(--muted);font-size:13.5px}
+.ua-sum{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+.ua-sum>div{background:var(--surface);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:2px}
+.ua-sum b{font-size:18px}.ua-sum span{font-size:12px;color:var(--muted)}
+.ua-per{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:10px}
+.ua-per button{flex:none;border:0;background:var(--surface);font:inherit;font-size:13.5px;padding:7px 12px;border-radius:999px;cursor:pointer;color:var(--text)}
+.ua-per button.on{background:var(--accent);color:#fff}
+.ua-cust{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ua-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.ua-bar .search{flex:1;min-width:140px}
+.ua-d{margin:14px 2px 6px;font-size:14px}
+.ua-r{min-height:44px;padding-top:7px;padding-bottom:7px;gap:10px}
+.ua-r .time{font-size:12.5px;color:var(--muted);min-width:62px}
+.ua-r .ic{width:26px!important;height:26px!important}
+.ua-r .rt b{font-size:14px;font-weight:550}.ua-r .rt span{font-size:12.5px}
+.ua-r.bad .rt b{color:var(--r)}
+@media (max-width:600px){.ua-sum{grid-template-columns:repeat(3,1fr)}.ua-sum>div:nth-child(n+4){display:none}}
 </style>
 
 <button class="ask-fab" type="button" id="askOpen" hidden aria-label="Ask the assistant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Ask the assistant</span></button>
@@ -1828,7 +2005,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 <div class="shell" id="app">
   <header class="topbar">
     <button type="button" class="menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-    <div class="brand"><b>Shul Doors</b><span class="proto">Prototype</span></div>
+    <div class="brand"><b>Shul Manager</b><span class="proto">Prototype</span></div>
     <div class="today"><span class="heb" id="hebNow"></span><span class="dot">·</span><span id="gregNow"></span><span class="dot">·</span><span>Shkiah <b id="sunNow"></b></span><span class="hint" id="seasonNow"></span></div>
     <button type="button" class="syspill" id="sysCell"></button><span id="sysSub" hidden></span>
     <div class="seg viewseg" role="group" aria-label="View"><button type="button" data-view="simple">Simple</button><button type="button" data-view="full">Full</button></div><label class="who hint">Signed in as <select id="meSel" aria-label="Signed in as"></select></label>
@@ -1843,6 +2020,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
     <button type="button" class="navbtn cap-codes" data-tab="codes"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg></i>Guest codes</button>
     <button type="button" class="navbtn" data-tab="msgs" hidden><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></i>Messages <span class="badge" id="msgBadge" hidden></span></button>
     <button type="button" class="navbtn" data-tab="activity" data-also="live reports" id="actNav"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i>Activity</button>
+    <button type="button" class="navbtn admin-only" data-tab="mikvah"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z"/></svg></i>Mikva Magnet</button>
     <div class="ng"></div>
     <button type="button" class="navbtn lkbtn admin-only" data-tab="lockdown"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><path d="M12 15v2"/></svg></i>Lockdown</button>
     <button type="button" class="navbtn" data-tab="setup" data-also="people"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></i>Settings</button>
@@ -1917,9 +2095,10 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
   </section>
 
   <section id="tab-open" hidden>
-    <label class="search op-q"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="opQ" placeholder="Find a door" aria-label="Find a door" autocomplete="off"></label>
+    <div class="op-top"><label class="search op-q"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="opQ" placeholder="Find a door" aria-label="Find a door" autocomplete="off"></label><div class="fchips" id="opF" role="group" aria-label="Show"></div></div>
     <div id="opBody"></div>
   </section>
+  <section id="tab-mikvah" hidden><div id="mkBody"></div></section>
   <section id="tab-lockdown" hidden>
     <div id="opLock"></div>
     <div class="op-emerg" id="opEmerg"></div>
@@ -2194,6 +2373,14 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
           <p class="gf">Alos 16.1°, tzeis 8.5°, plag and chatzos by the GRA.</p>
         </div>
 
+        <div class="panel admin-only" data-sp="ctrl" data-ic="grid" data-c="var(--teal)">
+          <h2>Controllers</h2>
+          <p class="gf top">Everything Shul Manager talks to. Each controller keeps its own schedule, so the doors keep working even if this box is off.</p>
+          <div class="glist" id="ctRows"></div>
+          <h3 class="gh mk-h">Parking lot events</h3>
+          <div class="glist mk-log" id="ctPark"></div>
+          <p class="gf">Passwords for the controllers are typed in the add-on settings in Home Assistant, never here.</p>
+        </div>
         <div class="panel admin-only" data-sp="magnet" data-ic="lock" data-c="var(--o)">
           <h2>15 Ave magnet (Shabbos setting)</h2>
           <p class="gf" id="mgWhere"></p>
@@ -2206,6 +2393,22 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
           <h3 class="gh">Coming up</h3>
           <div class="glist" id="mgNext"></div>
           <p class="gf">Off whenever it is Shabbos or yom tov, including two days of yom tov and yom tov next to Shabbos. Protector.Net has no one-time changes for outputs, so the box rewrites the magnet's weekly schedule every night for the coming 7 days.</p>
+        </div>
+        <div class="panel admin-only" data-sp="welmsg" data-ic="chat" data-c="var(--g)">
+          <h2>Welcome messages</h2>
+          <p class="gf top">What a new person gets when you save them: an email with the sign-in link, then a text with their password. Use <b>{name}</b>, <b>{username}</b> and <b>{link}</b>; the text also needs <b>{password}</b>.</p>
+          <h3 class="gh mk-h">Welcome email</h3>
+          <div class="glist wm-f">
+            <label class="row"><span class="rt"><b>Subject</b></span><input id="wmSubject" data-wm="welSubject" autocomplete="off"></label>
+            <label class="row"><span class="rt"><b>Heading</b></span><input id="wmTitle" data-wm="welTitle" autocomplete="off"></label>
+            <label class="row col"><span class="rt"><b>Opening</b><span>Under the heading</span></span><textarea id="wmIntro" data-wm="welIntro" rows="3"></textarea></label>
+            <label class="row col"><span class="rt"><b>Closing</b><span>At the end, before your name</span></span><textarea id="wmClose" data-wm="welClose" rows="2"></textarea></label>
+          </div>
+          <p class="gf">The middle of the email fills itself in: how to sign in, what they're allowed to do, and the safety note.</p>
+          <h3 class="gh mk-h">Password text</h3>
+          <div class="glist wm-f"><label class="row col"><span class="rt"><b>Text message</b><span id="wmCount"></span></span><textarea id="wmPw" data-wm="pwText" rows="3"></textarea></label></div>
+          <div class="tline" style="margin-top:12px"><button class="btn sm" type="button" id="wmPrev">Preview</button><button class="btn sm" type="button" id="wmReset">Back to the original wording</button></div>
+          <div class="wm-prev" id="wmPrevBox" hidden><iframe id="wmFrame" title="Welcome email preview"></iframe><div class="wm-sms" id="wmSms"></div></div>
         </div>
         <div class="panel admin-only" data-sp="alerts" data-ic="bell" data-c="var(--r)">
           <h2>Alerts</h2>
@@ -2225,16 +2428,12 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 
         <div class="panel admin-only" data-sp="users" data-ic="people" data-c="var(--gray)">
           <h2>Users and permissions</h2>
-          <p class="gf top">A super admin sees and changes everything. For anyone else, set each door to Edit, View only or Hidden, and choose whether they can make permanent schedules or only temporary ones. New doors start hidden for them.</p>
+          <div class="uhead"><p class="gf top" style="margin:0">Tap a person to see or change their details.</p><button class="btn pri sm" type="button" id="nuOpen">Add a person</button></div>
           <p class="gf top" id="accessLine" hidden></p>
           <div class="usave" id="uSaveBar" hidden><span id="uSaveTxt">Unsaved changes</span><button class="btn sm" type="button" id="uCancel">Cancel</button><button class="btn sm pri" type="button" id="uSave">Save changes</button></div>
           <div id="userRows"></div>
-          <div class="glist addrow"><div class="row"><input id="uName" placeholder="New user's name" aria-label="User name"><select id="uRole" aria-label="Role"><option>Restricted</option><option>Super admin</option></select><button class="btn sm pri" type="button" id="addUser">Add</button></div></div>
-          <div class="steps-card"><b>Adding someone new</b><ol>
-            <li>In Home Assistant: Settings, People, <b>Add person</b>. Turn on <b>Allow login</b>, give them a username and a starting password. Leave <b>Administrator</b> off.</li>
-            <li>Here: add them above with the <b>same name</b> as in Home Assistant, and pick what they may do. Add their <b>email</b> so they can get past the sign-in code screen, and their mobile number if they should get texts.</li>
-            <li>They open building.khalbobov.org, enter the code emailed to them (once every 60 days per device), then their Home Assistant username and password, and open <b>Shul Doors</b>. They can change their password by tapping their name in Home Assistant.</li></ol>
-            <p>Anyone not added here sees "You're not added yet" instead of the app. Changes they make show up for you under Messages.</p></div>
+          <div class="glist addrow" hidden><div class="row"><input id="uName" placeholder="New user's name" aria-label="User name"><select id="uRole" aria-label="Role"><option>Restricted</option><option>Super admin</option></select><button class="btn sm pri" type="button" id="addUser">Add</button></div></div>
+          <p class="gf">Saving a new person emails them a welcome and texts them their password. Anyone not added here sees "You're not added yet".</p>
         </div>
 
         <div class="panel admin-only adv" data-sp="backup" data-ic="disk" data-c="var(--g)">
@@ -2298,6 +2497,30 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
     <div class="mbox op-sheet">
       <header class="mhead"><button type="button" class="mbtn" data-close>Cancel</button><b id="opT">Open a door</b><span class="mbtn" aria-hidden="true"></span></header>
       <div class="mbody" id="opSheet"></div>
+    </div>
+  </div>
+  <div class="modal" id="mNewU" hidden role="dialog" aria-modal="true" aria-labelledby="nuT">
+    <div class="mbox">
+      <header class="mhead"><button type="button" class="mbtn" data-close>Cancel</button><b id="nuT">Add a person</b><button type="button" class="mbtn pri" id="nuGo">Add</button></header>
+      <div class="mbody" id="nuBody"></div>
+    </div>
+  </div>
+  <div class="modal" id="mPw" hidden role="dialog" aria-modal="true" aria-labelledby="pwT">
+    <div class="mbox">
+      <header class="mhead"><button type="button" class="mbtn" data-close>Cancel</button><b id="pwT">Reset password</b><button type="button" class="mbtn pri" id="pwGo">Save</button></header>
+      <div class="mbody" id="pwBody"></div>
+    </div>
+  </div>
+  <div class="modal" id="mMk" hidden role="dialog" aria-modal="true" aria-labelledby="mkT">
+    <div class="mbox">
+      <header class="mhead"><button type="button" class="mbtn" data-close>Cancel</button><b id="mkT">Change</b><button type="button" class="mbtn pri" id="mkGo">Done</button></header>
+      <div class="mbody" id="mkSheet"></div>
+    </div>
+  </div>
+  <div class="modal" id="mUact" hidden role="dialog" aria-modal="true" aria-labelledby="uaT">
+    <div class="mbox ua-box">
+      <header class="mhead"><span class="mbtn" aria-hidden="true"></span><b id="uaT">Activity</b><button type="button" class="mbtn pri" data-close>Done</button></header>
+      <div class="mbody" id="uaBody"></div>
     </div>
   </div>
   <div class="modal" id="mEvent" hidden role="dialog" aria-modal="true" aria-labelledby="mEvT">
@@ -2563,7 +2786,7 @@ function boxPut(){
     if(BOX_TRY<=24){toast("The box isn't answering. Trying again…");setTimeout(()=>{if(!BOX_INFLIGHT)boxSave()},5000)}else{BOX_TRY=0;toast("Could not save. Check the connection to the box, then make the change again.")}})
   .finally(()=>{BOX_INFLIGHT=false;if(BOX_AGAIN&&!stop){BOX_AGAIN=false;boxPut();return}BOX_AGAIN=false;SAVING=false})}
 function log(text){
-  const e={t:Date.now(),u:S.me,text,push:"pending"};S.log.unshift(e);S.log=S.log.slice(0,500);
+  const e={t:Date.now(),u:S.me,text,push:"pending"};S.log.unshift(e);S.log=S.log.slice(0,3000);
   // prototype: pretend the push and the read-back check take a few seconds
   if(ON_BOX){e.push="box";return}
   setTimeout(()=>{e.push="sent";e.sentAt=Date.now();save();renderLog()},2500);
@@ -2953,6 +3176,8 @@ const MODE_LABEL={"Unlock":"Open","Card or Pin":"Card or PIN","Card":"Card only"
 function modeLabel(m){return MODE_LABEL[m]||m}
 function modeColor(m){return m==="Unlock"?"var(--g)":m==="Lockdown"?"var(--r)":"var(--b)"}
 const IC={
+  drop:'<path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z"/>',
+  car:'<path d="M5 16V11l2-5h10l2 5v5M5 16h14M5 16v2M19 16v2"/><circle cx="8" cy="13" r=".8"/><circle cx="16" cy="13" r=".8"/>',
   open:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>',
   lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
   lockdown:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4M12 14.5v3"/>',
@@ -3507,18 +3732,25 @@ function renderSetup(){
   $("#alertChecks").innerHTML=ALERTS.map(([k,l])=>`<label class="row swrow" for="al-${k}"><span class="rt"><b>${esc(l)}</b>${k==="held"?`<span>After <input type="number" id="heldMin" min="1" max="120" value="${S.alerts.heldMin}" aria-label="Minutes"> minutes</span>`:""}${NOTYET.includes(k)?`<span>Not connected yet</span>`:""}</span><input type="checkbox" class="switch" id="al-${k}" data-alert="${k}"${S.alerts[k]?" checked":""}></label>`).join("");
   {const to=chgRecipients();$("#chgTo").innerHTML=S.users.map(u=>`<label class="row swrow" for="chg-${esc(u.name)}"><span class="avatar">${esc(initials(u.name))}</span><span class="rt"><b>${esc(u.name)}</b><span>${u.phone?esc(u.phone):"No mobile number yet, so in the app only"}</span></span><input type="checkbox" class="switch" id="chg-${esc(u.name)}" data-chg="${esc(u.name)}"${to.includes(u.name)?" checked":""}></label>`).join("")}
   const CAPS=[["codes","Give guest codes"],["override","Open or lock doors by hand"],["events","Add events"],["rabbi","Set the rabbi away and switch situations"]];
-  $("#userRows").innerHTML=UL().map((u,i)=>{
-    const r=u.role==="Restricted";
-    return `<div class="glist ublock"><div class="row"><span class="avatar">${esc(initials(u.name))}</span><div class="rt"><b>${esc(u.name)}${u.name===S.me?' <span class="mini">You</span>':""}</b><span>${r?"Restricted":"Sees and changes everything"}</span></div>
-      <select data-urole="${i}" aria-label="Role for ${esc(u.name)}"><option${!r?" selected":""}>Super admin</option><option${r?" selected":""}>Restricted</option></select>
-      <button class="btn sm" type="button" data-uwel="${i}">Welcome email</button>${u.name!==S.me?`<button class="btn sm danger" type="button" data-udel="${i}">Remove</button>`:""}</div>
-      <div class="row"><span class="rt"><b>Mobile number</b><span>For alerts and vendor arrival texts</span></span><input class="uphone" data-uphone="${i}" value="${esc(u.phone||"")}" placeholder="Add a number" inputmode="tel" aria-label="Mobile number for ${esc(u.name)}"></div>
-      <div class="row"><span class="rt"><b>Email</b><span>Lets them sign in at building.khalbobov.org</span></span><input class="uphone uemail" data-uemail="${i}" value="${esc(u.email||"")}" placeholder="Add an email" inputmode="email" autocomplete="off" aria-label="Email for ${esc(u.name)}"></div>
+  renderCtrl();renderWelMsg();
+  $("#userRows").innerHTML=`<div class="glist ulist">`+UL().map((u,i)=>{
+    const r=u.role==="Restricted",nd=S.doors.filter(d=>((u.perm||{})[d.id]||"hidden")!=="hidden").length;
+    const sub=(r?`Restricted · ${nd} door${nd===1?"":"s"}`:"Super admin");
+    const tag=u.login===false?`<span class="utag off">Can't sign in</span>`:NEWPW.has(u.name)?`<span class="utag new">Not saved yet</span>`:"";
+    const sec=(t,body)=>`<div class="usec"><h4>${t}</h4><div class="glist">${body}</div></div>`;
+    return `<details class="ublock"${U_OPEN===u.name?" open":""} data-uname="${esc(u.name)}"><summary class="row"><span class="avatar">${esc(initials(u.name))}</span><div class="rt"><b>${esc(u.name)}${u.name===S.me?' <span class="mini">You</span>':""}</b><span>${esc(sub)}</span></div>${tag}<span class="chev"></span></summary>
+      <div class="ubody">
+      ${sec("Contact",`<div class="row"><span class="rt"><b>Mobile</b></span><input class="uphone" data-uphone="${i}" value="${esc(u.phone||"")}" placeholder="Add a number" inputmode="tel" aria-label="Mobile number for ${esc(u.name)}"></div>
+        <div class="row"><span class="rt"><b>Email</b></span><input class="uphone uemail" data-uemail="${i}" value="${esc(u.email||"")}" placeholder="Add an email" inputmode="email" autocomplete="off" aria-label="Email for ${esc(u.name)}"></div>`)}
+      ${sec("Sign-in",`<div class="row"><span class="rt"><b>${u.login===false?"Turned off":esc(u.login||loginName(u.name))}</b><span>${u.login===false?"They can't open Shul Manager":u.pwDone?"Picked their own password":"Still has the starting password"}</span></span><button class="btn sm" type="button" data-upw="${i}">Reset password</button></div>`)}
+      ${sec("Access",`<div class="row"><span class="rt"><b>Role</b><span>${r?"Only what you choose below":"Sees and changes everything"}</span></span><select data-urole="${i}" aria-label="Role for ${esc(u.name)}"><option${!r?" selected":""}>Super admin</option><option${r?" selected":""}>Restricted</option></select></div>
       ${r?`<div class="row"><span class="rt"><b>Schedules</b><span>For doors they can edit</span></span><select id="us${i}" data-usched="${i}" aria-label="Schedules"><option value="none"${u.sched==="none"?" selected":""}>None</option><option value="temp"${u.sched==="temp"?" selected":""}>Temporary only</option><option value="both"${u.sched==="both"?" selected":""}>Permanent and temporary</option></select></div>
       ${CAPS.map(([k,l])=>`<label class="row swrow"><span class="rt"><b>${esc(l)}</b></span><input type="checkbox" class="switch" data-ucan="${i}" data-cap="${k}"${(u.can||{})[k]?" checked":""}></label>`).join("")}
       <details class="row doorperm"><summary><span class="rt"><b>Doors</b><span>${S.doors.filter(d=>((u.perm||{})[d.id]||"hidden")==="edit").length} edit, ${S.doors.filter(d=>((u.perm||{})[d.id]||"hidden")==="view").length} view only, the rest hidden</span></span><span class="chev"></span></summary>
         <div class="tline" style="margin:8px 0"><span class="hint">Set every door to</span><select data-uall="${i}" aria-label="Set all doors"><option value="">Choose…</option><option value="edit">Edit</option><option value="view">View only</option><option value="hidden">Hidden</option></select></div>
-        <div class="permgrid">${S.doors.map(d=>{const v=(u.perm||{})[d.id]||"hidden";return `<label class="${v==="hidden"?"p-hidden":""}">${esc(d.name)}<select data-uperm="${i}" data-door="${esc(d.id)}" aria-label="${esc(u.name)} on ${esc(d.name)}"><option value="edit"${v==="edit"?" selected":""}>Edit</option><option value="view"${v==="view"?" selected":""}>View only</option><option value="hidden"${v==="hidden"?" selected":""}>Hidden</option></select></label>`}).join("")}</div></details>`:""}</div>`}).join("");
+        <div class="permgrid">${S.doors.map(d=>{const v=(u.perm||{})[d.id]||"hidden";return `<label class="${v==="hidden"?"p-hidden":""}">${esc(d.name)}<select data-uperm="${i}" data-door="${esc(d.id)}" aria-label="${esc(u.name)} on ${esc(d.name)}"><option value="edit"${v==="edit"?" selected":""}>Edit</option><option value="view"${v==="view"?" selected":""}>View only</option><option value="hidden"${v==="hidden"?" selected":""}>Hidden</option></select></label>`}).join("")}</div></details>`:""}`)}
+      <div class="uacts"><button class="lnk" type="button" data-uact="${esc(u.name)}">Activity</button><button class="lnk" type="button" data-uwel="${i}">Send welcome again</button>${u.name!==S.me?`<button class="lnk" type="button" data-uoff="${i}">${u.login===false?"Turn sign-in on":"Turn sign-in off"}</button><button class="lnk danger" type="button" data-udel="${i}">Remove</button>`:""}</div>
+      </div></details>`}).join("")+`</div>`;
 }
 function dayLabel(ms){const d=nyDate(ms),t=todayNY();return d===t?"Today":d===addDays(t,-1)?"Yesterday":longDate(d)}
 function renderStatus(){
@@ -4063,7 +4295,29 @@ function uchg(text,rerender){UCH.push(text);$("#uSaveBar").hidden=false;$("#uSav
 function uDone(){UD=null;UCH=[];$("#uSaveBar").hidden=true}
 $("#uSave").onclick=()=>{if(!UD){uDone();return}
   if(!UD.some(u=>u.role==="Super admin")){toast("Keep at least one super admin.");return}
-  const n=UCH.length,text=UCH.length===1?UCH[0]:`Users and permissions: ${UCH.join("; ")}`;S.users=UD;uDone();commit(text);toast(n===1?"Saved.":`Saved ${n} changes.`);if(ON_BOX)setTimeout(accessLine,6000)};
+  const n=UCH.length,text=UCH.length===1?UCH[0]:`Users and permissions: ${UCH.join("; ")}`;const before=S.users;S.users=UD;uDone();commit(text);
+  const fresh=[...NEWPW.entries()].filter(([k])=>S.users.some(u=>u.name===k));NEWPW.clear();
+  const flips=S.users.map(u=>{const b=before.find(x=>x.name===u.name);return b&&(b.login===false)!==(u.login===false)?{name:u.name,on:u.login!==false}:null}).filter(Boolean);
+  const gone=before.filter(b=>!S.users.some(u=>u.name===b.name)).map(b=>({name:b.name,username:b.login||loginName(b.name),on:false}));
+  if(fresh.length||flips.length||gone.length)afterUserSave(fresh,flips,gone);else toast(n===1?"Saved.":`Saved ${n} changes.`);
+  if(ON_BOX)setTimeout(accessLine,6000)};
+// after Save: make the logins, then the welcome email, then the password text. Passwords are only held here until sent.
+async function boxSaved(){for(let i=0;i<60&&(typeof SAVING!=="undefined"&&SAVING);i++)await new Promise(r=>setTimeout(r,250))}
+async function postJ(url,body){try{return await (await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json()}catch(e){return {ok:false,error:"Can't reach the box."}}}
+async function afterUserSave(fresh,flips,gone){
+  if(!ON_BOX){toast(fresh.length?`Saved. ${fresh.map(f=>f[0]).join(", ")} can sign in. Welcome email sent; the password text goes out once texting is live.`:"Saved.");return}
+  toast("Saved. Setting up sign-in…");await boxSaved();const notes=[];
+  for(const g of gone){const j=await postJ("api/logins/active",g);if(!j.ok&&!/No sign-in was found/.test(j.error||""))notes.push(`${g.name}: sign-in not turned off (${j.error})`)}
+  for(const f of flips){const j=await postJ("api/logins/active",f);if(!j.ok)notes.push(`${f.name}: ${j.error}`)}
+  for(const [name,pw] of fresh){const u=S.users.find(x=>x.name===name);if(!u)continue;
+    const a=await postJ("api/logins/create",{name,username:u.login,password:pw});
+    if(!a.ok){notes.push(`${name}: login not made (${a.error})`);continue}
+    let em="no email on file";if(u.email){const m=welcomeEmail(u,u.login,S.me);const e=await postJ("api/email/welcome",{to:u.email,subject:m.subject,html:m.html,text:m.text});em=e.ok?"welcome email sent":"welcome email not sent ("+e.error+")"}
+    let tx="no mobile on file";if(u.phone){const t=await postJ("api/sms/password",{name,password:pw});tx=t.ok?"password texted":t.notLive?"texting isn't live yet, so give them the password in person":"password not texted ("+t.error+")"}
+    notes.push(`${name}: can sign in, ${em}, ${tx}`)}
+  showNotes(notes)}
+function showNotes(notes){if(!notes.length){toast("Saved.");return}const el=document.createElement("div");el.className="nb-sheet";
+  el.innerHTML=`<div class="nb-box"><b>Done</b><ul>${notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul><button class="btn pri sm" type="button">OK</button></div>`;el.querySelector("button").onclick=()=>el.remove();document.body.appendChild(el)}
 $("#uCancel").onclick=()=>{uDone();renderSetup()};
 addEventListener("beforeunload",ev=>{if(UD){ev.preventDefault();ev.returnValue=""}});
 // the Cloudflare sign-in list (which emails may reach building.khalbobov.org)
@@ -4071,6 +4325,191 @@ async function accessLine(){const el=$("#accessLine");if(!el||!ON_BOX)return;let
   el.hidden=false;el.className="gf top"+(j.why?" warnm":"");
   el.textContent=!j.on?"Emails are saved here but not sent to Cloudflare yet: add a Cloudflare key in the add-on settings to turn that on.":j.why?j.why:j.at?`Sign-in list is up to date: ${j.emails.length} email${j.emails.length===1?"":"s"} can reach building.khalbobov.org.`:"Checking the sign-in list…"}
 if(ON_BOX)setTimeout(accessLine,3000);
+
+// ---------- people: logins are made from here (the box passes them to Home Assistant's sign-in, never saved) ----------
+function loginName(n){return String(n||"").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,".").replace(/^\.+|\.+$/g,"").slice(0,24)||"user"}
+function pwField(id){return `<div class="pw-row"><input id="${id}" autocomplete="new-password" spellcheck="false" placeholder="At least 8 characters"><button type="button" class="btn sm" data-mkpw="${id}">Make one</button></div>`}
+const NU_NOTE=`<div class="nu-note">${ico("check")}<span>The password goes straight to the sign-in system. It's never saved in Shul Manager, never in Activity, and never in an email.</span></div>`;
+function openNewUser(){
+  $("#nuBody").innerHTML=`<div class="nu-f">
+    <label>Name<input id="nuName" placeholder="First and last name" autocomplete="off"></label>
+    <div class="two"><label>Username<input id="nuUser" autocomplete="off" spellcheck="false" placeholder="Filled in from the name"></label>
+    <label>What they can do<select id="nuRole"><option value="Restricted">Only what I choose</option><option value="Super admin">Everything (super admin)</option></select></label></div>
+    <label>Starting password${pwField("nuPw")}</label>
+    <div class="two"><label>Email<input id="nuEmail" inputmode="email" autocomplete="off" placeholder="For the sign-in code"></label>
+    <label>Mobile<input id="nuPhone" inputmode="tel" autocomplete="off" placeholder="Optional, for texts"></label></div>
+    <div class="nu-note">${ico("check")}<span>When you save, Shul Manager creates the login, emails a welcome with the sign-in link, then texts the password to their mobile. The password is never saved or emailed.</span></div></div>`;
+  openModal("mNewU");$("#nuName").focus()}
+document.addEventListener("input",ev=>{if(ev.target.id==="nuName"){const u=$("#nuUser");if(!u.dataset.touched)u.value=loginName(ev.target.value)}if(ev.target.id==="nuUser")ev.target.dataset.touched="1"});
+document.addEventListener("click",ev=>{const t=ev.target;
+  const mp=t.closest("[data-mkpw]");if(mp){$("#"+mp.dataset.mkpw).value=makePw();return}
+  if(t.closest("#nuOpen")){openNewUser();return}
+  if(t.closest("#nuGo")){const n=$("#nuName").value.trim(),un=$("#nuUser").value.trim(),pw=$("#nuPw").value;
+    if(!n){$("#nuName").focus();return}if(ud().some(u=>u.name===n)){toast("Someone with that name is already added.");return}
+    if(pw.length<8){toast("Pick a starting password of at least 8 characters.");$("#nuPw").focus();return}
+    const r=$("#nuRole").value,u=r==="Restricted"?{name:n,role:"Restricted",perm:{},sched:"none",can:{rules:false,override:false,events:false,rabbi:false},added:Date.now()}:{name:n,role:"Super admin",added:Date.now()};
+    u.login=un||loginName(n);u.email=$("#nuEmail").value.trim();u.phone=$("#nuPhone").value.trim();ud().push(u);NEWPW.set(n,pw);U_OPEN=n;closeModal("mNewU");uchg(`Added user ${n} with the username ${u.login}`,true);toast(`${n} is added. Tap Save changes to create the login and send the welcome.`);return}
+  const up=t.closest("[data-upw]");if(up){const u=UL()[+up.dataset.upw];PW_U=u&&u.name;$("#pwT").textContent="Reset password";
+    $("#pwBody").innerHTML=`<div class="nu-f"><p style="margin:0">A new starting password for <b>${esc(PW_U)}</b>. Their old one stops working right away.</p><label>New password${pwField("pwNew")}</label>${NU_NOTE}</div>`;openModal("mPw");return}
+  if(t.closest("#pwGo")){const pw=$("#pwNew").value;if(pw.length<8){toast("At least 8 characters.");return}const name=PW_U;
+    if(NEWPW.has(name)){NEWPW.set(name,pw);closeModal("mPw");toast("Starting password changed. It's sent when you save.");return}
+    if(UD){toast("Save your other changes first, then reset the password.");return}
+    (async()=>{const btn=$("#pwGo");btn.disabled=true;let notes=[];
+      if(ON_BOX){const j=await postJ("api/logins/password",{name,password:pw});if(!j.ok){btn.disabled=false;toast(j.error||"Not changed");return}
+        const u=S.users.find(x=>x.name===name);if(u&&u.phone){const t=await postJ("api/sms/password",{name,password:pw});notes.push(t.ok?"New password texted to them.":t.notLive?"Texting isn't live yet, so give them the password in person.":"Not texted: "+t.error)}else notes.push("No mobile on file, so give them the password in person.")}
+      const u=S.users.find(x=>x.name===name);if(u){u.pwDone=0}commit(`Reset the password for ${name}`);btn.disabled=false;closeModal("mPw");toast(`New password set for ${name}. ${notes.join(" ")||"Give it to them in person or by text."}`)})();return}
+  const uo=t.closest("[data-uoff]");if(uo){const u=UL()[+uo.dataset.uoff];if(!u)return;const x=ud().find(y=>y.name===u.name);x.login=x.login===false?loginName(x.name):false;uchg(`${x.login===false?"Turned off":"Turned on"} sign-in for ${x.name}`,true);return}
+});
+function renderWelMsg(){const M=MSGS();document.querySelectorAll("[data-wm]").forEach(el=>{if(document.activeElement!==el)el.value=M[el.dataset.wm]});const n=($("#wmPw")||{}).value||"";const c=$("#wmCount");if(c)c.textContent=`${n.length} characters${n.length>160?", sent as more than one text":""}${n.includes("{password}")?"":". Add {password}"}`}
+document.addEventListener("change",ev=>{const el=ev.target;if(!el.dataset||!el.dataset.wm)return;const v=el.value.trim();S.msgs=S.msgs||{};if(!v||v===MSG_DEF[el.dataset.wm])delete S.msgs[el.dataset.wm];else S.msgs[el.dataset.wm]=v.slice(0,1200);commit("Changed the welcome messages");renderWelMsg();if(!$("#wmPrevBox").hidden)wmPreview()});
+document.addEventListener("input",ev=>{if(ev.target.id==="wmPw")renderWelMsg()});
+function wmPreview(){const u=S.users.find(x=>x.role==="Restricted")||S.users[0]||{name:"Moshe Klein"};const login=u.login||loginName(u.name);const m=welcomeEmail({...u,name:"Moshe Klein",email:"moshe@example.com"},"moshe.klein",S.me);
+  $("#wmFrame").srcdoc=`<!doctype html><meta charset="utf-8"><body style="margin:0">${m.html}</body>`;$("#wmSms").textContent=fillMsg(MSGS().pwText,{name:"Moshe Klein"},"moshe.klein").replace(/\{password\}/g,"Cedar-Maple-4821");$("#wmPrevBox").hidden=false}
+document.addEventListener("click",ev=>{if(ev.target.closest("#wmPrev"))wmPreview();if(ev.target.closest("#wmReset")){S.msgs={};commit("Put the welcome messages back to the original wording");renderWelMsg();if(!$("#wmPrevBox").hidden)wmPreview()}});
+let PW_U=null,U_OPEN=null;const NEWPW=new Map();
+document.addEventListener("toggle",ev=>{const d=ev.target;if(d.classList&&d.classList.contains("ublock")){if(d.open){U_OPEN=d.dataset.uname;document.querySelectorAll("details.ublock[open]").forEach(x=>{if(x!==d)x.open=false})}else if(U_OPEN===d.dataset.uname)U_OPEN=null}},true);
+
+// ---------- controllers ----------
+let CT=null,CT_T=0;
+async function ctLoad(){if(!ON_BOX)return;try{CT=await (await fetch("api/controllers")).json()}catch(e){CT={err:"Can't reach the box."}}CT_T=Date.now();renderCtrl()}
+function ctAgo(t){if(!t)return "";const m=Math.round((Date.now()-t)/60000);return m<1?"just now":m<60?m+" min ago":Math.round(m/60)+" hr ago"}
+function renderCtrl(){const el=$("#ctRows");if(!el)return;if(isAdmin())pkLoad();
+  if(ON_BOX&&Date.now()-CT_T>30000){CT_T=Date.now();ctLoad()}
+  const st=(k,demo)=>{if(!ON_BOX)return {ok:true,txt:demo};const x=CT&&CT[k];if(!x)return {ok:null,txt:"Checking…"};if(!x.configured)return {ok:null,txt:"Not set up. Add its address in the add-on settings."};return x.ok?{ok:true,txt:"Connected"+(x.at?" · checked "+ctAgo(x.at):"")}:{ok:false,txt:x.why||"Not answering"}};
+  const allow=(k)=>!!(S.ctrl&&S.ctrl[k]);
+  const rows=[
+    {k:"prot",ic:"door",n:"Protector.Net (Hartmann)",s:{ok:true,txt:`${S.doors.length} doors`}},
+    {k:"mikva",ic:"drop",n:"Mikva magnet (X-600M)",s:st("mikva","Connected · relay 16"),allow:"mikvaWrites",what:"Allow saving settings and Release now or Hold open from here"},
+    {k:"parking",ic:"car",n:"Parking lot (CDVI Atrium)",s:st("parking","Connected · 2 entrances"),allow:"parkWrites",what:"Allow buzzing and opening the parking lot from here"},
+    {k:"logins",ic:"person",n:"Sign-in accounts (Home Assistant)",s:ON_BOX?(CT&&CT.logins?{ok:true,txt:"Ready"}:{ok:null,txt:"Checking…"}):{ok:true,txt:"Ready"}}];
+  el.innerHTML=rows.map(r=>`<div class="row ct-row"><span class="ic" style="--c:${r.s.ok?"var(--green)":r.s.ok===false?"var(--r)":"var(--gray)"}">${ico(r.ic)}</span><div class="rt"><b>${esc(r.n)}</b><span>${r.s.ok?`<span class="ct-ok">●</span> `:r.s.ok===false?`<span class="ct-bad">●</span> `:""}${esc(r.s.txt)}</span></div>${r.k!=="prot"?`<button class="btn sm" type="button" data-cttest="${r.k}">Test</button>`:""}</div>
+    ${r.allow?`<label class="row swrow ct-allow"><span class="rt"><b>Changes from Shul Manager</b><span>${esc(r.what)}</span></span><input type="checkbox" class="switch" data-ctallow="${r.allow}"${allow(r.allow)?" checked":""}></label>`:""}`).join("")
+    +(ON_BOX?"":"");
+  const pe=$("#ctPark");if(pe)pe.innerHTML=(PK.events||[]).slice(-15).reverse().map(e=>`<div class="row"><span class="t mk-t">${esc(fmt(nyMin(e.t)))}<br><span style="font-size:11.5px">${esc(dayLabel(e.t))}</span></span><div class="rt"><b style="font-weight:500">${esc(e.text||"Event")}</b><span>${esc([e.door,e.who].filter(Boolean).join(" · "))}</span></div></div>`).join("")||`<div class="row"><span class="hint">No parking lot events yet.</span></div>`}
+document.addEventListener("click",async ev=>{const b=ev.target.closest("[data-cttest]");if(!b)return;b.disabled=true;b.textContent="Testing…";
+  let j={ok:true};if(ON_BOX){try{j=await (await fetch("api/controllers/test",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({which:b.dataset.cttest})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}}
+  else await new Promise(r=>setTimeout(r,500));
+  b.disabled=false;b.textContent="Test";toast(j.ok?"Connected and answering":(j.error||"Not answering"));if(ON_BOX)ctLoad()});
+document.addEventListener("change",ev=>{const t=ev.target;if(!t.dataset||!t.dataset.ctallow)return;S.ctrl=S.ctrl||{};S.ctrl[t.dataset.ctallow]=t.checked;commit(`${t.checked?"Turned on":"Turned off"} changes from Shul Manager for the ${t.dataset.ctallow==="mikvaWrites"?"mikva magnet":"parking lot"}`)});
+
+// ---------- Mikvah controller (X-600M). It works out the calendar and sunset itself; we only read and save its settings ----------
+const MK_STD=[["wd","Weekday",0],["es","Erev Shabbos",1],["sb","Shabbos",0],["ey","Erev Yom Tov",1],["yt","Yom Tov day",0]];
+let MK={iv:30,pu:10,carry:true,late:240,man:0,manExp:0,ov:null,dirty:false,
+  p:{wd:{st:720,en:150},es:{off:20,en:240},sb:{st:630,en:150},ey:{off:50,en:240},yt:{st:630,en:240}},
+  custom:[{code:7,n:"חנוכה",st:720,en:150,nb:[960,1170]},{code:8,n:"ראש השנה",st:550,en:150,nb:[670,795]},{code:9,n:"ראש השנה שחל בשבת",st:560,en:240},{code:10,n:"Open until 11AM",st:660,en:150},{code:11,n:"ערב שבועות",off:50,en:150},{code:12,n:"ערב פסח שחל בשבת",st:540,en:240}],
+  hol:[["Tishrei",[["Erev Rosh Hashana",["erev_rh"],"ey"],["Rosh Hashana, day 1",["rh1"],{s:"c1",f:"c1",b:"c2"}],["Rosh Hashana, day 2",["rh2"],"c1"],["Tzom Gedalia",["tzom_gedalia"],"week"],["Erev Yom Kippur",["erev_yk"],"es"],["Yom Kippur",["yk"],"closed"],["Erev Sukkos",["erev_succos"],"ey"],["Sukkos, day 1",["succos1"],"yt"],["Sukkos, day 2",["succos2"],"yt"],["Chol Hamoed Sukkos",["succos3","succos4","succos5","succos6"],{s:"week",f:"ey",b:"week"}],["Hoshana Rabbah",["hoshana_rabba"],{s:"ey",f:"es",b:"week"}],["Shmini Atzeres",["shmini_atzeres"],"yt"],["Simchas Torah",["simchas_torah"],"c3"]]],
+    ["Kislev to Adar",[["Chanukah (Erev and days 1 to 7)",["erev_chanuka","chanuka1","chanuka2","chanuka3","chanuka4","chanuka5","chanuka6","chanuka7"],{s:"c0",f:"week",b:"week"}],["Chanukah, day 8",["zos_chanuka"],"week"],["Asara B'Teves",["asara_teves"],"week"],["Taanis Esther",["taanis_esther"],"week"],["Purim",["purim"],"week"],["Shushan Purim",["shushan_purim"],"week"]]],
+    ["Nissan to Sivan",[["Erev Pesach",["erev_pesach"],{s:"ey",f:"ey",b:"c5"}],["Pesach, day 1",["pesach1"],"c3"],["Pesach, day 2",["pesach2"],"c3"],["Chol Hamoed Pesach",["pesach3","pesach4","pesach5"],{s:"week",f:"ey",b:"week"}],["Erev Shvi'i shel Pesach",["pesach6"],{s:"ey",f:"ey",b:"yt"}],["Pesach, day 7",["shvii_pesach"],"yt"],["Pesach, day 8",["acharon_pesach"],"yt"],["Erev Shavuos",["erev_shavuos"],"c4"],["Shavuos, day 1",["shavuos1"],"yt"],["Shavuos, day 2",["shavuos2"],"yt"]]],
+    ["Tammuz and Av",[["17 Tammuz",["shiva_asar_tammuz"],"week"],["Erev Tisha B'Av",["erev_tisha_bav"],"week"],["Tisha B'Av",["tisha_bav"],"closed"]]]],
+  log:null};
+let MKT="now",MK_FOR=0,MK_SEL=null;
+// ---- the live controller: read its registers into MK, save changes back ----
+const MK_HREG=["hErh","hRh1","hRh2","hTzg","hEyk","hYk","hEsk","hSk1","hSk2","hChs","hHr","hSa","hSt","hChan","hCh8","hAbt","hTae","hPur","hShp","hEps","hPs1","hPs2","hChp","hE7p","hPs7","hPs8","hEsh","hSh1","hSh2","hSat","hEtb","hTb"];
+const MK_CODE={1:"wd",2:"es",3:"sb",4:"ey",5:"yt",6:"closed"};
+function mkKey(code){code=+code||0;if(!code)return "week";if(MK_CODE[code])return MK_CODE[code];if(code>=7&&code<=16){const i=MK.custom.findIndex(c=>c.code===code);return i>=0?"c"+i:"week"}return "week"}
+function mkCode(k){if(k==="week")return 0;const e=Object.entries(MK_CODE).find(([,v])=>v===k);if(e)return +e[0];if(/^c\d/.test(k)){const c=MK.custom[+k.slice(1)];return c?c.code:0}return 0}
+function mkDecode(v){v=Math.round(+v||0);if(v===0)return "week";if(v<1000000)return mkKey(v);const x=v-1000000;return {s:mkKey(Math.floor(x/10000)),f:mkKey(Math.floor(x/100)%100),b:mkKey(x%100)}}
+function mkEncode(r){if(typeof r==="string")return mkCode(r);return 1000000+mkCode(r.s)*10000+mkCode(r.f)*100+mkCode(r.b)}
+function mkFlat(){const out=[];MK.hol.forEach(([,rs])=>rs.forEach(r=>out.push(r)));return out}
+function mkFromBox(j){const R=j.regs||{},g=(k,d)=>R[k]!=null?R[k]:d;
+  MK.p={wd:{st:g("cgWdSt",720),en:g("cgWdEn",150)},es:{off:g("cgEsOff",30),en:g("cgEsEn",240)},sb:{st:g("cgSbSt",630),en:g("cgSbEn",150)},ey:{off:g("cgEyOff",30),en:g("cgEyEn",240)},yt:{st:g("cgYtSt",630),en:g("cgYtEn",150)}};
+  MK.iv=g("cgIv",30);MK.pu=g("cgPu",10);MK.carry=!!g("cgCarry",1);MK.late=g("cgLateEn",240);MK.man=g("manOv",0);MK.manExp=g("manExp",0);MK.ver=g("cgVer",0);
+  MK.custom=(j.presets||[]).filter(p=>p.used).map(p=>({code:p.code,n:p.name,...(p.mode===1?{off:p.start}:{st:p.start}),en:p.end,...(p.bStart||p.bEnd?{nb:[p.bStart,p.bEnd]}:{})}));
+  mkFlat().forEach((r,i)=>{if(R[MK_HREG[i]]!=null)r[2]=mkDecode(R[MK_HREG[i]])});
+  MK.log=(j.log||[]).map(x=>({line:x}));MK.sunset=j.sunset;MK.absT=j.absT;MK.devMin=j.devMin;MK.allow=!!j.allow;MK.live=true;MK.err="";MK.dirty=false;MK.base=JSON.stringify(mkRegs())}
+function mkRegs(){const o={cgWdSt:MK.p.wd.st,cgWdEn:MK.p.wd.en,cgEsOff:MK.p.es.off,cgEsEn:MK.p.es.en,cgSbSt:MK.p.sb.st,cgSbEn:MK.p.sb.en,cgEyOff:MK.p.ey.off,cgEyEn:MK.p.ey.en,cgYtSt:MK.p.yt.st,cgYtEn:MK.p.yt.en,cgIv:MK.iv,cgPu:MK.pu,cgCarry:MK.carry?1:0,cgLateEn:MK.late};
+  mkFlat().forEach((r,i)=>{o[MK_HREG[i]]=mkEncode(r[2])});return o}
+let MK_LOADING=false;
+async function mkLoad(){if(!ON_BOX||MK_LOADING)return;MK_LOADING=true;
+  try{const j=await (await fetch("api/mikva")).json();if(j.ok===false)throw new Error(j.error||"no answer");mkFromBox(j)}catch(e){MK.live=false;MK.err=e.message}
+  MK_LOADING=false;renderMk()}
+async function mkSave(){const now=mkRegs(),was=JSON.parse(MK.base||"{}"),diff={};Object.keys(now).forEach(k=>{if(now[k]!==was[k])diff[k]=now[k]});
+  if(!Object.keys(diff).length){MK.dirty=false;renderMk();return}
+  if(!ON_BOX){MK.dirty=false;ctrlNote("Saved the mikva magnet settings");toast("Saved to the mikva magnet");renderMk();return}
+  let j;try{j=await (await fetch("api/mikva/save",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({regs:diff,cgVer:MK.ver||0})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}
+  if(!j.ok){toast(j.error||"Not saved");return}
+  ctrlNote(`Saved the mikva magnet settings (${Object.keys(diff).length} change${Object.keys(diff).length>1?"s":""})`);toast("Saved to the mikva magnet");mkLoad()}
+async function mkManual(v,mins){const T=MK.absT!=null&&MK.devMin!=null?MK.absT*1440+MK.devMin:null;
+  const exp=v===0||!mins?0:mins===-1?(T!=null?(MK.absT+1)*1440:0):(T!=null?T+mins:0);
+  const text=v===0?"Mikva magnet: back to the schedule":v===1?`Mikva magnet: released now${mins?` for ${mins===-1?"the rest of today":durText(mins)}`:""}`:`Mikva magnet: held open${mins?` for ${mins===-1?"the rest of today":durText(mins)}`:""}`;
+  if(ON_BOX){let j;try{j=await (await fetch("api/mikva/manual",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({v,exp})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}
+    if(!j.ok){toast(j.error||"Didn't work");return false}}
+  MK.man=v;MK.manExp=exp;ctrlNote(text);toast(text.replace("Mikva magnet: ","Mikva magnet "));renderMk();return true}
+
+function mkName(k){if(k==="week")return "the normal week";if(k==="closed")return "Mikvah closed";const st=MK_STD.find(x=>x[0]===k);if(st)return st[1];if(/^c\d/.test(k)){const c=MK.custom[+k.slice(1)];return c?c.n:"(removed)"}return k}
+function mkProf(k){if(k==="closed")return {all:true};const st=MK.p[k];if(st)return st;if(/^c\d/.test(k))return MK.custom[+k.slice(1)]||MK.p.wd;return MK.p.wd}
+function mkWeek(w){return w===5?"es":w===6?"sb":"wd"}
+function mkResolve(s){const d=dayInfo(s),w=d.w;let row=null;MK.hol.forEach(([g,rs])=>rs.forEach(r=>{if(!row&&r[1].some(k=>d.keys.has(k)))row=r}));
+  if(!row)return {k:mkWeek(w),why:w===5?"Erev Shabbos":w===6?"Shabbos":"Weekday",d};
+  let k=typeof row[2]==="string"?row[2]:(w===5?row[2].f:w===6?row[2].b:row[2].s);if(k==="week")k=mkWeek(w);return {k,why:row[0],d}}
+function mkWin(k,d){const p=mkProf(k);if(p.all)return {all:true};const sun=MK.live&&MK.sunset!=null&&d.s===todayNY()?MK.sunset:Math.round(d.z.sunset);const st=p.off!=null?sun+p.off:p.st;return {st,en:p.en,nb:p.nb}}
+function mkWinText(w){return w.all?"releases all day":`${fmt(w.st)} to ${fmt(w.en)}${w.nb?`, none ${fmt(w.nb[0])} to ${fmt(w.nb[1])}`:""}`}
+// a bar from 6 AM to 6 AM the next morning
+function mkBar(w,now){const X=m=>{let v=m-360;if(v<0)v+=1440;return v/1440*100};
+  if(w.all)return `<div class="mk-bar"><span class="w all" style="left:0;width:100%"></span>${now!=null?`<span class="now" style="left:${X(now)}%"></span>`:""}</div>`;
+  let a=X(w.st),b=X(w.en);if(b<=a)b=100;let h=`<span class="w" style="left:${a}%;width:${b-a}%"></span>`;
+  if(w.nb){const na=X(w.nb[0]),nb=X(w.nb[1]);h+=`<span class="nb" style="left:${na}%;width:${nb-na}%"></span>`}
+  for(let m=w.st;;m+=MK.iv){const x=X(m%1440);if(x>b||x<a-.01||m-w.st>1440)break;if(w.nb){const mm=m%1440;if(mm>=w.nb[0]&&mm<w.nb[1])continue}h+=`<span class="tk" style="left:${x}%"></span>`}
+  return `<div class="mk-bar">${h}${now!=null?`<span class="now" style="left:${X(now)}%"></span>`:""}</div>`}
+function mkNowMin(){const p=new Intl.DateTimeFormat("en-US",{timeZone:TZ,hour:"numeric",minute:"numeric",hourCycle:"h23"}).formatToParts(new Date());return +p.find(x=>x.type==="hour").value*60+ +p.find(x=>x.type==="minute").value}
+function mkLog(){if(MK.log)return MK.log;const t=Date.now(),L=[];for(let i=1;i<=14;i++)L.push({t:t-i*30*60e3-(t%(30*60e3)),x:"Released (door closed)",k:"rel"});L.splice(3,0,{t:t-95*60e3,x:"Hold open for 1 hour, by Hershy",k:"man"});L.splice(6,0,{t:t-170*60e3,x:"Back to the schedule (hold ended)",k:"man"});L.push({t:t-26*3600e3,x:"Settings saved from Shul Manager, by Hershy",k:"save"});return MK.log=L}
+function renderMk(){const b=$("#mkBody");if(!b)return;const today=todayNY(),r=mkResolve(today),w=mkWin(r.k,r.d),now=mkNowMin();
+  const seg=`<div class="mk-seg" role="tablist">${[["now","Now"],["sched","Schedules"],["hol","Yom Tov"],["log","Log"]].map(([k,t])=>`<button type="button" class="${MKT===k?"on":""}" data-mkt="${k}">${t}</button>`).join("")}</div>`;
+  const save=MK.dirty?`<div class="mk-save"><span>Changes not on the controller yet</span><button class="btn sm" type="button" data-mkundo>Undo</button><button class="btn sm" type="button" data-mksave>Save to controller</button></div>`:"";
+  if(ON_BOX&&!MK.live&&!MK.err&&!MK_LOADING){mkLoad()}
+  const banner=ON_BOX?(MK_LOADING&&!MK.live?`<p class="gf top">Reading the controller…</p>`:MK.err?`<div class="mk-card mk-warn"><b>Can't reach the mikva magnet</b><p>${esc(MK.err)}</p><button class="btn sm" type="button" data-mkreload>Try again</button></div>`:!MK.allow?`<p class="gf top mk-ro">Showing the controller's settings. Changes from here are off. A super admin can turn them on under Settings, Controllers.</p>`:""):"";
+  let h="";
+  if(MKT==="now"){
+    let nx=null;if(!w.all){for(let m=w.st;m-w.st<1440;m+=MK.iv){const mm=m%1440;if(w.nb&&mm>=w.nb[0]&&mm<w.nb[1])continue;const rel=((mm-now)+1440)%1440;if(m>=now||(m>=1440&&mm>now-1)){nx=mm;break}}}
+    const manT=["Following the schedule","Released, the door stays closed","Held open, no releases"][MK.man];
+    h=`<div class="mk-card"><div class="mk-head" style="--c:var(--b)"><span class="oi">${ico("drop")}</span><div><b>Mikva magnet</b><span>${esc(manT)}</span></div><span class="mk-conn"><i></i><span>Controller connected</span></span></div>
+      <p class="mk-today"><b>Today: ${esc(mkName(r.k))}</b>${r.why!==mkName(r.k)?` <em>(${esc(r.why)})</em>`:""}<br>Releases every ${MK.iv} min, ${mkWinText(w)}.${nx!=null&&MK.man===0?` Next release <b>${fmt(nx)}</b>.`:""}</p>
+      ${mkBar(w,now)}<div class="mk-axis"><span>6 AM</span><span>Noon</span><span>6 PM</span><span>Midnight</span><span>6 AM</span></div></div>
+      <h3 class="gh mk-h">Right now</h3>
+      <div class="mk-man">${[[0,"Follow the schedule","Releases on time"],[1,"Release now","Close the door"],[2,"Hold open","Skip releases"]].map(([v,t,sm])=>`<button type="button" class="${MK.man===v?"on":""}" data-mkman="${v}"><b>${t}</b><small>${sm}</small></button>`).join("")}</div>
+      ${MK.man?`<div class="mk-for"><span class="hint">For</span>${[[60,"1 hour"],[120,"2 hours"],[240,"4 hours"],[-1,"Rest of today"],[0,"Until I change it"]].map(([m,t])=>`<button type="button" class="mk-chip${MK_FOR===m?" on":""}" data-mkfor="${m}">${t}</button>`).join("")}</div>`:""}
+      <h3 class="gh mk-h">Coming days</h3><div class="glist mk-days">${Array.from({length:8},(_,i)=>{const s=addDays(today,i),rr=mkResolve(s),ww=mkWin(rr.k,rr.d);
+        return `<div class="row"><div class="dn"><b>${i===0?"Today":i===1?"Tomorrow":WDN[rr.d.w]}</b><span>${esc(shortDate(s))}</span></div><div class="rt"><b>${esc(mkName(rr.k))}</b><span>${mkWinText(ww)}${rr.why!==mkName(rr.k)&&!/^(Weekday|Shabbos|Erev Shabbos)$/.test(rr.why)?` · ${esc(rr.why)}`:""}</span></div>${mkBar(ww)}</div>`}).join("")}</div>
+      <p class="gf">Need a different time for one day? Use <b>Yom Tov</b> or a custom schedule. Every change is saved in Activity.</p>`}
+  if(MKT==="sched"){
+    const card=(k,n,isSun,p,custom)=>{const w0=custom&&p.all?{all:true}:{st:isSun?Math.round(r.d.z.sunset)+p.off:p.st,en:p.en,nb:p.nb};
+      return `<div class="mk-card"><h3>${esc(n)}${custom?`<span class="pill">Custom</span>`:""}</h3><p class="cap">${isSun?`Starts ${p.off} min after sunset`:`Starts ${fmt(p.st)}`}, ends ${fmt(p.en)}${p.nb?`, no releases ${fmt(p.nb[0])} to ${fmt(p.nb[1])}`:""}</p>${mkBar(w0)}
+      ${custom&&ON_BOX?"":`<div class="mk-f">${isSun?`<label>Minutes after sunset<input type="number" min="0" max="180" value="${p.off}" data-mkf="${k}:off"></label>`:`<label>Starts<input type="time" value="${hhmm(p.st)}" data-mkf="${k}:st"></label>`}<label>Ends (next morning)<input type="time" value="${hhmm(p.en)}" data-mkf="${k}:en"></label></div>`}</div>`};
+    h=`<div class="mk-card"><h3 style="margin:0 0 4px">For every schedule</h3><div class="mk-f"><label>Release every<select data-mkf="g:iv">${[15,20,30,45,60].map(m=>`<option value="${m}"${MK.iv===m?" selected":""}>${m} minutes</option>`).join("")}</select></label><label>Release length<select data-mkf="g:pu">${[5,10,15,20,30].map(m=>`<option value="${m}"${MK.pu===m?" selected":""}>${m} seconds</option>`).join("")}</select></label><label>Late night end<input type="time" value="${hhmm(MK.late)}" data-mkf="g:late"></label></div>
+      <label class="row swrow" style="padding:12px 0 0"><span class="rt"><b>Stay open late before Shabbos and Yom Tov</b><span>When the night is Shabbos or Yom Tov, releases go on until the late night end</span></span><input type="checkbox" class="switch" data-mkf="g:carry"${MK.carry?" checked":""}></label></div>
+      <h3 class="gh mk-h">Standard</h3><div class="mk-sched">${MK_STD.map(([k,n,sun])=>card(k,n,!!sun,MK.p[k])).join("")}<div class="mk-card"><h3>Mikvah closed</h3><p class="cap">Releases all day, the door stays closed</p>${mkBar({all:true})}</div></div>
+      <h3 class="gh mk-h">Custom <span class="hint" style="font-weight:500">Use them in the Yom Tov table</span></h3>${MK.custom.length?`<div class="mk-sched">${MK.custom.map((c,i)=>card("c"+i,c.n,c.off!=null,c,true)).join("")}</div>`:`<p class="gf">No custom schedules were found on the controller.</p>`}
+      ${ON_BOX?`<p class="gf">Custom schedules are added and renamed on the controller's own page. Their times show here.</p>`:`<button class="btn" type="button" data-mkaddc style="margin-top:12px">Add a custom schedule</button>`}`}
+  if(MKT==="hol"){
+    const txt=v=>typeof v==="string"?(v==="week"?"Follows the normal week":"Always "+mkName(v)):`Sun to Thu: ${mkName(v.s)} · Fri: ${mkName(v.f)} · Shabbos: ${mkName(v.b)}`;
+    h=`<p class="gf top">The controller works out the Jewish calendar by itself. Here you choose what each day runs. Tap a day to change it.</p>`+
+      MK.hol.map(([g,rs],gi)=>`<h3 class="gh mk-h">${esc(g)}</h3><div class="glist mk-hol">${rs.map((x,ri)=>`<button type="button" class="row tap" data-mkhol="${gi}:${ri}"><div class="rt"><b>${esc(x[0])}</b><span>${esc(txt(x[2]))}</span></div><span class="chev"></span></button>`).join("")}</div>`).join("")}
+  if(MKT==="log"){
+    if(ON_BOX){const L=MK.log||[];h=L.length?`<div class="glist mk-log">${L.map(e=>`<div class="row"><div class="rt"><b style="font-weight:500">${esc(e.line)}</b></div></div>`).join("")}</div><p class="gf">Read from the controller's own log, newest first.</p>`:`<p class="gf top">The controller's log is empty or couldn't be read.</p>`}
+    else h=`<div class="glist mk-log">${mkLog().map(e=>`<div class="row"><span class="t">${esc(fmt(nyMin(e.t)))}<br><span style="font-size:11.5px">${esc(dayLabel(e.t))}</span></span><span class="ic" style="--c:${e.k==="rel"?"var(--b)":e.k==="man"?"var(--man,#7b55c7)":"var(--green)"}">${ico(e.k==="rel"?"lock":e.k==="man"?"open":"check")}</span><div class="rt"><b>${esc(e.x)}</b></div></div>`).join("")}</div><p class="gf">Read from the controller's own log. It also shows in Activity.</p>`}
+  b.innerHTML=seg+banner+h+save}
+function hhmm(m){m=((m%1440)+1440)%1440;return pad(Math.floor(m/60))+":"+pad(m%60)}
+function nyMin(t){const p=new Intl.DateTimeFormat("en-US",{timeZone:TZ,hour:"numeric",minute:"numeric",hourCycle:"h23"}).formatToParts(new Date(t));return +p.find(x=>x.type==="hour").value*60+ +p.find(x=>x.type==="minute").value}
+function mkSetF(key,val){const [k,f]=key.split(":");if(k==="g"){MK[f]=f==="carry"?val:f==="late"?toMin(val):+val}else{const p=/^c\d/.test(k)?MK.custom[+k.slice(1)]:MK.p[k];p[f]=f==="off"?+val:toMin(val)}MK.dirty=true;renderMk()}
+function toMin(v){const [h,m]=String(v).split(":").map(Number);return (h||0)*60+(m||0)}
+function mkProfOpts(sel,withWeek){return (withWeek?[["week","The normal week"]]:[]).concat(MK_STD.map(x=>[x[0],x[1]]),[["closed","Mikvah closed"]],MK.custom.map((c,i)=>["c"+i,c.n])).map(([k,n])=>`<option value="${k}"${sel===k?" selected":""}>${esc(n)}</option>`).join("")}
+function mkHolSheet(gi,ri){MK_SEL=[gi,ri];const x=MK.hol[gi][1][ri],v=x[2],mode=typeof v==="string"?(v==="week"?"week":"always"):"wd";$("#mkT").textContent=x[0];
+  $("#mkSheet").innerHTML=`<div class="nu-f"><label>On this day<select id="mkMode"><option value="week"${mode==="week"?" selected":""}>Follow the normal week</option><option value="always"${mode==="always"?" selected":""}>Always use one schedule</option><option value="wd"${mode==="wd"?" selected":""}>Depends on the weekday</option></select></label>
+    <div id="mkAlw"${mode==="always"?"":" hidden"}><label>Schedule<select id="mkA">${mkProfOpts(mode==="always"?v:"yt")}</select></label></div>
+    <div id="mkWd"${mode==="wd"?"":" hidden"} class="nu-f"><label>Sunday to Thursday<select id="mkS">${mkProfOpts(v.s||"week",1)}</select></label><label>Friday<select id="mkFr">${mkProfOpts(v.f||"week",1)}</select></label><label>Shabbos<select id="mkB">${mkProfOpts(v.b||"week",1)}</select></label></div></div>`;openModal("mMk")}
+document.addEventListener("change",ev=>{const t=ev.target;if(t.dataset&&t.dataset.mkf)mkSetF(t.dataset.mkf,t.type==="checkbox"?t.checked:t.value);if(t.id==="mkMode"){$("#mkAlw").hidden=t.value!=="always";$("#mkWd").hidden=t.value!=="wd"}});
+document.addEventListener("click",ev=>{const t=ev.target;
+  const tb=t.closest("[data-mkt]");if(tb){MKT=tb.dataset.mkt;renderMk();return}
+  const mm=t.closest("[data-mkman]");if(mm){const v=+mm.dataset.mkman;MK_FOR=v?60:0;mkManual(v,MK_FOR);return}
+  const mf=t.closest("[data-mkfor]");if(mf){MK_FOR=+mf.dataset.mkfor;mkManual(MK.man,MK_FOR===0?0:MK_FOR);return}
+  if(t.closest("[data-mkreload]")){MK.err="";mkLoad();renderMk();return}
+  const hl=t.closest("[data-mkhol]");if(hl){const [g,r]=hl.dataset.mkhol.split(":").map(Number);mkHolSheet(g,r);return}
+  if(t.closest("#mkGo")&&MK_SEL){const x=MK.hol[MK_SEL[0]][1][MK_SEL[1]],m=$("#mkMode").value;x[2]=m==="week"?"week":m==="always"?$("#mkA").value:{s:$("#mkS").value,f:$("#mkFr").value,b:$("#mkB").value};MK.dirty=true;closeModal("mMk");renderMk();return}
+  if(t.closest("[data-mksave]")){mkSave();return}
+  if(t.closest("[data-mkundo]")){if(ON_BOX){MK.live=false;mkLoad()}else MK.dirty=false;toast("Changes undone");renderMk();return}
+  if(t.closest("[data-mkaddc]")){MK.custom.push({n:"Custom "+(MK.custom.length+1),st:720,en:150});MK.dirty=true;renderMk();return}
+});
+
 // ---------- a new user's first visit: please change your starting password ----------
 function pwReminder(){
   if(!ON_BOX)return;const u=me();if(!u||!u.added||u.pwDone)return;
@@ -4087,7 +4526,10 @@ function pwReminder(){
 setTimeout(pwReminder,1500);
 // ---------- welcome email for a new user: what they can do, and how to get in ----------
 // Inline styles only, so it looks the same once pasted into Gmail or Outlook. Never a password.
-function welcomeEmail(u,login,from){
+const MSG_DEF={welSubject:"Welcome to Shul Manager",welTitle:"Welcome to Shul Manager, {name}",welIntro:"The system that runs the shul's doors by zmanim, Shabbos, Yom Tov and events.",welClose:"Questions? Reply to this email.",pwText:"Hi {name}, your Shul Manager password is {password} . Sign in at {link} with the username {username}, then pick your own password."};
+function MSGS(){return {...MSG_DEF,...(S.msgs||{})}}
+function fillMsg(t,u,login){return String(t||"").replace(/\{name\}/g,(u&&u.name||"").split(" ")[0]).replace(/\{fullname\}/g,u&&u.name||"").replace(/\{username\}/g,login||"").replace(/\{link\}/g,"building.khalbobov.org")}
+function welcomeEmail(u,login,from){const M=MSGS();
   const r=u.role==="Restricted",e=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const ed=r?S.doors.filter(d=>((u.perm||{})[d.id]||"hidden")==="edit"):S.doors, vw=r?S.doors.filter(d=>((u.perm||{})[d.id]||"hidden")==="view"):[];
   const cn=k=>!r||!!(u.can||{})[k], sc=r?(u.sched||"none"):"both";
@@ -4107,7 +4549,7 @@ function welcomeEmail(u,login,from){
     ["Open the site",`Go to <a href="https://building.khalbobov.org" style="color:#0071e3">building.khalbobov.org</a> on your phone, tablet or computer. Save it to your home screen for next time.`],
     ["Enter the email code",`Type <b>${e(u.email||"your email")}</b>. A code arrives in that inbox; type it in. Each device remembers you for 60 days.`],
     ["Sign in",`Username: <b>${e(login||"(we'll give it to you)")}</b>. Your starting password comes separately. Tap your name at the bottom left to change it.`],
-    ["Open Shul Doors","Tap <b>Shul Doors</b> in the menu on the left."]];
+    ["Open Shul Manager","Tap <b>Shul Manager</b> in the menu on the left."]];
   const tips=[
     ["Home","what every door is doing right now, today's zmanim, and quick open buttons."],
     ["Ask the assistant","the blue button at the bottom. Type or tap the microphone and talk, for example <i>\"Open the ladies entrance Tuesday 6 to 11 for the Cohen wedding\"</i>. It shows you the change first; nothing is saved until you press <b>Save</b>. It remembers your chats and how you like things."],
@@ -4116,8 +4558,8 @@ function welcomeEmail(u,login,from){
   const H=`<div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1d1d1f;background:#f5f5f7;padding:24px 12px">
 <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:18px;padding:28px 26px;line-height:1.5;font-size:15px">
 <div style="font-size:13px;color:#6e6e73;letter-spacing:.02em">CONGREGATION K'HAL SHAAREI ZION BOBOV</div>
-<h1 style="font-size:24px;margin:6px 0 4px">Welcome to Shul Doors, ${e(u.name)}</h1>
-<p style="margin:0 0 18px;color:#6e6e73">The system that runs the shul's doors by zmanim, Shabbos, Yom Tov and events.</p>
+<h1 style="font-size:24px;margin:6px 0 4px">${e(fillMsg(M.welTitle,u,login))}</h1>
+<p style="margin:0 0 18px;color:#6e6e73">${e(fillMsg(M.welIntro,u,login)).replace(/\n/g,"<br>")}</p>
 <h2 style="font-size:16px;margin:0 0 10px">Getting in</h2>
 ${steps.map(([t,d],i)=>`<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 10px;border-collapse:collapse"><tr><td style="vertical-align:top;padding-right:12px"><div style="width:26px;height:26px;border-radius:13px;background:#0071e3;color:#fff;font-weight:600;font-size:14px;line-height:26px;text-align:center">${i+1}</div></td><td style="vertical-align:top"><b>${t}</b><br><span style="color:#3a3a3c">${d}</span></td></tr></table>`).join("")}
 <h2 style="font-size:16px;margin:20px 0 8px">What you can do</h2>
@@ -4133,18 +4575,18 @@ ${steps.map(([t,d],i)=>`<table role="presentation" cellpadding="0" cellspacing="
 <h2 style="font-size:16px;margin:20px 0 8px">Finding your way</h2>
 ${tips.map(([t,d])=>`<p style="margin:0 0 8px"><b>${t}:</b> <span style="color:#3a3a3c">${d}</span></p>`).join("")}
 <div style="margin:20px 0 0;padding:14px 16px;background:#f5f5f7;border-radius:12px;font-size:14px;color:#3a3a3c"><b>Keep it safe.</b> Don't share your login. For extra protection, turn on two-step sign in: tap your name, then <b>Multi-factor authentication</b>.</div>
-<p style="margin:20px 0 0">Questions? Reply to this email.</p>
+<p style="margin:20px 0 0">${e(fillMsg(M.welClose,u,login)).replace(/\n/g,"<br>")}</p>
 <p style="margin:12px 0 0">${e(from||"")}<br><span style="color:#6e6e73">K'hal Shaarei Zion Bobov</span></p>
 </div></div>`;
-  const T=`Welcome to Shul Doors, ${u.name}
+  const T=`${fillMsg(M.welTitle,u,login)}
 
-The system that runs the shul's doors by zmanim, Shabbos, Yom Tov and events.
+${fillMsg(M.welIntro,u,login)}
 
 GETTING IN
 1. Open the site: building.khalbobov.org (save it to your home screen).
 2. Enter the email code: type ${u.email||"your email"}, then the code that arrives. Each device remembers you for 60 days.
 3. Sign in: username ${login||"(we'll give it to you)"}. Your starting password comes separately. Tap your name at the bottom left to change it.
-4. Tap Shul Doors in the menu on the left.
+4. Tap Shul Manager in the menu on the left.
 
 WHAT YOU CAN DO
 ${can.map(c=>"- "+c).join("\n")}
@@ -4160,10 +4602,10 @@ ${tips.map(([t,d])=>"- "+t+": "+d.replace(/<[^>]+>/g,"").replace(/\\"/g,'"')).jo
 
 Keep it safe: don't share your login. Turn on two-step sign in: tap your name, then Multi-factor authentication.
 
-Questions? Reply to this email.
+${fillMsg(M.welClose,u,login)}
 ${from||""}
 K'hal Shaarei Zion Bobov`;
-  return {html:H.replace(/\\"/g,'"'),text:T,subject:"Welcome to Shul Doors"};
+  return {html:H.replace(/\\"/g,'"'),text:T,subject:fillMsg(M.welSubject,u,login)};
 }
 let WEL=null;
 function welRender(){const u=S.users[WEL];if(!u)return;const m=welcomeEmail(u,$("#welUser").value.trim(),$("#welFrom").value.trim());
@@ -4502,7 +4944,7 @@ function drawReports(j,r){
   // everything above, in full (the screen shows only the top of each list), for the downloads
   const per=r.days===1?nyDate(r.a):`${nyDate(r.a)} to ${nyDate(r.b-1)}`;
   RP_X=[
-    {name:"Summary",rows:[["Shul Doors report",""],["Period",per],["Doors",RP.door?doorName(RP.door.startsWith("g:")?RP.door:RP.door):"All"],["Person filter",RP.who||"Everyone"],["Entries",ok.length],["People",people.size],["Denied",den.length],["After hours",late.length],["Door changes",M.length]]},
+    {name:"Summary",rows:[["Shul Manager report",""],["Period",per],["Doors",RP.door?doorName(RP.door.startsWith("g:")?RP.door:RP.door):"All"],["Person filter",RP.who||"Everyone"],["Entries",ok.length],["People",people.size],["Denied",den.length],["After hours",late.length],["Door changes",M.length]]},
     {name:"By door",rows:[["Door","Door number","Entries","People","Denied","After hours","Busiest hour","Last entry"],...allRows.map(x=>[doorName(x.d),x.d,x.n,x.p,x.den,x.late,x.bh<0?"":fmt(x.bh*60),x.last?whenX(x.last):""])]},
     {name:"People",rows:[["Person","Entries","Denied","Doors","Which doors","Last seen"],...Object.entries(pm).sort((a,b)=>b[1].n-a[1].n).map(([n,p])=>[n,p.n,p.den,p.doors.size,[...p.doors].map(doorName).join(", "),whenX(p.last)])]},
     {name:"Denied",rows:[["When","Door","Who"],...[...den].sort((a,b)=>b.t-a.t).map(e=>[whenX(e.t),doorName(e.door),e.who])]},
@@ -4633,7 +5075,7 @@ function pdfBlob(sheets,title){
 function exportSheets(kind,sheets,base){if(!sheets||!sheets.some(s=>s.rows.length>1)){toast("Nothing to download in this period.");return}
   if(kind==="pdf"){const m=base.match(/^(.*?)-?(\d{4}-\d\d-\d\d)?(?:_to_(\d{4}-\d\d-\d\d))?$/)||[];const nm=(m[1]||base).replace(/-/g," ").replace(/^./,c=>c.toUpperCase());
     const when=m[2]?(m[3]?`${shortDate(m[2])} to ${shortDate(m[3])}`:shortDate(m[2])):"";
-    dlBlob(pdfBlob(sheets.map(x=>x.rows.length>1501?{name:x.name,rows:[...x.rows.slice(0,1501),[`and ${x.rows.length-1501} more rows. Download Excel to get all of them.`]]}:x),`Shul Doors   ${nm}${when?"   "+when:""}`),base+".pdf");return}
+    dlBlob(pdfBlob(sheets.map(x=>x.rows.length>1501?{name:x.name,rows:[...x.rows.slice(0,1501),[`and ${x.rows.length-1501} more rows. Download Excel to get all of them.`]]}:x),`Shul Manager   ${nm}${when?"   "+when:""}`),base+".pdf");return}
   if(kind==="xlsx")dlBlob(xlsxBlob(sheets),base+".xlsx");else dlBlob(new Blob([csvText(sheets)],{type:"text/csv;charset=utf-8"}),base+".csv")}
 const dlCtl=id=>`<span class="dl2" id="${id}"><span>Download</span><button type="button" class="btn sm" data-dl="xlsx">Excel</button><button type="button" class="btn sm" data-dl="csv">CSV</button></span>`;
 const whenX=t=>new Date(t).toLocaleString("en-US",{timeZone:TZ,month:"short",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"});
@@ -4763,6 +5205,43 @@ function showWhatChanges(el,ch,go){
   $("#wcBack").onclick=()=>{el.innerHTML=""};
   $("#wcGo").onclick=()=>{el.innerHTML="";go()}}
 /* ---------- wiring ---------- */
+// One person's activity: sign-ins and every change they made, with filters and a download
+let UA={who:null,per:"30",from:"",to:"",kind:"all",q:"",visits:null};
+const UA_KINDS=[["all","Everything"],["in","Sign-ins"],["doors","Doors"],["rules","Rules"],["events","Events and special times"],["codes","Guest codes"],["other","Settings and other"]];
+function uaKind(t){return /^By hand|Buzzed|LOCKDOWN|lockdown|back to the schedule|by-hand/i.test(t)?"doors":/\brules?\b/i.test(t)?"rules":/event|Rav away|rabbi|situation|dates changed/i.test(t)?"events":/code|vendor/i.test(t)?"codes":"other"}
+function uaRange(){const t=todayNY();if(UA.per==="custom"){const f=UA.from||t,z=UA.to||f;return [nyToMs(f,0),nyToMs(addDays(z,1),0)]}
+  if(UA.per==="today")return [nyToMs(t,0),Infinity];if(UA.per==="y")return [nyToMs(addDays(t,-1),0),nyToMs(t,0)];if(UA.per==="year")return [nyToMs(t.slice(0,4)+"-01-01",0),Infinity];
+  return [nyToMs(addDays(t,-(+UA.per-1)),0),Infinity]}
+async function openUact(who){UA={...UA,who,visits:null,q:""};drawUact();openModal("mUact");
+  if(ON_BOX){try{const r=await fetch("api/visits?u="+encodeURIComponent(who));const j=await r.json();UA.visits=j.visits||[]}catch(e){UA.visits=[]}}
+  else{const now=Date.now();UA.visits=[...Array(9)].map((_,k)=>{const t=now-k*2.3*864e5-3600e3*(k%5);return {u:who,t,end:t+(8+k*7)*60e3,dev:["iPhone, Safari","Windows, Chrome","Home Assistant app on iPhone or iPad"][k%3],ip:["72.229.14."+(20+k),"192.168.10.41"][k%2]}})}   // prototype: made-up sign-ins
+  drawUact()}
+function uaItems(){const [a,b]=uaRange(),inR=t=>t>=a&&t<b,q=UA.q.trim().toLowerCase(),items=[];
+  (UA.visits||[]).forEach(v=>{if(inR(v.t))items.push({t:v.t,k:"in",text:v.no?"Tried to open the app but is not added in Shul Manager":"Signed in",sub:[v.end&&v.end-v.t>=60e3?`Stayed ${durText(Math.round((v.end-v.t)/60000))}`:"",v.dev||"",v.ip?`IP ${v.ip}`:""].filter(Boolean).join(" · "),bad:!!v.no})});
+  (S.log||[]).forEach(l=>{if(l.u===UA.who&&inR(l.t))items.push({t:l.t,k:uaKind(l.text),text:l.text,sub:""})});
+  return items.filter(x=>(UA.kind==="all"||x.k===UA.kind)&&(!q||(x.text+" "+x.sub).toLowerCase().includes(q))).sort((x,y)=>y.t-x.t)}
+function drawUact(){const who=UA.who,u=S.users.find(x=>x.name===who)||{name:who};$("#uaT").textContent=who;
+  const items=uaItems(),allV=(UA.visits||[]).filter(v=>!v.no),lastV=allV.length?allV.reduce((m,v)=>Math.max(m,v.end||v.t),0):0;
+  const n=k=>items.filter(x=>x.k===k).length,ch=items.filter(x=>x.k!=="in").length;
+  const per=[["today","Today"],["y","Yesterday"],["7","7 days"],["30","30 days"],["90","90 days"],["year","This year"],["custom","Pick dates"]];
+  const ic={in:"person",doors:"door",rules:"grid",events:"cal",codes:"key",other:"flag"};
+  const byDay=[];items.forEach(x=>{const d=nyDate(x.t);let g=byDay.find(y=>y.d===d);if(!g){g={d,xs:[]};byDay.push(g)}g.xs.push(x)});
+  $("#uaBody").innerHTML=`<div class="ua-head"><span class="avatar big">${esc(initials(who))}</span><div><b>${esc(who)}</b><span>${esc(u.role||"")}${u.email?" · "+esc(u.email):""}</span></div></div>
+    <div class="ua-sum"><div><b>${UA.visits===null?"…":lastV?esc(agoText(lastV)):"Never"}</b><span>Last here</span></div><div><b>${n("in")}</b><span>Sign-ins</span></div><div><b>${ch}</b><span>Changes</span></div><div><b>${n("doors")}</b><span>Door changes</span></div><div><b>${n("rules")}</b><span>Rule changes</span></div></div>
+    <div class="ua-per">${per.map(([k,l])=>`<button type="button" data-uaper="${k}" class="${UA.per===k?"on":""}">${l}</button>`).join("")}</div>
+    ${UA.per==="custom"?`<div class="ua-cust"><input type="date" id="uaFrom" value="${esc(UA.from||addDays(todayNY(),-6))}" aria-label="From"><span class="hint">to</span><input type="date" id="uaTo" value="${esc(UA.to||todayNY())}" aria-label="To"></div>`:""}
+    <div class="ua-bar"><select id="uaKind" aria-label="What to show">${UA_KINDS.map(([k,l])=>`<option value="${k}"${UA.kind===k?" selected":""}>${l}</option>`).join("")}</select><label class="search sm"><input type="search" id="uaQ" value="${esc(UA.q)}" placeholder="Search" aria-label="Search"></label><span id="uaDl">${dlCtl("uaDlC")}</span></div>
+    ${UA.visits===null?`<p class="none">Loading sign-ins…</p>`:items.length?byDay.map(g=>`<h3 class="gh ua-d">${esc(uaDay(g.d))}</h3><div class="glist">${g.xs.map(x=>`<div class="row ua-r${x.bad?" bad":""}"><span class="time">${esc(fmt(nyMinutes(x.t)))}</span><span class="ic" style="--c:${x.k==="in"?"var(--teal)":x.k==="doors"?"var(--o)":"var(--b)"}">${ico(ic[x.k])}</span><div class="rt"><b>${esc(x.text)}</b>${x.sub?`<span>${esc(x.sub)}</span>`:""}</div></div>`).join("")}</div>`).join(""):`<p class="none">Nothing in this period.</p>`}
+    ${ON_BOX?"":`<p class="gf">Prototype: the sign-ins here are made up. On the box they are real.</p>`}`;
+  $("#uaDlC").addEventListener("click",ev=>{const b=ev.target.closest("[data-dl]");if(!b)return;const K=Object.fromEntries(UA_KINDS);
+    exportSheets(b.dataset.dl,[{name:"Activity",rows:[["When","Type","What","Details"],...uaItems().map(x=>[whenX(x.t),K[x.k],x.text,x.sub])]}],`activity-${who.replace(/[^a-z0-9]+/gi,"-").toLowerCase()}-${UA.per==="custom"?(UA.from||"")+"_to_"+(UA.to||""):UA.per}`)})}
+function uaDay(d){const t=todayNY();return d===t?"Today":d===addDays(t,-1)?"Yesterday":`${WDN[dow(d)]}, ${shortDate(d)}`}
+function agoText(t){const m=Math.round((Date.now()-t)/60000);if(m<2)return "Now";if(m<60)return m+" min ago";const h=Math.round(m/60);if(h<24)return h+" hr ago";const d=Math.round(h/24);return d===1?"Yesterday":d+" days ago"}
+document.addEventListener("click",ev=>{const a=ev.target.closest("[data-uact]");if(a){openUact(a.dataset.uact);return}
+  const p=ev.target.closest("[data-uaper]");if(p){UA.per=p.dataset.uaper;drawUact();return}});
+document.addEventListener("change",ev=>{if(ev.target.id==="uaKind"){UA.kind=ev.target.value;drawUact()}if(ev.target.id==="uaFrom"){UA.from=ev.target.value;if(UA.to&&UA.to<UA.from)UA.to=UA.from;drawUact()}if(ev.target.id==="uaTo"){UA.to=ev.target.value;drawUact()}});
+document.addEventListener("input",ev=>{if(ev.target.id==="uaQ"){UA.q=ev.target.value;const pos=ev.target.selectionStart;drawUact();const q=$("#uaQ");q.focus();q.setSelectionRange(pos,pos)}});
+
 // Emergency lockdown: outside doors, or every door, until someone ends it
 function outsideDoors(){const g=S.groups.find(x=>/outdoor|outside|exterior|street/i.test(x.name));return g?expandDoors(["g:"+g.id]):[]}
 function lockdownNow(){const now=Date.now();return S.overrides.filter(o=>o.mode==="Lockdown"&&o.from<=now&&(!o.to||o.to>now))}
@@ -4788,28 +5267,70 @@ $("#homeLock").onclick=()=>showTab("lockdown");
 
 // Open a door: its own page, made for quick taps
 let OP_SEL=null;
+
+// ---------- parking lot (CDVI Atrium): its own two doors, shown with the others on Open a door ----------
+// a line in Activity for things done on another controller (nothing to undo here)
+function ctrlNote(text){log(text);save();renderAll()}
+let PK={doors:null,events:[],timers:[],allow:false,t:0,err:""};
+const PK_DEMO=[{id:"00A1B2C3:0",name:"Parking Entrance 1",state:"locked"},{id:"00A1B2C3:1",name:"Parking Entrance 2",state:"locked"}];
+async function pkLoad(force){if(!ON_BOX){if(!PK.doors){PK.doors=PK_DEMO.map(d=>({...d}));PK.allow=true;PK.events=[{t:Date.now()-40*60e3,text:"Access granted",who:"Aaron Krausz",door:"Parking Entrance 1"},{t:Date.now()-95*60e3,text:"Access granted",who:"Abish Geller",door:"Parking Entrance 2"}]}return}
+  if(!force&&Date.now()-PK.t<20000)return;PK.t=Date.now();
+  try{const j=await (await fetch("api/parking?days=7")).json();PK={...PK,doors:j.doors||[],events:j.events||[],timers:j.timers||[],allow:!!j.allow,err:j.ok?"":(j.why||"")};}catch(e){PK.err="Can't reach the box."}
+  if($("#tab-open")&&!$("#tab-open").hidden)renderOpen();renderCtrl()}
+const pkOpen=d=>/unlock|open/i.test(d.state||"")||PK.timers.some(t=>t.id===d.id&&t.to>Date.now());
+function pkTimer(id){const t=PK.timers.find(x=>x.id===id&&x.to>Date.now());return t?t.to:0}
+function pkRow(d){const op=pkOpen(d),c=op?modeColor("Unlock"):modeColor("Lock"),to=pkTimer(d.id);
+  return `<div class="op-r"><button type="button" class="op-t${op?" is-open":""}" data-pk="${esc(d.id)}" style="--c:${c}"><i class="oi">${ico(op?"open":"lock")}</i><span class="ot"><b>${esc(d.name)}</b><span class="os">${op?`<em>Open</em>${to?`<i class="nx" style="font-style:normal"> · locks ${esc(whenText(to))}</i>`:""}`:"Locked"}</span></span></button></div>`}
+function pkSection(){if(!isAdmin())return "";pkLoad();const ds=PK.doors||[];
+  if(PK.err&&!ds.length)return `<section class="op-ac"><h3>Parking lot</h3><div class="op-r"><span class="hint" style="padding:10px 16px;display:block">${esc(PK.err)}</span></div></section>`;
+  if(!ds.length)return "";
+  return `<section class="op-ac"><h3>Parking lot<span>${ds.length}</span></h3>${ds.map(pkRow).join("")}</section>`}
+let PK_SEL=null;
+function pkSheet(id){const d=(PK.doors||[]).find(x=>x.id===id);if(!d)return;PK_SEL=id;const op=pkOpen(d);$("#opT").textContent=d.name;
+  $("#opSheet").innerHTML=`<div class="op-now" style="--c:${modeColor(op?"Unlock":"Lock")}"><i class="dot"></i><b>${op?"Open":"Locked"} now</b><span>Parking lot controller</span></div>
+    ${!PK.allow?`<p class="gf mk-ro">Opening the parking lot from here is off. A super admin can turn it on under Settings, Controllers.</p>`:""}
+    <button type="button" class="op-buzz" data-pka="buzz">${ico("open")}<span><b>Buzz open</b><small>Unlocks for a few seconds</small></span></button>
+    <h3 class="op-sh">Keep it open for</h3><div class="op-mins">${[5,10,20,30,60].map(m=>`<button type="button" data-pka="${m}">${m===60?"1 hour":m+" min"}</button>`).join("")}<button type="button" data-pka="0">Until I lock it</button></div>
+    ${op?`<button type="button" class="op-back" data-pka="reset">Lock it now</button>`:""}
+    <div class="op-foot"><span class="gf" style="margin:0">Every buzz and open is saved in Activity.</span></div>`;openModal("mOpen")}
+async function pkAct(k){const d=(PK.doors||[]).find(x=>x.id===PK_SEL);if(!d)return;const cmd=k==="buzz"?"buzz":k==="reset"?"reset":"open",mins=cmd==="open"?+k:0;
+  if(ON_BOX){let j;try{j=await (await fetch("api/parking/door",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:d.id,name:d.name,cmd,mins})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}
+    if(!j.ok){toast(j.error||"Didn't work");return}}
+  else{d.state=cmd==="reset"||cmd==="buzz"?"locked":"unlocked";PK.timers=PK.timers.filter(t=>t.id!==d.id);if(mins)PK.timers.push({id:d.id,to:Date.now()+mins*60e3})}
+  const text=`Parking lot ${d.name}: ${cmd==="buzz"?"buzzed open":cmd==="reset"?"locked":mins?`open for ${durText(mins)}`:"open until locked"}`;
+  ctrlNote(text);toast(text.replace("Parking lot ",""));closeModal("mOpen");pkLoad(true);renderOpen()}
+document.addEventListener("click",ev=>{const t=ev.target;const p=t.closest("[data-pk]");if(p){pkSheet(p.dataset.pk);return}const a=t.closest("[data-pka]");if(a){pkAct(a.dataset.pka)}});
 function opDoors(){const mayBuzz=isAdmin();return S.doors.filter(d=>mayBuzz||canChangeDoor(d.id))}
 function fixOpenNav(){const n=$("#openNav");if(n)n.hidden=!opDoors().length}
-function opTile(id,big){const f=doorFacts(id),pn=buzzPins().includes(id);
-  return `<div class="op-tw${big?" big":""}"><button type="button" class="op-t" data-op="${esc(id)}" style="--c:${modeColor(f.st.mode)}"><b>${esc(doorName(id))}</b><span><i class="dot"></i>${esc(f.label)}${f.hand?" · by hand":""}</span></button><button type="button" class="op-pin${pn?" on":""}" data-oppin="${esc(id)}" aria-pressed="${pn}" aria-label="${pn?"Unpin":"Pin"} ${esc(doorName(id))}" title="${pn?"Unpin":"Pin to the top"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z"/><path d="M12 13v8"/></svg></button></div>`}
+let OP_F="all";
+function opArea(id){let best=null;S.groups.forEach(g=>{if(g.doors.includes(id)&&(!best||g.doors.length<best.doors.length))best=g});return best?best.name:"Other doors"}
+function opTile(id,big){const f=doorFacts(id),pn=buzzPins().includes(id),c=modeColor(f.st.mode),op=f.st.mode==="Unlock";
+  const sub=op?`<em>Open</em>${f.st.next?`<i class="nx" style="font-style:normal"> · ${esc(tileNext(f).replace(/^Locks /,"locks "))}</i>`:""}`:f.st.mode==="Lockdown"?`<em>Lockdown</em>`:"Locked";
+  return `<div class="op-tw"><button type="button" class="op-t${op?" is-open":""}" data-op="${esc(id)}" style="--c:${c}"><i class="oi">${ico(modeIco(f.st.mode))}</i><span class="ot"><b>${esc(doorName(id))}</b><span class="os">${sub}</span>${f.hand?`<span class="hb">Changed by hand</span>`:""}</span></button><button type="button" class="op-pin${pn?" on":""}" data-oppin="${esc(id)}" aria-pressed="${pn}" aria-label="${pn?"Unpin":"Pin"} ${esc(doorName(id))}" title="${pn?"Unpin":"Pin to the top"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z"/><path d="M12 13v8"/></svg></button></div>`}
+function opRow(id){return opTile(id,false).replace('class="op-tw"','class="op-r"')}
 function renderOpen(){const body=$("#opBody");if(!body)return;fixOpenNav();
-  const ds=opDoors(),has=id=>ds.some(d=>d.id===id),q=($("#opQ").value||"").trim().toLowerCase();
-  if(!ds.length){body.innerHTML=emptyState("door","No doors to open","You don't have permission to open doors.","");return}
-  if(q){const f=ds.filter(d=>(d.name+" "+d.id).toLowerCase().includes(q));body.innerHTML=f.length?`<h2 class="gh op-h">Results</h2><div class="op-grid">${f.map(d=>opTile(d.id,true)).join("")}</div>`:`<p class="none">No door matches \u201c${esc(q)}\u201d.</p>`;return}
-  const pins=buzzPins().filter(has),rec=buzzRecent().filter(id=>has(id)&&!pins.includes(id)).slice(0,6);
-  const main=ds.filter(d=>/main ent/i.test(d.name)&&!pins.includes(d.id)&&!rec.includes(d.id)).map(d=>d.id);
-  const rest=ds.filter(d=>!pins.includes(d.id)).sort((a,b)=>doorName(a.id).localeCompare(doorName(b.id)));
-  body.innerHTML=(pins.length?`<h2 class="gh op-h">Pinned</h2><div class="op-grid">${pins.map(id=>opTile(id,true)).join("")}</div>`:`<p class="op-tip">Tip: tap the pin on any door to keep it at the top.</p>`)
-    +(rec.length?`<h2 class="gh op-h">Recent</h2><div class="op-grid">${rec.map(id=>opTile(id,true)).join("")}</div>`:"")
-    +(!pins.length&&!rec.length&&main.length?`<h2 class="gh op-h">Main doors</h2><div class="op-grid">${main.map(id=>opTile(id,true)).join("")}</div>`:"")
-    +`<h2 class="gh op-h">All doors</h2><div class="op-grid small">${rest.map(d=>opTile(d.id,false)).join("")}</div>`}
+  const ds0=opDoors(),q=($("#opQ").value||"").trim().toLowerCase();
+  if(!ds0.length){body.innerHTML=emptyState("door","No doors to open","You don't have permission to open doors.","");$("#opF").innerHTML="";return}
+  const isOpen=d=>stateNow(d.id).mode==="Unlock",nOpen=ds0.filter(isOpen).length;
+  $("#opF").innerHTML=[["all","All",ds0.length],["open","Open now",nOpen],["locked","Locked",ds0.length-nOpen]].map(([k,t,n])=>`<button type="button" class="fchip f-${k}${OP_F===k?" on":""}" data-opf="${k}">${t} <b>${n}</b></button>`).join("");
+  const ds=ds0.filter(d=>OP_F==="all"||(OP_F==="open")===isOpen(d)),has=id=>ds.some(d=>d.id===id);
+  const head=(t,n)=>`<h2 class="gh op-h">${t}${n!=null?`<span>${n}</span>`:""}</h2>`;
+  if(q){const f=ds.filter(d=>(d.name+" "+d.id).toLowerCase().includes(q));body.innerHTML=f.length?head("Results",f.length)+`<div class="op-grid op-big">${f.map(d=>opTile(d.id,true)).join("")}</div>`:`<p class="none">No door matches “${esc(q)}”.</p>`;return}
+  if(!ds.length){body.innerHTML=`<p class="none">${OP_F==="open"?"No doors are open right now.":"Every door is open right now."}</p>`;return}
+  const pins=OP_F==="all"?buzzPins().filter(has):[],rec=OP_F==="all"?buzzRecent().filter(id=>has(id)&&!pins.includes(id)).slice(0,4):[];
+  const top=new Set([...pins,...rec]);
+  const byA=new Map();ds.filter(d=>!top.has(d.id)).sort((a,b)=>doorName(a.id).localeCompare(doorName(b.id))).forEach(d=>{const a=opArea(d.id);if(!byA.has(a))byA.set(a,[]);byA.get(a).push(d.id)});
+  const areas=[...byA.entries()].sort((a,b)=>a[0]==="Other doors"?1:b[0]==="Other doors"?-1:a[0].localeCompare(b[0]));
+  body.innerHTML=(pins.length?head("Pinned")+`<div class="op-grid small">${pins.map(id=>opTile(id,true)).join("")}</div>`:(OP_F==="all"?`<p class="op-tip">Tip: tap the pin next to any door to keep it at the top.</p>`:""))
+    +(rec.length?head("Recent")+`<div class="op-grid small">${rec.map(id=>opTile(id,true)).join("")}</div>`:"")
+    +`<div class="op-areas">${OP_F!=="open"||(PK.doors||[]).some(pkOpen)?pkSection():""}${areas.map(([a,ids])=>`<section class="op-ac"><h3>${esc(a)}<span>${ids.length}</span></h3>${ids.map(opRow).join("")}</section>`).join("")}</div>`}
 function opSheet(id){OP_SEL=id;const f=doorFacts(id),mayBuzz=isAdmin(),mayOpen=canChangeDoor(id);
   $("#opT").textContent=doorName(id);
   $("#opSheet").innerHTML=`<div class="op-now" style="--c:${modeColor(f.st.mode)}"><i class="dot"></i><b>${esc(f.label)} now</b><span>${esc(f.nx)}</span></div>
     ${mayBuzz?`<button type="button" class="op-buzz" data-opa="buzz">${ico("open")}<span><b>Buzz open</b><small>Unlocks for a few seconds</small></span></button>`:""}
     ${mayOpen?`<h3 class="op-sh">Keep it open for</h3><div class="op-mins">${[5,10,20,30,60].map(m=>`<button type="button" data-opa="${m}">${m===60?"1 hour":m+" min"}</button>`).join("")}<button type="button" class="op-cbtn" data-opc>Other</button></div>
     <div class="op-custom" id="opCustom" hidden><label class="op-n"><input type="number" id="opH" min="0" max="168" value="1" inputmode="numeric" aria-label="Hours"><span>hours</span></label><label class="op-n"><input type="number" id="opM" min="0" max="59" value="30" step="5" inputmode="numeric" aria-label="Minutes"><span>min</span></label><button type="button" class="btn pri" id="opCGo">Open</button></div>${f.hand?`<button type="button" class="op-back" data-opa="back">Back to schedule</button>`:""}`:""}
-    <p class="gf">Every buzz and open is saved in Activity.</p>`;openModal("mOpen")}
+    <div class="op-foot"><span class="gf" style="margin:0">Every buzz and open is saved in Activity.</span><button type="button" class="lnk" data-oppin="${esc(id)}" data-opsheet="1">${buzzPins().includes(id)?"Unpin":"Pin to top"}</button></div>`;openModal("mOpen")}
 function durText(m){const h=Math.floor(m/60),r=m%60;return h?`${h} hour${h>1?"s":""}${r?` ${r} min`:""}`:`${m} min`}
 async function opAct(k,btn){const id=OP_SEL;if(!id)return;const name=doorName(id);
   if(k==="buzz"){btn.disabled=true;const t=btn.innerHTML;btn.innerHTML=`<span><b>Buzzing…</b></span>`;const j=await buzzDoor(id);btn.disabled=false;
@@ -4818,7 +5339,8 @@ async function opAct(k,btn){const id=OP_SEL;if(!id)return;const name=doorName(id
   const mins=+k,now=Date.now(),o={id:"o"+now,doors:[id],mode:"Unlock",from:now,to:now+mins*60e3,by:S.me,why:"Quick open"};
   endOverridesFor(id);S.overrides.push(o);buzzRemember(id);commit(`By hand: Open on ${name} until ${whenText(o.to)} (quick open, ${mins} min)`);toast(`${name} is open for ${durText(mins)}`);closeModal("mOpen");renderOpen()}
 document.addEventListener("click",ev=>{const t=ev.target;
-  const pn=t.closest("[data-oppin]");if(pn){const id=pn.dataset.oppin,u=S.users.find(x=>x.name===S.me);if(u){const p=buzzPins();u.buzzPins=p.includes(id)?p.filter(x=>x!==id):[...p,id];save()}renderOpen();return}
+  const pn=t.closest("[data-oppin]");if(pn){const id=pn.dataset.oppin,u=S.users.find(x=>x.name===S.me);if(u){const p=buzzPins();u.buzzPins=p.includes(id)?p.filter(x=>x!==id):[...p,id];save()}renderOpen();if(pn.dataset.opsheet){pn.textContent=buzzPins().includes(id)?"Unpin":"Pin to top";toast(buzzPins().includes(id)?"Pinned to the top":"Unpinned")}return}
+  const of=t.closest("[data-opf]");if(of){OP_F=of.dataset.opf;renderOpen();return}
   const d=t.closest("[data-op]");if(d){opSheet(d.dataset.op);return}
   const a=t.closest("[data-opa]");if(a&&!a.disabled){opAct(a.dataset.opa,a);return}
   if(t.closest("[data-opc]")){const c=$("#opCustom");c.hidden=!c.hidden;if(!c.hidden){$("#opH").focus();$("#opH").select()}return}
@@ -4873,7 +5395,7 @@ function showHelp(){const h=HELP[CUR_TAB]||HELP.board;$("#mHpT").textContent=h[0
 $("#pageHelp").onclick=showHelp;
 document.addEventListener("click",ev=>{if(ev.target.id==="hpAsk"){ev.preventDefault();closeModal("mHelp");const a=$("#askOpen");if(a&&!a.hidden)a.click()}if(ev.target.id==="hpTour"){ev.preventDefault();closeModal("mHelp");startTour()}});
 // a short first-time tour, once per person
-const TOUR=[["Quick tour","Welcome to Shul Doors. It runs the shul's real doors. Here are the basics.","board"],
+const TOUR=[["Quick tour","Welcome to Shul Manager. It runs the shul's real doors. Here are the basics.","board"],
  ["Home","Tells you if anything is wrong, which doors are open, and what changes next.","board"],
  ["Doors","Tap any door to open or lock it by hand. It goes back to its schedule at the time you pick.","doors"],
  ["Rules and events","The standing instructions. Use Quick schedule for one date. You always see what changes before it is saved, and you can undo for 10 minutes.","rules"],
@@ -4980,7 +5502,7 @@ document.addEventListener("click",ev=>{const b=ev.target.closest("#pageTabs [dat
 function actFirst(){return ["activity","live","reports"].find(tabOk)}
 function fixActNav(){const n=$("#actNav");if(n)n.hidden=!actFirst()}
 
-const TITLES={open:"Open a door",lockdown:"Lockdown",people:"People",live:"Activity",board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules and events",events:"Rules and events",special:"Rules and events",codes:"Guest codes",msgs:"Messages",reports:"Activity",activity:"Activity",setup:"Settings"};
+const TITLES={mikvah:"Mikva Magnet",open:"Open a door",lockdown:"Lockdown",people:"People",live:"Activity",board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules and events",events:"Rules and events",special:"Rules and events",codes:"Guest codes",msgs:"Messages",reports:"Activity",activity:"Activity",setup:"Settings"};
 document.querySelectorAll(".navbtn[data-tab]").forEach(b=>b.onclick=()=>showTab(b.dataset.tab==="activity"?actFirst()||"board":b.dataset.tab));
 function setDrawer(open){document.body.classList.toggle("drawer",open);$("#scrim").hidden=!open;$("#menuBtn").setAttribute("aria-expanded",open)}
 document.querySelectorAll(".viewseg button").forEach(b=>b.onclick=()=>{SIMPLE=b.dataset.view==="simple";try{localStorage.setItem("shulDoorSimple",SIMPLE?"1":"0")}catch(e){}setPref("simple",SIMPLE);renderView();fixActNav();if(!tabOk(CUR_TAB))showTab(actFirst()||"board");else drawPageTabs(CUR_TAB);if(CUR_TAB==="setup")renderSetupIndex()});
@@ -4990,7 +5512,7 @@ $("#moreBtn").onclick=()=>setDrawer(true);
 $("#scrim").onclick=()=>setDrawer(false);
 document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab(b.dataset.go));
 addEventListener("keydown",ev=>{if(ev.key==="Escape")setDrawer(false)});
-const SUBS={lockdown:"For an emergency. No one gets in, not even with a card or PIN, until you end it",open:"Tap a door, then buzz it or open it for a few minutes",people:"Everyone with a card or PIN in Protector.Net",live:"Who is coming in, at every door, as it happens",board:"",doors:"Live status of every door. Tap one to change it.",preview:"What every door does, hour by hour",sheet:"One week on one page, ready to print or email",rules:"The standing instructions the doors follow",events:"Weddings, sheva brachos and the shul's own dates",codes:"PINs for visitors that expire on their own",msgs:"Ask a teammate to make a change",reports:"How the doors are used",activity:"What changed, and what the doors were doing at any moment",setup:""};
+const SUBS={mikvah:"The mikva door magnet. It runs on its own, even if this box is off",lockdown:"For an emergency. No one gets in, not even with a card or PIN, until you end it",open:"Tap a door, then buzz it or open it for a few minutes",people:"Everyone with a card or PIN in Protector.Net",live:"Who is coming in, at every door, as it happens",board:"",doors:"Live status of every door. Tap one to change it.",preview:"What every door does, hour by hour",sheet:"One week on one page, ready to print or email",rules:"The standing instructions the doors follow",events:"Weddings, sheva brachos and the shul's own dates",codes:"PINs for visitors that expire on their own",msgs:"Ask a teammate to make a change",reports:"How the doors are used",activity:"What changed, and what the doors were doing at any moment",setup:""};
 function showTab(t){CUR_TAB=t;useCount(t);if(t!=="doors"&&typeof SELMODE!=="undefined"&&SELMODE){SELMODE=false;DSEL.clear();document.body.classList.remove("selmode")}document.querySelectorAll(".navbtn[data-tab]").forEach(x=>x.classList.toggle("on",x.dataset.tab===t||(x.dataset.also||"").split(" ").includes(t)));
   drawPageTabs(t);
   const inBar=[...document.querySelectorAll(".bnav [data-tab]")].some(x=>x.dataset.tab===t||(x.dataset.also||"").split(" ").includes(t));
@@ -4998,7 +5520,7 @@ function showTab(t){CUR_TAB=t;useCount(t);if(t!=="doors"&&typeof SELMODE!=="unde
   $("#pageTitle").textContent=TITLES[t]||"";$("#pageSub").textContent=SUBS[t]||"";$("#pageSub").hidden=!SUBS[t];
   document.querySelectorAll("#pageAct [data-for]").forEach(b=>b.hidden=b.dataset.for!==t||(b.dataset.tcv&&b.dataset.tcv!==TCV)||(b.id==="gdNew"&&(sched()==="none"||!visDoors().some(d=>perm(d.id)==="edit"))));
   setDrawer(false);hideTip();
-  ["board","open","lockdown","doors","live","people","preview","rules","events","special","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);liveRun(t==="live");if(t==="open")renderOpen();if(t==="lockdown")renderLockBits();if(t==="doors")renderBoard();if(t==="codes"&&ON_BOX)renderCodes();if(t==="people")ppFetch(false);
+  ["board","open","mikvah","lockdown","doors","live","people","preview","rules","events","special","codes","sheet","reports","msgs","activity","setup"].forEach(k=>$("#tab-"+k).hidden=k!==t);liveRun(t==="live");if(t==="open")renderOpen();if(t==="mikvah")renderMk();if(t==="lockdown")renderLockBits();if(t==="doors")renderBoard();if(t==="codes"&&ON_BOX)renderCodes();if(t==="people")ppFetch(false);
   if(t==="codes")setTCV(TCV);if(t==="reports")renderReports();if(t==="activity")renderLog();if(t==="setup"){$("#split").classList.remove("detail");renderSetupIndex()}
   scrollTo({top:0})}
 let SP=null;
@@ -5007,13 +5529,13 @@ function renderSetupIndex(){
   const panels=[...document.querySelectorAll("#tab-setup .panel")], ok=panels.filter(spAvailable);
   if(!ok.some(p=>p.dataset.sp===SP))SP=(["doors","users","view"].map(k=>ok.find(p=>p.dataset.sp===k)).find(Boolean)||ok[0]||{dataset:{}}).dataset.sp;
   panels.forEach(p=>p.classList.toggle("sp-off",p.dataset.sp!==SP));
-  const GRP=[["The doors",["doors","groups","magnet","zmanim","holnames"]],["People and alerts",["users","people","alerts"]],["You",["view","teach"]],["System",["backup","reset"]]];
+  const GRP=[["The doors",["doors","groups","magnet","zmanim","holnames"]],["People and alerts",["users","welmsg","people","alerts"]],["You",["view","teach"]],["System",["ctrl","backup","reset"]]];
   const row=p=>`<button type="button" class="row tap${p.dataset.sp===SP?" on":""}" data-sp="${p.dataset.sp}"><span class="ic" style="--c:${p.dataset.c}">${ico(p.dataset.ic)}</span><div class="rt"><b>${esc(p.querySelector("h2").textContent)}</b></div>${p.dataset.sp==="teach"&&isAdmin()&&S.notes.some(n=>n.status==="pending")?`<span class="pill blue">${S.notes.filter(n=>n.status==="pending").length} waiting</span>`:""}<span class="chev"></span></button>`;
   const peopleRow=isAdmin()?`<button type="button" class="row tap" data-goto="people"><span class="ic" style="--c:var(--green)">${ico("people")}</span><div class="rt"><b>People</b><small class="hint" style="display:block">Cards and PINs in Protector.Net</small></div><span class="chev"></span></button>`:"";
   const by=Object.fromEntries(ok.map(p=>[p.dataset.sp,p])),used=new Set();
   let html=GRP.map(([g,ks])=>{const rows=ks.map(k=>{if(k==="people")return peopleRow;const p=by[k];if(!p)return "";used.add(k);return row(p)}).join("");return rows?`<h3 class="gh si-h">${g}</h3><div class="glist">${rows}</div>`:""}).join("");
   const rest=ok.filter(p=>!used.has(p.dataset.sp));if(rest.length)html+=`<div class="glist">${rest.map(row).join("")}</div>`;
-  $("#setupIdx").innerHTML=html+(window.__SD_ADDON?`<p class="gf" style="text-align:center;margin-top:10px">Shul Doors version ${esc(window.__SD_ADDON)}</p>`:"");
+  $("#setupIdx").innerHTML=html+(window.__SD_ADDON?`<p class="gf" style="text-align:center;margin-top:10px">Shul Manager version ${esc(window.__SD_ADDON)}</p>`:"");
 }
 $("#setupIdx").addEventListener("click",ev=>{if(ev.target.closest("[data-goto]")){showTab(ev.target.closest("[data-goto]").dataset.goto);return}const b=ev.target.closest("[data-sp]");if(!b)return;SP=b.dataset.sp;renderSetupIndex();$("#split").classList.add("detail");if(innerWidth<700)scrollTo({top:0})});
 $("#setBack").onclick=()=>{$("#split").classList.remove("detail");scrollTo({top:0})};
@@ -5634,7 +6156,7 @@ async function boxSampler(){
         gotAny=true;box.value=((base?base+" ":"")+finalT+interim).replace(/\s+/g," ").trimStart();askGrow()};
       r.onerror=e=>{
         if(e.error==="not-allowed"||e.error==="service-not-allowed"||e.error==="network"||e.error==="audio-capture"){
-          if(e.error==="not-allowed"&&window.top!==window&&!BOX_STT){const d=help(`The microphone is blocked inside Home Assistant's frame. <button class="btn sm" type="button">Open Shul Doors in its own window</button> and press Speak there.`);d.querySelector("button").onclick=()=>window.open(location.href,"_blank")}
+          if(e.error==="not-allowed"&&window.top!==window&&!BOX_STT){const d=help(`The microphone is blocked inside Home Assistant's frame. <button class="btn sm" type="button">Open Shul Manager in its own window</button> and press Speak there.`);d.querySelector("button").onclick=()=>window.open(location.href,"_blank")}
           else if(BOX_STT){SR_BAD=true;live=null;setMic(false);startRec();return}
           else help(e.error==="network"?"Speech typing needs the internet. Check the connection and try again.":"The microphone was not allowed. Allow it in the browser's site settings and try again.")}
         else if(e.error==="no-speech")add("sys","I didn't hear anything. Click the microphone and talk.")};
@@ -5647,7 +6169,7 @@ async function boxSampler(){
       let stream;
       try{stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true}})}
       catch(e){
-        if(window.top!==window){const d=help(`The microphone is blocked inside Home Assistant's frame. <button class="btn sm" type="button">Open Shul Doors in its own window</button> and press Speak there.`);d.querySelector("button").onclick=()=>window.open(location.href,"_blank")}
+        if(window.top!==window){const d=help(`The microphone is blocked inside Home Assistant's frame. <button class="btn sm" type="button">Open Shul Manager in its own window</button> and press Speak there.`);d.querySelector("button").onclick=()=>window.open(location.href,"_blank")}
         else help("The microphone was not allowed. Click the microphone icon at the right of Chrome's address bar, choose Allow, and try again.");
         return}
       const ctx=new (window.AudioContext||window.webkitAudioContext)(),src=ctx.createMediaStreamSource(stream),proc=ctx.createScriptProcessor(4096,1,1),parts=[];
@@ -5922,7 +6444,7 @@ Use the tools to look things up rather than guessing. To change anything, call a
       out.innerHTML=mdLite(text);turns.push({role:"assistant",content:text});remember("ai",text);
     }catch(e){
       const keep=e&&e.text;out.textContent=keep||"";
-      const why={box_bad_key:"The Claude key in the add-on settings was not accepted. Check it in Settings, Apps, Shul Doors, Configuration.",box_unreachable:"The box couldn't reach Claude. Check the internet connection and try again.",box_too_long:"That chat got too long. Press New chat and ask again.",cancelled:"Stopped.",not_granted:"The assistant needs your permission to use Claude. Reopen the page to be asked again.",rate_limited:"Too many questions right now. Try again in a minute.",session_expired:"Please sign in to Claude again.",refused:"I can't help with that one."}[e&&e.code]||"Something went wrong. Try again.";
+      const why={box_bad_key:"The Claude key in the add-on settings was not accepted. Check it in Settings, Apps, Shul Manager, Configuration.",box_unreachable:"The box couldn't reach Claude. Check the internet connection and try again.",box_too_long:"That chat got too long. Press New chat and ask again.",cancelled:"Stopped.",not_granted:"The assistant needs your permission to use Claude. Reopen the page to be asked again.",rate_limited:"Too many questions right now. Try again in a minute.",session_expired:"Please sign in to Claude again.",refused:"I can't help with that one."}[e&&e.code]||"Something went wrong. Try again.";
       if(!keep)out.remove();add("sys",why);
       if(e&&["not_granted","sampling_disabled","not_declared","capability_disabled"].includes(e.code)){$("#askOpen").hidden=true;$("#askPanel").hidden=true;$("#qaAsk").hidden=true}
     }finally{busy=false;$("#askSend").textContent="Send";msgs.scrollTop=msgs.scrollHeight}
@@ -6091,7 +6613,7 @@ if(ON_BOX){
       const r=j.last||{};const when=!r.at?"not yet":nyDate(r.at)===todayNY()?new Date(r.at).toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"}):whenText(r.at);
       const err=(r.errors||[]).length, warn=(r.warnings||[]).length;
       b.className="sdbanner "+(err?"bad":j.mode==="live"?"ok":"info");
-      b.innerHTML=`<b>${esc(MODE_TXT[j.mode]||j.mode)}</b><span>Checked ${esc(when)} · ${r.actions?r.actions.length:0} ${j.mode==="practice"?"changes it would make":"changes made"}${err?`, ${err} problem${err>1?"s":""}`:""}${warn?`, ${warn} note${warn>1?"s":""}`:""}${r.compare&&r.compare.differ?` · ${r.compare.differ.length?`rules and doors differ on ${r.compare.differ.length} door${r.compare.differ.length>1?"s":""}`:r.compare.checked?`rules and doors match on ${r.compare.checked} door${r.compare.checked>1?"s":""}`:"could not read the doors' schedules yet"}${r.compare.checked&&r.compare.skipped&&r.compare.skipped.length?`, ${r.compare.skipped.length} could not be read`:""}`:""}.</span>${(r.warnings||[]).some(x=>/login not set/i.test(x))?`<span><b>Next step:</b> enter the Protector.Net login in the add-on's Configuration tab (Settings, Apps, Shul Doors, Configuration).</span>`:""}<a href="api/report" target="_blank">See details</a>`;
+      b.innerHTML=`<b>${esc(MODE_TXT[j.mode]||j.mode)}</b><span>Checked ${esc(when)} · ${r.actions?r.actions.length:0} ${j.mode==="practice"?"changes it would make":"changes made"}${err?`, ${err} problem${err>1?"s":""}`:""}${warn?`, ${warn} note${warn>1?"s":""}`:""}${r.compare&&r.compare.differ?` · ${r.compare.differ.length?`rules and doors differ on ${r.compare.differ.length} door${r.compare.differ.length>1?"s":""}`:r.compare.checked?`rules and doors match on ${r.compare.checked} door${r.compare.checked>1?"s":""}`:"could not read the doors' schedules yet"}${r.compare.checked&&r.compare.skipped&&r.compare.skipped.length?`, ${r.compare.skipped.length} could not be read`:""}`:""}.</span>${(r.warnings||[]).some(x=>/login not set/i.test(x))?`<span><b>Next step:</b> enter the Protector.Net login in the add-on's Configuration tab (Settings, Apps, Shul Manager, Configuration).</span>`:""}<a href="api/report" target="_blank">See details</a>`;
       // live with no problems: the header shows it; the banner stays out of the way
       b.hidden=j.mode==="live"&&!err&&!window.SD_BANNER;BOX_ST=j;renderHealth();renderHero();
       {const sc=$("#sysCell");if(sc)sc.title=(MODE_TXT[j.mode]||"")+" Checked "+when+".";}

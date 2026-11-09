@@ -1,5 +1,5 @@
 "use strict";
-// Shul Doors: the box. Serves the portal inside Home Assistant (ingress),
+// Shul Manager: the box. Serves the portal inside Home Assistant (ingress),
 // keeps the rules, and every night (and after every change) brings the
 // Protector.Net doors in line with them.
 const http = require("http");
@@ -15,6 +15,9 @@ const { makeClient } = require("./lib/protector");
 const { sync } = require("./lib/sync");
 const { localDate } = require("./lib/time");
 const { createActivity } = require("./lib/activity");
+const { createHaAuth } = require("./lib/hauth");
+const { createMikva } = require("./lib/mikva");
+const { createAtrium } = require("./lib/atrium");
 
 const DATA = process.env.SD_DATA || "/data";
 const PORT = +process.env.SD_PORT || 8099;
@@ -115,7 +118,7 @@ function accessSoon(ms = 4000) {
   }, ms);
 }
 // ---------- email through SMTP2GO (welcome emails to users) ----------
-// Only to an email that belongs to a user in Shul Doors, and only a super admin can send.
+// Only to an email that belongs to a user in Shul Manager, and only a super admin can send.
 const SMTP2GO = process.env.SD_SMTP2GO_URL || "https://api.smtp2go.com/v3/email/send";
 // "K'hal Shaarei Zion <info@khalbobov.org>" -> a properly quoted sender; or just the address
 function senderOf(from) {
@@ -160,7 +163,7 @@ function changeAlerts(before, after, who) {
       delete changeQueue[name];
       if (!sms || !(state.alerts && state.alerts.changeText !== false)) return;
       const by = [...q.by].join(" and "), n = q.lines.length;
-      const body = `${by} changed the door schedule: ${q.lines.slice(0, 3).join("; ")}${n > 3 ? `; and ${n - 3} more` : ""}. See Messages in Shul Doors.`;
+      const body = `${by} changed the door schedule: ${q.lines.slice(0, 3).join("; ")}${n > 3 ? `; and ${n - 3} more` : ""}. See Messages in Shul Manager.`;
       sms.sendOne(u.phone, body.slice(0, 480), "change").catch(() => {});
     }, +process.env.SD_CHANGE_MS || 3 * 60e3);
   }
@@ -171,6 +174,7 @@ function changeAlerts(before, after, who) {
 // answers, what they call things); they only shape that person's chats.
 const slug = (n) => String(n || "default").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "default";
 function personOf(req) { const u = matchUser(haUser(req)); return u ? u.name : (haUser(req) || "default"); }
+const DEFAULT_PW_TEXT = "Hi {name}, your Shul Manager password is {password} . Sign in at {link} with the username {username}, then pick your own password.";
 function readBody(req) { return new Promise((r) => { const ch = []; let n = 0; req.on("data", (c) => { n += c.length; if (n < 3e6) ch.push(c); }); req.on("end", () => { try { r(JSON.parse(Buffer.concat(ch).toString("utf8") || "{}")); } catch { r(null); } }); }); }
 function chatFile(who) { try { fs.mkdirSync(file("chats"), { recursive: true }); } catch {} return file("chats/" + slug(who) + ".json"); }
 function loadChats(who) { try { return JSON.parse(fs.readFileSync(chatFile(who), "utf8")); } catch { return { threads: [] }; } }
@@ -217,6 +221,38 @@ async function readyClient() {
   if (!part) throw new Error("partition not found");
   await client.setPartition(part.Id);
   return client;
+}
+// Sign-ins: each time someone opens the app, and how long they kept it open (the
+// page checks in every few seconds). People Home Assistant let in who are not added
+// in Shul Manager are kept too, marked "not added".
+const VISIT_GAP = 20 * 60e3;
+let visitWrite = 0;
+// where a sign-in came from: the address the request came from, and the kind of device.
+// A device's MAC address never travels over the internet, so it can't be known here.
+function clientIp(req) {
+  const h = req.headers || {}, cf = h["cf-connecting-ip"], xf = String(h["x-forwarded-for"] || "").split(",")[0].trim();
+  const ip = String(cf || xf || (req.socket && req.socket.remoteAddress) || "").replace(/^::ffff:/, "");
+  return ip.slice(0, 64);
+}
+function deviceOf(req) {
+  const a = String((req.headers || {})["user-agent"] || "");
+  if (/Home ?Assistant\//i.test(a)) return /iPhone|iPad|iOS/i.test(a) ? "Home Assistant app on iPhone or iPad" : /Android/i.test(a) ? "Home Assistant app on Android" : "Home Assistant app";
+  const os = /iPad/.test(a) ? "iPad" : /iPhone/.test(a) ? "iPhone" : /Android/.test(a) ? "Android" : /Windows/.test(a) ? "Windows" : /Mac OS X|Macintosh/.test(a) ? "Mac" : /CrOS/.test(a) ? "Chromebook" : /Linux/.test(a) ? "Linux" : "";
+  const br = /Edg\//.test(a) ? "Edge" : /OPR\//.test(a) ? "Opera" : /Firefox\//.test(a) ? "Firefox" : /Chrome\//.test(a) ? "Chrome" : /Safari\//.test(a) ? "Safari" : "";
+  return [os, br].filter(Boolean).join(", ") || "Unknown device";
+}
+function visit(who, opts = {}) {
+  if (!who) return;
+  store.visits = store.visits || [];
+  const now = Date.now(), v = store.visits;
+  let last = null;
+  for (let i = v.length - 1; i >= 0 && i >= v.length - 200; i--) if (v[i].u === who) { last = v[i]; break; }
+  if (last && now - (last.end || last.t) < VISIT_GAP && !!last.no === !!opts.no && (!opts.ip || !last.ip || last.ip === opts.ip)) { last.end = now; if (opts.load) last.loads = (last.loads || 1) + 1; }
+  else if (opts.load || opts.no) v.push({ u: who, t: now, end: now, ...(opts.ip ? { ip: opts.ip } : {}), ...(opts.dev ? { dev: opts.dev } : {}), ...(opts.no ? { no: true } : {}) });
+  else return;
+  const cut = now - 400 * 864e5;
+  while (v.length && (v[0].t < cut || v.length > 5000)) v.shift();
+  if (opts.load || opts.no || now - visitWrite > 5 * 60e3) { visitWrite = now; writeJson("store.json", store); }
 }
 function superAdmin(user) {
   if (!user) return true;   // only Home Assistant admins reach the box
@@ -334,8 +370,8 @@ function clashNotes() {
 async function alertsAfterRun(r, clashes) {
   const a = (state && state.alerts) || {};
   if (!sms) return;
-  if (a.push && r.errors && r.errors.length) await sms.alertOnce(state, "err:" + r.errors[0].slice(0, 80), `Shul Doors could not finish updating the doors: ${r.errors[0].slice(0, 160)}. The doors keep running on their last schedule.`, "problem");
-  if (a.conflicts) for (const c of clashes.slice(0, 2)) await sms.alertOnce(state, "clash:" + c.slice(0, 120), "Two door rules overlap and need a choice in Shul Doors (Rules page).", "clash", 24 * 3600e3);
+  if (a.push && r.errors && r.errors.length) await sms.alertOnce(state, "err:" + r.errors[0].slice(0, 80), `Shul Manager could not finish updating the doors: ${r.errors[0].slice(0, 160)}. The doors keep running on their last schedule.`, "problem");
+  if (a.conflicts) for (const c of clashes.slice(0, 2)) await sms.alertOnce(state, "clash:" + c.slice(0, 120), "Two door rules overlap and need a choice in Shul Manager (Rules page).", "clash", 24 * 3600e3);
 }
 // a door held open: Home Assistant's door sensors (open = "on") are read every minute
 function checkHeld(states) {
@@ -451,6 +487,91 @@ function activityFor(days, kind) {
   const ids = new Set(((state && state.doors) || []).map((d) => d.id));
   return { status: activity.status(), events: activity.list(days, (pid) => byPid.get(Number(pid)) || null, (name) => { const id = ourId(name); return ids.has(id) ? id : null; }, kind) };
 }
+
+
+// ---------- sign-in accounts, the mikva magnet and the parking lot ----------
+const haAuth = createHaAuth({ url: process.env.SD_HA_WS || (SUP_TOKEN ? "ws://supervisor/core/websocket" : ""), token: process.env.SD_HA_TOKEN || SUP_TOKEN, log });
+const mikva = createMikva({ url: opts.mikva_url, username: opts.mikva_username, password: opts.mikva_password, log });
+const atrium = createAtrium({ url: opts.atrium_url, username: opts.atrium_username, password: opts.atrium_password, log });
+const ctrlAllow = (k) => !!(state && state.ctrl && state.ctrl[k]);
+// parking lot events: read every minute, kept on the box for Activity
+async function parkPoll() {
+  if (!atrium.configured) return;
+  try {
+    if (!store) return; store.parkEvents = store.parkEvents || [];
+    const ev = await atrium.events(1), have = new Set(store.parkEvents.map((e) => e.ser + "|" + e.t));
+    const fresh = ev.filter((e) => e.t && !have.has(e.ser + "|" + e.t));
+    if (fresh.length) { store.parkEvents = store.parkEvents.concat(fresh.map((e) => ({ t: e.t, ser: e.ser, text: e.text, who: e.who, door: e.door }))).sort((a, b) => a.t - b.t).slice(-3000); writeJson("store.json", store); }
+  } catch (e) { /* status() keeps the reason */ }
+}
+if (atrium.configured) { setTimeout(parkPoll, 15000).unref(); setInterval(parkPoll, 60000).unref(); }
+// timed opens on the parking lot: lock again when the time is up, even after a restart
+function parkTimerTick() {
+  if (!store) return; store.parkTimers = store.parkTimers || [];
+  const now = Date.now(), due = store.parkTimers.filter((t) => t.to <= now);
+  if (!due.length) return;
+  store.parkTimers = store.parkTimers.filter((t) => t.to > now); writeJson("store.json", store);
+  due.forEach((t) => atrium.command(t.id, "reset").catch((e) => log("warn", "parking lot: couldn't lock again: " + e.message)));
+}
+if (atrium.configured) setInterval(parkTimerTick, 15000).unref();
+function meAdmin(req) { return superAdmin(haUser(req)); }
+async function ctrlApi(req, res, p, u) {
+  try {
+    if (req.method === "GET" && p === "/api/controllers") return send(res, 200, { mikva: mikva.status(), parking: atrium.status(), allow: { mikva: ctrlAllow("mikvaWrites"), parking: ctrlAllow("parkWrites") }, logins: !!SUP_TOKEN || !!process.env.SD_HA_WS });
+    if (req.method === "POST" && p === "/api/controllers/test") {
+      const b = (await readBody(req)) || {};
+      if (b.which === "mikva") { await mikva.read(); return send(res, 200, { ok: true }); }
+      if (b.which === "parking") { const r = await atrium.test(); return send(res, 200, r); }
+      if (b.which === "logins") { const l = await haAuth.list(); return send(res, 200, { ok: true, count: l.length }); }
+      return send(res, 400, { error: "Which one?" });
+    }
+    // mikva magnet
+    if (req.method === "GET" && p === "/api/mikva") return send(res, 200, { ...(await mikva.read()), allow: ctrlAllow("mikvaWrites") });
+    if (req.method === "POST" && (p === "/api/mikva/save" || p === "/api/mikva/manual")) {
+      if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can change the mikva magnet." });
+      if (!ctrlAllow("mikvaWrites")) return send(res, 200, { ok: false, error: "Changes to the mikva magnet are turned off. Turn them on under Settings, Controllers." });
+      const b = (await readBody(req)) || {};
+      const r = p.endsWith("save") ? await mikva.write(b.regs, b.cgVer) : await mikva.manual(b.v, b.exp);
+      activityNote(haUser(req), p.endsWith("save") ? "Saved the mikva magnet settings" : `Mikva magnet: ${["back to the schedule", "released now", "held open"][+b.v] || "changed"}`);
+      return send(res, 200, r);
+    }
+    // parking lot
+    if (req.method === "GET" && p === "/api/parking") {
+      let doors = [], why = "";
+      try { doors = await atrium.doors(); } catch (e) { why = e.message; }
+      const days = Math.max(1, Math.min(400, +u.searchParams.get("days") || 7)), from = Date.now() - days * 864e5;
+      return send(res, 200, { ok: !why, why, doors, timers: store.parkTimers || [], events: (store.parkEvents || []).filter((e) => e.t >= from).slice(-1000), allow: ctrlAllow("parkWrites"), status: atrium.status() });
+    }
+    if (req.method === "POST" && p === "/api/parking/door") {
+      if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can open the parking lot." });
+      if (!ctrlAllow("parkWrites")) return send(res, 200, { ok: false, error: "Opening the parking lot from here is turned off. Turn it on under Settings, Controllers." });
+      const b = (await readBody(req)) || {}, mins = Math.max(0, Math.min(24 * 60, +b.mins || 0));
+      const cmd = b.cmd === "buzz" ? "buzz" : b.cmd === "reset" ? "reset" : "open";
+      await atrium.command(String(b.id || ""), cmd);
+      store.parkTimers = (store.parkTimers || []).filter((t) => t.id !== b.id);
+      if (cmd === "open" && mins) store.parkTimers.push({ id: String(b.id), to: Date.now() + mins * 60e3, by: haUser(req) });
+      writeJson("store.json", store);
+      activityNote(haUser(req), `Parking lot ${b.name || b.id}: ${cmd === "buzz" ? "buzzed open" : cmd === "reset" ? "back to normal" : mins ? `open for ${mins} min` : "open"}`);
+      return send(res, 200, { ok: true });
+    }
+    // sign-in accounts (Home Assistant). Passwords are passed through, never stored or logged.
+    if (p.startsWith("/api/logins")) {
+      if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can manage sign-ins." });
+      if (req.method === "GET" && p === "/api/logins") return send(res, 200, { ok: true, users: await haAuth.list() });
+      const b = (await readBody(req)) || {};
+      let who = (state.users || []).find((x) => x.name === b.name);
+      if (!who && p === "/api/logins/active" && b.on === false && b.name) who = { name: String(b.name), login: String(b.username || "") };   // someone just removed: turn their sign-in off
+      if (!who) return send(res, 200, { ok: false, error: "Save the person first." });
+      const username = b.username || who.login || "";
+      if (req.method === "POST" && p === "/api/logins/create") return send(res, 200, await haAuth.create({ name: who.name, username, password: b.password }));
+      if (req.method === "POST" && p === "/api/logins/password") return send(res, 200, await haAuth.setPassword({ name: who.name, username, password: b.password }));
+      if (req.method === "POST" && p === "/api/logins/active") return send(res, 200, await haAuth.setActive({ name: who.name, username, on: !!b.on }));
+    }
+    return send(res, 404, { error: "not found" });
+  } catch (e) { return send(res, 200, { ok: false, error: e.message }); }
+}
+// the page writes the Activity line itself after a change works, so the shared state isn't touched here
+function activityNote(user, text) { log("info", `${user || "someone"}: ${text}`); }
 
 // ---------- speech to text: the page records, Whisper on this box listens ----------
 // Talks the Wyoming protocol to Home Assistant's Whisper add-on (port 10300):
@@ -623,17 +744,17 @@ function send(res, code, body, type = "application/json") {
   res.end(type === "application/json" ? JSON.stringify(body) : body);
 }
 const ADDON_VER = (() => { try { return fs.readFileSync(path.join(__dirname, "version.txt"), "utf8").trim(); } catch { return "dev"; } })();
-// The person, as Home Assistant names them ("Hershy Reifer"), matched to a Shul Doors user ("Hershy").
+// The person, as Home Assistant names them ("Hershy Reifer"), matched to a Shul Manager user ("Hershy").
 function haUser(req) { return String(req.headers["x-remote-user-display-name"] || req.headers["x-remote-user-name"] || "").trim(); }
 function matchUser(name) {
   const n = String(name || "").toLowerCase(); if (!n) return null;
   const us = (state && state.users) || [];
   return us.find((u) => u.name.toLowerCase() === n) || us.find((u) => n.startsWith(u.name.toLowerCase() + " ")) || null;
 }
-// Home Assistant users who aren't added in Shul Doors get a short page instead of the app.
+// Home Assistant users who aren't added in Shul Manager get a short page instead of the app.
 // (Until the first super admin exists, the first person in is let in, as before.)
 function notAdded(req) { const n = haUser(req); return !!n && !matchUser(n) && ((state && state.users) || []).some((u) => u.role === "Super admin"); }
-const NOT_ADDED = (name) => `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shul Doors</title><body style="font:17px -apple-system,Segoe UI,Roboto,sans-serif;margin:0;min-height:100vh;display:grid;place-items:center;background:#f5f5f7;color:#1d1d1f"><div style="max-width:420px;padding:32px;text-align:center"><div style="font-size:44px">🔒</div><h1 style="font-size:24px;margin:12px 0 8px">You're not added yet</h1><p style="color:#6e6e73;line-height:1.5">Hi ${String(name).replace(/[<&]/g, "")}. Ask a Shul Doors admin to add you under Settings, Users and permissions, using the name <b>${String(name).replace(/[<&]/g, "")}</b>. Then reload this page.</p></div></body>`;
+const NOT_ADDED = (name) => `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shul Manager</title><body style="font:17px -apple-system,Segoe UI,Roboto,sans-serif;margin:0;min-height:100vh;display:grid;place-items:center;background:#f5f5f7;color:#1d1d1f"><div style="max-width:420px;padding:32px;text-align:center"><div style="font-size:44px">🔒</div><h1 style="font-size:24px;margin:12px 0 8px">You're not added yet</h1><p style="color:#6e6e73;line-height:1.5">Hi ${String(name).replace(/[<&]/g, "")}. Ask a Shul Manager admin to add you under Settings, Users and permissions, using the name <b>${String(name).replace(/[<&]/g, "")}</b>. Then reload this page.</p></div></body>`;
 function portal(req) {
   const html = fs.readFileSync(path.join(__dirname, "public", "index.html"), "utf8");
   const user = req.headers["x-remote-user-display-name"] || req.headers["x-remote-user-name"] || "";
@@ -653,14 +774,21 @@ const server = http.createServer((req, res) => {
   if (!ALLOWED.has(ip) && !process.env.SD_ANY_IP) { res.writeHead(403); return res.end("forbidden"); }
   const u = new URL(req.url, "http://box");
   const p = u.pathname.replace(/\/+$/, "") || "/";
-  if (halted && req.method === "GET" && (p === "/" || p === "/index.html")) return send(res, 200, `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shul Doors</title><body style="font:16px -apple-system,Segoe UI,sans-serif;padding:24px;max-width:640px;background:#fff;color:#111"><h1>Shul Doors is paused</h1><p>${stateProblem.replace(/</g, "&lt;")}</p><p>The doors keep running on what was last loaded into the panels. Send the add-on log to whoever set this up.</p></body>`, "text/html; charset=utf-8");
+  if (halted && req.method === "GET" && (p === "/" || p === "/index.html")) return send(res, 200, `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shul Manager</title><body style="font:16px -apple-system,Segoe UI,sans-serif;padding:24px;max-width:640px;background:#fff;color:#111"><h1>Shul Manager is paused</h1><p>${stateProblem.replace(/</g, "&lt;")}</p><p>The doors keep running on what was last loaded into the panels. Send the add-on log to whoever set this up.</p></body>`, "text/html; charset=utf-8");
   if (halted && p === "/api/state") return send(res, 503, { error: stateProblem });
   if (notAdded(req)) {
-    if (req.method === "GET" && (p === "/" || p === "/index.html")) return send(res, 200, NOT_ADDED(haUser(req)), "text/html; charset=utf-8");
-    return send(res, 403, { error: "You're not added in Shul Doors yet." });
+    if (req.method === "GET" && (p === "/" || p === "/index.html")) { visit(haUser(req), { no: true, ip: clientIp(req), dev: deviceOf(req) }); return send(res, 200, NOT_ADDED(haUser(req)), "text/html; charset=utf-8"); }
+    return send(res, 403, { error: "You're not added in Shul Manager yet." });
   }
-  if (req.method === "GET" && (p === "/" || p === "/index.html")) return send(res, 200, portal(req), "text/html; charset=utf-8");
+  if (req.method === "GET" && (p === "/" || p === "/index.html")) { if (haUser(req)) visit(personOf(req), { load: true, ip: clientIp(req), dev: deviceOf(req) }); return send(res, 200, portal(req), "text/html; charset=utf-8"); }
+  if (req.method === "GET" && p === "/api/visits") {
+    if (!superAdmin(haUser(req))) return send(res, 403, { error: "Only a super admin can see sign-ins." });
+    const who = u.searchParams.get("u");
+    return send(res, 200, { visits: (store.visits || []).filter((x) => !who || x.u === who) });
+  }
   if (p === "/api/chats" || p.startsWith("/api/chats/") || p === "/api/memory" || p === "/api/seen") { chatApi(req, res, p); return; }
+  if (p === "/api/controllers" || p.startsWith("/api/controllers/") || p.startsWith("/api/mikva") || p.startsWith("/api/parking") || p.startsWith("/api/logins")) { ctrlApi(req, res, p, u); return; }
+  if (req.method === "GET" && p === "/api/status" && haUser(req)) visit(personOf(req));
   if (req.method === "GET" && p === "/api/status") return send(res, 200, { problem: stateProblem, mode: opts.mode, pilotDoors, version, last: lastReport && { at: lastReport.at, ok: lastReport.ok, actions: lastReport.actions, errors: lastReport.errors, warnings: lastReport.warnings, loadedThrough: lastReport.loadedThrough, compare: lastReport.compare }, codes: codeStatus() });
   if (req.method === "GET" && p === "/api/report") {
     const r = lastReport || {}; const lines = [`Mode: ${opts.mode}`, `Checked: ${r.at ? new Date(r.at).toLocaleString("en-US", { timeZone: "America/New_York" }) : "not yet"} (${r.reason || ""})`, "",
@@ -678,7 +806,7 @@ const server = http.createServer((req, res) => {
       const to = String((b && b.to) || "").trim().toLowerCase();
       const u = (state.users || []).find((x) => (x.email || "").toLowerCase() === to);
       if (!u) return send(res, 200, { ok: false, error: "That email doesn't belong to a user here." });
-      try { const id = await sendEmail({ to, subject: b.subject || "Welcome to Shul Doors", html: b.html || "", text: b.text || "" });
+      try { const id = await sendEmail({ to, subject: b.subject || "Welcome to Shul Manager", html: b.html || "", text: b.text || "" });
         store.welcomeSent = store.welcomeSent || {}; store.welcomeSent[u.name] = { at: Date.now(), by: who, to }; writeJson("store.json", store);
         log("info", `welcome email sent to ${u.name} by ${who}`); send(res, 200, { ok: true, id, at: Date.now() }); }
       catch (e) { log("warn", "welcome email: " + e.message); send(res, 200, { ok: false, error: "The email didn't go out: " + e.message }); }
@@ -694,7 +822,9 @@ const server = http.createServer((req, res) => {
       if (!u.phone) return send(res, 200, { ok: false, error: `Add a mobile number for ${u.name} first.` });
       if (pw.length < 8) return send(res, 200, { ok: false, error: "Use a password of at least 8 characters." });
       if (!sms || sms.mode !== "live") return send(res, 200, { ok: false, notLive: true, error: "Texting isn't live yet, so nothing was sent. Give them the password in person for now." });
-      const r = await sms.sendOne(u.phone, `Your Shul Doors starting password is ${pw} . Sign in at building.khalbobov.org with the username in your welcome email, then change it.`, "password", { secret: pw });
+      const tpl = String((state.msgs && state.msgs.pwText) || DEFAULT_PW_TEXT);
+      const body = tpl.replace(/\{name\}/g, u.name.split(" ")[0]).replace(/\{username\}/g, u.login || "").replace(/\{link\}/g, "building.khalbobov.org").replace(/\{password\}/g, pw);
+      const r = await sms.sendOne(u.phone, body.includes(pw) ? body : body + " Password: " + pw, "password", { secret: pw });
       log("info", `starting password texted to ${u.name}: ${r.status}`);
       send(res, 200, r.status === "sent" ? { ok: true } : { ok: false, error: "The text didn't go out: " + (r.why || r.status) });
     }); return;
@@ -703,7 +833,7 @@ const server = http.createServer((req, res) => {
   if (req.method === "GET" && p === "/api/sms") return send(res, 200, sms ? { mode: sms.mode, configured: sms.configured, log: sms.list(30), optedOut: sms.optedOut() } : { mode: "off" });
   if (req.method === "POST" && p === "/api/sms/test") {
     if (!sms) return send(res, 503, { error: "not ready" });
-    sms.toContacts(state, "This is a test from Shul Doors. Door alerts will come from this number.", "test").then((out) => send(res, 200, { mode: sms.mode, out }));
+    sms.toContacts(state, "This is a test from Shul Manager. Door alerts will come from this number.", "test").then((out) => send(res, 200, { mode: sms.mode, out }));
     return;
   }
   if (req.method === "GET" && p === "/api/live") {

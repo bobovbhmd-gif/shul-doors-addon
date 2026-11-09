@@ -1,7 +1,7 @@
-# Shul Doors
+# Shul Manager
 
-Runs the shul's Hartmann Protector.Net doors by zmanim, Jewish holidays, events and situations,
-with the Shul Doors portal in the Home Assistant sidebar.
+Runs the shul's Hartmann Protector.Net doors, the mikva magnet and the parking lot by zmanim,
+Jewish holidays, events and situations, with the Shul Manager portal in the Home Assistant sidebar.
 
 ## Modes
 - **practice** (start here): reads Protector.Net and writes down what it would do. Nothing at the doors changes.
@@ -43,6 +43,10 @@ The portal says so where they appear.
 - `protector_username` / `protector_password`: a Protector.Net System Administrator. Type these here yourself.
 - `partition`: leave empty to use the first partition.
 - `sync_time`: nightly run, New York time.
+- `mikva_url`: the mikva magnet controller (ControlByWeb X-600M), like `http://192.168.1.50`. Add `mikva_password` only if its password protection is on.
+- `atrium_url`: the parking lot controller (CDVI Atrium), like `http://192.168.1.60:8081`, with `atrium_username` / `atrium_password` of a user made for Shul Manager. Type these here yourself.
+- Changes to the mikva magnet and opening the parking lot stay off until a super admin turns them on under Settings, Controllers.
+- Sign-in accounts: Shul Manager makes and resets Home Assistant logins for the people you add. It never changes a Home Assistant administrator, and passwords are never stored.
 
 ## Door activity
 Reports read the card swipes from the Protector.Net integration's "Last Door Log" sensors in Home Assistant (read only) and keep them for about a year.
