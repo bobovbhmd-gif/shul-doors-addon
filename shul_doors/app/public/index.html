@@ -4444,7 +4444,7 @@ document.addEventListener("click",async ev=>{const b=ev.target.closest("[data-ct
   let j={ok:true};if(ON_BOX){try{j=await (await fetch("api/controllers/test",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({which:b.dataset.cttest})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}}
   else await new Promise(r=>setTimeout(r,500));
   b.disabled=false;b.textContent="Test";toast(j.ok?"Connected and answering":(j.error||"Not answering"));if(ON_BOX)ctLoad();
-  if(j.info){const i=j.info,txt=[`Sign-in: ${i.mode}`,`Doors: ${i.doors||"(none)"}`,`Last command: ${i.last||"(none yet)"}`,`Page (${i.pageSize||0}):`,...(i.page||[])].join("\n\n");
+  if(j.info){const i=j.info,txt=[`Sign-in: ${i.mode}`,`Doors: ${i.doors||"(none)"}`,`Last command: ${i.last||"(none yet)"}`,`Commands: ${(i.cmds||[]).join(" | ")}`,`Page (${i.pageSize||0}):`,...(i.page||[])].join("\n\n");
     const el=document.createElement("div");el.className="nb-sheet";el.innerHTML=`<div class="nb-box" style="max-width:640px"><b>Parking lot details</b><p class="gf">Copy this and send it to whoever set up Shul Manager.</p><textarea readonly style="width:100%;height:280px;font:12px ui-monospace,Menlo,monospace;border-radius:10px;border:1px solid var(--line);padding:8px;box-sizing:border-box"></textarea><div class="tline" style="margin-top:10px"><button class="btn pri sm" type="button" data-c>Copy</button><button class="btn sm" type="button" data-x>Close</button></div></div>`;
     el.querySelector("textarea").value=txt;el.querySelector("[data-x]").onclick=()=>el.remove();el.querySelector("[data-c]").onclick=()=>{try{navigator.clipboard.writeText(txt);toast("Copied")}catch(e){el.querySelector("textarea").select()}};document.body.appendChild(el)}});
 document.addEventListener("change",ev=>{const t=ev.target;if(!t.dataset||!t.dataset.ctallow)return;S.ctrl=S.ctrl||{};S.ctrl[t.dataset.ctallow]=t.checked;commit(`${t.checked?"Turned on":"Turned off"} changes from Shul Manager for the ${t.dataset.ctallow==="mikvaWrites"?"mikva magnet":t.dataset.ctallow==="mtempWrites"?"mikva thermostats":"parking lot"}`);MT.t=0});
@@ -4512,8 +4512,8 @@ const MS_DEMO={warm:{sun:[[0,88.5],[120,99],[630,76.5],[1155,68]],mon:[[0,88.5],
 let MS={pool:null,data:{},orig:{},max:6,link:true,err:"",loading:false,sel:null};
 function msFor(id){return MS.data[id]}
 function msDemoLoad(){const base=msCfg().base;(MT.list||mtDemo()).forEach(x=>{const k=/hot/.test(x.name)?"hot":"warm";MS.data[x.id]=JSON.parse(JSON.stringify(base[x.id]||MS_DEMO[k]));MS.orig[x.id]=JSON.stringify(MS.data[x.id])})}
-async function msLoad(){if(!ON_BOX){if(!Object.keys(MS.data).length)msDemoLoad();return}
-  if(MS.loading)return;MS.loading=true;try{const j=await (await fetch("api/mtemp/schedule")).json();if(!j.ok)throw new Error(j.error||"no answer");MS.max=j.max||6;const base=msCfg().base;(j.list||[]).forEach(x=>{const w=base[x.id]||x.week;MS.data[x.id]=JSON.parse(JSON.stringify(w));MS.orig[x.id]=JSON.stringify(w)});MS.err=""}catch(e){MS.err=e.message}
+async function msLoad(force){if(!ON_BOX){if(!Object.keys(MS.data).length)msDemoLoad();return}
+  if(MS.loading||(MS.loaded&&!force))return;MS.loading=true;MS.loaded=true;try{const j=await (await fetch("api/mtemp/schedule")).json();if(!j.ok)throw new Error(j.error||"no answer");MS.max=j.max||6;const base=msCfg().base;(j.list||[]).forEach(x=>{const w=base[x.id]||x.week;MS.data[x.id]=JSON.parse(JSON.stringify(w));MS.orig[x.id]=JSON.stringify(w)});MS.err=""}catch(e){MS.err=e.message}
   MS.loading=false;renderMt()}
 const msTwin=id=>{const L=MT.list||[],me=L.find(x=>x.id===id);if(!me)return null;const kind=/hot/i.test(me.name)?"hot":/warm/i.test(me.name)?"warm":null;return kind?L.find(x=>x.id!==id&&new RegExp(kind,"i").test(x.name))||null:null};
 const msDirty=id=>JSON.stringify(MS.data[id])!==MS.orig[id];
@@ -4528,18 +4528,20 @@ function msHolDefault(){const out=[];MK.hol.forEach(([g,rs])=>rs.forEach(([name,
 function msCfg(){const c=S.mtSched||{};return {on:!!c.on,closedTemp:c.closedTemp||68,base:c.base||{},hol:c.hol&&c.hol.length?c.hol:msHolDefault()}}
 const MS_USE=[["week","Normal week"],["sun","Like Sunday"],["mon","Like Monday"],["tue","Like Tuesday"],["wed","Like Wednesday"],["thu","Like Thursday"],["fri","Like Friday"],["sat","Like Shabbos"],["closed","Closed"]];
 function msPlan(){const c=msCfg(),t=todayNY();return Array.from({length:8},(_,i)=>{const d=addDays(t,i),di=dayInfo(d),slot=MS_DAYS[di.w][0];const row=c.on?c.hol.find(r=>r.use!=="week"&&r.keys.some(k=>di.keys.has(k))):null;return {d,di,slot,row}})}
+document.addEventListener("toggle",ev=>{if(ev.target.classList&&ev.target.classList.contains("ms-hol"))MS.holOpen=ev.target.open},true);
 function msHolHtml(){const c=msCfg(),u=((MT.list||[])[0]||{}).unit||"°F";
   const plan=msPlan().map(p=>`<div class="row"><div class="dn" style="width:110px;flex:none"><b>${p.d===todayNY()?"Today":WDN[p.di.w]}</b><span style="display:block;font-size:12.5px;color:var(--muted)">${esc(shortDate(p.d))}</span></div><div class="rt"><b>${p.row?esc(p.row.name):"Normal "+(p.di.w===6?"Shabbos":MS_DAYS[p.di.w][1])}</b><span>${p.row?(p.row.use==="closed"?`Closed, kept at ${c.closedTemp}${u}`:"Runs like "+MS_DAYS.find(x=>x[0]===p.row.use)[1]):"The normal week"}</span></div></div>`).join("");
   return `<h3 class="gh mk-h">Yom Tov and special days</h3><div class="glist">
     <label class="row swrow"><span class="rt"><b>Change the schedule on Yom Tov</b><span>Each night Shul Manager writes the coming 7 days onto the thermostats, with special days swapped in</span></span><input type="checkbox" class="switch" data-mshon${c.on?" checked":""}></label>
     ${c.on?`<div class="row"><span class="rt"><b>Closed means</b><span>The temperature to hold on a closed day</span></span><span class="tline"><input type="number" class="mt-in" min="40" max="90" step="0.5" value="${c.closedTemp}" data-msclosed aria-label="Closed temperature">${esc(u)}</span></div>`:""}</div>
-    ${c.on?`<details class="ms-hol"><summary>Which day each Yom Tov runs like</summary>${[...new Set(c.hol.map(r=>r.group))].map(g=>`<h4 class="gh">${esc(g)}</h4><div class="glist">${c.hol.map((r,i)=>r.group!==g?"":`<div class="row"><span class="rt"><b>${esc(r.name)}</b></span><select data-mshol="${i}" aria-label="${esc(r.name)}">${MS_USE.map(([k,l])=>`<option value="${k}"${r.use===k?" selected":""}>${l}</option>`).join("")}</select></div>`).join("")}</div>`).join("")}</details>`:""}
+    ${c.on?`<details class="ms-hol"${MS.holOpen?" open":""}><summary>Which day each Yom Tov runs like</summary>${[...new Set(c.hol.map(r=>r.group))].map(g=>`<h4 class="gh">${esc(g)}</h4><div class="glist">${c.hol.map((r,i)=>r.group!==g?"":`<div class="row"><span class="rt"><b>${esc(r.name)}</b></span><select data-mshol="${i}" aria-label="${esc(r.name)}">${MS_USE.map(([k,l])=>`<option value="${k}"${r.use===k?" selected":""}>${l}</option>`).join("")}</select></div>`).join("")}</div>`).join("")}</details>`:""}
     <h3 class="gh mk-h">Coming days</h3><div class="glist mk-days">${plan}</div>`}
-document.addEventListener("change",ev=>{const t=ev.target;if(!t.dataset)return;
+document.addEventListener("focusout",ev=>{if(renderMt.later&&$("#mtBody")&&$("#mtBody").contains(ev.target)){renderMt.later=false;setTimeout(()=>{renderMt.force=true;renderMt()},50)}});
+document.addEventListener("change",ev=>{const t=ev.target;if(!t.dataset)return;if(t.dataset.mshol!==undefined||t.dataset.mshon!==undefined||t.dataset.msclosed!==undefined)renderMt.force=true;
   if(t.dataset.mshon!==undefined){const c=msCfg();S.mtSched={...(S.mtSched||{}),on:t.checked,hol:c.hol,closedTemp:c.closedTemp,base:Object.keys(c.base).length?c.base:JSON.parse(JSON.stringify(MS.data))};commit(t.checked?"Turned on Yom Tov schedules for the mikva thermostats":"Turned off Yom Tov schedules for the mikva thermostats");msApply();renderMt()}
   if(t.dataset.msclosed!==undefined){const c=msCfg();S.mtSched={...(S.mtSched||{}),hol:c.hol,base:c.base,closedTemp:+t.value||68};commit("Changed the closed-day temperature for the mikva");msApply();renderMt()}
   if(t.dataset.mshol!==undefined){const c=msCfg(),hol=c.hol.map(r=>({...r}));hol[+t.dataset.mshol].use=t.value;S.mtSched={...(S.mtSched||{}),hol,base:c.base,closedTemp:c.closedTemp};commit(`Mikva thermostats: ${hol[+t.dataset.mshol].name} runs ${MS_USE.find(x=>x[0]===t.value)[1].toLowerCase()}`);msApply();renderMt()}});
-async function msApply(){if(!ON_BOX)return;let j;try{j=await (await fetch("api/mtemp/apply",{method:"POST"})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}
+async function msApply(loud){if(!ON_BOX)return;if(!loud&&!(S.ctrl&&S.ctrl.mtempWrites))return false;await boxSaved();let j;try{j=await (await fetch("api/mtemp/apply",{method:"POST"})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}
   if(!j.ok){toast(j.error||((j.out||[]).filter(o=>o.ok===false).map(o=>`${o.name}: ${o.error}`).join("; "))||"Not written to the thermostats");return false}return true}
 function msHtml(){const L=MT.list||[];if(!L.length)return `<p class="none">Reading the thermostats…</p>`;msLoad();
   if(MS.err)return `<div class="mk-card mk-warn"><b>Can't read the thermostat schedules</b><p>${esc(MS.err)}</p><button class="btn sm" type="button" data-msre>Try again</button></div>`;
@@ -4564,7 +4566,7 @@ function msReadSheet(){const rows=[...document.querySelectorAll("#msRows .ms-row
 document.addEventListener("click",async ev=>{const t=ev.target;
   const p=t.closest("[data-mspool]");if(p){MS.pool=p.dataset.mspool;renderMt();return}
   const d=t.closest("[data-msday]");if(d){msSheet(d.dataset.msday);return}
-  if(t.closest("[data-msre]")){MS.err="";msLoad();return}
+  if(t.closest("[data-msre]")){MS.err="";msLoad(true);return}
   if(t.closest("[data-msadd]")){const dd=msReadSheet(),last=dd[dd.length-1];dd.push([Math.min(1425,last[0]+60),last[1]]);MS.data[MS.pool][MS.sel]=dd;msSheet(MS.sel);return}
   const del=t.closest("[data-msdel]");if(del){const dd=msReadSheet();dd.splice(+del.dataset.msdel,1);MS.data[MS.pool][MS.sel]=dd;msSheet(MS.sel);return}
   if(t.closest("#mkGo")&&MS.sel&&$("#msRows")){const dd=msReadSheet();if(dd.some(e=>!(e[1]>=40&&e[1]<=110))){toast("Use temperatures between 40 and 110.");return}
@@ -4574,10 +4576,10 @@ document.addEventListener("click",async ev=>{const t=ev.target;
   if(t.closest("[data-mssave]")){const ids=(MT.list||[]).filter(x=>msDirty(x.id)).map(x=>x.id),names=ids.map(i=>(MT.list.find(x=>x.id===i)||{}).name),c=msCfg();
     const base={...c.base};(MT.list||[]).forEach(x=>{if(MS.data[x.id])base[x.id]=MS.data[x.id]});S.mtSched={...(S.mtSched||{}),hol:c.hol,closedTemp:c.closedTemp,on:c.on,base};
     commit(`Saved the thermostat schedule for ${names.join(" and ")}`);ids.forEach(i=>{MS.orig[i]=JSON.stringify(MS.data[i])});
-    if(ON_BOX){await boxSaved();const ok=await msApply();if(ok)toast("Saved and written to the thermostat"+(ids.length>1?"s":""))}else toast("Saved to the thermostat"+(ids.length>1?"s":""));renderMt();return}
+    if(ON_BOX){await boxSaved();const ok=await msApply(true);if(ok)toast("Saved and written to the thermostat"+(ids.length>1?"s":""))}else toast("Saved to the thermostat"+(ids.length>1?"s":""));renderMt();return}
 });
 document.addEventListener("change",ev=>{if(ev.target.dataset&&ev.target.dataset.mslink!==undefined){MS.link=ev.target.checked;renderMt()}});
-function renderMt(){const b=$("#mtBody");if(!b)return;mtLoad();const c=mtCfg(),L=MT.list||[];
+function renderMt(){const b=$("#mtBody");if(!b)return;const ae=document.activeElement;if(ae&&b.contains(ae)&&/SELECT|INPUT/.test(ae.tagName)&&ae.type!=="checkbox"&&!renderMt.force){renderMt.later=true;return}renderMt.force=false;const sy=window.scrollY;requestAnimationFrame(()=>{if(Math.abs(window.scrollY-sy)>2)window.scrollTo(0,sy)});mtLoad();const c=mtCfg(),L=MT.list||[];
   if(MT.err&&!L.length){b.innerHTML=`<div class="mk-card mk-warn"><b>Can't read the thermostats</b><p>${esc(MT.err)}</p><button class="btn sm" type="button" data-mtre>Try again</button></div>`;return}
   if(!L.length){b.innerHTML=`<p class="gf top">Reading the thermostats…</p>`;return}
   // the thermostats follow their own schedule (Meross app): low set points mean the pool is resting

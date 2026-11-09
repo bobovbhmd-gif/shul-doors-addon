@@ -128,6 +128,7 @@ function createAtrium({ url, username, password, log = () => {}, fetchImpl = (..
         while (i >= 0 && n < 3) { out.page.push(js.slice(Math.max(0, i - 160), i + 160).replace(/\s+/g, " ")); i = js.indexOf(word, i + 400); n++; }
       }
       out.pageSize = js.length;
+      out.cmds = [...new Set([...js.matchAll(/cmd:"([\w]+)"\s*,\s*lbl:[^,}]{0,80}/g)].map((m) => m[0].replace(/\s+/g, " ")))].slice(0, 40);
     } catch (e) { out.page.push("couldn't read the page: " + e.message); }
     return out;
   }
