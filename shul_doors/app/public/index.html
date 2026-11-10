@@ -1834,6 +1834,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 .mt-hand{display:flex;flex-direction:column;align-items:stretch;gap:8px;background:color-mix(in srgb,var(--warn,#c80) 12%,var(--fill));border-radius:10px;padding:8px 10px;margin-top:10px}.mt-hand span{display:flex;flex-direction:column;font-size:12.5px;color:var(--muted)}.mt-hand b{font-size:13.5px;color:var(--fg)}.mt-hb{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.mt-hb .lnk{background:none;border:0;color:var(--b);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:4px}
 .mt-sch{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12.5px;color:var(--muted)}.mt-sch i{width:7px;height:7px;border-radius:50%;background:var(--ok)}
 .pk-evr{align-items:flex-start;gap:12px}.pk-evb{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}.pk-effs{display:flex;flex-direction:column;gap:3px;margin-top:6px}.pk-eff{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--fg)}.pk-eff i{width:9px;height:9px;border-radius:3px;flex:none}.pk-eff em{font-style:normal;color:var(--muted)}.pk-eff.none{color:var(--muted)}
+.msp-row .rt{flex:1;min-width:0}.msp-row .ms-bar{margin-top:8px;width:100%}.msp-days{margin:12px 0}.msp-days summary{display:flex;flex-direction:column;cursor:pointer;padding:6px 0}.msp-days summary span{font-size:13px;color:var(--muted)}.msp-days .checks{display:flex;flex-wrap:wrap;gap:6px}
 .pk-quick{display:flex;flex-wrap:wrap;gap:8px}.pk-tls{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}.pk-tls small{font-size:11.5px;color:var(--muted)}.pk-tls .pk-tl{flex:none;width:100%}
 .hu-k{font-size:12.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.hu-pre{font-size:13.5px;color:var(--muted);background:var(--fill);border-radius:10px;padding:8px 10px}.hu-pre b{color:var(--fg)}
 .hu-det summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:4px 0}
@@ -4578,16 +4579,17 @@ function msBar(day0,k){const rd=msResolveDay(day0,k);const segs=rd.map((e,i)=>({
 function msHolDefault(){const out=[];MK.hol.forEach(([g,rs])=>rs.forEach(([name,keys])=>{const k=keys.join(" ");
   const use=/^(yk|tisha_bav)$/.test(k)?"closed":/erev_(rh|yk|succos|pesach|shavuos)|hoshana|pesach6/.test(k)?"fri":/rh1|rh2|succos1|succos2|shmini|simchas|pesach1|pesach2|shvii|acharon|shavuos1|shavuos2/.test(k)?"sat":"week";
   out.push({group:g,name,keys,use})}));return out}
-function msCfg(){const c=S.mtSched||{};return {on:!!c.on,closedTemp:c.closedTemp||68,base:c.base||{},hol:c.hol&&c.hol.length?c.hol:msHolDefault()}}
+function msCfg(){const c=S.mtSched||{};return {on:!!c.on,closedTemp:c.closedTemp||68,base:c.base||{},hol:c.hol&&c.hol.length?c.hol:msHolDefault(),special:c.special||[]}}
 const MS_USE=[["week","Normal week"],["sun","Like Sunday"],["mon","Like Monday"],["tue","Like Tuesday"],["wed","Like Wednesday"],["thu","Like Thursday"],["fri","Like Friday"],["sat","Like Shabbos"],["closed","Closed"]];
-function msPlan(){const c=msCfg(),t=todayNY();return Array.from({length:8},(_,i)=>{const d=addDays(t,i),di=dayInfo(d),slot=MS_DAYS[di.w][0];const row=c.on?c.hol.find(r=>r.use!=="week"&&r.keys.some(k=>di.keys.has(k))):null;return {d,di,slot,row}})}
+function msPlan(){const c=msCfg(),t=todayNY();return Array.from({length:8},(_,i)=>{const d=addDays(t,i),di=dayInfo(d),slot=MS_DAYS[di.w][0];const sp=c.on?mspFor(c,di,MS.pool):null,row=sp?{name:sp.name,use:"special"}:c.on?c.hol.find(r=>r.use!=="week"&&r.keys.some(k=>di.keys.has(k))):null;return {d,di,slot,row}})}
 document.addEventListener("toggle",ev=>{if(ev.target.classList&&ev.target.classList.contains("ms-hol"))MS.holOpen=ev.target.open},true);
 function msHolHtml(){const c=msCfg(),u=((MT.list||[])[0]||{}).unit||"°F";
-  const plan=msPlan().map(p=>`<div class="row"><div class="dn" style="width:110px;flex:none"><b>${p.d===todayNY()?"Today":WDN[p.di.w]}</b><span style="display:block;font-size:12.5px;color:var(--muted)">${esc(shortDate(p.d))}</span></div><div class="rt"><b>${p.row?esc(p.row.name):"Normal "+(p.di.w===6?"Shabbos":MS_DAYS[p.di.w][1])}</b><span>${p.row?(p.row.use==="closed"?`Closed, kept at ${c.closedTemp}${u}`:"Runs like "+MS_DAYS.find(x=>x[0]===p.row.use)[1]):"The normal week"}</span></div></div>`).join("");
+  const plan=msPlan().map(p=>`<div class="row"><div class="dn" style="width:110px;flex:none"><b>${p.d===todayNY()?"Today":WDN[p.di.w]}</b><span style="display:block;font-size:12.5px;color:var(--muted)">${esc(shortDate(p.d))}</span></div><div class="rt"><b>${p.row?esc(p.row.name):"Normal "+(p.di.w===6?"Shabbos":MS_DAYS[p.di.w][1])}</b><span>${p.row?(p.row.use==="special"?"Its own special schedule":p.row.use==="closed"?`Closed, kept at ${c.closedTemp}${u}`:"Runs like "+MS_DAYS.find(x=>x[0]===p.row.use)[1]):"The normal week"}</span></div></div>`).join("");
   return `<h3 class="gh mk-h">Yom Tov and special days</h3><div class="glist">
     <label class="row swrow"><span class="rt"><b>Change the schedule on Yom Tov</b><span>Each night Shul Manager writes the coming 7 days onto the thermostats, with special days swapped in</span></span><input type="checkbox" class="switch" data-mshon${c.on?" checked":""}></label>
     ${c.on?`<div class="row"><span class="rt"><b>Closed means</b><span>The temperature to hold on a closed day</span></span><span class="tline"><input type="number" class="mt-in" min="40" max="90" step="0.5" value="${c.closedTemp}" data-msclosed aria-label="Closed temperature">${esc(u)}</span></div>`:""}</div>
     ${c.on?`<details class="ms-hol"${MS.holOpen?" open":""}><summary>Which day each Yom Tov runs like</summary>${[...new Set(c.hol.map(r=>r.group))].map(g=>`<h4 class="gh">${esc(g)}</h4><div class="glist">${c.hol.map((r,i)=>r.group!==g?"":`<div class="row"><span class="rt"><b>${esc(r.name)}</b></span><select data-mshol="${i}" aria-label="${esc(r.name)}">${MS_USE.map(([k,l])=>`<option value="${k}"${r.use===k?" selected":""}>${l}</option>`).join("")}</select></div>`).join("")}</div>`).join("")}</details>`:""}
+    ${c.on?mspHtml():""}
     <h3 class="gh mk-h">Coming days</h3><div class="glist mk-days">${plan}</div>`}
 document.addEventListener("focusout",ev=>{if(renderMt.later&&$("#mtBody")&&$("#mtBody").contains(ev.target)){renderMt.later=false;setTimeout(()=>{renderMt.force=true;renderMt()},50)}});
 document.addEventListener("change",ev=>{const t=ev.target;if(!t.dataset)return;if(t.dataset.mshol!==undefined||t.dataset.mshon!==undefined||t.dataset.msclosed!==undefined)renderMt.force=true;
@@ -4596,6 +4598,52 @@ document.addEventListener("change",ev=>{const t=ev.target;if(!t.dataset)return;i
   if(t.dataset.mshol!==undefined){const c=msCfg(),hol=c.hol.map(r=>({...r}));hol[+t.dataset.mshol].use=t.value;S.mtSched={...(S.mtSched||{}),hol,base:c.base,closedTemp:c.closedTemp};commit(`Mikva thermostats: ${hol[+t.dataset.mshol].name} runs ${MS_USE.find(x=>x[0]===t.value)[1].toLowerCase()}`);msApply();renderMt()}});
 async function msApply(loud){if(!ON_BOX)return;if(!loud&&!(S.ctrl&&S.ctrl.mtempWrites))return false;await boxSaved();let j;try{j=await (await fetch("api/mtemp/apply",{method:"POST"})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}
   if(!j.ok){toast(j.error||((j.out||[]).filter(o=>o.ok===false).map(o=>`${o.name}: ${o.error}`).join("; "))||"Not written to the thermostats");return false}return true}
+
+// ---- special day schedules: their own times on chosen days, e.g. Chanukah or Rosh Hashana in the middle of the week ----
+const MSP_SUGGEST=[{id:"chan",name:"Chanukah",keys:["erev_chanuka","chanuka1","chanuka2","chanuka3","chanuka4","chanuka5","chanuka6","chanuka7"],wdOnly:true,like:"mon"},
+  {id:"rh",name:"Rosh Hashana",keys:["rh1","rh2"],wdOnly:true,like:"sat"}];
+function mspWhen(sp){const rows=[];MK.hol.forEach(([g,rs])=>rs.forEach(([n,keys])=>{if(keys.every(k=>sp.keys.includes(k)))rows.push(n)}));return (rows.join(", ")||"No days chosen")+(sp.wdOnly?" · Sunday to Thursday only":"")}
+// which special schedule a day uses (first match), for one pool
+function mspFor(c,di,id){return (c.special||[]).find(s=>s.keys.some(k=>di.keys.has(k))&&(!s.wdOnly||di.w<=4)&&s.plans&&s.plans[id])||null}
+function mspHtml(){const c=msCfg(),id=MS.pool,sug=MSP_SUGGEST.filter(x=>!c.special.some(s=>s.id===x.id));
+  return `<h3 class="gh mk-h">Special day schedules</h3><div class="glist">${c.special.map(s=>`<button type="button" class="row tap msp-row" data-msp="${esc(s.id)}"><div class="rt"><b>${esc(s.name)}</b><span>${esc(mspWhen(s))}</span>${s.plans&&s.plans[id]?msBar(s.plans[id],"mon"):`<span class="hint">No times for this pool yet</span>`}</div><span class="chev"></span></button>`).join("")||`<div class="row"><span class="hint">None yet. On these days the pool follows the Yom Tov choices above.</span></div>`}</div>
+    <div class="pk-quick" style="margin-top:10px">${sug.map(x=>`<button type="button" class="btn" data-msp="${x.id}">${esc(x.name)}</button>`).join("")}<button type="button" class="btn" data-msp="new">Another special day</button></div>
+    <p class="gf">A special day schedule wins over the Yom Tov choices above. With Sunday to Thursday only, a day that falls on Friday or Shabbos keeps its usual schedule.</p>`}
+function mspRows(day,u){return (day||[]).map((e,i)=>`<div class="ms-row" data-i="${i}"><label>From${i===0?`<span class="ms-first" style="padding:10px 0">12:00 AM</span>`:tsField("msp"+i,e[0])}</label><label>Temperature<span class="ms-temp"><input type="number" step="0.5" min="40" max="110" value="${e[1]}" data-msf="v">${esc(u)}</span></label>${i>0?`<button type="button" class="btn sm danger" data-mspdel="${i}" aria-label="Remove">Remove</button>`:`<span class="ms-first">Starts the day</span>`}</div>`).join("")}
+function mspRead(){const d=todayNY();return [...document.querySelectorAll("#mspRows .ms-row")].map((r,i)=>{if(i===0)return [0,+r.querySelector('[data-msf="v"]').value];const v=tsRead(r.querySelector(".ts"));return [/^\d+:\d+$/.test(v)?toMin(v):v,+r.querySelector('[data-msf="v"]').value]})
+  .filter((e,i)=>i===0||tsMin(e[0],d)>0).sort((a,b)=>tsMin(a[0],d)-tsMin(b[0],d))}
+function mspKeep(){if(!MS.sp||!$("#mspRows"))return;MS.sp.name=($("#mspName").value||"").trim()||MS.sp.name;MS.sp.wdOnly=$("#mspWd").checked;
+  MS.sp.keys=[...document.querySelectorAll("[data-mspday]:checked")].flatMap(x=>x.value.split(" "));MS.sp.plans[MS.pool]=mspRead()}
+function mspOpen(sid){const c=msCfg();let sp=c.special.find(s=>s.id===sid);
+  if(!sp){const g=MSP_SUGGEST.find(x=>x.id===sid)||{id:"s"+Date.now(),name:"",keys:[],wdOnly:true,like:"mon"};sp={id:g.id,name:g.name,keys:[...g.keys],wdOnly:g.wdOnly,plans:{},isNew:true};
+    // start from what the pool does on those days now
+    (MT.list||[]).forEach(x=>{const w=MS.data[x.id]||c.base[x.id];if(w&&w[g.like])sp.plans[x.id]=JSON.parse(JSON.stringify(w[g.like]))})}
+  MS.sp=JSON.parse(JSON.stringify(sp));MS.sel="x:"+sp.id;mspDraw()}
+function mspDraw(){const sp=MS.sp,L=MT.list||[],u=(L[0]||{}).unit||"°F",id=MS.pool,day=sp.plans[id]||[[0,68]],tw=msTwin(id);
+  $("#mkT").textContent=sp.isNew?"New special day schedule":sp.name;
+  const days=MK.hol.map(([g,rs])=>`<h4 class="gh">${esc(g)}</h4><div class="checks">${rs.map(([n,keys])=>`<label><input type="checkbox" data-mspday value="${esc(keys.join(" "))}"${keys.every(k=>sp.keys.includes(k))?" checked":""}> ${esc(n)}</label>`).join("")}</div>`).join("");
+  $("#mkSheet").innerHTML=`<div class="nu-f"><label class="fl">Name<input id="mspName" value="${esc(sp.name)}" placeholder="For example Chanukah"></label>
+    <details class="msp-days"${sp.keys.length?"":" open"}><summary><b>Which days</b><span>${esc(mspWhen({...sp,wdOnly:false}))}</span></summary>${days}</details>
+    <div class="glist" style="margin-bottom:12px"><label class="row swrow"><span class="rt"><b>Sunday to Thursday only</b><span>Not when the day falls on Friday or Shabbos</span></span><input type="checkbox" class="switch" id="mspWd"${sp.wdOnly?" checked":""}></label></div>
+    <div class="ua-per">${L.map(x=>`<button type="button" class="${x.id===id?"on":""}" data-msppool="${esc(x.id)}">${esc(x.name)}</button>`).join("")}</div>
+    <div id="mspRows">${mspRows(day,u)}</div>${day.length<MS.max?`<button type="button" class="btn sm" data-mspadd>Add a change</button>`:`<p class="gf">That's the most this thermostat allows in one day (${MS.max}).</p>`}
+    ${tw&&MS.link?`<p class="gf">${esc(tw.name)} gets the same times.</p>`:""}
+    ${sp.isNew?"":`<button type="button" class="btn sm danger" data-mspremove style="margin-top:14px">Remove this special schedule</button>`}</div>`;openModal("mMk")}
+document.addEventListener("click",ev=>{const t=ev.target;
+  const o=t.closest("[data-msp]");if(o){mspOpen(o.dataset.msp);return}
+  if(!MS.sp||!$("#mspRows"))return;
+  const pp=t.closest("[data-msppool]");if(pp){mspKeep();MS.pool=pp.dataset.msppool;mspDraw();return}
+  if(t.closest("[data-mspadd]")){mspKeep();const dd=MS.sp.plans[MS.pool],last=dd[dd.length-1];dd.push([Math.min(1425,tsMin(last[0],todayNY())+60),last[1]]);mspDraw();return}
+  const dl=t.closest("[data-mspdel]");if(dl){mspKeep();MS.sp.plans[MS.pool].splice(+dl.dataset.mspdel,1);mspDraw();return}
+  if(t.closest("[data-mspremove]")){const c=msCfg(),n=MS.sp.name;S.mtSched={...(S.mtSched||{}),on:c.on,hol:c.hol,base:c.base,closedTemp:c.closedTemp,special:c.special.filter(s=>s.id!==MS.sp.id)};commit(`Mikva thermostats: removed the ${n} schedule`);MS.sp=null;MS.sel=null;closeModal("mMk");msApply();renderMt.force=true;renderMt();return}
+  if(t.closest("#mkGo")){mspKeep();const sp=MS.sp;if(!sp.name){toast("Give it a name.");return}if(!sp.keys.length){toast("Pick at least one day.");return}
+    if(Object.values(sp.plans).some(d=>d.some(e=>!(e[1]>=40&&e[1]<=110)))){toast("Use temperatures between 40 and 110.");return}
+    const tw=msTwin(MS.pool);if(MS.link&&tw)sp.plans[tw.id]=sp.plans[MS.pool].map(e=>[...e]);
+    const c=msCfg(),isNew=sp.isNew;delete sp.isNew;const list=c.special.filter(s=>s.id!==sp.id).concat([sp]);
+    const base=Object.keys(c.base).length?c.base:JSON.parse(JSON.stringify(MS.data));
+    S.mtSched={...(S.mtSched||{}),on:true,hol:c.hol,base,closedTemp:c.closedTemp,special:list};
+    commit(`Mikva thermostats: ${isNew?"added":"changed"} the ${sp.name} schedule (${mspWhen(sp)})`);MS.sp=null;MS.sel=null;ev.stopImmediatePropagation();closeModal("mMk");msApply();renderMt.force=true;renderMt();return}
+},true);
 
 // ---- times that follow the zmanim: "18:00", or "sunset-30", "alos+15", "candles", "havdalah+10" ----
 const ZT=[["time","At a set time"],["alos","Alos"],["sunrise","Netz"],["candles","Candle lighting"],["sunset","Shkiah"],["tzeis","Tzeis"],["havdalah","Havdalah"]];

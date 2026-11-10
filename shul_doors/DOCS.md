@@ -48,6 +48,7 @@ The portal says so where they appear.
 - Changes to the mikva magnet and opening the parking lot stay off until a super admin turns them on under Settings, Controllers.
 - Parking lot schedule: parking times are ordinary rules on the two entrances (they show under Parking lot in the rule editor), so events, Yom Tov, the Rav away, the summer and winter clock, situations and special dates are shared with the doors. Each entrance can be Normal (key tags), Open or Locked. The parking page lists the shul's events and special dates with what the parking does for each. Locked isn't connected to the controller yet; until it is, a Locked entrance is left as it was.
 - Mikva thermostats set by hand (here or in the Meross app) go back to their schedule at the next scheduled change, unless someone taps Keep it.
+- Mikva special day schedules: a set of days (for example Erev Chanukah and days 1 to 7, or both days of Rosh Hashana) can have its own times for each pool, optionally only when the day falls on Sunday to Thursday. It wins over the "runs like" choice for that day.
 - Mikva heat-ups: from the temperature log, how long each pool takes for the preheat and for the heat to the temperature people use, with a suggested start time. The "isn't warming up" alert compares the rise with each pool's usual speed.
 - Sign-in accounts: Shul Manager makes and resets Home Assistant logins for the people you add. It never changes a Home Assistant administrator, and passwords are never stored.
 

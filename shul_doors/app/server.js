@@ -549,8 +549,11 @@ function mtResolve(cfg, id) {
   for (let i = 0; i < 7; i++) {
     const d = engine.addDays(today, i), slot = MT_DAYS[new Date(d + "T12:00:00Z").getUTCDay()];
     let keys = []; try { keys = engine.raw(`[...dayInfo(${JSON.stringify(d)}).keys]`); } catch { /* plain day */ }
-    const row = cfg.on ? (cfg.hol || []).find((r) => r.use && r.use !== "week" && (r.keys || []).some((k) => keys.includes(k))) : null;
-    const day = row ? (row.use === "closed" ? [[0, +cfg.closedTemp || 68]] : base[row.use]) : base[slot];
+    // a special day schedule (its own times) wins, then the Yom Tov choice ("runs like Shabbos"), then the normal week
+    const w = MT_DAYS.indexOf(slot);
+    const sp = cfg.on ? (cfg.special || []).find((x) => (x.keys || []).some((k) => keys.includes(k)) && (!x.wdOnly || w <= 4) && x.plans && Array.isArray(x.plans[id]) && x.plans[id].length) : null;
+    const row = sp ? { name: sp.name, use: "special" } : cfg.on ? (cfg.hol || []).find((r) => r.use && r.use !== "week" && (r.keys || []).some((k) => keys.includes(k))) : null;
+    const day = sp ? sp.plans[id] : row ? (row.use === "closed" ? [[0, +cfg.closedTemp || 68]] : base[row.use]) : base[slot];
     let z = {}; try { z = engine.info(d).z || {}; } catch { /* no zmanim */ }
     week[slot] = sched.resolveDay(day || base[slot], z); plan.push({ d, slot, why: row ? row.name : "", use: row ? row.use : slot });
   }
