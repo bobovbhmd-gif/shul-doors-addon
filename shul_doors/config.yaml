@@ -1,5 +1,5 @@
 name: Shul Manager
-version: "0.3.00"
+version: "0.3.01"
 slug: shul_doors
 description: Runs the shul's doors, the mikva magnet and the parking lot by zmanim, Jewish holidays, events and situations.
 url: https://github.com/bobovbhmd-gif/shul-doors-addon
