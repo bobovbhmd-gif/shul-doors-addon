@@ -1093,6 +1093,7 @@ details.row .permgrid{padding-bottom:14px}
 .permgrid label{background:var(--fill2);border-radius:10px;padding:6px 6px 6px 12px;font-size:14px}
 .ublock .rt input[type=number]{width:56px;padding:2px 6px}
 #alertChecks .rt input[type=number]{width:60px;padding:2px 6px;text-align:center}
+.tb-card .tb-b{padding:12px 16px 14px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}.tb-card .tb-b p{margin:0;line-height:1.45}
 /* home */
 .homecols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px}
 .homegrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
@@ -2531,6 +2532,8 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
           <div class="glist" id="chgTo"></div>
           <p class="gf">They see it in Messages right away. Once texting is on, they also get one text a few minutes after the last change, at the mobile number in Users and permissions.</p>
           <div class="tline" style="margin-top:12px"><button class="btn sm" type="button" id="testAlert">Send a test text</button><span class="hint" id="testMsg"></span></div>
+          <h3 class="gh">Doors by text</h3>
+          <div class="glist" id="tbRows"></div>
           <h3 class="gh">Recent texts</h3>
           <div class="glist" id="smsLog"><div class="row"><span class="hint">None yet.</span></div></div>
         </div>
@@ -2618,6 +2621,15 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
     <div class="mbox">
       <header class="mhead"><button type="button" class="mbtn" data-close>Cancel</button><b id="pwT">Reset password</b><button type="button" class="mbtn pri" id="pwGo">Save</button></header>
       <div class="mbody" id="pwBody"></div>
+    </div>
+  </div>
+  <div class="modal" id="mTpin" hidden role="dialog" aria-modal="true" aria-labelledby="tpT">
+    <div class="mbox">
+      <header class="mhead"><button type="button" class="mbtn" data-close>Cancel</button><b id="tpT">Text PIN</b><button type="button" class="mbtn pri" id="tpGo">Save</button></header>
+      <div class="mbody"><p class="gf top">You'll text this PIN to confirm when you open or buzz a door by text. Locking a door doesn't need it. Use 4 to 8 digits, different from your door code.</p>
+        <div class="glist"><label class="row"><span class="rt"><b>New PIN</b></span><input id="tpA" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" aria-label="New PIN"></label>
+        <label class="row"><span class="rt"><b>Again</b></span><input id="tpB" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" aria-label="New PIN again"></label></div>
+        <p class="gf" id="tpMsg"></p></div>
     </div>
   </div>
   <div class="modal" id="mMk" hidden role="dialog" aria-modal="true" aria-labelledby="mkT">
@@ -3850,6 +3862,7 @@ function renderSetup(){
   $("#contactRows").innerHTML=S.contacts.map((c,i)=>`<div class="row"><span class="avatar">${esc(initials(c.name))}</span><div class="rt"><b>${esc(c.name)}</b><span>${esc(c.to)} · ${c.sms&&c.consentAt?`gets texts, agreed ${esc(shortDate(nyDate(c.consentAt)))}`:`<span class="warnm">no texts until they agree</span>`}</span></div>${c.sms&&c.consentAt?`<button class="btn sm" type="button" data-cstop="${i}">Stop texts</button>`:`<button class="btn sm" type="button" data-cok="${i}">They agreed</button>`}<button class="btn sm danger" type="button" data-cdel="${i}">Remove</button></div>`).join("")||`<div class="row"><span class="hint">No one gets alerts yet.</span></div>`;
   const NOTYET=ON_BOX?["offline","ups","batt","heartbeat"]:[];
   $("#alertChecks").innerHTML=ALERTS.map(([k,l])=>`<label class="row swrow" for="al-${k}"><span class="rt"><b>${esc(l)}</b>${k==="held"?`<span>After <input type="number" id="heldMin" min="1" max="120" value="${S.alerts.heldMin}" aria-label="Minutes"> minutes</span>`:""}${NOTYET.includes(k)?`<span>Not connected yet</span>`:""}</span><input type="checkbox" class="switch" id="al-${k}" data-alert="${k}"${S.alerts[k]?" checked":""}></label>`).join("");
+  if(isAdmin()){tbRows();if(!TB)tbLoad().then(tbRows)}
   {const to=chgRecipients();$("#chgTo").innerHTML=S.users.map(u=>`<label class="row swrow" for="chg-${esc(u.name)}"><span class="avatar">${esc(initials(u.name))}</span><span class="rt"><b>${esc(u.name)}</b><span>${u.phone?esc(u.phone):"No mobile number yet, so in the app only"}</span></span><input type="checkbox" class="switch" id="chg-${esc(u.name)}" data-chg="${esc(u.name)}"${to.includes(u.name)?" checked":""}></label>`).join("")}
   const CAPS=[["codes","Give guest codes"],["override","Open or lock doors by hand"],["parking","Open the parking lot"],["mtview","See the mikva temperature"],["events","Add events"],["rabbi","Set the rabbi away and switch situations"]];
   renderCtrl();renderWelMsg();
@@ -3863,7 +3876,7 @@ function renderSetup(){
       ${sec("Contact",`<div class="row"><span class="rt"><b>Mobile</b></span><input class="uphone" data-uphone="${i}" value="${esc(u.phone||"")}" placeholder="Add a number" inputmode="tel" aria-label="Mobile number for ${esc(u.name)}"></div>
         <label class="row swrow"><span class="rt"><b>Mikva temperature alerts</b><span>By text, once texting is live</span></span><input type="checkbox" class="switch" data-umt="${i}"${u.mtAlert?" checked":""}></label>
         <div class="row"><span class="rt"><b>Email</b></span><input class="uphone uemail" data-uemail="${i}" value="${esc(u.email||"")}" placeholder="Add an email" inputmode="email" autocomplete="off" aria-label="Email for ${esc(u.name)}"></div>`)}
-      ${sec("Sign-in",`<div class="row"><span class="rt"><b>${u.login===false?"Turned off":esc(u.login||loginName(u.name))}</b><span>${u.login===false?"They can't open Shul Manager":u.pwDone?"Picked their own password":"Still has the starting password"}</span></span><button class="btn sm" type="button" data-upw="${i}">Reset password</button></div>`)}
+      ${sec("Sign-in",`<div class="row"><span class="rt"><b>${u.login===false?"Turned off":esc(u.login||loginName(u.name))}</b><span>${u.login===false?"They can't open Shul Manager":u.pwDone?"Picked their own password":"Still has the starting password"}</span></span><button class="btn sm" type="button" data-upw="${i}">Reset password</button></div>${TB&&TB.pins?`<div class="row"><span class="rt"><b>Text PIN</b><span>${TB.pins.includes(u.name)?"Picked, for opening doors by text":"Not picked yet"}</span></span>${TB.pins.includes(u.name)?`<button class="btn sm" type="button" data-tbreset="${esc(u.name)}">Reset PIN</button>`:""}</div>`:""}`)}
       ${sec("Access",`<div class="row"><span class="rt"><b>Role</b><span>${r?"Only what you choose below":"Sees and changes everything"}</span></span><select data-urole="${i}" aria-label="Role for ${esc(u.name)}"><option${!r?" selected":""}>Super admin</option><option${r?" selected":""}>Restricted</option></select></div>
       ${r?`<div class="row"><span class="rt"><b>Schedules</b><span>For doors they can edit</span></span><select id="us${i}" data-usched="${i}" aria-label="Schedules"><option value="none"${u.sched==="none"?" selected":""}>None</option><option value="temp"${u.sched==="temp"?" selected":""}>Temporary only</option><option value="both"${u.sched==="both"?" selected":""}>Permanent and temporary</option></select></div>
       ${CAPS.map(([k,l])=>`<label class="row swrow"><span class="rt"><b>${esc(l)}</b></span><input type="checkbox" class="switch" data-ucan="${i}" data-cap="${k}"${(u.can||{})[k]?" checked":""}></label>`).join("")}
@@ -5792,6 +5805,34 @@ function opTile(id,big){const f=doorFacts(id),pn=buzzPins().includes(id),c=modeC
   const sub=op?`<em>Open</em>${f.st.next?`<i class="nx" style="font-style:normal"> · ${esc(tileNext(f).replace(/^Locks /,"locks "))}</i>`:""}`:f.st.mode==="Lockdown"?`<em>Lockdown</em>`:"Locked";
   return `<div class="op-tw"><button type="button" class="op-t${op?" is-open":""}" data-op="${esc(id)}" style="--c:${c}"><i class="oi">${ico(modeIco(f.st.mode))}</i><span class="ot"><b>${esc(doorName(id))}</b><span class="os">${sub}</span>${f.hand?`<span class="hb">Changed by hand</span>`:""}</span></button><button type="button" class="op-pin${pn?" on":""}" data-oppin="${esc(id)}" aria-pressed="${pn}" aria-label="${pn?"Unpin":"Pin"} ${esc(doorName(id))}" title="${pn?"Unpin":"Pin to the top"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z"/><path d="M12 13v8"/></svg></button></div>`}
 function opRow(id){return opTile(id,false).replace('class="op-tw"','class="op-r"')}
+let TB=null;   // doors by text: what the box says (null until asked)
+async function tbLoad(force){if(TB&&!force)return TB;
+  if(!ON_BOX){TB=TB||{on:!!(S.alerts&&S.alerts.textDoors),live:true,number:"+15185550100",hasPin:false,phone:true,doors:3,hook:"/twilio/sms/demo",pins:[]};TB.on=!!(S.alerts&&S.alerts.textDoors);return TB}
+  try{TB=await (await fetch("api/textbot")).json()}catch(e){TB=TB||{}}return TB}
+function tbNum(n){const d=String(n||"").replace(/\D/g,"").replace(/^1(?=\d{10}$)/,"");return d.length===10?`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`:"the shul's text number"}
+function tbCard(){if(!TB){tbLoad().then(t=>{if(t&&t.on)renderOpen()});return ""}
+  if(!TB.on||!TB.live||!TB.doors)return "";
+  const d0=opDoors()[0],ex=d0?doorName(d0.id):"Side Door";
+  return `<section class="op-ac tb-card"><h3>Open doors by text</h3><div class="tb-b"><p>Text <b>${esc(tbNum(TB.number))}</b>, for example “open ${esc(ex)} 20 min” or “lock ${esc(ex)}”. Opening asks for your text PIN.</p>
+    ${TB.phone?`<button type="button" class="btn sm" data-tbpin>${TB.hasPin?"Change text PIN":"Pick a text PIN"}</button>`:`<p class="gf">Your mobile number isn't in Shul Manager yet. Ask a super admin to add it in Users and permissions.</p>`}</div></section>`}
+function tbRows(){const el=$("#tbRows");if(!el)return;const on=!!(S.alerts&&S.alerts.textDoors);
+  el.innerHTML=`<label class="row swrow" for="tbOn"><span class="rt"><b>Open and lock doors by text</b><span>People in Users and permissions can text the shul's number to open or lock the doors they're allowed to change. Opening needs their text PIN.</span></span><input type="checkbox" class="switch" id="tbOn"${on?" checked":""}></label>`
+    +(on&&TB&&TB.hook?`<div class="row"><span class="rt"><b>Twilio incoming address</b><span>Your tunnel's texts address, then <code style="word-break:break-all">${esc(TB.hook)}</code></span></span><button type="button" class="btn sm" data-tbcopy>Copy</button></div>`:"")
+    +(on&&TB&&!TB.live?`<div class="row"><span class="rt"><b>Texting isn't live yet</b><span>Turn on live texting in the add-on settings first.</span></span></div>`:"")
+    +(on&&TB&&TB.pins?`<div class="row"><span class="rt"><b>Picked a text PIN</b><span>${TB.pins.length?esc(TB.pins.join(", ")):"Nobody yet"}</span></span></div>`:"")}
+document.addEventListener("change",ev=>{if(ev.target.id!=="tbOn")return;S.alerts.textDoors=ev.target.checked;commit(`Doors by text turned ${ev.target.checked?"on":"off"}`);tbLoad(true).then(()=>{tbRows();renderOpen()})});
+document.addEventListener("click",async ev=>{const t=ev.target;
+  if(t.closest("[data-tbpin]")){$("#tpA").value="";$("#tpB").value="";$("#tpMsg").textContent="";$("#tpT").textContent=TB&&TB.hasPin?"Change text PIN":"Text PIN";openModal("mTpin");setTimeout(()=>$("#tpA").focus(),50);return}
+  if(t.closest("#tpGo")){const a=$("#tpA").value.trim(),b=$("#tpB").value.trim(),m=$("#tpMsg");
+    if(a!==b){m.textContent="The two PINs don't match.";return}
+    let j={ok:true};if(ON_BOX){try{j=await (await fetch("api/textpin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin:a})})).json()}catch(e){j={error:"Couldn't reach the box. Try again."}}}
+    else if(!/^\d{4,8}$/.test(a))j={error:"Use 4 to 8 digits."};
+    if(!j.ok){m.textContent=j.error||"That didn't work.";return}
+    if(TB)TB.hasPin=true;closeModal("mTpin");toast("Text PIN saved");tbLoad(true).then(renderOpen);return}
+  const rs=t.closest("[data-tbreset]");if(rs){const n=rs.dataset.tbreset;if(ON_BOX){try{await fetch("api/textpin/reset",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:n})})}catch(e){}}
+    if(TB&&TB.pins)TB.pins=TB.pins.filter(x=>x!==n);toast(`${n}'s text PIN was reset`);await tbLoad(true);renderAll();return}
+  if(t.closest("[data-tbcopy]")&&TB&&TB.hook){try{await navigator.clipboard.writeText(TB.hook);toast("Copied")}catch(e){toast("Couldn't copy")}return}
+});
 function renderOpen(){const body=$("#opBody");if(!body)return;fixOpenNav();
   const ds0=opDoors(),q=($("#opQ").value||"").trim().toLowerCase();
   if(!ds0.length){$("#opF").innerHTML="";const pk=pkSection();body.innerHTML=pk||emptyState("door","No doors to open","You don't have permission to open doors.","");return}
@@ -5808,7 +5849,7 @@ function renderOpen(){const body=$("#opBody");if(!body)return;fixOpenNav();
   const pkp=OP_F==="all"?pkPinned():[];
   body.innerHTML=(pins.length||pkp.length?head("Pinned")+`<div class="op-grid small">${pins.map(id=>opTile(id,true)).join("")}${pkp.map(d=>pkRow(d,true)).join("")}</div>`:(OP_F==="all"?`<p class="op-tip">Tip: tap the pin next to any door to keep it at the top.</p>`:""))
     +(rec.length?head("Recent")+`<div class="op-grid small">${rec.map(id=>opTile(id,true)).join("")}</div>`:"")
-    +`<div class="op-areas">${OP_F!=="open"||(PK.doors||[]).some(pkOpen)?pkSection():""}${areas.map(([a,ids])=>`<section class="op-ac"><h3>${esc(a)}<span>${ids.length}</span></h3>${ids.map(opRow).join("")}</section>`).join("")}</div>`}
+    +`<div class="op-areas">${OP_F!=="open"||(PK.doors||[]).some(pkOpen)?pkSection():""}${areas.map(([a,ids])=>`<section class="op-ac"><h3>${esc(a)}<span>${ids.length}</span></h3>${ids.map(opRow).join("")}</section>`).join("")}</div>`+(OP_F==="all"?tbCard():"")}
 function opSheet(id){OP_SEL=id;const f=doorFacts(id),mayOpen=canChangeDoor(id),mayBuzz=isAdmin()||mayOpen;
   $("#opT").textContent=doorName(id);
   $("#opSheet").innerHTML=`<div class="op-now" style="--c:${modeColor(f.st.mode)}"><i class="dot"></i><b>${esc(f.label)} now</b><span>${esc(f.nx)}</span></div>
