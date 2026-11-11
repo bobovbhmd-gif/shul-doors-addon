@@ -42,7 +42,7 @@ ${wide ? body : `<main class="page"><div class="wrap">${body}</div></main>`}
 </body></html>`, { headers: { "content-type": "text/html; charset=utf-8", "x-robots-tag": "noindex, nofollow" } });
 const home = `<div class="min"><p class="he">קהל שערי ציון באבוב</p><h1>Congregation K'hal Shaarei Zion</h1><p class="sub">Synagogue · Boro Park, Brooklyn</p>
 <ul class="info"><li><b>Address</b>4715 15th Avenue, Brooklyn, NY 11219</li><li><b>Phone</b><a href="tel:+17188513037">(718) 851-3037</a></li><li><b>Email</b><a href="mailto:info@khalbobov.org">info@khalbobov.org</a></li></ul>
-<a class="btn" href="https://secure.cardknox.com/khalbobov" rel="noopener">Donate</a>
+<a class="btn" href="/donate" rel="noopener">Donate</a>
 <p class="smalllinks"><a href="/opt-in">Text messages</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p></div>`;
 const optin = `<p class="kicker"><a href="/">K'hal Shaarei Zion</a></p><h1>Door texts</h1>
 <p>Door alerts to our staff and door codes to expected vendors and guests. No marketing.</p>
@@ -65,6 +65,7 @@ export default {
   async fetch(request) {
     const path = new URL(request.url).pathname.replace(/\/+$/, "") || "/";
     const T = " | Congregation K'hal Shaarei Zion";
+    if (path === "/donate") return Response.redirect("https://secure.cardknox.com/khalbobov", 302);
     if (path === "/robots.txt") return new Response("User-agent: *\nDisallow: /\n", { headers: { "content-type": "text/plain" } });
     if (path === "/") return page("Congregation K'hal Shaarei Zion", home, true);
     if (path === "/opt-in" || path === "/door-texts" || path === "/texts") return page("Text messages" + T, optin);
