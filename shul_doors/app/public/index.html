@@ -3318,7 +3318,7 @@ function ico(k){return `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]||""}
 function modeIco(m){return m==="Unlock"?"open":m==="Lockdown"?"lockdown":"lock"}
 function initials(n){return String(n||"?").replace(/[^A-Za-z ]/g,"").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("")||"?"}
 let LAST_FOCUS=null;
-function openModal(id){const m=$("#"+id);if(!m)return;LAST_FOCUS=document.activeElement;m.hidden=false;document.body.classList.add("modal-open");
+function openModal(id){const m=$("#"+id);if(!m)return;LAST_FOCUS=document.activeElement;m.hidden=false;if(window.vvPlace)vvPlace();document.body.classList.add("modal-open");
   requestAnimationFrame(()=>m.classList.add("show"));
   // no typing box on open for touch screens (keyboard pops up) or when editing an existing rule
   const touch=window.matchMedia&&matchMedia("(pointer:coarse)").matches;if(touch||(id==="mRule"&&E&&!E.isNew))return;
@@ -4131,7 +4131,7 @@ function renderBuzzCard(){
   if(sel){const f=doorFacts(sel),b=typeof BOX_ST!=="undefined"&&BOX_ST;
     const notSent=ON_BOX&&b&&b.mode!=="live"&&!(b.mode==="pilot"&&(b.pilotDoors||[]).includes(sel));
     acts=`<div class="bz-acts"><div class="bz-now"><span>${esc(f.label)} now · ${esc(f.nx)}</span></div>
-      <div class="bz-btns">${mayBuzz?`<button type="button" class="bz-a buzz" data-bza="buzz">${ico("open")}Buzz open</button>`:""}
+      <div class="bz-btns">${mayBuzz||mayOpen(sel)?`<button type="button" class="bz-a buzz" data-bza="buzz">${ico("open")}Buzz open</button>`:""}
       ${mayOpen(sel)?[5,10,20,30,60].map(m=>`<button type="button" class="bz-a" data-bza="${m}">Open ${m} min</button>`).join("")+(f.hand?`<button type="button" class="bz-a back" data-bza="back">Back to schedule</button>`:""):""}</div>
       ${notSent?`<p class="hint bz-note">This door isn't run by the box yet${b.mode==="pilot"?" (not in the pilot)":""}, so "Open" is saved but not sent. Buzz open still works.</p>`:""}</div>`}
   el.innerHTML=`<div class="bz-h"><span class="ic" style="--c:var(--g)">${ico("open")}</span><div><b>Open a door</b><span>${sel?"Choose what to do":"Tap a door"}</span></div>
@@ -4761,7 +4761,7 @@ function renderPk(){const b=$("#pkBody");if(!b)return;pkDemo();pkLoad();pkMigrat
   const ro=PK.allow?"":`<p class="gf top mk-ro">Changes from here are off. A super admin can turn them on under Settings, Controllers.</p>`;
   let h="";
   if(PKT==="now"){h=`<div class="pk-now">${ds.map(d=>{const want=pkModeAt(t,nm,d.id),man=(S.parkMan||{})[d.id],mode=man?man.mode:want.mode;
-      return `<div class="pk-c"><div class="mk-head" style="--c:${PK_MODES[mode][2]}"><span class="oi">${ico(mode==="open"?"open":"lock")}</span><div><b>${esc(d.name)}</b><span>${PK_MODES[mode][0]}: ${PK_MODES[mode][1]}${man?" · set by hand":want.by?` · ${esc(want.by)}`:""}</span></div></div>
+      return `<div class="pk-c"><div class="mk-head" style="--c:${PK_MODES[mode][2]}"><span class="oi">${ico(mode==="open"?"open":"lock")}</span><div><b>${esc(pkName(d))}</b><span>${PK_MODES[mode][0]}: ${PK_MODES[mode][1]}${man?" · set by hand":want.by?` · ${esc(want.by)}`:""}</span></div></div>
       <div class="pk-modes">${Object.entries(PK_MODES).map(([k,[n,sub,col]])=>`<button type="button" class="${mode===k?"on":""}" style="--c:${col}" data-pkmode="${k}" data-pkid="${esc(d.id)}"><b>${n}</b><small>${sub}</small></button>`).join("")}</div>
       ${man?`<button class="btn sm" type="button" data-pkback="${esc(d.id)}">Back to the schedule</button>`:""}
       <div><span class="hint">Today</span>${pkTimeline(t,d.id,nm)}<div class="mk-axis"><span>12 AM</span><span>6 AM</span><span>Noon</span><span>6 PM</span><span>12 AM</span></div></div></div>`}).join("")||`<p class="none">Reading the parking lot…</p>`}</div>
@@ -4799,7 +4799,7 @@ document.addEventListener("click",ev=>{const t=ev.target;
   if(t.closest("[data-pkevnew]")){openEventForm(null);return}
   const pe=t.closest("[data-pkev]");if(pe){const e=S.events.find(x=>x.id===pe.dataset.pkev);if(e)openEventForm(e);return}
   const e=t.closest("[data-pkrule]");if(e){const r=S.rules.find(x=>String(x.id)===e.dataset.pkrule);if(r)openEditor(r,false);return}
-  const mb=t.closest("[data-pkmode]");if(mb){const id=mb.dataset.pkid,mode=mb.dataset.pkmode,d=(PK.doors||[]).find(x=>x.id===id);S.parkMan={...(S.parkMan||{}),[id]:{mode,at:Date.now()}};commit(`Parking lot ${d?d.name:id}: ${PK_MODES[mode][0]} by hand`);renderPk();pkPush();return}
+  const mb=t.closest("[data-pkmode]");if(mb){const id=mb.dataset.pkid,mode=mb.dataset.pkmode,d=(PK.doors||[]).find(x=>x.id===id);S.parkMan={...(S.parkMan||{}),[id]:{mode,at:Date.now()}};commit(`${d?pkName(d):id}: ${PK_MODES[mode][0]} by hand`);renderPk();pkPush();return}
   const bk=t.closest("[data-pkback]");if(bk){const m={...(S.parkMan||{})};delete m[bk.dataset.pkback];S.parkMan=m;commit("Parking lot: back to the schedule");renderPk();pkPush();return}
 });
 async function pkPush(){if(!ON_BOX)return;await boxSaved();try{const j=await (await fetch("api/parking/apply",{method:"POST"})).json();if(!j.ok&&j.error)toast(j.error)}catch(e){}}
@@ -5745,39 +5745,44 @@ let OP_SEL=null;
 // ---------- parking lot (CDVI Atrium): its own two doors, shown with the others on Open a door ----------
 // a line in Activity for things done on another controller (nothing to undo here)
 function ctrlNote(text){log(text);save();renderAll()}
+function pkName(d){const n=(S.parkNames||{})[d.id];if(n)return n;const i=(PK.doors||[]).findIndex(x=>x.id===d.id);return i>=0?"Parking "+(i+1):d.name}
 let PK={doors:null,events:[],timers:[],allow:false,t:0,err:""};
 const PK_DEMO=[{id:"00A1B2C3:0",name:"Parking Entrance 1",state:"locked"},{id:"00A1B2C3:1",name:"Parking Entrance 2",state:"locked"}];
 async function pkLoad(force){if(!ON_BOX){if(!PK.doors){PK.doors=PK_DEMO.map(d=>({...d}));PK.allow=true;PK.events=[{t:Date.now()-40*60e3,text:"Access granted",who:"Aaron Krausz",door:"Parking Entrance 1"},{t:Date.now()-95*60e3,text:"Access granted",who:"Abish Geller",door:"Parking Entrance 2"}]}return}
   if(!force&&Date.now()-PK.t<20000)return;PK.t=Date.now();
   try{const j=await (await fetch("api/parking?days=7")).json();PK={...PK,doors:j.doors||[],events:j.events||[],timers:j.timers||[],holds:j.holds||{},allow:!!j.allow,err:j.ok?"":(j.why||"")};
-    if(j.ok&&PK.doors.length){const L=PK.doors.map(d=>({id:"P:"+d.id,name:d.name}));if(JSON.stringify(L)!==JSON.stringify(S.parkDoors||[])){S.parkDoors=L;save();pkMigrate()}}}catch(e){PK.err="Can't reach the box."}
+    if(j.ok&&PK.doors.length){const L=PK.doors.map(d=>({id:"P:"+d.id,name:pkName(d)}));if(JSON.stringify(L)!==JSON.stringify(S.parkDoors||[])){S.parkDoors=L;save();pkMigrate()}}}catch(e){PK.err="Can't reach the box."}
   if($("#tab-open")&&!$("#tab-open").hidden)renderOpen();renderCtrl()}
 const pkOpen=d=>/unlock|open/i.test(d.state||"")||!!(PK.holds||{})[d.id]||PK.timers.some(t=>t.id===d.id&&t.to>Date.now());
 function pkTimer(id){const t=PK.timers.find(x=>x.id===id&&x.to>Date.now());return t?t.to:0}
 function pkRow(d,big){const op=pkOpen(d),c=op?modeColor("Unlock"):modeColor("Lock"),to=pkTimer(d.id),pid="P:"+d.id,pn=buzzPins().includes(pid),held=!!(PK.holds||{})[d.id];
-  return `<div class="${big?"op-tw":"op-r"}"><button type="button" class="op-t${op?" is-open":""}" data-pk="${esc(d.id)}" style="--c:${c}"><i class="oi">${ico(op?"open":"lock")}</i><span class="ot"><b>${esc(d.name)}</b><span class="os">${op?`<em>Open</em>${to?`<i class="nx" style="font-style:normal"> · locks ${esc(whenText(to))}</i>`:held?`<i class="nx" style="font-style:normal"> · until locked</i>`:""}`:"Locked"}</span></span></button><button type="button" class="op-pin${pn?" on":""}" data-oppin="${esc(pid)}" aria-pressed="${pn}" aria-label="${pn?"Unpin":"Pin"} ${esc(d.name)}" title="${pn?"Unpin":"Pin to the top"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z"/><path d="M12 13v8"/></svg></button></div>`}
+  return `<div class="${big?"op-tw":"op-r"}"><button type="button" class="op-t${op?" is-open":""}" data-pk="${esc(d.id)}" style="--c:${c}"><i class="oi">${ico(op?"open":"lock")}</i><span class="ot"><b>${esc(pkName(d))}</b><span class="os">${op?`<em>Open</em>${to?`<i class="nx" style="font-style:normal"> · locks ${esc(whenText(to))}</i>`:held?`<i class="nx" style="font-style:normal"> · until locked</i>`:""}`:"Locked"}</span></span></button><button type="button" class="op-pin${pn?" on":""}" data-oppin="${esc(pid)}" aria-pressed="${pn}" aria-label="${pn?"Unpin":"Pin"} ${esc(pkName(d))}" title="${pn?"Unpin":"Pin to the top"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z"/><path d="M12 13v8"/></svg></button></div>`}
 function pkPinned(){if(!(isAdmin()||can("parking")))return [];const p=buzzPins();return (PK.doors||[]).filter(d=>p.includes("P:"+d.id))}
 function pkSection(){if(!(isAdmin()||can("parking")))return "";pkLoad();const ds=PK.doors||[];
   if(PK.err&&!ds.length)return `<section class="op-ac"><h3>Parking lot</h3><div class="op-r"><span class="hint" style="padding:10px 16px;display:block">${esc(PK.err)}</span></div></section>`;
   const rest=ds.filter(d=>!buzzPins().includes("P:"+d.id));if(!rest.length)return "";
   return `<section class="op-ac"><h3>Parking lot<span>${rest.length}</span></h3>${rest.map(d=>pkRow(d)).join("")}</section>`}
 let PK_SEL=null;
-function pkSheet(id){const d=(PK.doors||[]).find(x=>x.id===id);if(!d)return;PK_SEL=id;const op=pkOpen(d);$("#opT").textContent=d.name;
+function pkSheet(id){const d=(PK.doors||[]).find(x=>x.id===id);if(!d)return;PK_SEL=id;const op=pkOpen(d);$("#opT").textContent=pkName(d);
   $("#opSheet").innerHTML=`<div class="op-now" style="--c:${modeColor(op?"Unlock":"Lock")}"><i class="dot"></i><b>${op?"Open":"Locked"} now</b><span>Parking lot controller</span></div>
     ${!PK.allow?`<p class="gf mk-ro">Opening the parking lot from here is off. A super admin can turn it on under Settings, Controllers.</p>`:""}
     <button type="button" class="op-buzz" data-pka="buzz">${ico("open")}<span><b>Buzz open</b><small>Unlocks for a few seconds</small></span></button>
     <h3 class="op-sh">Keep it open for</h3><div class="op-mins">${[5,10,20,30,60].map(m=>`<button type="button" data-pka="${m}">${m===60?"1 hour":m+" min"}</button>`).join("")}<button type="button" class="op-cbtn" data-pkc>Other</button>${isAdmin()?`<button type="button" data-pka="0">Until I lock it</button>`:""}</div>
     <div class="op-custom" id="pkCustom" hidden><label class="op-n"><input type="number" id="pkH" min="0" max="${isAdmin()?24:4}" value="1" inputmode="numeric" aria-label="Hours"><span>hours</span></label><label class="op-n"><input type="number" id="pkM" min="0" max="59" value="30" step="5" inputmode="numeric" aria-label="Minutes"><span>min</span></label><button type="button" class="btn pri" id="pkCGo">Open</button></div>
     ${op?`<button type="button" class="op-back" data-pka="reset">Lock it now</button>`:""}
-    <div class="op-foot"><span class="gf" style="margin:0">Every buzz and open is saved in Activity.</span><button type="button" class="lnk" data-oppin="P:${esc(d.id)}" data-opsheet="1">${buzzPins().includes("P:"+d.id)?"Unpin":"Pin to top"}</button></div>`;openModal("mOpen")}
+    <div class="op-foot"><span class="gf" style="margin:0">Every buzz and open is saved in Activity.</span><span style="display:flex;gap:16px;white-space:nowrap">${isAdmin()?`<button type="button" class="lnk" data-pkren>Rename</button>`:""}<button type="button" class="lnk" data-oppin="P:${esc(d.id)}" data-opsheet="1">${buzzPins().includes("P:"+d.id)?"Unpin":"Pin to top"}</button></span></div>
+    <div class="op-custom" id="pkRen" hidden><label class="op-n" style="flex:1"><input id="pkRenI" value="${esc(pkName(d))}" maxlength="24" aria-label="Name" style="width:100%" data-keepkb></label><button type="button" class="btn pri" id="pkRenGo">Save</button></div>`;openModal("mOpen")}
 async function pkAct(k){const d=(PK.doors||[]).find(x=>x.id===PK_SEL);if(!d)return;const cmd=k==="buzz"?"buzz":k==="reset"?"reset":"open",mins=cmd==="open"?+k:0;
-  if(ON_BOX){let j;try{j=await (await fetch("api/parking/door",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:d.id,name:d.name,cmd,mins})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}
+  if(ON_BOX){let j;try{j=await (await fetch("api/parking/door",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:d.id,name:pkName(d),cmd,mins})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}
     if(!j.ok){toast(j.error||"Didn't work");return}}
   else{d.state=cmd==="reset"||cmd==="buzz"?"locked":"unlocked";PK.holds=PK.holds||{};if(cmd!=="buzz")delete PK.holds[d.id];if(cmd==="open"&&!mins)PK.holds[d.id]=true;PK.timers=PK.timers.filter(t=>t.id!==d.id);if(mins)PK.timers.push({id:d.id,to:Date.now()+mins*60e3})}
-  const text=`Parking lot ${d.name}: ${cmd==="buzz"?"buzzed open":cmd==="reset"?"locked":mins?`open for ${durText(mins)}`:"open until locked"}`;
+  const text=`${pkName(d)}: ${cmd==="buzz"?"buzzed open":cmd==="reset"?"locked":mins?`open for ${durText(mins)}`:"open until locked"}`;
   ctrlNote(text);toast(text.replace("Parking lot ",""));closeModal("mOpen");pkLoad(true);renderOpen()}
 document.addEventListener("click",ev=>{const t=ev.target;const p=t.closest("[data-pk]");if(p){pkSheet(p.dataset.pk);return}const a=t.closest("[data-pka]");if(a){pkAct(a.dataset.pka);return}
   if(t.closest("[data-pkc]")){const c=$("#pkCustom");c.hidden=!c.hidden;if(!c.hidden){$("#pkH").focus();$("#pkH").select()}return}
+  if(t.closest("[data-pkren]")){const r=$("#pkRen");r.hidden=!r.hidden;if(!r.hidden)$("#pkRenI").focus();return}
+  if(t.closest("#pkRenGo")){const n=$("#pkRenI").value.trim(),d=(PK.doors||[]).find(x=>x.id===PK_SEL);if(!d)return;S.parkNames={...(S.parkNames||{})};if(n)S.parkNames[d.id]=n;else delete S.parkNames[d.id];
+    S.parkDoors=(PK.doors||[]).map(x=>({id:"P:"+x.id,name:pkName(x)}));save();toast(`Named ${pkName(d)}`);pkSheet(d.id);renderOpen();return}
   if(t.closest("#pkCGo")){const m=Math.round((+$("#pkH").value||0)*60+(+$("#pkM").value||0)),max=isAdmin()?1440:240;if(m<1){toast("Pick how long to keep it open.");return}if(m>max){toast(`Up to ${max/60} hours.`);return}pkAct(String(m))}});
 function opDoors(){const mayBuzz=isAdmin();return S.doors.filter(d=>mayBuzz||canChangeDoor(d.id))}
 function fixOpenNav(){const n=$("#openNav");if(n)n.hidden=!opDoors().length&&!can("parking")}
@@ -5804,7 +5809,7 @@ function renderOpen(){const body=$("#opBody");if(!body)return;fixOpenNav();
   body.innerHTML=(pins.length||pkp.length?head("Pinned")+`<div class="op-grid small">${pins.map(id=>opTile(id,true)).join("")}${pkp.map(d=>pkRow(d,true)).join("")}</div>`:(OP_F==="all"?`<p class="op-tip">Tip: tap the pin next to any door to keep it at the top.</p>`:""))
     +(rec.length?head("Recent")+`<div class="op-grid small">${rec.map(id=>opTile(id,true)).join("")}</div>`:"")
     +`<div class="op-areas">${OP_F!=="open"||(PK.doors||[]).some(pkOpen)?pkSection():""}${areas.map(([a,ids])=>`<section class="op-ac"><h3>${esc(a)}<span>${ids.length}</span></h3>${ids.map(opRow).join("")}</section>`).join("")}</div>`}
-function opSheet(id){OP_SEL=id;const f=doorFacts(id),mayBuzz=isAdmin(),mayOpen=canChangeDoor(id);
+function opSheet(id){OP_SEL=id;const f=doorFacts(id),mayOpen=canChangeDoor(id),mayBuzz=isAdmin()||mayOpen;
   $("#opT").textContent=doorName(id);
   $("#opSheet").innerHTML=`<div class="op-now" style="--c:${modeColor(f.st.mode)}"><i class="dot"></i><b>${esc(f.label)} now</b><span>${esc(f.nx)}</span></div>
     ${mayBuzz?`<button type="button" class="op-buzz" data-opa="buzz">${ico("open")}<span><b>Buzz open</b><small>Unlocks for a few seconds</small></span></button>`:""}
@@ -7137,9 +7142,17 @@ new MutationObserver(()=>{clearTimeout(PL_T);PL_T=setTimeout(()=>document.queryS
   const vv=window.visualViewport,root=document.documentElement,coarse=window.matchMedia&&matchMedia("(pointer:coarse)").matches;
   const typing=el=>el&&(/^(TEXTAREA|SELECT)$/.test(el.tagName)||(el.tagName==="INPUT"&&!/^(checkbox|radio|button|submit|range|color|file|hidden)$/.test(el.type))||el.isContentEditable);
   let done=null;
-  const place=()=>{if(!vv)return;root.style.setProperty("--vvh",vv.height+"px");root.style.setProperty("--vvt",vv.offsetTop+"px");
-    if(done){const kb=Math.max(0,innerHeight-vv.height-vv.offsetTop);done.style.bottom=(kb+10)+"px";done.style.top="auto"}};
-  if(vv){vv.addEventListener("resize",place);vv.addEventListener("scroll",place);place()}
+  // inside Home Assistant the page sits in a frame that can be taller than the screen, so measure the part of the frame you can see
+  let fe=null,pw=null;try{if(window.parent!==window&&window.frameElement){fe=window.frameElement;pw=window.parent}}catch(e){}
+  const place=()=>{if(!vv)return;let t=vv.offsetTop,h=vv.height;
+    if(fe)try{const r=fe.getBoundingClientRect(),pv=pw.visualViewport,pt=pv?pv.offsetTop:0,ph=pv?pv.height:pw.innerHeight,top=Math.max(r.top,pt),bot=Math.min(r.bottom,pt+ph);
+      if(bot-top>120){const vt=top-r.top,vb=bot-r.top;t=Math.max(t,vt);h=Math.max(120,Math.min(t+h,vb)-t)}}catch(e){}
+    root.style.setProperty("--vvh",h+"px");root.style.setProperty("--vvt",t+"px");
+    if(done){const kb=Math.max(0,innerHeight-h-t);done.style.bottom=(kb+10)+"px";done.style.top="auto"}};
+  if(vv){vv.addEventListener("resize",place);vv.addEventListener("scroll",place);addEventListener("resize",place);
+    if(pw)try{const pv=pw.visualViewport;if(pv){pv.addEventListener("resize",place);pv.addEventListener("scroll",place)}pw.addEventListener("resize",place);pw.addEventListener("scroll",place,true)}catch(e){}
+    place();setTimeout(place,600)}
+  window.vvPlace=place;
   if(!coarse)return;
   done=document.createElement("button");done.type="button";done.className="kbdone";done.innerHTML="Done <span aria-hidden='true'>&#8964;</span>";done.setAttribute("aria-label","Close the keyboard");
   done.addEventListener("pointerdown",e=>e.preventDefault());done.addEventListener("click",()=>{const a=document.activeElement;if(a&&a.blur)a.blur();done.classList.remove("on")});

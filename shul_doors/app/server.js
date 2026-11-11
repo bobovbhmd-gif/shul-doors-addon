@@ -103,7 +103,7 @@ function loadStore() {   // what the box remembers about the doors (original sch
 }
 
 // ---------- syncing with the doors ----------
-// "Buzz open": a pulse unlock, the same as pressing the door's release button. Super admins only;
+// "Buzz open": a pulse unlock, the same as pressing the door's release button. Super admins, and anyone who may open that door;
 // in practice mode nothing is sent. Every buzz is written to the history.
 // ---------- the Cloudflare sign-in list follows the users' emails ----------
 let accessState = { on: false, emails: [], at: 0, why: "" }, accessTimer = null;
@@ -314,7 +314,7 @@ async function pulse(door, user) {
   if (!d) return { code: 404, body: { error: "No such door." } };
   if (user) {
     const u = (state.users || []).find((x) => x.name.toLowerCase() === user.toLowerCase()) || (state.users || []).find((x) => user.toLowerCase().startsWith(x.name.toLowerCase() + " "));
-    if (u && u.role !== "Super admin") return { code: 403, body: { error: "Only a super admin can buzz a door open." } };
+    if (u && u.role !== "Super admin" && !((u.can || {}).override && (u.perm || {})[door] === "edit")) return { code: 403, body: { error: "You don't have permission to open this door." } };
   }
   const by = user || "someone";
   if (opts.mode === "practice") return { code: 200, body: { sent: false, message: "Practice mode: the doors are not changed, so nothing was sent." } };
