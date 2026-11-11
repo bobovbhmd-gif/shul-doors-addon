@@ -108,7 +108,16 @@ function createHaAuth({ url, token, log = () => {}, connect = wsConnect }) {
       if (String(password || "").length < 8) throw new Error("Use a password of at least 8 characters.");
       return session(async (call) => {
         const u = findUser(await call("config/auth/list"), { username, name }); guard(u);
-        await call("config/auth_provider/homeassistant/admin_change_password", { user_id: u.id, password: String(password) });
+        // Home Assistant lets only its owner use admin_change_password, so when that's refused,
+        // remove the person's Home Assistant sign-in and add it back with the new password (same user, same username).
+        try { await call("config/auth_provider/homeassistant/admin_change_password", { user_id: u.id, password: String(password) }); }
+        catch (e) {
+          if (!/unauthori[sz]ed|owner/i.test(e.message)) throw e;
+          const uname = u.username || String(username || "");
+          if (!uname) throw new Error("This person has no username in Home Assistant, so the password can't be reset from here.");
+          await call("config/auth_provider/homeassistant/delete", { username: uname });
+          await call("config/auth_provider/homeassistant/create", { user_id: u.id, username: uname, password: String(password) });
+        }
         log("info", `password reset in Home Assistant for ${name}`);
         return { ok: true };
       });
