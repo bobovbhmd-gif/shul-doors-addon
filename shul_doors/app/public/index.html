@@ -1,4 +1,4 @@
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
 <title>Shul Door Scheduler</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <style>
@@ -2072,6 +2072,24 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 .ua-r .rt b{font-size:14px;font-weight:550}.ua-r .rt span{font-size:12.5px}
 .ua-r.bad .rt b{color:var(--r)}
 @media (max-width:600px){.ua-sum{grid-template-columns:repeat(3,1fr)}.ua-sum>div:nth-child(n+4){display:none}}
+
+/* ---- touch screens: bigger tap targets, and the on-screen keyboard never hides the form ---- */
+@media (pointer:coarse){
+  input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:max(16px,1em)}   /* under 16px, iPhones zoom the page in when a box is tapped */
+  .lnk,.linkbtn{min-height:40px;display:inline-flex;align-items:center;padding-top:8px;padding-bottom:8px}
+  .tag button{min-width:32px;min-height:32px;display:inline-grid;place-items:center;margin:-6px -8px -6px 0}
+  #heldMin,input.mt-in,.tline input{min-height:40px}
+  .ux{min-width:40px;min-height:40px}
+}
+.modal{height:var(--vvh,100dvh);top:var(--vvt,0px);bottom:auto}
+.mbox{max-height:min(88vh,calc(var(--vvh,100dvh) - 16px),920px)}
+@media (max-width:700px){.mbox{max-height:calc(var(--vvh,100dvh) - 8px)}}
+@media (max-width:700px){.wd{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.wd button{min-width:0;padding:9px 0;text-align:center}}
+.brand b{white-space:nowrap}@media (max-width:420px){.brand b{font-size:17px}.topbar .who{min-width:0;flex:0 1 auto}.topbar #meSel{max-width:112px;min-width:0}}@media (max-width:340px){.brand b{font-size:15px}.topbar #meSel{max-width:92px}}
+@media (max-width:520px){.row{flex-wrap:wrap}.row.swrow{flex-wrap:nowrap}.row>.rt{flex:1 1 150px;min-width:0}.row>.switch,.row>input[type=checkbox]{flex:0 0 auto}}@media (max-width:420px){.mt-grid{grid-template-columns:1fr}}
+.nu-f input.switch,.nu-f input[type=checkbox].switch{width:51px;flex:0 0 auto}.nu-f label.row.swrow{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:12px}.nu-f label.row.swrow .rt{flex:1;min-width:0}
+.kbdone{position:fixed;right:12px;z-index:90;display:none;align-items:center;gap:6px;border:0;border-radius:999px;background:var(--fg,#1b2333);color:#fff;font:600 15px/1 Inter,system-ui,sans-serif;padding:11px 16px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.kbdone.on{display:inline-flex}
 </style>
 
 <button class="ask-fab" type="button" id="askOpen" hidden aria-label="Ask the assistant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Ask the assistant</span></button>
@@ -4447,7 +4465,7 @@ document.addEventListener("click",ev=>{const t=ev.target;
   const mp=t.closest("[data-mkpw]");if(mp){$("#"+mp.dataset.mkpw).value=makePw();return}
   if(t.closest("#nuOpen")){openNewUser();return}
   if(t.closest("#nuGo")){const n=$("#nuName").value.trim(),un=$("#nuUser").value.trim(),pw=$("#nuPw").value;
-    if(!n){$("#nuName").focus();return}if(ud().some(u=>u.name===n)){toast("Someone with that name is already added.");return}
+    if(!n){toast("Type their name first.");$("#nuName").focus();return}if(ud().some(u=>u.name===n)){toast("Someone with that name is already added.");return}
     if(pw.length<8){toast("Pick a starting password of at least 8 characters.");$("#nuPw").focus();return}
     const r=$("#nuRole").value,u=r==="Restricted"?{name:n,role:"Restricted",perm:{},sched:"none",can:{rules:false,override:false,events:false,rabbi:false},added:Date.now()}:{name:n,role:"Super admin",added:Date.now()};
     u.login=un||loginName(n);u.email=$("#nuEmail").value.trim();u.phone=$("#nuPhone").value.trim();ud().push(u);NEWPW.set(n,pw);U_OPEN=n;closeModal("mNewU");uchg(`Added user ${n} with the username ${u.login}`,true);toast(`${n} is added. Tap Save changes to create the login and send the welcome.`);return}
@@ -6049,7 +6067,7 @@ $("#rqGroup").addEventListener("click",ev=>{const b=ev.target.closest("[data-rg]
 $("#sitChips").addEventListener("click",ev=>{const b=ev.target.closest("[data-sit]");if(!b)return;const x=sitOf(b.dataset.sit);const t=todayNY();
   if(x.ranges.some(r=>t<=r.to&&t>=r.from)&&!x.on){$("#sitChips").title=`"${x.name}" is on by its dates. Edit them in Settings.`;return}
   x.on=!x.on;if(x.on)x.since=todayNY();else delete x.since;commit(`"${x.name}" turned ${x.on?"on":"off"}`)});
-$("#addSit").onclick=()=>{const n=$("#newSit").value.trim();if(!n)return;S.situations.push({id:"s"+Date.now(),name:n,on:false,top:false,ranges:[]});$("#newSit").value="";commit(`Added situation "${n}"`)};
+$("#addSit").onclick=()=>{const n=$("#newSit").value.trim();if(!n){toast("Type a name for the situation first.");$("#newSit").focus();return}S.situations.push({id:"s"+Date.now(),name:n,on:false,top:false,ranges:[]});$("#newSit").value="";commit(`Added situation "${n}"`)};
 // change a date range in place: two dates, Save or Cancel
 function editRange(row,r,save){row.innerHTML=`<span class="rt"><span>From</span></span><input type="date" class="erF" value="${esc(r.from)}" aria-label="From"><span class="hint">to</span><input type="date" class="erT" value="${esc(r.to)}" aria-label="To"><button class="btn sm pri" type="button" data-ersave>Save</button><button class="btn sm" type="button" data-ercancel>Cancel</button>`;
   row.querySelector("[data-ersave]").onclick=ev=>{ev.stopPropagation();const f=row.querySelector(".erF").value,t=row.querySelector(".erT").value||f;if(!f||t<f){row.querySelector(".erT").focus();return}save(f,t)};
@@ -6213,17 +6231,17 @@ $("#addEv").onclick=()=>{const n=$("#evName").value.trim(),f=$("#evFrom").value,
   attempt({change:()=>S.events.push(ev),doors:S.doors.map(d=>d.id).concat(pkDoors().map(d=>d.id)),from:addDays(f,-1),days:daysBetween(f,t)+3,el:$("#evMsg"),done:sum=>{$("#evName").value="";$("#evFrom").value="";$("#evTo").value="";$("#evMsg").innerHTML="";commit(`Added event "${n}"${sum}`);closeModal("mEvent");toast("Event added")}})};
 
 $("#evRows").addEventListener("click",ev=>{if(ev.target.closest("[data-evnew]")){openEventForm(null);return}const ed=ev.target.closest("[data-evedit]");if(ed&&!ev.target.closest("[data-evdel]")){if(!can("events")&&!isAdmin())return;const e=S.events.find(x=>x.id===ed.dataset.evedit);if(e)openEventForm(e);return}const b=ev.target.closest("[data-evdel]");if(!b)return;if(inUse(b,"ev:"+b.dataset.evdel))return;const e=S.events.find(x=>x.id===b.dataset.evdel);S.events=S.events.filter(x=>x!==e);commit(`Removed event "${e.name}"`)});
-$("#addType").onclick=()=>{const t=$("#newType").value.trim();if(!t||S.types.includes(t))return;S.types.push(t);$("#newType").value="";commit(`Added event type "${t}"`)};
+$("#addType").onclick=()=>{const t=$("#newType").value.trim();if(!t){toast("Type a name for the event type first.");$("#newType").focus();return}if(S.types.includes(t)){toast("That type is already in the list.");return}S.types.push(t);$("#newType").value="";commit(`Added event type "${t}"`)};
 // a date, type or event that a rule uses can't be removed: the rule would quietly stop working
 function inUse(b,k,extra){const n=holUses(k)+(extra||0);if(!n)return false;const r=holUses(k);b.textContent=r?`Used by ${r} rule${r===1?"":"s"}`:`Used by ${extra} event${extra===1?"":"s"}`;b.disabled=true;return true}
 $("#typeTags").addEventListener("click",ev=>{const b=ev.target.closest("[data-tdel]");if(!b)return;if(inUse(b,"type:"+b.dataset.tdel,S.events.filter(e=>e.type===b.dataset.tdel).length))return;S.types=S.types.filter(t=>t!==b.dataset.tdel);commit(`Removed event type "${b.dataset.tdel}"`)});
 $("#hdMonth").innerHTML=monOpts();$("#hdDay").innerHTML=dayOpts();
 $("#gdMonth").innerHTML=GMON.map((m,i)=>`<option value="${i+1}">${m}</option>`).join("");
 $("#gdDay").innerHTML=Array.from({length:31},(_,i)=>`<option>${i+1}</option>`).join("");
-$("#addGd").onclick=()=>{const n=$("#gdName").value.trim();if(!n)return;const g={id:"c"+Date.now(),name:n,m:+$("#gdMonth").value,d:+$("#gdDay").value};
+$("#addGd").onclick=()=>{const n=$("#gdName").value.trim();if(!n){toast("Type a name for the date first.");$("#gdName").focus();return}const g={id:"c"+Date.now(),name:n,m:+$("#gdMonth").value,d:+$("#gdDay").value};
   attempt({change:()=>S.gdates.push(g),doors:S.doors.map(d=>d.id),from:todayNY(),days:366,el:$("#gdMsg"),done:sum=>{$("#gdName").value="";commit(`Added yearly date "${n}"${sum}`)}})};
 $("#gdRows").addEventListener("click",ev=>{const b=ev.target.closest("[data-gddel]");if(!b)return;if(inUse(b,"gd:"+b.dataset.gddel))return;const g=S.gdates.find(x=>x.id===b.dataset.gddel);S.gdates=S.gdates.filter(x=>x!==g);commit(`Removed yearly date "${g.name}"`)});
-$("#addHd").onclick=()=>{const n=$("#hdName").value.trim();if(!n)return;const h={id:"h"+Date.now(),name:n,m:+$("#hdMonth").value,d:+$("#hdDay").value};
+$("#addHd").onclick=()=>{const n=$("#hdName").value.trim();if(!n){toast("Type a name for the date first.");$("#hdName").focus();return}const h={id:"h"+Date.now(),name:n,m:+$("#hdMonth").value,d:+$("#hdDay").value};
   attempt({change:()=>S.hdates.push(h),doors:S.doors.map(d=>d.id),from:todayNY(),days:400,el:$("#hdMsg"),done:sum=>{$("#hdName").value="";commit(`Added Hebrew date "${n}"${sum}`)}})};
 $("#hdRows").addEventListener("click",ev=>{const b=ev.target.closest("[data-hddel]");if(!b)return;if(inUse(b,"hd:"+b.dataset.hddel))return;const h=S.hdates.find(x=>x.id===b.dataset.hddel);S.hdates=S.hdates.filter(x=>x!==h);commit(`Removed Hebrew date "${h.name}"`)});
 // settings
@@ -6232,9 +6250,9 @@ $("#doorRows").addEventListener("change",ev=>{const j=ev.target.dataset.ddef;if(
 // removing a door or group takes a second tap, so a slip of the finger can't do it
 function armed(b){if(b.dataset.armed)return true;b.dataset.armed="1";const t=b.textContent;b.textContent="Tap again to remove";setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent=t}},4000);return false}
 $("#doorRows").addEventListener("click",ev=>{const i=ev.target.dataset.ddel;if(i!==undefined){if(!armed(ev.target))return;const id=S.doors[i].id;S.doors.splice(i,1);S.rules.forEach(r=>r.doors=r.doors.filter(d=>d!==id));S.groups.forEach(g=>g.doors=g.doors.filter(d=>d!==id));commit(`Removed door ${id}`)}});
-$("#addDoor").onclick=()=>{const id=$("#newDoorId").value.trim().toUpperCase(),n=$("#newDoorName").value.trim();if(!id||S.doors.some(d=>d.id===id))return;
+$("#addDoor").onclick=()=>{const id=$("#newDoorId").value.trim().toUpperCase(),n=$("#newDoorName").value.trim();if(!id){toast("Type the door's ID first.");$("#newDoorId").focus();return}if(S.doors.some(d=>d.id===id)){toast("That door is already in the list.");return}
   S.doors.push({id,name:n||id,def:"Card or Pin"});$("#newDoorId").value="";$("#newDoorName").value="";commit(`Added door ${id}`)};
-$("#addGroup").onclick=()=>{const n=$("#newGroup").value.trim();if(!n)return;S.groups.push({id:"g"+Date.now(),name:n,doors:[]});$("#newGroup").value="";commit(`Added door group "${n}"`)};
+$("#addGroup").onclick=()=>{const n=$("#newGroup").value.trim();if(!n){toast("Type a name for the group first.");$("#newGroup").focus();return}S.groups.push({id:"g"+Date.now(),name:n,doors:[]});$("#newGroup").value="";commit(`Added door group "${n}"`)};
 $("#groupRows").addEventListener("change",ev=>{const id=ev.target.dataset.gid;if(!id)return;const g=S.groups.find(x=>x.id===id);const d=ev.target.value;
   g.doors=ev.target.checked?[...g.doors,d]:g.doors.filter(x=>x!==d);commit(`${ev.target.checked?"Added":"Removed"} ${d} ${ev.target.checked?"to":"from"} "${g.name}"`)});
 $("#groupRows").addEventListener("click",ev=>{const gd=ev.target.closest("[data-gdef]");if(gd){const g=S.groups.find(x=>x.id===gd.dataset.gdef),m=document.querySelector(`[data-gdefsel="${g.id}"]`).value;
@@ -6254,7 +6272,7 @@ $("#havOff").addEventListener("change",e=>{const n=Math.max(0,Math.min(120,+e.ta
 $("#addAway").onclick=()=>{const f=$("#awayFrom").value,t=$("#awayTo").value||f;if(!f||t<f)return;S.away.push({from:f,to:t});commit(`Rabbi away ${shortDate(f)} to ${shortDate(t)}`)};
 $("#awayRows").addEventListener("click",ev=>{const i=ev.target.dataset.adel;if(i!==undefined){S.away.splice(i,1);commit("Removed rabbi away dates");return}
   const e=ev.target.dataset.aed;if(e!==undefined){const a=S.away[+e];editRange(ev.target.closest(".row"),a,(f,t)=>{const was=rangeText(a.from,a.to);a.from=f;a.to=t;S.away.sort((x,y)=>x.from<y.from?-1:1);commit(`Rav away dates changed to ${rangeText(f,t)} (was ${was})`)})}});
-$("#addContact").onclick=()=>{const n=$("#cName").value.trim(),t=$("#cTo").value.trim(),ok=$("#cAgree").checked;if(!n||!t)return;
+$("#addContact").onclick=()=>{const n=$("#cName").value.trim(),t=$("#cTo").value.trim(),ok=$("#cAgree").checked;if(!n||!t){toast(!n?"Type their name first.":"Type their mobile number or email first.");(!n?$("#cName"):$("#cTo")).focus();return}
   const digits=t.replace(/\D/g,"");if(!(digits.length===10||(digits.length===11&&digits[0]==="1"))){toast("Enter a US mobile number, like 718-555-0142");return}
   S.contacts.push({name:n,to:t,sms:ok,consentAt:ok?Date.now():null,consentBy:ok?S.me:null});$("#cName").value="";$("#cTo").value="";$("#cAgree").checked=false;
   commit(`Added alert contact ${n}${ok?" (agreed to texts)":""}`)};
@@ -6286,7 +6304,7 @@ $("#userRows").addEventListener("change",ev=>{const t=ev.target,d=t.dataset;
   else if(d.ucan!==undefined){const u=ud()[d.ucan];u.can=u.can||{};u.can[d.cap]=t.checked;uchg(`${u.name}: "${CAPS_LABEL[d.cap]}" turned ${t.checked?"on":"off"}`)}});
 const CAPS_LABEL={parking:"Buzz the parking lot open or keep it open for a while",mtview:"See the mikva temperature, without changing it",codes:"Give temporary codes for their Edit doors",rules:"Change rules for their Edit doors",override:"Open or lock doors by hand",events:"Add events",rabbi:"Set the rabbi away"};
 $("#userRows").addEventListener("click",ev=>{const i=ev.target.dataset.udel;if(i!==undefined){const u=ud().splice(i,1)[0];uchg(`Removed user ${u.name}`,true)}});
-$("#addUser").onclick=()=>{const n=$("#uName").value.trim();if(!n||ud().some(u=>u.name===n))return;ud().push($("#uRole").value==="Restricted"?{name:n,role:"Restricted",perm:{},sched:"none",can:{rules:false,override:false,events:false,rabbi:false},added:Date.now()}:{name:n,role:"Super admin",added:Date.now()});$("#uName").value="";uchg(`Added user ${n} (${$("#uRole").value})`,true)};
+$("#addUser").onclick=()=>{const n=$("#uName").value.trim();if(!n){toast("Type their name first.");$("#uName").focus();return}if(ud().some(u=>u.name===n)){toast("Someone with that name is already added.");return}ud().push($("#uRole").value==="Restricted"?{name:n,role:"Restricted",perm:{},sched:"none",can:{rules:false,override:false,events:false,rabbi:false},added:Date.now()}:{name:n,role:"Super admin",added:Date.now()});$("#uName").value="";uchg(`Added user ${n} (${$("#uRole").value})`,true)};
 $("#copyBackup").onclick=()=>{const txt=JSON.stringify(S);
   const fallback=()=>{$("#restoreTxt").value=txt;$("#restoreTxt").select();$("#copyMsg").textContent="Selected below. Copy it with your keyboard or long-press."};
   try{navigator.clipboard.writeText(txt).then(()=>{$("#copyMsg").textContent="Copied. Paste it somewhere safe."},fallback)}catch(e){fallback()}};
@@ -6444,7 +6462,7 @@ setInterval(()=>{renderOverride();renderBoard();if(document.activeElement?.id!==
 $("#bGroup").addEventListener("change",renderBoard);
 $("#board").addEventListener("click",ev=>{const a=ev.target.closest("[data-rule]");if(!a)return;showTab("rules");const el=$("#rule-"+a.dataset.rule);if(el){el.scrollIntoView({block:"center"});el.classList.add("flash");setTimeout(()=>el.classList.remove("flash"),1600)}});
 // badge groups
-$("#addAg").onclick=()=>{const n=$("#newAg").value.trim();if(!n||S.accessGroups.includes(n))return;S.accessGroups.push(n);$("#newAg").value="";commit(`Added badge group "${n}"`)};
+$("#addAg").onclick=()=>{const n=$("#newAg").value.trim();if(!n){toast("Type a name for the badge group first.");$("#newAg").focus();return}if(S.accessGroups.includes(n)){toast("That group is already in the list.");return}S.accessGroups.push(n);$("#newAg").value="";commit(`Added badge group "${n}"`)};
 $("#agTags").addEventListener("click",ev=>{const b=ev.target.closest("[data-agdel]");if(!b)return;S.accessGroups=S.accessGroups.filter(g=>g!==b.dataset.agdel);commit(`Removed badge group "${b.dataset.agdel}"`)});
 // bulk
 $("#rules").addEventListener("change",ev=>{const id=ev.target.dataset.pick;if(id===undefined)return;const n=+id;ev.target.checked?PICK.add(n):PICK.delete(n);$("#bMsg").textContent="";renderBulk()});
@@ -7109,4 +7127,25 @@ function plistCount(el){const w=el.parentElement;if(!w||!w.classList.contains("p
   w.querySelector(".pl-n").textContent=n?`${n} picked`:"";w.querySelector(".pl-clr").hidden=!n}
 let PL_T=0;
 new MutationObserver(()=>{clearTimeout(PL_T);PL_T=setTimeout(()=>document.querySelectorAll(".checks.plist").forEach(el=>{const k=el.querySelectorAll("label").length+":"+el.querySelectorAll("input:checked").length;if(el.dataset.plk!==k||!el.parentElement.classList.contains("pl-wrap")){el.dataset.plk=k;plistUp(el)}}),30)}).observe(document.body,{childList:true,subtree:true});
+
+// ---- the on-screen keyboard: keep the open pop-up inside the visible part of the screen, and make it easy to close ----
+(function(){
+  const vv=window.visualViewport,root=document.documentElement,coarse=window.matchMedia&&matchMedia("(pointer:coarse)").matches;
+  const typing=el=>el&&(/^(TEXTAREA|SELECT)$/.test(el.tagName)||(el.tagName==="INPUT"&&!/^(checkbox|radio|button|submit|range|color|file|hidden)$/.test(el.type))||el.isContentEditable);
+  let done=null;
+  const place=()=>{if(!vv)return;root.style.setProperty("--vvh",vv.height+"px");root.style.setProperty("--vvt",vv.offsetTop+"px");
+    if(done){const kb=Math.max(0,innerHeight-vv.height-vv.offsetTop);done.style.bottom=(kb+10)+"px";done.style.top="auto"}};
+  if(vv){vv.addEventListener("resize",place);vv.addEventListener("scroll",place);place()}
+  if(!coarse)return;
+  done=document.createElement("button");done.type="button";done.className="kbdone";done.innerHTML="Done <span aria-hidden='true'>&#8964;</span>";done.setAttribute("aria-label","Close the keyboard");
+  done.addEventListener("pointerdown",e=>e.preventDefault());done.addEventListener("click",()=>{const a=document.activeElement;if(a&&a.blur)a.blur();done.classList.remove("on")});
+  document.body.appendChild(done);
+  addEventListener("focusin",e=>{if(typing(e.target)&&e.target.tagName!=="SELECT"){done.classList.add("on");place()}});
+  addEventListener("focusout",()=>setTimeout(()=>{if(!typing(document.activeElement))done.classList.remove("on")},50));
+  // tapping anywhere that isn't a box or a control closes the keyboard
+  addEventListener("touchstart",e=>{const a=document.activeElement;if(!typing(a))return;const t=e.target;if(t===done||t.closest("input,textarea,select,label,button,a,[contenteditable],[role=button]"))return;a.blur()},{passive:true});
+  // Enter on a one-line box closes the keyboard once whatever Enter does has run
+  addEventListener("keydown",e=>{const a=e.target;if(e.key!=="Enter"||a.tagName!=="INPUT"||!typing(a))return;setTimeout(()=>{if(document.activeElement===a&&!a.dataset.keepkb)a.blur()},0)});
+  document.querySelectorAll("input:not([enterkeyhint])").forEach(i=>{if(typing(i))i.setAttribute("enterkeyhint",i.type==="search"?"search":"done")});
+})();
 </script>
