@@ -3864,7 +3864,7 @@ function renderSetup(){
   $("#alertChecks").innerHTML=ALERTS.map(([k,l])=>`<label class="row swrow" for="al-${k}"><span class="rt"><b>${esc(l)}</b>${k==="held"?`<span>After <input type="number" id="heldMin" min="1" max="120" value="${S.alerts.heldMin}" aria-label="Minutes"> minutes</span>`:""}${NOTYET.includes(k)?`<span>Not connected yet</span>`:""}</span><input type="checkbox" class="switch" id="al-${k}" data-alert="${k}"${S.alerts[k]?" checked":""}></label>`).join("");
   if(isAdmin()){tbRows();if(!TB)tbLoad().then(tbRows)}
   {const to=chgRecipients();$("#chgTo").innerHTML=S.users.map(u=>`<label class="row swrow" for="chg-${esc(u.name)}"><span class="avatar">${esc(initials(u.name))}</span><span class="rt"><b>${esc(u.name)}</b><span>${u.phone?esc(u.phone):"No mobile number yet, so in the app only"}</span></span><input type="checkbox" class="switch" id="chg-${esc(u.name)}" data-chg="${esc(u.name)}"${to.includes(u.name)?" checked":""}></label>`).join("")}
-  const CAPS=[["codes","Give guest codes"],["override","Open or lock doors by hand"],["parking","Open the parking lot"],["mtview","See the mikva temperature"],["events","Add events"],["rabbi","Set the rabbi away and switch situations"]];
+  const CAPS=[["codes","Give guest codes"],["override","Open or lock doors by hand"],["parking","Open the parking lot"],["mtview","See the mikva temperature"],["text","Open and lock their doors by text"],["events","Add events"],["rabbi","Set the rabbi away and switch situations"]];
   renderCtrl();renderWelMsg();
   $("#userRows").innerHTML=`<div class="glist ulist">`+UL().map((u,i)=>{
     const r=u.role==="Restricted",nd=S.doors.filter(d=>((u.perm||{})[d.id]||"hidden")!=="hidden").length;
@@ -4430,6 +4430,7 @@ function uchg(text,rerender){UCH.push(text);$("#uSaveBar").hidden=false;$("#uSav
 function uDone(){UD=null;UCH=[];$("#uSaveBar").hidden=true}
 $("#uSave").onclick=()=>{if(!UD){uDone();return}
   if(!UD.some(u=>u.role==="Super admin")){toast("Keep at least one super admin.");return}
+  if(isAdmin()&&!UD.some(u=>u.name===S.me&&u.role==="Super admin")){toast("You can't take away your own super admin. Ask another super admin.");return}
   const n=UCH.length,text=UCH.length===1?UCH[0]:`Users and permissions: ${UCH.join("; ")}`;const before=S.users;S.users=UD;uDone();commit(text);
   const fresh=[...NEWPW.entries()].filter(([k])=>S.users.some(u=>u.name===k));NEWPW.clear();
   const flips=S.users.map(u=>{const b=before.find(x=>x.name===u.name);return b&&(b.login===false)!==(u.login===false)?{name:u.name,on:u.login!==false}:null}).filter(Boolean);
@@ -5816,7 +5817,7 @@ function tbCard(){if(!TB){tbLoad().then(t=>{if(t&&t.on)renderOpen()});return ""}
   return `<section class="op-ac tb-card"><h3>Open doors by text</h3><div class="tb-b"><p>Text <b>${esc(tbNum(TB.number))}</b>, for example “open ${esc(ex)} 20 min” or “lock ${esc(ex)}”. Opening asks for your text PIN.</p>
     ${TB.phone?`<button type="button" class="btn sm" data-tbpin>${TB.hasPin?"Change text PIN":"Pick a text PIN"}</button>`:`<p class="gf">Your mobile number isn't in Shul Manager yet. Ask a super admin to add it in Users and permissions.</p>`}</div></section>`}
 function tbRows(){const el=$("#tbRows");if(!el)return;const on=!!(S.alerts&&S.alerts.textDoors);
-  el.innerHTML=`<label class="row swrow" for="tbOn"><span class="rt"><b>Open and lock doors by text</b><span>People in Users and permissions can text the shul's number to open or lock the doors they're allowed to change. Opening needs their text PIN.</span></span><input type="checkbox" class="switch" id="tbOn"${on?" checked":""}></label>`
+  el.innerHTML=`<label class="row swrow" for="tbOn"><span class="rt"><b>Open and lock doors by text</b><span>Super admins, and people with “Open and lock their doors by text” turned on in Users and permissions, can text the shul's number to open or lock the doors they may change. Opening needs their text PIN.</span></span><input type="checkbox" class="switch" id="tbOn"${on?" checked":""}></label>`
     +(on&&TB&&TB.hook?`<div class="row"><span class="rt"><b>Twilio incoming address</b><span>Your tunnel's texts address, then <code style="word-break:break-all">${esc(TB.hook)}</code></span></span><button type="button" class="btn sm" data-tbcopy>Copy</button></div>`:"")
     +(on&&TB&&!TB.live?`<div class="row"><span class="rt"><b>Texting isn't live yet</b><span>Turn on live texting in the add-on settings first.</span></span></div>`:"")
     +(on&&TB&&TB.pins?`<div class="row"><span class="rt"><b>Picked a text PIN</b><span>${TB.pins.length?esc(TB.pins.join(", ")):"Nobody yet"}</span></span></div>`:"")}
@@ -6346,13 +6347,14 @@ async function smsRefresh(){if(!ON_BOX)return;let j;try{j=await (await fetch("ap
   const L=$("#smsLog");if(L)L.innerHTML=(j.log||[]).slice(0,20).map(e=>`<div class="row"><span class="ic" style="--c:${e.status==="sent"?"var(--g)":e.status==="test"?"var(--b)":"var(--o)"}">${ico("chat")}</span><div class="rt"><b>${esc(e.to)}</b><span>${esc(e.body)}</span><span>${esc(whenText(e.at))} · ${esc(e.status==="test"?"test, not sent":e.status==="sent"?"sent":(e.status+(e.why?": "+e.why:"")))}</span></div></div>`).join("")||`<div class="row"><span class="hint">None yet.</span></div>`}
 $("#userRows").addEventListener("change",ev=>{const t=ev.target,d=t.dataset;
   if(d.urole!==undefined){const u=ud()[d.urole];
-    if(u.name===S.me&&t.value!=="Super admin"&&ud().filter(x=>x.role==="Super admin").length<2){t.value="Super admin";return} // keep at least one super admin
+    if(u.name===S.me&&u.role==="Super admin"&&t.value!=="Super admin"){t.value="Super admin";toast("You can't take away your own super admin. Ask another super admin.");return}
+    if(u.role==="Super admin"&&t.value!=="Super admin"&&ud().filter(x=>x.role==="Super admin").length<2){t.value="Super admin";toast("Keep at least one super admin.");return}
     u.role=t.value;if(t.value==="Restricted"){u.perm=u.perm||{};u.sched=u.sched||"none";u.can=u.can||{rules:false,override:true,events:true,rabbi:false}}uchg(`${u.name} is now ${t.value}`,true)}
   else if(d.uperm!==undefined){const u=ud()[d.uperm];u.perm=u.perm||{};u.perm[d.door]=t.value;uchg(`${u.name}: ${d.door} set to ${t.options[t.selectedIndex].text}`)}
   else if(d.uall!==undefined&&t.value){const u=ud()[d.uall];u.perm={};S.doors.forEach(x=>u.perm[x.id]=t.value);uchg(`${u.name}: every door set to ${t.options[t.selectedIndex].text}`,true)}
   else if(d.usched!==undefined){const u=ud()[d.usched];u.sched=t.value;uchg(`${u.name}: schedules set to ${t.options[t.selectedIndex].text}`)}
   else if(d.ucan!==undefined){const u=ud()[d.ucan];u.can=u.can||{};u.can[d.cap]=t.checked;uchg(`${u.name}: "${CAPS_LABEL[d.cap]}" turned ${t.checked?"on":"off"}`)}});
-const CAPS_LABEL={parking:"Buzz the parking lot open or keep it open for a while",mtview:"See the mikva temperature, without changing it",codes:"Give temporary codes for their Edit doors",rules:"Change rules for their Edit doors",override:"Open or lock doors by hand",events:"Add events",rabbi:"Set the rabbi away"};
+const CAPS_LABEL={parking:"Buzz the parking lot open or keep it open for a while",mtview:"See the mikva temperature, without changing it",text:"Open and lock their doors by text",codes:"Give temporary codes for their Edit doors",rules:"Change rules for their Edit doors",override:"Open or lock doors by hand",events:"Add events",rabbi:"Set the rabbi away"};
 $("#userRows").addEventListener("click",ev=>{const i=ev.target.dataset.udel;if(i!==undefined){const u=ud().splice(i,1)[0];uchg(`Removed user ${u.name}`,true)}});
 $("#addUser").onclick=()=>{const n=$("#uName").value.trim();if(!n){toast("Type their name first.");$("#uName").focus();return}if(ud().some(u=>u.name===n)){toast("Someone with that name is already added.");return}ud().push($("#uRole").value==="Restricted"?{name:n,role:"Restricted",perm:{},sched:"none",can:{rules:false,override:false,events:false,rabbi:false},added:Date.now()}:{name:n,role:"Super admin",added:Date.now()});$("#uName").value="";uchg(`Added user ${n} (${$("#uRole").value})`,true)};
 $("#copyBackup").onclick=()=>{const txt=JSON.stringify(S);

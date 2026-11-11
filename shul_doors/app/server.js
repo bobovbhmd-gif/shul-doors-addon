@@ -948,6 +948,7 @@ const textOn = () => !!(state && state.alerts && state.alerts.textDoors && sms &
 function textUsers() { return ((state && state.users) || []).filter((u) => u.login !== false).map((u) => ({ ...u, phone: e164(u.phone) })).filter((u) => u.phone); }
 function textDoorsFor(u) {
   const admin = u.role === "Super admin";
+  if (!admin && !(u.can || {}).text) return [];   // the "Open and lock their doors by text" switch on their page
   const out = (state.doors || []).filter((d) => admin || ((u.can || {}).override && (u.perm || {})[d.id] === "edit")).map((d) => ({ id: d.id, name: d.name }));
   if ((admin || (u.can || {}).parking) && ctrlAllow("parkWrites")) for (const d of state.parkDoors || []) out.push({ id: String(d.id), name: d.name, park: true });
   return out;
@@ -1261,6 +1262,11 @@ const server = http.createServer((req, res) => {
       }
       catch (e) { engine.setState(state); return send(res, 400, { error: "rules failed to run: " + e.message }); }
       // "open now", a situation switched on or off, or the rabbi leaving should reach the doors right away
+      {   // a super admin can't take super admin away from themselves, and one always stays
+        const who = matchUser(haUser(req)), after = (body.state.users || []);
+        if (!after.some((x) => x.role === "Super admin")) { engine.setState(state); return send(res, 400, { error: "Keep at least one super admin." }); }
+        if (who && who.role === "Super admin" && !after.some((x) => x.name.toLowerCase() === who.name.toLowerCase() && x.role === "Super admin")) { engine.setState(state); return send(res, 400, { error: "You can't take away your own super admin. Ask another super admin." }); }
+      }
       const pick = (x) => JSON.stringify([x.overrides || [], (x.situations || []).map((t) => [t.id, t.on, t.ranges || []]), x.rabbiAwayNow || false, x.away || []]);
       const urgent = pick(state) !== pick(body.state);
       const before = state; state = body.state; version++;
