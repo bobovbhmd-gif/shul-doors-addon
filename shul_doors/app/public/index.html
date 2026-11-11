@@ -4103,7 +4103,7 @@ async function buzzDoor(id){
   catch(e){return {sent:false,message:"Couldn't reach the box. Try again."}}
 }
 // recent and pinned doors are kept per person (on the box, so every device shows the same)
-const bzValid=id=>S.doors.some(d=>d.id===id);
+const bzValid=id=>{if(S.doors.some(d=>d.id===id))return true;if(!/^P:/.test(id))return false;let L=[];try{L=PK.doors||[]}catch(e){}return !L.length||L.some(d=>"P:"+d.id===id)};
 function buzzRecent(){const u=S.users.find(x=>x.name===S.me);let r=u&&Array.isArray(u.buzzRecent)?u.buzzRecent:null;
   if(!r){try{r=JSON.parse(localStorage.getItem("shulBuzzRecent")||"[]")}catch(e){r=[]}}return r.filter(bzValid)}
 function buzzRemember(id){const r=[id,...buzzRecent().filter(x=>x!==id)].slice(0,12);const u=S.users.find(x=>x.name===S.me);if(u)u.buzzRecent=r;try{localStorage.setItem("shulBuzzRecent",JSON.stringify(r))}catch(e){}}
@@ -5749,17 +5749,18 @@ let PK={doors:null,events:[],timers:[],allow:false,t:0,err:""};
 const PK_DEMO=[{id:"00A1B2C3:0",name:"Parking Entrance 1",state:"locked"},{id:"00A1B2C3:1",name:"Parking Entrance 2",state:"locked"}];
 async function pkLoad(force){if(!ON_BOX){if(!PK.doors){PK.doors=PK_DEMO.map(d=>({...d}));PK.allow=true;PK.events=[{t:Date.now()-40*60e3,text:"Access granted",who:"Aaron Krausz",door:"Parking Entrance 1"},{t:Date.now()-95*60e3,text:"Access granted",who:"Abish Geller",door:"Parking Entrance 2"}]}return}
   if(!force&&Date.now()-PK.t<20000)return;PK.t=Date.now();
-  try{const j=await (await fetch("api/parking?days=7")).json();PK={...PK,doors:j.doors||[],events:j.events||[],timers:j.timers||[],allow:!!j.allow,err:j.ok?"":(j.why||"")};
+  try{const j=await (await fetch("api/parking?days=7")).json();PK={...PK,doors:j.doors||[],events:j.events||[],timers:j.timers||[],holds:j.holds||{},allow:!!j.allow,err:j.ok?"":(j.why||"")};
     if(j.ok&&PK.doors.length){const L=PK.doors.map(d=>({id:"P:"+d.id,name:d.name}));if(JSON.stringify(L)!==JSON.stringify(S.parkDoors||[])){S.parkDoors=L;save();pkMigrate()}}}catch(e){PK.err="Can't reach the box."}
   if($("#tab-open")&&!$("#tab-open").hidden)renderOpen();renderCtrl()}
-const pkOpen=d=>/unlock|open/i.test(d.state||"")||PK.timers.some(t=>t.id===d.id&&t.to>Date.now());
+const pkOpen=d=>/unlock|open/i.test(d.state||"")||!!(PK.holds||{})[d.id]||PK.timers.some(t=>t.id===d.id&&t.to>Date.now());
 function pkTimer(id){const t=PK.timers.find(x=>x.id===id&&x.to>Date.now());return t?t.to:0}
-function pkRow(d){const op=pkOpen(d),c=op?modeColor("Unlock"):modeColor("Lock"),to=pkTimer(d.id);
-  return `<div class="op-r"><button type="button" class="op-t${op?" is-open":""}" data-pk="${esc(d.id)}" style="--c:${c}"><i class="oi">${ico(op?"open":"lock")}</i><span class="ot"><b>${esc(d.name)}</b><span class="os">${op?`<em>Open</em>${to?`<i class="nx" style="font-style:normal"> · locks ${esc(whenText(to))}</i>`:""}`:"Locked"}</span></span></button></div>`}
+function pkRow(d,big){const op=pkOpen(d),c=op?modeColor("Unlock"):modeColor("Lock"),to=pkTimer(d.id),pid="P:"+d.id,pn=buzzPins().includes(pid),held=!!(PK.holds||{})[d.id];
+  return `<div class="${big?"op-tw":"op-r"}"><button type="button" class="op-t${op?" is-open":""}" data-pk="${esc(d.id)}" style="--c:${c}"><i class="oi">${ico(op?"open":"lock")}</i><span class="ot"><b>${esc(d.name)}</b><span class="os">${op?`<em>Open</em>${to?`<i class="nx" style="font-style:normal"> · locks ${esc(whenText(to))}</i>`:held?`<i class="nx" style="font-style:normal"> · until locked</i>`:""}`:"Locked"}</span></span></button><button type="button" class="op-pin${pn?" on":""}" data-oppin="${esc(pid)}" aria-pressed="${pn}" aria-label="${pn?"Unpin":"Pin"} ${esc(d.name)}" title="${pn?"Unpin":"Pin to the top"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z"/><path d="M12 13v8"/></svg></button></div>`}
+function pkPinned(){if(!(isAdmin()||can("parking")))return [];const p=buzzPins();return (PK.doors||[]).filter(d=>p.includes("P:"+d.id))}
 function pkSection(){if(!(isAdmin()||can("parking")))return "";pkLoad();const ds=PK.doors||[];
   if(PK.err&&!ds.length)return `<section class="op-ac"><h3>Parking lot</h3><div class="op-r"><span class="hint" style="padding:10px 16px;display:block">${esc(PK.err)}</span></div></section>`;
-  if(!ds.length)return "";
-  return `<section class="op-ac"><h3>Parking lot<span>${ds.length}</span></h3>${ds.map(pkRow).join("")}</section>`}
+  const rest=ds.filter(d=>!buzzPins().includes("P:"+d.id));if(!rest.length)return "";
+  return `<section class="op-ac"><h3>Parking lot<span>${rest.length}</span></h3>${rest.map(d=>pkRow(d)).join("")}</section>`}
 let PK_SEL=null;
 function pkSheet(id){const d=(PK.doors||[]).find(x=>x.id===id);if(!d)return;PK_SEL=id;const op=pkOpen(d);$("#opT").textContent=d.name;
   $("#opSheet").innerHTML=`<div class="op-now" style="--c:${modeColor(op?"Unlock":"Lock")}"><i class="dot"></i><b>${op?"Open":"Locked"} now</b><span>Parking lot controller</span></div>
@@ -5768,11 +5769,11 @@ function pkSheet(id){const d=(PK.doors||[]).find(x=>x.id===id);if(!d)return;PK_S
     <h3 class="op-sh">Keep it open for</h3><div class="op-mins">${[5,10,20,30,60].map(m=>`<button type="button" data-pka="${m}">${m===60?"1 hour":m+" min"}</button>`).join("")}<button type="button" class="op-cbtn" data-pkc>Other</button>${isAdmin()?`<button type="button" data-pka="0">Until I lock it</button>`:""}</div>
     <div class="op-custom" id="pkCustom" hidden><label class="op-n"><input type="number" id="pkH" min="0" max="${isAdmin()?24:4}" value="1" inputmode="numeric" aria-label="Hours"><span>hours</span></label><label class="op-n"><input type="number" id="pkM" min="0" max="59" value="30" step="5" inputmode="numeric" aria-label="Minutes"><span>min</span></label><button type="button" class="btn pri" id="pkCGo">Open</button></div>
     ${op?`<button type="button" class="op-back" data-pka="reset">Lock it now</button>`:""}
-    <div class="op-foot"><span class="gf" style="margin:0">Every buzz and open is saved in Activity.</span></div>`;openModal("mOpen")}
+    <div class="op-foot"><span class="gf" style="margin:0">Every buzz and open is saved in Activity.</span><button type="button" class="lnk" data-oppin="P:${esc(d.id)}" data-opsheet="1">${buzzPins().includes("P:"+d.id)?"Unpin":"Pin to top"}</button></div>`;openModal("mOpen")}
 async function pkAct(k){const d=(PK.doors||[]).find(x=>x.id===PK_SEL);if(!d)return;const cmd=k==="buzz"?"buzz":k==="reset"?"reset":"open",mins=cmd==="open"?+k:0;
   if(ON_BOX){let j;try{j=await (await fetch("api/parking/door",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:d.id,name:d.name,cmd,mins})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}
     if(!j.ok){toast(j.error||"Didn't work");return}}
-  else{d.state=cmd==="reset"||cmd==="buzz"?"locked":"unlocked";PK.timers=PK.timers.filter(t=>t.id!==d.id);if(mins)PK.timers.push({id:d.id,to:Date.now()+mins*60e3})}
+  else{d.state=cmd==="reset"||cmd==="buzz"?"locked":"unlocked";PK.holds=PK.holds||{};if(cmd!=="buzz")delete PK.holds[d.id];if(cmd==="open"&&!mins)PK.holds[d.id]=true;PK.timers=PK.timers.filter(t=>t.id!==d.id);if(mins)PK.timers.push({id:d.id,to:Date.now()+mins*60e3})}
   const text=`Parking lot ${d.name}: ${cmd==="buzz"?"buzzed open":cmd==="reset"?"locked":mins?`open for ${durText(mins)}`:"open until locked"}`;
   ctrlNote(text);toast(text.replace("Parking lot ",""));closeModal("mOpen");pkLoad(true);renderOpen()}
 document.addEventListener("click",ev=>{const t=ev.target;const p=t.closest("[data-pk]");if(p){pkSheet(p.dataset.pk);return}const a=t.closest("[data-pka]");if(a){pkAct(a.dataset.pka);return}
@@ -5799,7 +5800,8 @@ function renderOpen(){const body=$("#opBody");if(!body)return;fixOpenNav();
   const top=new Set([...pins,...rec]);
   const byA=new Map();ds.filter(d=>!top.has(d.id)).sort((a,b)=>doorName(a.id).localeCompare(doorName(b.id))).forEach(d=>{const a=opArea(d.id);if(!byA.has(a))byA.set(a,[]);byA.get(a).push(d.id)});
   const areas=[...byA.entries()].sort((a,b)=>a[0]==="Other doors"?1:b[0]==="Other doors"?-1:a[0].localeCompare(b[0]));
-  body.innerHTML=(pins.length?head("Pinned")+`<div class="op-grid small">${pins.map(id=>opTile(id,true)).join("")}</div>`:(OP_F==="all"?`<p class="op-tip">Tip: tap the pin next to any door to keep it at the top.</p>`:""))
+  const pkp=OP_F==="all"?pkPinned():[];
+  body.innerHTML=(pins.length||pkp.length?head("Pinned")+`<div class="op-grid small">${pins.map(id=>opTile(id,true)).join("")}${pkp.map(d=>pkRow(d,true)).join("")}</div>`:(OP_F==="all"?`<p class="op-tip">Tip: tap the pin next to any door to keep it at the top.</p>`:""))
     +(rec.length?head("Recent")+`<div class="op-grid small">${rec.map(id=>opTile(id,true)).join("")}</div>`:"")
     +`<div class="op-areas">${OP_F!=="open"||(PK.doors||[]).some(pkOpen)?pkSection():""}${areas.map(([a,ids])=>`<section class="op-ac"><h3>${esc(a)}<span>${ids.length}</span></h3>${ids.map(opRow).join("")}</section>`).join("")}</div>`}
 function opSheet(id){OP_SEL=id;const f=doorFacts(id),mayBuzz=isAdmin(),mayOpen=canChangeDoor(id);

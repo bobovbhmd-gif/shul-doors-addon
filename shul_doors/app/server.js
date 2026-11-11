@@ -727,7 +727,7 @@ async function ctrlApi(req, res, p, u) {
       let doors = [], why = "";
       try { doors = await atrium.doors(); } catch (e) { why = e.message; }
       const days = Math.max(1, Math.min(400, +u.searchParams.get("days") || 7)), from = Date.now() - days * 864e5;
-      return send(res, 200, { ok: !why, why, doors, timers: store.parkTimers || [], modes: store.parkMode || {}, events: (store.parkEvents || []).filter((e) => e.t >= from).slice(-1000), allow: ctrlAllow("parkWrites"), status: atrium.status() });
+      return send(res, 200, { ok: !why, why, doors, timers: store.parkTimers || [], holds: store.parkHold || {}, modes: store.parkMode || {}, events: (store.parkEvents || []).filter((e) => e.t >= from).slice(-1000), allow: ctrlAllow("parkWrites"), status: atrium.status() });
     }
     if (req.method === "POST" && p === "/api/parking/apply") {
       if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can change the parking lot." });
