@@ -637,6 +637,8 @@ async function parkApply(force) {
 const parkScheduled = () => !!(state && ((state.rules || []).some((r) => (r.doors || []).some((x) => String(x).startsWith("P:") || ((state.groups || []).find((g) => "g:" + g.id === x) || { doors: [] }).doors.some((y) => String(y).startsWith("P:")))) || Object.keys(state.parkMan || {}).length));
 if (atrium.configured) setInterval(() => { if (ctrlAllow("parkWrites") && parkScheduled()) parkApply(false).catch(() => {}); }, 60000).unref();
 function meAdmin(req) { return superAdmin(haUser(req)); }
+// a switch a super admin turned on for this person (Settings, People): parking, mtview, ...
+function meCan(req, k) { if (meAdmin(req)) return true; const u = matchUser(haUser(req)); return !!(u && u.can && u.can[k]); }
 async function ctrlApi(req, res, p, u) {
   try {
     if (req.method === "GET" && p === "/api/controllers") return send(res, 200, { mikva: mikva.status(), parking: atrium.status(), allow: { mikva: ctrlAllow("mikvaWrites"), parking: ctrlAllow("parkWrites"), mtemp: ctrlAllow("mtempWrites") }, mtemp: { configured: !!HA_URL }, logins: !!SUP_TOKEN || !!process.env.SD_HA_WS });
@@ -732,10 +734,11 @@ async function ctrlApi(req, res, p, u) {
       return send(res, 200, await parkApply(true));
     }
     if (req.method === "POST" && p === "/api/parking/door") {
-      if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can open the parking lot." });
+      if (!meCan(req, "parking")) return send(res, 403, { error: "You don't have permission to open the parking lot." });
       if (!ctrlAllow("parkWrites")) return send(res, 200, { ok: false, error: "Opening the parking lot from here is turned off. Turn it on under Settings, Controllers." });
       const b = (await readBody(req)) || {}, mins = Math.max(0, Math.min(24 * 60, +b.mins || 0));
       const cmd = b.cmd === "buzz" ? "buzz" : b.cmd === "reset" ? "reset" : "open";
+      if (!meAdmin(req) && cmd === "open" && (!mins || mins > 240)) return send(res, 403, { error: "Pick how long to keep it open, up to 4 hours." });
       await atrium.command(String(b.id || ""), cmd);
       store.parkHold = store.parkHold || {}; store.parkMode = store.parkMode || {};
       if (cmd !== "buzz") { store.parkTimers = (store.parkTimers || []).filter((t) => t.id !== b.id); delete store.parkMode[b.id]; delete store.parkHold[b.id]; }

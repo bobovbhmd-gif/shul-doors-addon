@@ -1831,7 +1831,8 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 @media (max-width:600px){.pk-week .dn{width:64px}.pk-modes button small{display:none}}
 /* heat-up */
 .ts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.ts select,.ts input{width:auto!important;min-width:0}.ts input[type=number]{width:72px!important}
-.mt-hand{display:flex;flex-direction:column;align-items:stretch;gap:8px;background:color-mix(in srgb,var(--warn,#c80) 12%,var(--fill));border-radius:10px;padding:8px 10px;margin-top:10px}.mt-hand span{display:flex;flex-direction:column;font-size:12.5px;color:var(--muted)}.mt-hand b{font-size:13.5px;color:var(--fg)}.mt-hb{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.mt-hb .lnk{background:none;border:0;color:var(--b);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:4px}
+.mt-hand{display:flex;flex-direction:column;align-items:stretch;gap:8px;background:color-mix(in srgb,var(--warn,#c80) 12%,var(--fill));border-radius:10px;padding:8px 10px;margin-top:10px}.mt-hand span{display:flex;flex-direction:column;font-size:12.5px;color:var(--muted)}.mt-hand b{font-size:13.5px;color:var(--fg)}.mt-view .mt-set button,.mt-view .mt-hb{display:none}
+.mt-hb{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.mt-hb .lnk{background:none;border:0;color:var(--b);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:4px}
 .mt-sch{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12.5px;color:var(--muted)}.mt-sch i{width:7px;height:7px;border-radius:50%;background:var(--ok)}
 .pk-evr{align-items:flex-start;gap:12px}.pk-evb{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}.pk-effs{display:flex;flex-direction:column;gap:3px;margin-top:6px}.pk-eff{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--fg)}.pk-eff i{width:9px;height:9px;border-radius:3px;flex:none}.pk-eff em{font-style:normal;color:var(--muted)}.pk-eff.none{color:var(--muted)}
 .msp-row .rt{flex:1;min-width:0}.msp-row .ms-bar{margin-top:8px;width:100%}.msp-days{margin:12px 0}.msp-days summary{display:flex;flex-direction:column;cursor:pointer;padding:6px 0}.msp-days summary span{font-size:13px;color:var(--muted)}.msp-days .checks{display:flex;flex-wrap:wrap;gap:6px}
@@ -2106,7 +2107,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
     <button type="button" class="navbtn" data-tab="msgs" hidden><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></i>Messages <span class="badge" id="msgBadge" hidden></span></button>
     <button type="button" class="navbtn" data-tab="activity" data-also="live reports" id="actNav"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i>Activity</button>
     <button type="button" class="navbtn admin-only" data-tab="parking"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 16V11l2-5h10l2 5v5M5 16h14M5 16v2M19 16v2"/><circle cx="8" cy="13" r=".8"/><circle cx="16" cy="13" r=".8"/></svg></i>Parking</button>
-    <button type="button" class="navbtn admin-only" data-tab="mikvah"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z"/></svg></i>Mikva</button>
+    <button type="button" class="navbtn" id="navMikva" data-tab="mikvah"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z"/></svg></i>Mikva</button>
     <div class="ng"></div>
     <button type="button" class="navbtn lkbtn admin-only" data-tab="lockdown"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><path d="M12 15v2"/></svg></i>Lockdown</button>
     <button type="button" class="navbtn" data-tab="setup" data-also="people"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></i>Settings</button>
@@ -3830,7 +3831,7 @@ function renderSetup(){
   const NOTYET=ON_BOX?["offline","ups","batt","heartbeat"]:[];
   $("#alertChecks").innerHTML=ALERTS.map(([k,l])=>`<label class="row swrow" for="al-${k}"><span class="rt"><b>${esc(l)}</b>${k==="held"?`<span>After <input type="number" id="heldMin" min="1" max="120" value="${S.alerts.heldMin}" aria-label="Minutes"> minutes</span>`:""}${NOTYET.includes(k)?`<span>Not connected yet</span>`:""}</span><input type="checkbox" class="switch" id="al-${k}" data-alert="${k}"${S.alerts[k]?" checked":""}></label>`).join("");
   {const to=chgRecipients();$("#chgTo").innerHTML=S.users.map(u=>`<label class="row swrow" for="chg-${esc(u.name)}"><span class="avatar">${esc(initials(u.name))}</span><span class="rt"><b>${esc(u.name)}</b><span>${u.phone?esc(u.phone):"No mobile number yet, so in the app only"}</span></span><input type="checkbox" class="switch" id="chg-${esc(u.name)}" data-chg="${esc(u.name)}"${to.includes(u.name)?" checked":""}></label>`).join("")}
-  const CAPS=[["codes","Give guest codes"],["override","Open or lock doors by hand"],["events","Add events"],["rabbi","Set the rabbi away and switch situations"]];
+  const CAPS=[["codes","Give guest codes"],["override","Open or lock doors by hand"],["parking","Open the parking lot"],["mtview","See the mikva temperature"],["events","Add events"],["rabbi","Set the rabbi away and switch situations"]];
   renderCtrl();renderWelMsg();
   $("#userRows").innerHTML=`<div class="glist ulist">`+UL().map((u,i)=>{
     const r=u.role==="Restricted",nd=S.doors.filter(d=>((u.perm||{})[d.id]||"hidden")!=="hidden").length;
@@ -3863,7 +3864,8 @@ function renderStatus(){
   $("#meSel").innerHTML=S.users.map(u=>`<option${u.name===S.me?" selected":""}>${esc(u.name)}</option>`).join("");
   $("#app").classList.toggle("role-editor",!isAdmin());$("#app").classList.toggle("role-admin",isAdmin());
   ["override","events","rabbi","rules","codes"].forEach(k=>$("#app").classList.toggle("no-"+k,!can(k)));
-  $("#rabRO").hidden=can("rabbi");$("#rabRO").textContent=S.rabbiAwayNow?"· away":"· local";
+  $("#rabRO").hidden=can("rabbi");
+  {const nm=$("#navMikva");if(nm)nm.hidden=!(isAdmin()||can("mtview"));}fixOpenNav();$("#rabRO").textContent=S.rabbiAwayNow?"· away":"· local";
 }
 function tRange(a,b){const end=b>=1440?"midnight":fmt(b), st=fmt(a);
   if(b<1440&&(a<720)===(b<720))return `${st.replace(/ [AP]M$/,"")} to ${end}`;return `${st} to ${end}`}
@@ -4823,12 +4825,13 @@ function renderMt(){const b=$("#mtBody");if(!b)return;const ae=document.activeEl
     ${c.when==="times"?`<div class="row"><span class="rt"><b>Between</b></span><span class="tline"><input type="time" value="${c.from}" data-mtc="from" aria-label="From"> and <input type="time" value="${c.to}" data-mtc="to" aria-label="To"></span></div>`:""}
     <label class="row swrow"><span class="rt"><b>Also when a thermostat goes offline</b></span><input type="checkbox" class="switch" data-mtc="offline"${c.offline?" checked":""}></label>`:""}
     </div><p class="gf">The preheat after midnight is when a problem can still be fixed, so alerts go out between 11:30 PM and 2:30 AM unless you change it. Texts start once texting is live. Each person also needs to agree to texts under Settings, Alerts. An alert goes out once, then again only if it's still a problem an hour later.</p>`;
-  const seg=`<div class="mk-seg" role="tablist">${[["now","Now"],["sched","Schedule"],["heat","Heat-up"],["log","Log"],["alerts","Alerts"]].map(([k,t])=>`<button type="button" class="${MTT===k?"on":""}" data-mtt="${k}">${t}</button>`).join("")}</div>`;
+  const viewOnly=!isAdmin();if(viewOnly&&(MTT==="sched"||MTT==="alerts"))MTT="now";
+  const seg=`<div class="mk-seg" role="tablist">${[["now","Now"],["sched","Schedule"],["heat","Heat-up"],["log","Log"],["alerts","Alerts"]].filter(x=>!viewOnly||!["sched","alerts"].includes(x[0])).map(([k,t])=>`<button type="button" class="${MTT===k?"on":""}" data-mtt="${k}">${t}</button>`).join("")}</div>`;
   if(MTT==="sched"){b.innerHTML=seg+(MT.allow?"":`<p class="gf top mk-ro">Showing the thermostat schedules. Saving them from here is off. A super admin can turn it on under Settings, Controllers.</p>`)+msHtml();return}
   if(MTT==="heat"){b.innerHTML=seg+huHtml();return}
   if(MTT==="log"){if(!MTL.rows&&!MTL.loading)setTimeout(mtlLoad);b.innerHTML=seg+mtlHtml();return}
   if(MTT==="alerts"){b.innerHTML=seg+al.replace('<h3 class="gh mk-h">Alerts</h3>','');return}
-  b.innerHTML=seg+ro+`<div class="mt-grid">${cards}</div><p class="gf">Each thermostat follows its schedule (for example heating to 106° from 2 AM, resting at 68° in the day). A change by hand, here or in the Meross app, lasts until the next change in its schedule, unless you tap Keep it.</p><h3 class="gh mk-h">Last 24 hours</h3>${mtChart(L)}`}
+  b.innerHTML=seg+(viewOnly?"":ro)+`<div class="mt-grid${viewOnly?" mt-view":""}">${cards}</div><p class="gf">Each thermostat follows its schedule (for example heating to 106° from 2 AM, resting at 68° in the day). A change by hand, here or in the Meross app, lasts until the next change in its schedule, unless you tap Keep it.</p><h3 class="gh mk-h">Last 24 hours</h3>${mtChart(L)}`}
 document.addEventListener("click",async ev=>{const t=ev.target;if(t.closest("[data-mtre]")){MT.err="";mtLoad(true);return}
   const bk=t.closest("[data-mtback]");if(bk){const x=MT.list[+bk.dataset.mtback];if(!MT.allow&&!(S.ctrl&&S.ctrl.mtempWrites)){toast("Changing the thermostats from here is off. Turn on Mikva thermostats under Settings, Controllers.");return}
     if(ON_BOX){bk.disabled=true;let j;try{j=await (await fetch("api/mtemp/resume",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:x.id})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}bk.disabled=false;if(!j.ok){toast(j.error||"Not changed");return}}
@@ -5733,7 +5736,7 @@ const pkOpen=d=>/unlock|open/i.test(d.state||"")||PK.timers.some(t=>t.id===d.id&
 function pkTimer(id){const t=PK.timers.find(x=>x.id===id&&x.to>Date.now());return t?t.to:0}
 function pkRow(d){const op=pkOpen(d),c=op?modeColor("Unlock"):modeColor("Lock"),to=pkTimer(d.id);
   return `<div class="op-r"><button type="button" class="op-t${op?" is-open":""}" data-pk="${esc(d.id)}" style="--c:${c}"><i class="oi">${ico(op?"open":"lock")}</i><span class="ot"><b>${esc(d.name)}</b><span class="os">${op?`<em>Open</em>${to?`<i class="nx" style="font-style:normal"> · locks ${esc(whenText(to))}</i>`:""}`:"Locked"}</span></span></button></div>`}
-function pkSection(){if(!isAdmin())return "";pkLoad();const ds=PK.doors||[];
+function pkSection(){if(!(isAdmin()||can("parking")))return "";pkLoad();const ds=PK.doors||[];
   if(PK.err&&!ds.length)return `<section class="op-ac"><h3>Parking lot</h3><div class="op-r"><span class="hint" style="padding:10px 16px;display:block">${esc(PK.err)}</span></div></section>`;
   if(!ds.length)return "";
   return `<section class="op-ac"><h3>Parking lot<span>${ds.length}</span></h3>${ds.map(pkRow).join("")}</section>`}
@@ -5742,7 +5745,8 @@ function pkSheet(id){const d=(PK.doors||[]).find(x=>x.id===id);if(!d)return;PK_S
   $("#opSheet").innerHTML=`<div class="op-now" style="--c:${modeColor(op?"Unlock":"Lock")}"><i class="dot"></i><b>${op?"Open":"Locked"} now</b><span>Parking lot controller</span></div>
     ${!PK.allow?`<p class="gf mk-ro">Opening the parking lot from here is off. A super admin can turn it on under Settings, Controllers.</p>`:""}
     <button type="button" class="op-buzz" data-pka="buzz">${ico("open")}<span><b>Buzz open</b><small>Unlocks for a few seconds</small></span></button>
-    <h3 class="op-sh">Keep it open for</h3><div class="op-mins">${[5,10,20,30,60].map(m=>`<button type="button" data-pka="${m}">${m===60?"1 hour":m+" min"}</button>`).join("")}<button type="button" data-pka="0">Until I lock it</button></div>
+    <h3 class="op-sh">Keep it open for</h3><div class="op-mins">${[5,10,20,30,60].map(m=>`<button type="button" data-pka="${m}">${m===60?"1 hour":m+" min"}</button>`).join("")}<button type="button" class="op-cbtn" data-pkc>Other</button>${isAdmin()?`<button type="button" data-pka="0">Until I lock it</button>`:""}</div>
+    <div class="op-custom" id="pkCustom" hidden><label class="op-n"><input type="number" id="pkH" min="0" max="${isAdmin()?24:4}" value="1" inputmode="numeric" aria-label="Hours"><span>hours</span></label><label class="op-n"><input type="number" id="pkM" min="0" max="59" value="30" step="5" inputmode="numeric" aria-label="Minutes"><span>min</span></label><button type="button" class="btn pri" id="pkCGo">Open</button></div>
     ${op?`<button type="button" class="op-back" data-pka="reset">Lock it now</button>`:""}
     <div class="op-foot"><span class="gf" style="margin:0">Every buzz and open is saved in Activity.</span></div>`;openModal("mOpen")}
 async function pkAct(k){const d=(PK.doors||[]).find(x=>x.id===PK_SEL);if(!d)return;const cmd=k==="buzz"?"buzz":k==="reset"?"reset":"open",mins=cmd==="open"?+k:0;
@@ -5751,9 +5755,11 @@ async function pkAct(k){const d=(PK.doors||[]).find(x=>x.id===PK_SEL);if(!d)retu
   else{d.state=cmd==="reset"||cmd==="buzz"?"locked":"unlocked";PK.timers=PK.timers.filter(t=>t.id!==d.id);if(mins)PK.timers.push({id:d.id,to:Date.now()+mins*60e3})}
   const text=`Parking lot ${d.name}: ${cmd==="buzz"?"buzzed open":cmd==="reset"?"locked":mins?`open for ${durText(mins)}`:"open until locked"}`;
   ctrlNote(text);toast(text.replace("Parking lot ",""));closeModal("mOpen");pkLoad(true);renderOpen()}
-document.addEventListener("click",ev=>{const t=ev.target;const p=t.closest("[data-pk]");if(p){pkSheet(p.dataset.pk);return}const a=t.closest("[data-pka]");if(a){pkAct(a.dataset.pka)}});
+document.addEventListener("click",ev=>{const t=ev.target;const p=t.closest("[data-pk]");if(p){pkSheet(p.dataset.pk);return}const a=t.closest("[data-pka]");if(a){pkAct(a.dataset.pka);return}
+  if(t.closest("[data-pkc]")){const c=$("#pkCustom");c.hidden=!c.hidden;if(!c.hidden){$("#pkH").focus();$("#pkH").select()}return}
+  if(t.closest("#pkCGo")){const m=Math.round((+$("#pkH").value||0)*60+(+$("#pkM").value||0)),max=isAdmin()?1440:240;if(m<1){toast("Pick how long to keep it open.");return}if(m>max){toast(`Up to ${max/60} hours.`);return}pkAct(String(m))}});
 function opDoors(){const mayBuzz=isAdmin();return S.doors.filter(d=>mayBuzz||canChangeDoor(d.id))}
-function fixOpenNav(){const n=$("#openNav");if(n)n.hidden=!opDoors().length}
+function fixOpenNav(){const n=$("#openNav");if(n)n.hidden=!opDoors().length&&!can("parking")}
 let OP_F="all";
 function opArea(id){let best=null;S.groups.forEach(g=>{if(g.doors.includes(id)&&(!best||g.doors.length<best.doors.length))best=g});return best?best.name:"Other doors"}
 function opTile(id,big){const f=doorFacts(id),pn=buzzPins().includes(id),c=modeColor(f.st.mode),op=f.st.mode==="Unlock";
@@ -5762,7 +5768,7 @@ function opTile(id,big){const f=doorFacts(id),pn=buzzPins().includes(id),c=modeC
 function opRow(id){return opTile(id,false).replace('class="op-tw"','class="op-r"')}
 function renderOpen(){const body=$("#opBody");if(!body)return;fixOpenNav();
   const ds0=opDoors(),q=($("#opQ").value||"").trim().toLowerCase();
-  if(!ds0.length){body.innerHTML=emptyState("door","No doors to open","You don't have permission to open doors.","");$("#opF").innerHTML="";return}
+  if(!ds0.length){$("#opF").innerHTML="";const pk=pkSection();body.innerHTML=pk||emptyState("door","No doors to open","You don't have permission to open doors.","");return}
   const isOpen=d=>stateNow(d.id).mode==="Unlock",nOpen=ds0.filter(isOpen).length;
   $("#opF").innerHTML=[["all","All",ds0.length],["open","Open now",nOpen],["locked","Locked",ds0.length-nOpen]].map(([k,t,n])=>`<button type="button" class="fchip f-${k}${OP_F===k?" on":""}" data-opf="${k}">${t} <b>${n}</b></button>`).join("");
   const ds=ds0.filter(d=>OP_F==="all"||(OP_F==="open")===isOpen(d)),has=id=>ds.some(d=>d.id===id);
@@ -5944,7 +5950,7 @@ function buildBnav(){const bar=document.querySelector(".bnav");if(!bar)return;
 
 // pages that share one menu item get tabs under the title
 const PAGE_TABS=[[["mikvah","Magnet"],["mtemp","Temperature"]],[["rules","Rules"],["events","Events"],["special","Special times"]],[["activity","History"],["live","Live"],["reports","Reports"]],[["preview","Day"],["sheet","Week sheet"]]];
-function tabOk(k){if(k==="special")return isAdmin()||can("rabbi");if(k==="live")return isAdmin();if(k==="reports")return isAdmin()&&!SIMPLE;if(k==="activity")return !SIMPLE;return true}
+function tabOk(k){if(k==="mikvah")return isAdmin();if(k==="special")return isAdmin()||can("rabbi");if(k==="live")return isAdmin();if(k==="reports")return isAdmin()&&!SIMPLE;if(k==="activity")return !SIMPLE;return true}
 function drawPageTabs(t){const el=$("#pageTabs");if(!el)return;const grp=PAGE_TABS.find(g=>g.some(x=>x[0]===t)&&g[0][0]!=="preview");
   if(t==="people"){el.hidden=false;el.innerHTML=`<button type="button" class="pback" data-pt="setup">\u2039 Settings</button>`;return}
   const ok=grp?grp.filter(x=>tabOk(x[0])):[];el.hidden=ok.length<2;
@@ -5965,7 +5971,7 @@ $("#scrim").onclick=()=>setDrawer(false);
 document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab(b.dataset.go));
 addEventListener("keydown",ev=>{if(ev.key==="Escape")setDrawer(false)});
 const SUBS={parking:"The two parking lot entrances: who can get in, and when",mtemp:"The water temperature in each pool",mikvah:"The mikva door magnet. It runs on its own, even if this box is off",lockdown:"For an emergency. No one gets in, not even with a card or PIN, until you end it",open:"Tap a door, then buzz it or open it for a few minutes",people:"Everyone with a card or PIN in Protector.Net",live:"Who is coming in, at every door, as it happens",board:"",doors:"Live status of every door. Tap one to change it.",preview:"What every door does, hour by hour",sheet:"One week on one page, ready to print or email",rules:"The standing instructions the doors follow",events:"Weddings, sheva brachos and the shul's own dates",codes:"PINs for visitors that expire on their own",msgs:"Ask a teammate to make a change",reports:"How the doors are used",activity:"What changed, and what the doors were doing at any moment",setup:""};
-function showTab(t){CUR_TAB=t;useCount(t);if(t!=="doors"&&typeof SELMODE!=="undefined"&&SELMODE){SELMODE=false;DSEL.clear();document.body.classList.remove("selmode")}document.querySelectorAll(".navbtn[data-tab]").forEach(x=>x.classList.toggle("on",x.dataset.tab===t||(x.dataset.also||"").split(" ").includes(t)));
+function showTab(t){if((t==="mikvah"||t==="mtemp")&&!isAdmin())t=can("mtview")?"mtemp":"board";if(t==="parking"&&!isAdmin())t="open";CUR_TAB=t;useCount(t);if(t!=="doors"&&typeof SELMODE!=="undefined"&&SELMODE){SELMODE=false;DSEL.clear();document.body.classList.remove("selmode")}document.querySelectorAll(".navbtn[data-tab]").forEach(x=>x.classList.toggle("on",x.dataset.tab===t||(x.dataset.also||"").split(" ").includes(t)));
   drawPageTabs(t);
   const inBar=[...document.querySelectorAll(".bnav [data-tab]")].some(x=>x.dataset.tab===t||(x.dataset.also||"").split(" ").includes(t));
   $("#moreBtn").classList.toggle("on",!inBar);
@@ -6278,7 +6284,7 @@ $("#userRows").addEventListener("change",ev=>{const t=ev.target,d=t.dataset;
   else if(d.uall!==undefined&&t.value){const u=ud()[d.uall];u.perm={};S.doors.forEach(x=>u.perm[x.id]=t.value);uchg(`${u.name}: every door set to ${t.options[t.selectedIndex].text}`,true)}
   else if(d.usched!==undefined){const u=ud()[d.usched];u.sched=t.value;uchg(`${u.name}: schedules set to ${t.options[t.selectedIndex].text}`)}
   else if(d.ucan!==undefined){const u=ud()[d.ucan];u.can=u.can||{};u.can[d.cap]=t.checked;uchg(`${u.name}: "${CAPS_LABEL[d.cap]}" turned ${t.checked?"on":"off"}`)}});
-const CAPS_LABEL={codes:"Give temporary codes for their Edit doors",rules:"Change rules for their Edit doors",override:"Open or lock doors by hand",events:"Add events",rabbi:"Set the rabbi away"};
+const CAPS_LABEL={parking:"Buzz the parking lot open or keep it open for a while",mtview:"See the mikva temperature, without changing it",codes:"Give temporary codes for their Edit doors",rules:"Change rules for their Edit doors",override:"Open or lock doors by hand",events:"Add events",rabbi:"Set the rabbi away"};
 $("#userRows").addEventListener("click",ev=>{const i=ev.target.dataset.udel;if(i!==undefined){const u=ud().splice(i,1)[0];uchg(`Removed user ${u.name}`,true)}});
 $("#addUser").onclick=()=>{const n=$("#uName").value.trim();if(!n||ud().some(u=>u.name===n))return;ud().push($("#uRole").value==="Restricted"?{name:n,role:"Restricted",perm:{},sched:"none",can:{rules:false,override:false,events:false,rabbi:false},added:Date.now()}:{name:n,role:"Super admin",added:Date.now()});$("#uName").value="";uchg(`Added user ${n} (${$("#uRole").value})`,true)};
 $("#copyBackup").onclick=()=>{const txt=JSON.stringify(S);
