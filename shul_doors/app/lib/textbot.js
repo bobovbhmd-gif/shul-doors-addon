@@ -66,7 +66,7 @@ function createTextBot({ store, save = () => {}, users, doorsFor, isAdmin, act, 
   async function run(u, pend) {
     const list = pend.doors;
     try {
-      if (pend.action === "open" && list.every((d) => d.mag)) { await act.open(u, list, pend.mins); return `${names(list)} is off for ${durText(pend.mins)}, until ${timeText(now() + pend.mins * 60e3)}, then back to its schedule. Text "${list[0].name} on" to turn it back on sooner.`; }
+      if (pend.action === "open" && list.every((d) => d.hold)) { await act.open(u, list, pend.mins); return `${names(list)} is held open for ${durText(pend.mins)}, until ${timeText(now() + pend.mins * 60e3)}, then back to its schedule. Text "close ${list[0].name}" to end it sooner.`; }
       if (pend.action === "open") { await act.open(u, list, pend.mins); return `${names(list)} ${list.length > 1 ? "are" : "is"} open for ${durText(pend.mins)}, until ${timeText(now() + pend.mins * 60e3)}. Text "lock ${list[0].name}" to lock it sooner.`; }
       if (pend.action === "buzz") { const r = await act.buzz(u, list); return r || `${names(list)} buzzed open.`; }
     } catch (e) { log("warn", "text door request: " + e.message); return `That didn't work: ${e.message}`; }
@@ -131,7 +131,7 @@ function createTextBot({ store, save = () => {}, users, doorsFor, isAdmin, act, 
     store.textPending[num] = { name: u.name, action: r.action, doors: list, mins, at: t }; save();
     return r.action === "buzz"
       ? `Buzz open ${names(list)}? Reply with your text PIN to confirm, or NO.`
-      : list.every((d) => d.mag) ? `Turn off ${names(list)} for ${durText(mins)}? Reply with your text PIN to confirm, or NO.`
+      : list.every((d) => d.hold) ? `Hold ${names(list)} open for ${durText(mins)}? Reply with your text PIN to confirm, or NO.`
       : `Open ${names(list)} for ${durText(mins)}? Reply with your text PIN to confirm, or NO.`;
   }
 

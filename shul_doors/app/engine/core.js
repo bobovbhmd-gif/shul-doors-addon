@@ -205,7 +205,6 @@ function outputDay(o,s){
   if(outHoly(s))off(0,outHoly(addDays(s,1))?1440:outAt(o.on,z));
   else if(outHoly(addDays(s,1)))off(outAt(o.off,z),1440);
   (o.extra||[]).forEach(x=>{if(x.d===dow(s))off(x.a,x.b)});
-  (o.hand||[]).forEach(h=>{if(!h||!h.from||!h.to||h.to<=h.from)return;const ds=nyDate(h.from),de=nyDate(h.to);if(s<ds||s>de)return;off(s===ds?nyMinutes(h.from):0,s===de?nyMinutes(h.to):1440)});   // turned off by hand for a while
   const segs=[];let a=0;for(let m=1;m<=1440;m++)if(m===1440||arr[m]!==arr[a]){segs.push({a,b:m,mode:arr[a]});a=m}
   return segs}
 
