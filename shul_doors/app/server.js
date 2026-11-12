@@ -1205,7 +1205,7 @@ const server = http.createServer((req, res) => {
     const me = matchUser(haUser(req)), admin = meAdmin(req);
     textNumberOf().then((number) => send(res, 200, { on: !!(state.alerts && state.alerts.textDoors), live: !!(sms && sms.mode === "live" && sms.configured), number,
       hasPin: !!(me && textbot.hasPin(me.name)), phone: !!(me && e164(me.phone)), doors: me ? textDoorsFor(me).length : 0,
-      ...(admin ? { hook: "/twilio/sms/" + store.textHook, pins: ((state.users) || []).filter((u) => textbot.hasPin(u.name)).map((u) => u.name) } : {}) }));
+      ...(admin ? { hook: "/twilio/sms/" + store.textHook } : {}) }));
     return;
   }
   if (req.method === "POST" && p === "/api/textpin") {

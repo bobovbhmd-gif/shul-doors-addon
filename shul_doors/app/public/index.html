@@ -2555,7 +2555,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
           <div class="glist" id="chgTo"></div>
           </section>
           <section data-tm="doors" hidden>
-          <p class="gf top">People can text the shul's number to open or lock the doors they may change. Opening needs their text PIN; locking doesn't.</p>
+          <p class="gf top">People can text the shul's number to open or lock the doors they may change. To open, the reply asks them to send back a short code, so a faked number can't open anything.</p>
           <div class="glist" id="tbRows"></div>
           <h3 class="gh">Who may use it</h3>
           <div class="glist" id="tbPeople"></div>
@@ -3903,7 +3903,7 @@ let TMS="alerts";
 function tmShow(k){TMS=k;document.querySelectorAll("[data-tms]").forEach(b=>b.classList.toggle("on",b.dataset.tms===k));document.querySelectorAll("section[data-tm]").forEach(x=>x.hidden=x.dataset.tm!==k);if(k==="log")lgLoad(false,"tl");if(k==="doors"){tbRows();tbPeople()}}
 document.addEventListener("click",ev=>{const b=ev.target.closest("[data-tms]");if(b)tmShow(b.dataset.tms)});
 function tbPeople(){const el=$("#tbPeople");if(!el)return;
-  el.innerHTML=S.users.map((u,i)=>{const sa=u.role==="Super admin",on=sa||!!(u.can&&u.can.text),pin=TB&&TB.pins?TB.pins.includes(u.name):null;
+  el.innerHTML=S.users.map((u,i)=>{const sa=u.role==="Super admin",on=sa||!!(u.can&&u.can.text),pin=null;
     return `<div class="row"><span class="avatar">${esc(initials(u.name))}</span><span class="rt"><b>${esc(u.name)}</b><span>${!u.phone?"No mobile number":sa?"Super admin, always allowed":on?"Allowed":"Not allowed"}${pin==null?"":pin?" · PIN picked":on?" · no PIN yet":""}</span></span>${sa||!u.phone?"":`<input type="checkbox" class="switch" data-tbu="${i}" aria-label="${esc(u.name)} may open doors by text"${on?" checked":""}>`}${pin?`<button class="btn sm" type="button" data-tbreset="${esc(u.name)}">Reset PIN</button>`:""}</div>`}).join("")}
 document.addEventListener("change",ev=>{const t=ev.target;if(!t.matches("[data-tbu]"))return;const u=S.users[+t.dataset.tbu];if(!u)return;u.can={...(u.can||{}),text:t.checked};commit(`Users and permissions: ${u.name}: "Open and lock their doors by text" turned ${t.checked?"on":"off"}`);tbPeople()});
 function renderSetup(){
@@ -5865,17 +5865,16 @@ function opTile(id,big){const f=doorFacts(id),pn=buzzPins().includes(id),c=modeC
 function opRow(id){return opTile(id,false).replace('class="op-tw"','class="op-r"')}
 let TB=null;   // doors by text: what the box says (null until asked)
 async function tbLoad(force){if(TB&&!force)return TB;
-  if(!ON_BOX){TB=TB||{on:!!(S.alerts&&S.alerts.textDoors),live:true,number:"+15185550100",hasPin:false,phone:true,doors:3,hook:"/twilio/sms/demo",pins:[]};TB.on=!!(S.alerts&&S.alerts.textDoors);return TB}
+  if(!ON_BOX){TB=TB||{on:!!(S.alerts&&S.alerts.textDoors),live:true,number:"+15185550100",hasPin:false,phone:true,doors:3,hook:"/twilio/sms/demo"};TB.on=!!(S.alerts&&S.alerts.textDoors);return TB}
   try{TB=await (await fetch("api/textbot")).json()}catch(e){TB=TB||{}}return TB}
 function tbNum(n){const d=String(n||"").replace(/\D/g,"").replace(/^1(?=\d{10}$)/,"");return d.length===10?`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`:"the shul's text number"}
 function tbCard(){if(!TB){tbLoad().then(t=>{if(t&&t.on){renderOpen();renderSetupIndex()}});return ""}
   if(!TB.on||!TB.live||!TB.doors)return "";
-  return `<p class="op-tip">You can also open doors by text. ${TB.hasPin?"":"First pick your text PIN: "}<button type="button" class="linkbtn" data-goto-mytext>${TB.hasPin?"How it works":"Settings, Doors by text"}</button></p>`}
+  return `<p class="op-tip">You can also open doors by text. <button type="button" class="linkbtn" data-goto-mytext>How it works</button></p>`}
 function renderMyText(){const el=$("#myText");if(!el)return;if(!TB){tbLoad().then(()=>{renderMyText();if(typeof CUR_TAB!=="undefined"&&CUR_TAB==="setup")renderSetupIndex()});return}
   const d0=opDoors()[0],ex=d0?doorName(d0.id):"Side Door";
-  el.innerHTML=`<p class="gf top">Text <b>${esc(tbNum(TB.number))}</b> from your phone to open or lock your doors. For example “open ${esc(ex)} 20 min” or “lock ${esc(ex)}”. Opening asks for your text PIN; locking doesn't. No PIN yet? Pick one here, or the first time you text, it asks you to pick one.</p>
-    <div class="glist"><div class="row"><span class="ic" style="--c:var(--g)">${ico("key")}</span><div class="rt"><b>Text PIN</b><span>${TB.phone?(TB.hasPin?"Picked":"Not picked yet"):"Your mobile number isn't in Shul Manager yet. Ask a super admin to add it."}</span></div>${TB.phone?`<button type="button" class="btn sm${TB.hasPin?"":" pri"}" data-tbpin>${TB.hasPin?"Change":"Pick a PIN"}</button>`:""}</div>
-    <div class="row"><span class="ic" style="--c:var(--b)">${ico("door")}</span><div class="rt"><b>Doors you can change by text</b><span>${TB.doors} · the same as in the app</span></div></div></div>`}
+  el.innerHTML=`<p class="gf top">Text <b>${esc(tbNum(TB.number))}</b> from your phone, the way you'd text a person. For example “can you open ${esc(ex)} for 20 minutes” or “lock ${esc(ex)}”. To open, it texts back a short code; send the code to confirm. Locking happens right away.</p>
+    <div class="glist"><div class="row"><span class="ic" style="--c:var(--b)">${ico("door")}</span><div class="rt"><b>Doors you can change by text</b><span>${TB.doors} · the same as in the app</span></div></div>${TB.phone?"":`<div class="row"><div class="rt"><b>Your mobile number isn't in Shul Manager yet</b><span>Ask a super admin to add it.</span></div></div>`}</div>`}
 document.addEventListener("click",ev=>{if(!ev.target.closest("[data-goto-mytext]"))return;showTab("setup");SP="mytext";renderSetupIndex();renderMyText();const s=$("#split");if(s)s.classList.add("detail")});
 function tbRows(){const el=$("#tbRows");if(!el)return;const on=!!(S.alerts&&S.alerts.textDoors);
   el.innerHTML=`<label class="row swrow" for="tbOn"><span class="rt"><b>Open and lock doors by text</b><span>The shul's number answers people who are allowed below.</span></span><input type="checkbox" class="switch" id="tbOn"${on?" checked":""}></label>`
