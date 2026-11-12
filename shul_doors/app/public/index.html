@@ -1093,6 +1093,7 @@ details.row .permgrid{padding-bottom:14px}
 .permgrid label{background:var(--fill2);border-radius:10px;padding:6px 6px 6px 12px;font-size:14px}
 .ublock .rt input[type=number]{width:56px;padding:2px 6px}
 #alertChecks .rt input[type=number]{width:60px;padding:2px 6px;text-align:center}
+.al-h{display:flex;align-items:center;gap:10px;margin-top:26px}.al-h span{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;display:inline-flex;align-items:center;justify-content:center;flex:none}
 .tb-card .tb-b{padding:12px 16px 14px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}.tb-card .tb-b p{margin:0;line-height:1.45}
 /* home */
 .homecols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px}
@@ -2522,17 +2523,19 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
         </div>
         <div class="panel admin-only" data-sp="alerts" data-ic="bell" data-c="var(--r)">
           <h2>Alerts</h2>
-          <h3 class="gh">Send alerts to</h3>
+          <h3 class="gh al-h"><span>1</span>Problem alerts</h3>
+          <p class="gf top">A text when something goes wrong, like a panel offline or the nightly update failing. Only the people listed here get them.</p>
           <div class="glist" id="contactRows"></div>
           <div class="glist addrow"><div class="row"><input id="cName" placeholder="Name" aria-label="Contact name" style="max-width:150px"><input id="cTo" placeholder="Mobile number" aria-label="Mobile number" inputmode="tel"><label class="cagree"><input type="checkbox" id="cAgree"> Agreed to get texts</label><button class="btn sm pri" type="button" id="addContact">Add</button></div></div>
           <p class="gf">Only add someone who agreed, in person or in writing, to get door texts. Anyone can reply STOP to stop them.</p>
-          <h3 class="gh">Alert me when</h3>
+          <h3 class="gh mk-h">Text them when</h3>
           <div class="glist" id="alertChecks"></div>
-          <h3 class="gh">When someone else changes something</h3>
-          <div class="glist" id="chgTo"></div>
-          <p class="gf">They see it in Messages right away. Once texting is on, they also get one text a few minutes after the last change, at the mobile number in Users and permissions.</p>
           <div class="tline" style="margin-top:12px"><button class="btn sm" type="button" id="testAlert">Send a test text</button><span class="hint" id="testMsg"></span></div>
-          <h3 class="gh">Doors by text</h3>
+          <h3 class="gh al-h"><span>2</span>Changes by others</h3>
+          <p class="gf top">When someone changes doors, rules or events, these people hear about it: in the app's Messages, and by text only if you pick it. Nobody hears about their own changes, and settings changes never send a text.</p>
+          <div class="glist" id="chgTo"></div>
+          <h3 class="gh al-h"><span>3</span>Doors by text</h3>
+          <p class="gf top">People can text the shul's number to open or lock their doors. Who may do it is set on each person's page in Users and permissions.</p>
           <div class="glist" id="tbRows"></div>
           <h3 class="gh">Recent texts</h3>
           <div class="glist" id="smsLog"><div class="row"><span class="hint">None yet.</span></div></div>
@@ -3863,7 +3866,8 @@ function renderSetup(){
   const NOTYET=ON_BOX?["offline","ups","batt","heartbeat"]:[];
   $("#alertChecks").innerHTML=ALERTS.map(([k,l])=>`<label class="row swrow" for="al-${k}"><span class="rt"><b>${esc(l)}</b>${k==="held"?`<span>After <input type="number" id="heldMin" min="1" max="120" value="${S.alerts.heldMin}" aria-label="Minutes"> minutes</span>`:""}${NOTYET.includes(k)?`<span>Not connected yet</span>`:""}</span><input type="checkbox" class="switch" id="al-${k}" data-alert="${k}"${S.alerts[k]?" checked":""}></label>`).join("");
   if(isAdmin()){tbRows();if(!TB)tbLoad().then(tbRows)}
-  {const to=chgRecipients();$("#chgTo").innerHTML=S.users.map(u=>`<label class="row swrow" for="chg-${esc(u.name)}"><span class="avatar">${esc(initials(u.name))}</span><span class="rt"><b>${esc(u.name)}</b><span>${u.phone?esc(u.phone):"No mobile number yet, so in the app only"}</span></span><input type="checkbox" class="switch" id="chg-${esc(u.name)}" data-chg="${esc(u.name)}"${to.includes(u.name)?" checked":""}></label>`).join("")}
+  {const to=chgRecipients(),tx=chgSms();$("#chgTo").innerHTML=S.users.map(u=>{const v=!to.includes(u.name)?"off":tx.includes(u.name)?"text":"app";
+    return `<div class="row"><span class="avatar">${esc(initials(u.name))}</span><span class="rt"><b>${esc(u.name)}</b><span>${v==="off"?"Doesn't hear about changes":v==="text"?"Messages, and a text a few minutes after the last change":"Messages in the app only"}</span></span><select data-chg="${esc(u.name)}" aria-label="Changes by others for ${esc(u.name)}"><option value="off"${v==="off"?" selected":""}>Off</option><option value="app"${v==="app"?" selected":""}>In the app</option>${u.phone?`<option value="text"${v==="text"?" selected":""}>App and text</option>`:""}</select></div>`}).join("")}
   const CAPS=[["codes","Give guest codes"],["override","Open or lock doors by hand"],["parking","Open the parking lot"],["mtview","See the mikva temperature"],["text","Open and lock their doors by text"],["events","Add events"],["rabbi","Set the rabbi away and switch situations"]];
   renderCtrl();renderWelMsg();
   $("#userRows").innerHTML=`<div class="glist ulist">`+UL().map((u,i)=>{
@@ -6168,8 +6172,11 @@ $("#hsWho").addEventListener("change",e=>{HS.who=e.target.value;renderLog()});
 $("#logRows").addEventListener("click",ev=>{if(ev.target.closest("#hsMore")){HS.lim+=150;renderLog()}});
 // requests
 $("#chFeed").addEventListener("click",ev=>{if(ev.target.closest("#chSeen"))chgMarkSeen()});
-$("#chgTo").addEventListener("change",ev=>{const n=ev.target.dataset.chg;if(!n)return;const to=new Set(chgRecipients());if(ev.target.checked)to.add(n);else to.delete(n);
-  S.alerts.changeTo=S.users.map(u=>u.name).filter(x=>to.has(x));commit(`Changes by others: ${ev.target.checked?"now tells":"no longer tells"} ${n}`)});
+function chgSms(){return S.alerts&&Array.isArray(S.alerts.changeSms)?S.alerts.changeSms:[]}
+$("#chgTo").addEventListener("change",ev=>{const n=ev.target.dataset.chg;if(!n)return;const v=ev.target.value,to=new Set(chgRecipients()),tx=new Set(chgSms());
+  if(v==="off"){to.delete(n);tx.delete(n)}else{to.add(n);if(v==="text")tx.add(n);else tx.delete(n)}
+  S.alerts.changeTo=S.users.map(u=>u.name).filter(x=>to.has(x));S.alerts.changeSms=S.users.map(u=>u.name).filter(x=>tx.has(x));
+  commit(`Changes by others: ${n} ${v==="off"?"no longer hears about changes":v==="text"?"hears in the app and by text":"hears in the app only"}`)});
 chgLoadSeen();
 $("#rqOpen").onclick=()=>{RQ_ALL=false;renderRequests()};$("#rqAll").onclick=()=>{RQ_ALL=true;renderRequests()};
 $("#rqSend").onclick=()=>{const subj=$("#rqSubj").value.trim(),txt=$("#rqText").value.trim();if(!subj&&!txt){$("#rqMsg").textContent="Write a subject or a message.";return}

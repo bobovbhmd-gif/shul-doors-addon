@@ -159,10 +159,14 @@ function changeAlerts(before, after, who) {
   const last = Math.max(0, ...((before.log || []).map((e) => +e.t || 0)));
   const fresh = (after.log || []).filter((e) => (+e.t || 0) > last && e.text);
   if (!fresh.length) return;
-  const to = (after.alerts && Array.isArray(after.alerts.changeTo)) ? after.alerts.changeTo : (after.users || []).filter((u) => u.role === "Super admin").map((u) => u.name);
+  // a text only for the people picked for "App and text", and only for changes to doors, rules and events (never settings)
+  const app = new Set((after.alerts && Array.isArray(after.alerts.changeTo)) ? after.alerts.changeTo : []);
+  const to = ((after.alerts && Array.isArray(after.alerts.changeSms)) ? after.alerts.changeSms : []).filter((n) => app.has(n));
+  const SETTING = /^(Alert |Changes by others|Doors by text|Users and permissions|Added alert contact|Removed alert contact|Welcome|Saved the mikva|Mikva |Turned (on|off) mikva|Changed the mikva|Parking lot |Controllers|Settings)/i;
+  const real = fresh.filter((e) => !SETTING.test(String(e.text)));
   for (const name of to) {
     const u = (after.users || []).find((x) => x.name === name); if (!u || !u.phone) continue;
-    const mine = fresh.filter((e) => String(e.u || who).toLowerCase() !== name.toLowerCase()); if (!mine.length) continue;
+    const mine = real.filter((e) => String(e.u || who).toLowerCase() !== name.toLowerCase()); if (!mine.length) continue;
     const q = changeQueue[name] = changeQueue[name] || { by: new Set(), lines: [], timer: null };
     for (const e of mine) { q.by.add(e.u || who); q.lines.push(String(e.text)); }
     clearTimeout(q.timer);
