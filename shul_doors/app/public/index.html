@@ -2426,6 +2426,10 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
       <div class="setpane" id="setPane">
         <button type="button" class="backbtn" id="setBack"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Settings</button>
 
+        <div class="panel" data-sp="mytext" data-ic="key" data-c="var(--g)">
+          <h2>Doors by text</h2>
+          <div id="myText"></div>
+        </div>
         <div class="panel" data-sp="view" data-ic="eye" data-c="var(--b)">
           <h2>View</h2>
           <div class="glist"><div class="row"><div class="rt"><b>Layout</b><span>Simple hides expert tools: reports, history, bulk edit, imports and backups.</span></div><div class="seg viewseg" role="group" aria-label="View"><button type="button" data-view="simple">Simple</button><button type="button" data-view="full">Full</button></div></div></div>
@@ -3886,7 +3890,7 @@ document.addEventListener("click",ev=>{const b=ev.target.closest("[data-lgt]");i
 document.addEventListener("change",ev=>{if(ev.target.id==="lgDays")lgLoad();if(ev.target.id==="lgWho")lgDraw()});
 document.addEventListener("input",ev=>{if(ev.target.id==="lgQ")lgDraw()});
 function renderSetup(){
-  renderHolNames();renderMagnet();if(typeof SP!=="undefined"&&SP==="logs"&&isAdmin())lgLoad();if(typeof CUR_TAB!=="undefined"&&CUR_TAB==="setup")smsRefresh();
+  renderHolNames();renderMagnet();renderMyText();if(typeof SP!=="undefined"&&SP==="logs"&&isAdmin())lgLoad();if(typeof CUR_TAB!=="undefined"&&CUR_TAB==="setup")smsRefresh();
   $("#doorRows").innerHTML=S.doors.map((d,i)=>`<div class="row"><span class="ic" style="--c:${modeColor(d.def)}">${ico(modeIco(d.def))}</span><div class="rt"><input class="plain" value="${esc(d.name)}" data-dname="${i}" aria-label="Name for ${esc(d.id)}"><span>${esc(d.id)}</span></div>
     <select data-ddef="${i}" aria-label="Default for ${esc(d.id)}">${MODES.map(m=>`<option value="${m}"${m===d.def?" selected":""}>${esc(modeLabel(m))}</option>`).join("")}</select><button class="btn sm danger" type="button" data-ddel="${i}">Remove</button></div>`).join("");
   $("#groupRows").innerHTML=S.groups.map(g=>`<div class="glist gblock"><div class="row"><span class="ic" style="--c:var(--teal)">${ico("grid")}</span><div class="rt"><b>${esc(g.name)}</b><span>${g.doors.length} door${g.doors.length===1?"":"s"}</span></div><button class="btn sm danger" type="button" data-gdel="${esc(g.id)}">Remove</button></div>
@@ -5847,11 +5851,15 @@ async function tbLoad(force){if(TB&&!force)return TB;
   if(!ON_BOX){TB=TB||{on:!!(S.alerts&&S.alerts.textDoors),live:true,number:"+15185550100",hasPin:false,phone:true,doors:3,hook:"/twilio/sms/demo",pins:[]};TB.on=!!(S.alerts&&S.alerts.textDoors);return TB}
   try{TB=await (await fetch("api/textbot")).json()}catch(e){TB=TB||{}}return TB}
 function tbNum(n){const d=String(n||"").replace(/\D/g,"").replace(/^1(?=\d{10}$)/,"");return d.length===10?`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`:"the shul's text number"}
-function tbCard(){if(!TB){tbLoad().then(t=>{if(t&&t.on)renderOpen()});return ""}
+function tbCard(){if(!TB){tbLoad().then(t=>{if(t&&t.on){renderOpen();renderSetupIndex()}});return ""}
   if(!TB.on||!TB.live||!TB.doors)return "";
+  return `<p class="op-tip">You can also open doors by text. ${TB.hasPin?"":"First pick your text PIN: "}<button type="button" class="linkbtn" data-goto-mytext>${TB.hasPin?"How it works":"Settings, Doors by text"}</button></p>`}
+function renderMyText(){const el=$("#myText");if(!el)return;if(!TB){tbLoad().then(()=>{renderMyText();if(typeof CUR_TAB!=="undefined"&&CUR_TAB==="setup")renderSetupIndex()});return}
   const d0=opDoors()[0],ex=d0?doorName(d0.id):"Side Door";
-  return `<section class="op-ac tb-card"><h3>Open doors by text</h3><div class="tb-b"><p>Text <b>${esc(tbNum(TB.number))}</b>, for example “open ${esc(ex)} 20 min” or “lock ${esc(ex)}”. Opening asks for your text PIN.</p>
-    ${TB.phone?`<button type="button" class="btn sm" data-tbpin>${TB.hasPin?"Change text PIN":"Pick a text PIN"}</button>`:`<p class="gf">Your mobile number isn't in Shul Manager yet. Ask a super admin to add it in Users and permissions.</p>`}</div></section>`}
+  el.innerHTML=`<p class="gf top">Text <b>${esc(tbNum(TB.number))}</b> from your phone to open or lock your doors. For example “open ${esc(ex)} 20 min” or “lock ${esc(ex)}”. Opening asks for your text PIN; locking doesn't.</p>
+    <div class="glist"><div class="row"><span class="ic" style="--c:var(--g)">${ico("key")}</span><div class="rt"><b>Text PIN</b><span>${TB.phone?(TB.hasPin?"Picked":"Not picked yet"):"Your mobile number isn't in Shul Manager yet. Ask a super admin to add it."}</span></div>${TB.phone?`<button type="button" class="btn sm${TB.hasPin?"":" pri"}" data-tbpin>${TB.hasPin?"Change":"Pick a PIN"}</button>`:""}</div>
+    <div class="row"><span class="ic" style="--c:var(--b)">${ico("door")}</span><div class="rt"><b>Doors you can change by text</b><span>${TB.doors} · the same as in the app</span></div></div></div>`}
+document.addEventListener("click",ev=>{if(!ev.target.closest("[data-goto-mytext]"))return;showTab("setup");SP="mytext";renderSetupIndex();renderMyText();const s=$("#split");if(s)s.classList.add("detail")});
 function tbRows(){const el=$("#tbRows");if(!el)return;const on=!!(S.alerts&&S.alerts.textDoors);
   el.innerHTML=`<label class="row swrow" for="tbOn"><span class="rt"><b>Open and lock doors by text</b><span>Super admins, and people with “Open and lock their doors by text” turned on in Users and permissions, can text the shul's number to open or lock the doors they may change. Opening needs their text PIN.</span></span><input type="checkbox" class="switch" id="tbOn"${on?" checked":""}></label>`
     +(on&&TB&&TB.hook?`<div class="row"><span class="rt"><b>Twilio incoming address</b><span>Your tunnel's texts address, then <code style="word-break:break-all">${esc(TB.hook)}</code></span></span><button type="button" class="btn sm" data-tbcopy>Copy</button></div>`:"")
@@ -5865,7 +5873,7 @@ document.addEventListener("click",async ev=>{const t=ev.target;
     let j={ok:true};if(ON_BOX){try{j=await (await fetch("api/textpin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin:a})})).json()}catch(e){j={error:"Couldn't reach the box. Try again."}}}
     else if(!/^\d{4,8}$/.test(a))j={error:"Use 4 to 8 digits."};
     if(!j.ok){m.textContent=j.error||"That didn't work.";return}
-    if(TB)TB.hasPin=true;closeModal("mTpin");toast("Text PIN saved");tbLoad(true).then(renderOpen);return}
+    if(TB)TB.hasPin=true;closeModal("mTpin");toast("Text PIN saved");tbLoad(true).then(()=>{renderOpen();renderMyText()});return}
   const rs=t.closest("[data-tbreset]");if(rs){const n=rs.dataset.tbreset;if(ON_BOX){try{await fetch("api/textpin/reset",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:n})})}catch(e){}}
     if(TB&&TB.pins)TB.pins=TB.pins.filter(x=>x!==n);toast(`${n}'s text PIN was reset`);await tbLoad(true);renderAll();return}
   if(t.closest("[data-tbcopy]")&&TB&&TB.hook){try{await navigator.clipboard.writeText(TB.hook);toast("Copied")}catch(e){toast("Couldn't copy")}return}
@@ -6087,12 +6095,12 @@ function showTab(t){if((t==="mikvah"||t==="mtemp")&&!isAdmin())t=can("mtview")?"
   if(t==="codes")setTCV(TCV);if(t==="reports")renderReports();if(t==="activity")renderLog();if(t==="setup"){$("#split").classList.remove("detail");renderSetupIndex()}
   scrollTo({top:0})}
 let SP=null;
-function spAvailable(p){if(p.hasAttribute("data-gone"))return false;if(p.classList.contains("admin-only")&&!isAdmin())return false;if(p.classList.contains("adv")&&SIMPLE)return false;if(p.classList.contains("cap-rabbi")&&!can("rabbi"))return false;return true}
+function spAvailable(p){if(p.hasAttribute("data-gone"))return false;if(p.dataset.sp==="mytext"&&!(TB&&TB.on&&TB.live&&TB.doors))return false;if(p.classList.contains("admin-only")&&!isAdmin())return false;if(p.classList.contains("adv")&&SIMPLE)return false;if(p.classList.contains("cap-rabbi")&&!can("rabbi"))return false;return true}
 function renderSetupIndex(){if(SP==="logs"&&isAdmin())setTimeout(()=>lgLoad(),0);
   const panels=[...document.querySelectorAll("#tab-setup .panel")], ok=panels.filter(spAvailable);
   if(!ok.some(p=>p.dataset.sp===SP))SP=(["doors","users","view"].map(k=>ok.find(p=>p.dataset.sp===k)).find(Boolean)||ok[0]||{dataset:{}}).dataset.sp;
   panels.forEach(p=>p.classList.toggle("sp-off",p.dataset.sp!==SP));
-  const GRP=[["The doors",["doors","groups","magnet","zmanim","holnames"]],["People and alerts",["users","welmsg","people","alerts"]],["You",["view","teach"]],["System",["ctrl","logs","backup","reset"]]];
+  const GRP=[["The doors",["doors","groups","magnet","zmanim","holnames"]],["People and alerts",["users","welmsg","people","alerts"]],["You",["mytext","view","teach"]],["System",["ctrl","logs","backup","reset"]]];
   const row=p=>`<button type="button" class="row tap${p.dataset.sp===SP?" on":""}" data-sp="${p.dataset.sp}"><span class="ic" style="--c:${p.dataset.c}">${ico(p.dataset.ic)}</span><div class="rt"><b>${esc(p.querySelector("h2").textContent)}</b></div>${p.dataset.sp==="teach"&&isAdmin()&&S.notes.some(n=>n.status==="pending")?`<span class="pill blue">${S.notes.filter(n=>n.status==="pending").length} waiting</span>`:""}<span class="chev"></span></button>`;
   const peopleRow=isAdmin()?`<button type="button" class="row tap" data-goto="people"><span class="ic" style="--c:var(--green)">${ico("people")}</span><div class="rt"><b>People</b><small class="hint" style="display:block">Cards and PINs in Protector.Net</small></div><span class="chev"></span></button>`:"";
   const by=Object.fromEntries(ok.map(p=>[p.dataset.sp,p])),used=new Set();
