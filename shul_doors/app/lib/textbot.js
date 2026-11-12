@@ -45,7 +45,28 @@ const TOOL = {
   },
 };
 
-function createTextBot({ store, save = () => {}, users, doorsFor, isAdmin, act, ask, reply, alert = async () => {}, log = () => {}, now = () => Date.now(), timeText = (t) => new Date(t).toISOString() }) {
+// a plain reading of the text, used when the AI can't be reached: open, lock or buzz, how long, and the door
+function localParse(text, doors) {
+  const t = " " + String(text).toLowerCase().replace(/[^a-z0-9.\s]/g, " ").replace(/\s+/g, " ") + " ";
+  const action = /\b(buzz|let (me|him|her|them|us) in)\b/.test(t) ? "buzz" : /\b(lock|close|shut|back on|turn (it )?on|release|end)\b/.test(t) ? "lock" : /\b(open|unlock|leave|hold|keep|prop)\b/.test(t) ? "open" : "other";
+  let minutes = 0, m;
+  if ((m = t.match(/(\d+(?:\.\d+)?)\s*(h|hr|hrs|hour|hours)\b/))) minutes = Math.round(+m[1] * 60);
+  if ((m = t.match(/(\d+)\s*(m|min|mins|minute|minutes)\b/))) minutes += +m[1];
+  if (!minutes && /\bhalf (an )?hour\b/.test(t)) minutes = 30;
+  if (!minutes && /\b(an|one|1) hour\b/.test(t)) minutes = 60;
+  if (!minutes && (m = t.match(/\b(?:for|open)\s+(\d{1,3})\b/))) minutes = +m[1];
+  const words = (s) => String(s).toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => (w.length > 1 || /\d/.test(w)) && !["the", "door", "doors", "for", "and"].includes(w));
+  const said = new Set(words(t));
+  let best = [], top = 0;
+  for (const d of doors) {
+    const ws = words(d.name + " " + d.id.replace(/^(P:|OUT:)/, "")), hit = ws.filter((w) => said.has(w) || [...said].some((x) => x.length > 3 && (w.startsWith(x) || x.startsWith(w)))).length;
+    const score = ws.length ? hit / ws.length + hit * 0.01 : 0;
+    if (score > top) { top = score; best = [d]; } else if (score === top && score > 0) best.push(d);
+  }
+  return { action, doors: top >= 0.5 && best.length === 1 ? [best[0].id] : [], minutes };
+}
+
+function createTextBot({ store, onIssue = () => {}, save = () => {}, users, doorsFor, isAdmin, act, ask, reply, alert = async () => {}, log = () => {}, now = () => Date.now(), timeText = (t) => new Date(t).toISOString() }) {
   store.textPins = store.textPins || {};       // person's name (lower case) -> { salt, hash, at }
   store.textPending = store.textPending || {}; // phone -> { name, action, doors, mins, at }
   store.textLock = store.textLock || {};       // phone -> { fails, until }
@@ -111,7 +132,8 @@ function createTextBot({ store, save = () => {}, users, doorsFor, isAdmin, act, 
     const mine = doorsFor(u);
     if (!mine.length) return "You don't have any doors you can open by text.";
     let r;
-    try { r = await ask(text, mine, TOOL); } catch (e) { log("warn", "text door request: " + e.message); return "Sorry, I couldn't read that right now. Please use the Shul Manager app."; }
+    try { r = await ask(text, mine, TOOL); }
+    catch (e) { log("warn", "text door request: the AI didn't answer (" + e.message + "), reading it plainly instead"); onIssue(u, "The AI didn't answer (" + e.message + "). The text was read without it."); r = localParse(text, mine); }
     if (!r || r.action === "other" || !["open", "lock", "buzz"].includes(r.action)) return OTHER;
     const ids = [...new Set((r.doors || []).map(String))], list = ids.map((id) => mine.find((d) => d.id === id)).filter(Boolean);
     if (!list.length) return `Which door? For example: "open ${mine[0].name} 20 min" or "lock ${mine[0].name}".`;
@@ -138,4 +160,4 @@ function createTextBot({ store, save = () => {}, users, doorsFor, isAdmin, act, 
   return { handle, setPin, resetPin, hasPin, pinProblem };
 }
 
-module.exports = { createTextBot, hashPin, pinOk, pinProblem, TOOL };
+module.exports = { createTextBot, localParse, hashPin, pinOk, pinProblem, TOOL };
