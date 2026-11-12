@@ -19,10 +19,12 @@ function e164(raw) {
   if (n.length === 11 && n[0] === "1") return "+" + n;
   return null;
 }
-function text(body) {
+// The shul's name starts every text except a reply in a conversation the person started (doors by text).
+// "Reply STOP to opt out" is added only to the first text a number gets in 30 days, as carriers ask.
+function text(body, { reply = false, stop = true } = {}) {
   let t = String(body || "").trim();
-  if (!t.startsWith(PREFIX.trim())) t = PREFIX + t;
-  if (!/reply stop/i.test(t)) t += SUFFIX;
+  if (!reply && !t.startsWith(PREFIX.trim())) t = PREFIX + t;
+  if (stop && !/reply stop/i.test(t)) t += SUFFIX;
   return t.slice(0, 600);
 }
 
@@ -39,7 +41,9 @@ function createSms({ opts, file, store, save = () => {}, log = () => {}, now = (
   // secret: a word (a password) that is sent but never written to the texts log
   async function sendOne(to, body, kind, { secret } = {}) {
     const num = e164(to);
-    const full = text(body);
+    store.smsStopAt = store.smsStopAt || {};
+    const stop = kind !== "textbot" && !(store.smsStopAt[num] > now() - 30 * 864e5);
+    const full = text(body, { reply: kind === "textbot", stop });
     const e = { at: now(), to: num || String(to), body: secret ? full.split(secret).join("••••••") : full, kind, mode };
     if (!num) { e.status = "skipped"; e.why = "not a US mobile number"; keep(e); return e; }
     if (store.smsOptOut.includes(num)) { e.status = "skipped"; e.why = "replied STOP"; keep(e); return e; }
@@ -54,7 +58,7 @@ function createSms({ opts, file, store, save = () => {}, log = () => {}, now = (
         headers: { Authorization: "Basic " + Buffer.from(opts.twilio_api_key_sid + ":" + opts.twilio_api_key_secret).toString("base64"), "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ To: num, MessagingServiceSid: opts.twilio_messaging_service_sid, Body: full }).toString() });
       const j = await r.json().catch(() => ({}));
-      if (r.ok) { e.status = "sent"; e.sid = j.sid; }
+      if (r.ok) { e.status = "sent"; e.sid = j.sid; if (stop) { store.smsStopAt[num] = now(); save(); } }
       else {
         e.status = "error"; e.why = (j.code ? j.code + ": " : "") + String(j.message || r.status).slice(0, 160);
         if (j.code === 21610) { store.smsOptOut.push(num); save(); e.why = "this number replied STOP"; }
