@@ -192,6 +192,10 @@ function loadChats(who) { try { return JSON.parse(fs.readFileSync(chatFile(who),
 function saveChats(who, c) { c.threads = c.threads.sort((a, b) => b.updated - a.updated).slice(0, 40); fs.writeFileSync(chatFile(who), JSON.stringify(c)); }
 const textOnly = (turns) => (Array.isArray(turns) ? turns : []).slice(-24).map((t) => ({ role: t.role === "assistant" ? "assistant" : "user",
   content: typeof t.content === "string" ? t.content.slice(0, 8000) : (Array.isArray(t.content) ? t.content.filter((b) => b && b.type === "text").map((b) => b.text).join("\n").slice(0, 8000) : "") })).filter((t) => t.content);
+function aiLog(e) { try { fs.appendFileSync(file("assistant-log.jsonl"), JSON.stringify(e) + "\n"); } catch { /* disk */ } }
+function readLines(name, since, max = 20000) {   // newest last; only entries from "since" on
+  try { return fs.readFileSync(file(name), "utf8").split("\n").filter(Boolean).slice(-max).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter((e) => e && (+e.at || 0) >= since); } catch { return []; }
+}
 function loadMemory() { try { return JSON.parse(fs.readFileSync(file("memory.json"), "utf8")); } catch { return {}; } }
 async function chatApi(req, res, p) {
   const who = personOf(req), now = Date.now();
@@ -217,7 +221,12 @@ async function chatApi(req, res, p) {
   if (req.method === "PUT") {
     const b = await readBody(req); if (!b) return send(res, 400, { error: "bad json" });
     const view = (Array.isArray(b.view) ? b.view : []).slice(-200).map((m) => ({ c: ["me", "ai", "sys", "card"].includes(m.c) ? m.c : "sys", t: String(m.t || "").slice(0, 8000), at: +m.at || now }));
-    const x = t || { id, created: now }; x.title = String(b.title || x.title || "Chat").slice(0, 80); x.view = view; x.turns = textOnly(b.turns); x.updated = now;
+    const x = t || { id, created: now };
+    {   // the assistant log: every new message, and a card's Saved or Discarded, kept even if the chat is deleted later
+      const old = (t && t.view) || [], title = String(b.title || x.title || "Chat").slice(0, 80);
+      view.forEach((m, i) => { if (!old[i] || (m.c === "card" && old[i].t !== m.t)) aiLog({ at: m.at || now, who, via: "app", thread: id, title, c: m.c, t: m.t }); });
+    }
+    x.title = String(b.title || x.title || "Chat").slice(0, 80); x.view = view; x.turns = textOnly(b.turns); x.updated = now;
     if (!t) c.threads.push(x); saveChats(who, c);
     return send(res, 200, { ok: true });
   }
@@ -1066,8 +1075,11 @@ async function textIn(q) {
     const m = await twilioGet(`https://api.twilio.com/2010-04-01/Accounts/${opts.twilio_account_sid}/Messages/${sid}.json`);
     if (m.direction !== "inbound" || e164(m.from) !== from || String(m.body || "") !== body) { log("warn", "text: Twilio didn't confirm an incoming text, ignored"); return; }
   } catch (e) { log("warn", "text: couldn't check with Twilio: " + e.message); return; }
+  sms.keepIn(from, body);
+  const u = textUsers().find((x) => x.phone === from), who = u ? u.name : `Unknown number ending ${from.slice(-4)}`, masked = /^\d{3,10}$/.test(body.trim()) ? "••••" : body.slice(0, 600);
+  aiLog({ at: Date.now(), who, via: "text", thread: "text:" + from, title: "Texts", c: "me", t: masked });
   const answer = await textbot.handle({ from, body });
-  if (answer) await sms.sendOne(from, answer, "textbot");
+  if (answer) { await sms.sendOne(from, answer, "textbot"); aiLog({ at: Date.now(), who, via: "text", thread: "text:" + from, title: "Texts", c: "ai", t: answer }); }
 }
 const TEXT_PORT = +process.env.SD_TEXT_PORT || 8100;
 const textServer = http.createServer((req, res) => {
@@ -1171,6 +1183,12 @@ const server = http.createServer((req, res) => {
     }); return;
   }
   if (req.method === "GET" && p === "/api/access") return send(res, 200, { on: !!opts.cloudflare_api_token, emails: accessState.emails, at: accessState.at, why: accessState.why });
+  if (req.method === "GET" && (p === "/api/logs/texts" || p === "/api/logs/assistant")) {
+    if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can see the logs." });
+    const days = Math.max(1, Math.min(400, +u.searchParams.get("days") || 30)), since = Date.now() - days * 864e5;
+    if (p.endsWith("texts")) return send(res, 200, { ok: true, list: readLines("sms.jsonl", since).reverse().slice(0, 3000) });
+    return send(res, 200, { ok: true, list: readLines("assistant-log.jsonl", since).slice(-5000) });
+  }
   if (req.method === "GET" && p === "/api/textbot") {
     const me = matchUser(haUser(req)), admin = meAdmin(req);
     textNumberOf().then((number) => send(res, 200, { on: !!(state.alerts && state.alerts.textDoors), live: !!(sms && sms.mode === "live" && sms.configured), number,

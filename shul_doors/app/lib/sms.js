@@ -95,7 +95,9 @@ function createSms({ opts, file, store, save = () => {}, log = () => {}, now = (
     const out = []; for (const n of to) out.push(await sendOne(n, body, kind));
     return out;
   }
-  return { mode, configured, sendOne, toContacts, alertOnce, alertTo, list: (n = 50) => entries.slice(-n).reverse(), optedOut: () => store.smsOptOut.slice() };
+  // an incoming text, kept in the same log (a reply that is only digits, like a PIN, is never written)
+  function keepIn(from, body) { const t = String(body || "").trim(); keep({ at: now(), from: e164(from) || String(from), body: /^\d{3,10}$/.test(t) ? "••••" : t.slice(0, 600), kind: "in", status: "received", mode }); }
+  return { mode, configured, sendOne, keepIn, toContacts, alertOnce, alertTo, list: (n = 50) => entries.slice(-n).reverse(), optedOut: () => store.smsOptOut.slice() };
 }
 
 module.exports = { createSms, e164, text };

@@ -1093,6 +1093,10 @@ details.row .permgrid{padding-bottom:14px}
 .permgrid label{background:var(--fill2);border-radius:10px;padding:6px 6px 6px 12px;font-size:14px}
 .ublock .rt input[type=number]{width:56px;padding:2px 6px}
 #alertChecks .rt input[type=number]{width:60px;padding:2px 6px;text-align:center}
+.lg-seg{margin:4px 0 12px}.lg-f{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.lg-f select,.lg-f input{flex:1 1 140px;min-width:0}
+.lg-r .rt span.lg-b{white-space:pre-wrap;color:var(--text);font-size:15px}.lg-r .tm{font-size:12px;color:var(--sub);white-space:nowrap;align-self:flex-start;text-align:right}
+.lg-c{margin-bottom:14px}.lg-c h4{margin:0 0 6px;font-size:13px;color:var(--sub);font-weight:600}.lg-m{padding:8px 12px;border-radius:14px;margin:4px 0;max-width:88%;width:fit-content;white-space:pre-wrap;font-size:14.5px;line-height:1.4}
+.lg-m.me{background:var(--accent);color:#fff;margin-left:auto}.lg-m.ai{background:var(--card,#fff);border:1px solid var(--line,#e5e5ea)}.lg-m.card{background:#fff4e5;border:1px solid #ffd8a8}.lg-m.sys{color:var(--sub);font-size:13px;background:none;padding:2px 0}.lg-m small{display:block;opacity:.7;font-size:11.5px;margin-top:2px}
 .al-h{display:flex;align-items:center;gap:10px;margin-top:26px}.al-h span{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;display:inline-flex;align-items:center;justify-content:center;flex:none}
 .tb-card .tb-b{padding:12px 16px 14px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}.tb-card .tb-b p{margin:0;line-height:1.45}
 /* home */
@@ -2106,7 +2110,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
     <button type="button">Why is the mikva locked on Rosh Hashana?</button>
     <button type="button">Open the main doors 6 to 11 PM next Tuesday for the Cohen wedding</button>
     <button type="button">Give the plumber a code for the mikva tomorrow 9 to 5</button>
-  </div>
+  </div><p class="hint ask-note" style="margin:4px 16px 0;font-size:12px">Chats are saved. Super admins can see them in Logs.</p>
   <div id="askAtt" class="ask-att" hidden></div><form id="askForm"><button class="btn mic clip" type="button" id="askClip" hidden aria-label="Attach a screenshot" title="Attach a screenshot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.5l-8.2 8.2a5 5 0 0 1-7.1-7.1l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg></button><input type="file" id="askFile" accept="image/*" multiple hidden><textarea id="askIn" placeholder="Ask, or say what to set up" aria-label="Message"></textarea><button class="btn mic" type="button" id="askMic" hidden aria-label="Speak instead of typing" title="Speak instead of typing"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg></button><button class="btn pri" type="submit" id="askSend">Send</button></form>
 </section>
 
@@ -2484,6 +2488,13 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
           <p class="gf">Alos 16.1°, tzeis 8.5°, plag and chatzos by the GRA.</p>
         </div>
 
+        <div class="panel admin-only" data-sp="logs" data-ic="tray" data-c="var(--indigo,#5856d6)">
+          <h2>Logs</h2>
+          <p class="gf top">Every text the shul's number sent or got, and every conversation with the assistant, in the app and by text. Only super admins see this.</p>
+          <div class="seg lg-seg" role="group" aria-label="Log"><button type="button" data-lgt="texts" class="on">Texts</button><button type="button" data-lgt="ai">Assistant</button></div>
+          <div class="lg-f"><select id="lgWho" aria-label="Person"><option value="">Everyone</option></select><select id="lgDays" aria-label="How far back"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last year</option></select><input id="lgQ" type="search" placeholder="Search" aria-label="Search the log"></div>
+          <div id="lgBody"><div class="glist"><div class="row"><span class="hint">Loading…</span></div></div></div>
+        </div>
         <div class="panel admin-only" data-sp="ctrl" data-ic="grid" data-c="var(--teal)">
           <h2>Controllers</h2>
           <p class="gf top">Everything Shul Manager talks to. Each controller keeps its own schedule, so the doors keep working even if this box is off.</p>
@@ -3853,8 +3864,29 @@ function renderMagnet(){
     const name=hol==="Shabbos"||!hol?hol:festName(hol);
     return `<div class="row"><span class="ic" style="--c:var(--o)">${ico("lock")}</span><div class="rt"><b>Off ${WDN[dow(p.from)]} ${esc(shortDate(p.from).replace(/, \d{4}$/,""))}, ${fmt(p.a)}</b><span>Back on ${WDN[dow(p.to)]} ${esc(shortDate(p.to).replace(/, \d{4}$/,""))}, ${fmt(p.b)}${name?" · "+esc(name):""}</span></div></div>`}).join("")||`<div class="row"><span class="hint">Nothing in the next weeks.</span></div>`;
 }
+let LG={t:"texts",data:{},key:""};
+function lgName(num){const d=String(num||"").replace(/\D/g,"").slice(-10);if(!d)return "";const u=S.users.find(x=>String(x.phone||"").replace(/\D/g,"").slice(-10)===d);if(u)return u.name;const c=(S.contacts||[]).find(x=>String(x.to||"").replace(/\D/g,"").slice(-10)===d);return c?c.name:fmtPhone(d)||num}
+const LG_KIND={change:"Change notice",test:"Test",password:"Password",textbot:"Doors by text",arrive:"Guest arrived",mikva:"Mikva alert",pin:"PIN alert",held:"Door held open",err:"Problem alert",clash:"Problem alert",in:"Incoming"};
+async function lgLoad(force){const days=$("#lgDays").value,k=LG.t+days;if(LG.data[k]&&!force){lgDraw();return}
+  let list=[];if(ON_BOX){try{const j=await (await fetch(`api/logs/${LG.t==="ai"?"assistant":"texts"}?days=${days}`)).json();list=j.list||[]}catch(e){list=[]}}
+  else{const n=Date.now();list=LG.t==="ai"?[{at:n-3e6,who:"Mendy Horowitz",via:"text",thread:"text:1",title:"Texts",c:"me",t:"open side door 20 min"},{at:n-3e6+4e3,who:"Mendy Horowitz",via:"text",thread:"text:1",title:"Texts",c:"ai",t:"Open Side Door for 20 min? Reply with your text PIN to confirm, or NO."},{at:n-3e6+3e4,who:"Mendy Horowitz",via:"text",thread:"text:1",title:"Texts",c:"me",t:"••••"},{at:n-3e6+3.4e4,who:"Mendy Horowitz",via:"text",thread:"text:1",title:"Texts",c:"ai",t:"Side Door is open for 20 min, until 7:40 PM."},{at:n-9e5,who:"Hershy",via:"app",thread:"a1",title:"Parking for the wedding",c:"me",t:"open parking 1 for an hour"},{at:n-8.9e5,who:"Hershy",via:"app",thread:"a1",title:"Parking for the wedding",c:"ai",t:"Tap Do it to confirm."},{at:n-8.8e5,who:"Hershy",via:"app",thread:"a1",title:"Parking for the wedding",c:"card",t:"Parking 1: Open for 1 hour (Done)"}]
+    :[{at:n-6e5,to:"+13475551234",body:"K'hal Shaarei Zion: Side Door is open for 20 min. Reply STOP to opt out.",kind:"textbot",status:"sent"},{at:n-6.3e5,from:"+13475551234",body:"••••",kind:"in",status:"received"},{at:n-7e5,from:"+13475551234",body:"open side door 20 min",kind:"in",status:"received"},{at:n-4e6,to:"+17185550142",body:"K'hal Shaarei Zion: This is a test from Shul Manager. Reply STOP to opt out.",kind:"test",status:"sent"}]}
+  LG.data[k]=list;lgDraw()}
+function lgDraw(){const el=$("#lgBody");if(!el)return;const list=LG.data[LG.t+$("#lgDays").value]||[],q=$("#lgQ").value.trim().toLowerCase(),who=$("#lgWho").value;
+  const nameOf=e=>LG.t==="ai"?e.who:lgName(e.to||e.from);
+  const people=[...new Set(list.map(nameOf).filter(Boolean))].sort(),sel=$("#lgWho");const keep=sel.value;
+  sel.innerHTML=`<option value="">Everyone</option>`+people.map(n=>`<option${n===keep?" selected":""}>${esc(n)}</option>`).join("");
+  const ok=e=>(!who||nameOf(e)===who)&&(!q||JSON.stringify(e).toLowerCase().includes(q)||String(nameOf(e)).toLowerCase().includes(q));
+  if(LG.t==="texts"){const L=list.filter(ok);
+    el.innerHTML=L.length?`<div class="glist">${L.slice(0,500).map(e=>{const inn=e.kind==="in";return `<div class="row lg-r"><span class="ic" style="--c:${inn?"var(--gray)":e.status==="sent"?"var(--g)":e.status==="test"?"var(--b)":"var(--o)"}">${ico("chat")}</span><div class="rt"><b>${inn?"From ":"To "}${esc(nameOf(e))}</b><span class="lg-b">${esc(e.body||"")}</span><span>${esc(LG_KIND[e.kind]||e.kind||"")} · ${esc(inn?"received":e.status==="test"?"test, not sent":e.status==="sent"?"sent":(e.status||"")+(e.why?": "+e.why:""))}</span></div><div class="tm">${esc(whenText(e.at))}</div></div>`}).join("")}</div>`:`<div class="glist"><div class="row"><span class="hint">No texts here.</span></div></div>`;return}
+  const th=new Map();list.filter(ok).forEach(e=>{const k=e.who+"|"+e.thread+"|"+(e.via==="text"?nyDate(e.at):"");if(!th.has(k))th.set(k,{who:e.who,via:e.via,title:e.title,items:[]});th.get(k).items.push(e)});
+  const T=[...th.values()].sort((a,b)=>b.items[b.items.length-1].at-a.items[a.items.length-1].at);
+  el.innerHTML=T.length?T.slice(0,200).map(c=>`<div class="lg-c glist" style="padding:12px 14px"><h4>${esc(c.who)} · ${c.via==="text"?"By text":"In the app"}${c.via==="text"?"":" · "+esc(c.title||"")} · ${esc(whenText(c.items[0].at))}</h4>${c.items.map(m=>`<div class="lg-m ${m.c}">${esc(m.t)}<small>${esc(new Date(m.at).toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"}))}</small></div>`).join("")}</div>`).join(""):`<div class="glist"><div class="row"><span class="hint">No conversations here.</span></div></div>`}
+document.addEventListener("click",ev=>{const b=ev.target.closest("[data-lgt]");if(!b)return;LG.t=b.dataset.lgt;document.querySelectorAll("[data-lgt]").forEach(x=>x.classList.toggle("on",x===b));$("#lgWho").value="";lgLoad()});
+document.addEventListener("change",ev=>{if(ev.target.id==="lgDays")lgLoad();if(ev.target.id==="lgWho")lgDraw()});
+document.addEventListener("input",ev=>{if(ev.target.id==="lgQ")lgDraw()});
 function renderSetup(){
-  renderHolNames();renderMagnet();if(typeof CUR_TAB!=="undefined"&&CUR_TAB==="setup")smsRefresh();
+  renderHolNames();renderMagnet();if(typeof SP!=="undefined"&&SP==="logs"&&isAdmin())lgLoad();if(typeof CUR_TAB!=="undefined"&&CUR_TAB==="setup")smsRefresh();
   $("#doorRows").innerHTML=S.doors.map((d,i)=>`<div class="row"><span class="ic" style="--c:${modeColor(d.def)}">${ico(modeIco(d.def))}</span><div class="rt"><input class="plain" value="${esc(d.name)}" data-dname="${i}" aria-label="Name for ${esc(d.id)}"><span>${esc(d.id)}</span></div>
     <select data-ddef="${i}" aria-label="Default for ${esc(d.id)}">${MODES.map(m=>`<option value="${m}"${m===d.def?" selected":""}>${esc(modeLabel(m))}</option>`).join("")}</select><button class="btn sm danger" type="button" data-ddel="${i}">Remove</button></div>`).join("");
   $("#groupRows").innerHTML=S.groups.map(g=>`<div class="glist gblock"><div class="row"><span class="ic" style="--c:var(--teal)">${ico("grid")}</span><div class="rt"><b>${esc(g.name)}</b><span>${g.doors.length} door${g.doors.length===1?"":"s"}</span></div><button class="btn sm danger" type="button" data-gdel="${esc(g.id)}">Remove</button></div>
@@ -6056,11 +6088,11 @@ function showTab(t){if((t==="mikvah"||t==="mtemp")&&!isAdmin())t=can("mtview")?"
   scrollTo({top:0})}
 let SP=null;
 function spAvailable(p){if(p.hasAttribute("data-gone"))return false;if(p.classList.contains("admin-only")&&!isAdmin())return false;if(p.classList.contains("adv")&&SIMPLE)return false;if(p.classList.contains("cap-rabbi")&&!can("rabbi"))return false;return true}
-function renderSetupIndex(){
+function renderSetupIndex(){if(SP==="logs"&&isAdmin())setTimeout(()=>lgLoad(),0);
   const panels=[...document.querySelectorAll("#tab-setup .panel")], ok=panels.filter(spAvailable);
   if(!ok.some(p=>p.dataset.sp===SP))SP=(["doors","users","view"].map(k=>ok.find(p=>p.dataset.sp===k)).find(Boolean)||ok[0]||{dataset:{}}).dataset.sp;
   panels.forEach(p=>p.classList.toggle("sp-off",p.dataset.sp!==SP));
-  const GRP=[["The doors",["doors","groups","magnet","zmanim","holnames"]],["People and alerts",["users","welmsg","people","alerts"]],["You",["view","teach"]],["System",["ctrl","backup","reset"]]];
+  const GRP=[["The doors",["doors","groups","magnet","zmanim","holnames"]],["People and alerts",["users","welmsg","people","alerts"]],["You",["view","teach"]],["System",["ctrl","logs","backup","reset"]]];
   const row=p=>`<button type="button" class="row tap${p.dataset.sp===SP?" on":""}" data-sp="${p.dataset.sp}"><span class="ic" style="--c:${p.dataset.c}">${ico(p.dataset.ic)}</span><div class="rt"><b>${esc(p.querySelector("h2").textContent)}</b></div>${p.dataset.sp==="teach"&&isAdmin()&&S.notes.some(n=>n.status==="pending")?`<span class="pill blue">${S.notes.filter(n=>n.status==="pending").length} waiting</span>`:""}<span class="chev"></span></button>`;
   const peopleRow=isAdmin()?`<button type="button" class="row tap" data-goto="people"><span class="ic" style="--c:var(--green)">${ico("people")}</span><div class="rt"><b>People</b><small class="hint" style="display:block">Cards and PINs in Protector.Net</small></div><span class="chev"></span></button>`:"";
   const by=Object.fromEntries(ok.map(p=>[p.dataset.sp,p])),used=new Set();
