@@ -743,7 +743,7 @@ async function ctrlApi(req, res, p, u) {
     // parking lot
     if (req.method === "GET" && p === "/api/parking") {
       let doors = [], why = "";
-      try { doors = await atrium.doors(); } catch (e) { why = e.message; }
+      try { doors = await atrium.doors(); parkList = doors; } catch (e) { why = e.message; }
       const days = Math.max(1, Math.min(400, +u.searchParams.get("days") || 7)), from = Date.now() - days * 864e5;
       return send(res, 200, { ok: !why, why, doors, timers: store.parkTimers || [], holds: store.parkHold || {}, modes: store.parkMode || {}, events: (store.parkEvents || []).filter((e) => e.t >= from).slice(-1000), allow: ctrlAllow("parkWrites"), status: atrium.status() });
     }
@@ -963,7 +963,11 @@ function textDoorsFor(u) {
   const admin = u.role === "Super admin";
   if (!admin && !(u.can || {}).text) return [];   // the "Open and lock their doors by text" switch on their page
   const out = (state.doors || []).filter((d) => admin || ((u.can || {}).override && (u.perm || {})[d.id] === "edit")).map((d) => ({ id: d.id, name: d.name }));
-  if ((admin || (u.can || {}).parking) && ctrlAllow("parkWrites")) for (const d of state.parkDoors || []) out.push({ id: String(d.id), name: d.name, park: true });
+  if ((admin || (u.can || {}).parking) && atrium.configured) {   // the parking entrances, named as in the app (Parking 1, Parking 2, or a name picked with Rename)
+    const live = parkList.length ? parkList : (state.parkDoors || []).map((d) => ({ id: parkRaw(d.id), name: d.name }));
+    live.forEach((d, i) => { const id = parkRaw(d.id), saved = (state.parkDoors || []).find((x) => parkRaw(x.id) === id);
+      out.push({ id: "P:" + id, name: (state.parkNames || {})[id] || (saved && saved.name) || `Parking ${i + 1}`, park: true }); });
+  }
   if (admin && mikva.configured && ctrlAllow("mikvaWrites")) out.push({ id: "MKV", name: "Mikva magnet", hold: true });   // the mikva magnet: held open for a while, then back to its schedule
   return out;
 }
@@ -980,6 +984,8 @@ function nowSeg(id, at = Date.now()) {
   return i < 0 ? null : { ...segs[i], next: segs[i + 1] || null, endsAt: at + (segs[i].b - p.m) * 60e3 };
 }
 const parkRaw = (id) => String(id).replace(/^P:/, "");
+let parkList = [];   // the parking entrances the controller last listed
+if (atrium.configured) atrium.doors().then((d) => { parkList = d || []; }).catch(() => {});
 function endOv(id, now) {   // end what was done by hand on this door, the same as "Back to schedule" in the app
   let ended = false;
   for (const o of [...(state.overrides || [])]) {
@@ -1013,6 +1019,7 @@ const textAct = {
     const now = Date.now(), lines = []; let changed = false;
     for (const d of list) {
       if (d.hold) { await mikva.manual(0, 0); activityNote(u.name, "Mikva magnet: back to the schedule (by text)"); lines.push(`${d.name} is back on its schedule. The magnet releases on time.`); continue; }
+      if (d.park && !ctrlAllow("parkWrites")) { lines.push(`${d.name} wasn't changed: changing the parking lot from Shul Manager is turned off (Settings, Controllers).`); continue; }
       if (d.park) {
         await atrium.command(parkRaw(d.id), "reset");
         store.parkTimers = (store.parkTimers || []).filter((t) => t.id !== parkRaw(d.id)); if (store.parkMode) delete store.parkMode[parkRaw(d.id)]; if (store.parkHold) delete store.parkHold[parkRaw(d.id)];
@@ -1034,6 +1041,7 @@ const textAct = {
     const out = [];
     for (const d of list) {
       if (d.hold) { out.push(`${d.name} can't be buzzed. Text "hold ${d.name} open 20 min" instead.`); continue; }
+      if (d.park && !ctrlAllow("parkWrites")) { out.push(`${d.name} wasn't buzzed: opening the parking lot from Shul Manager is turned off (Settings, Controllers).`); continue; }
       if (d.park) { await atrium.command(parkRaw(d.id), "buzz"); activityNote(u.name, `${d.name}: buzzed open (by text)`); out.push(`${d.name} buzzed open.`); continue; }
       const r = await pulse(d.id, u.name);
       out.push(r.body && r.body.sent ? `${d.name} buzzed open.` : `${d.name} wasn't buzzed: ${(r.body && (r.body.message || r.body.error)) || "it didn't work"}`);
