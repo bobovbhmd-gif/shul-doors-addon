@@ -1093,7 +1093,8 @@ details.row .permgrid{padding-bottom:14px}
 .permgrid label{background:var(--fill2);border-radius:10px;padding:6px 6px 6px 12px;font-size:14px}
 .ublock .rt input[type=number]{width:56px;padding:2px 6px}
 #alertChecks .rt input[type=number]{width:60px;padding:2px 6px;text-align:center}
-.lg-seg{margin:4px 0 12px}.lg-f{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.lg-f select,.lg-f input{flex:1 1 140px;min-width:0}
+#chgTo .row{flex-wrap:nowrap}#chgTo select{flex:none;width:auto;max-width:150px}
+.lg-seg,.tm-seg{margin:4px 0 14px}.tm-seg{display:flex;flex-wrap:wrap}.tm-seg button{flex:1 1 auto}.lg-f{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.lg-f select,.lg-f input{flex:1 1 140px;min-width:0}
 .lg-r .rt span.lg-b{white-space:pre-wrap;color:var(--text);font-size:15px}.lg-r .tm{font-size:12px;color:var(--sub);white-space:nowrap;align-self:flex-start;text-align:right}
 .lg-c{margin-bottom:14px}.lg-c h4{margin:0 0 6px;font-size:13px;color:var(--sub);font-weight:600}.lg-m{padding:8px 12px;border-radius:14px;margin:4px 0;max-width:88%;width:fit-content;white-space:pre-wrap;font-size:14.5px;line-height:1.4}
 .lg-m.me{background:var(--accent);color:#fff;margin-left:auto}.lg-m.ai{background:var(--card,#fff);border:1px solid var(--line,#e5e5ea)}.lg-m.card{background:#fff4e5;border:1px solid #ffd8a8}.lg-m.sys{color:var(--sub);font-size:13px;background:none;padding:2px 0}.lg-m small{display:block;opacity:.7;font-size:11.5px;margin-top:2px}
@@ -2492,10 +2493,9 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
           <p class="gf">Alos 16.1°, tzeis 8.5°, plag and chatzos by the GRA.</p>
         </div>
 
-        <div class="panel admin-only" data-sp="logs" data-ic="tray" data-c="var(--indigo,#5856d6)">
-          <h2>Logs</h2>
-          <p class="gf top">Every text the shul's number sent or got, and every conversation with the assistant, in the app and by text. Only super admins see this.</p>
-          <div class="seg lg-seg" role="group" aria-label="Log"><button type="button" data-lgt="texts" class="on">Texts</button><button type="button" data-lgt="ai">Assistant</button></div>
+        <div class="panel admin-only" data-sp="logs" data-ic="chat" data-c="var(--indigo,#5856d6)">
+          <h2>Assistant log</h2>
+          <p class="gf top">Every conversation with the assistant, by everyone, in the app and by text. Only super admins see this.</p>
           <div class="lg-f"><select id="lgWho" aria-label="Person"><option value="">Everyone</option></select><select id="lgDays" aria-label="How far back"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last year</option></select><input id="lgQ" type="search" placeholder="Search" aria-label="Search the log"></div>
           <div id="lgBody"><div class="glist"><div class="row"><span class="hint">Loading…</span></div></div></div>
         </div>
@@ -2536,24 +2536,34 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
           <div class="tline" style="margin-top:12px"><button class="btn sm" type="button" id="wmPrev">Preview</button><button class="btn sm" type="button" id="wmReset">Back to the original wording</button></div>
           <div class="wm-prev" id="wmPrevBox" hidden><iframe id="wmFrame" title="Welcome email preview"></iframe><div class="wm-sms" id="wmSms"></div></div>
         </div>
-        <div class="panel admin-only" data-sp="alerts" data-ic="bell" data-c="var(--r)">
-          <h2>Alerts</h2>
-          <h3 class="gh al-h"><span>1</span>Problem alerts</h3>
+        <div class="panel admin-only" data-sp="alerts" data-ic="chat" data-c="var(--g)">
+          <h2>Text messages</h2>
+          <p class="gf top">Everything about texts from the shul's number, in one place.</p>
+          <div class="seg tm-seg" role="group" aria-label="Text messages"><button type="button" data-tms="alerts" class="on">Alerts</button><button type="button" data-tms="changes">Changes</button><button type="button" data-tms="doors">Doors by text</button><button type="button" data-tms="log">Log</button></div>
+          <section data-tm="alerts">
           <p class="gf top">A text when something goes wrong, like a panel offline or the nightly update failing. Only the people listed here get them.</p>
+          <h3 class="gh">Who gets alerts</h3>
           <div class="glist" id="contactRows"></div>
           <div class="glist addrow"><div class="row"><input id="cName" placeholder="Name" aria-label="Contact name" style="max-width:150px"><input id="cTo" placeholder="Mobile number" aria-label="Mobile number" inputmode="tel"><label class="cagree"><input type="checkbox" id="cAgree"> Agreed to get texts</label><button class="btn sm pri" type="button" id="addContact">Add</button></div></div>
           <p class="gf">Only add someone who agreed, in person or in writing, to get door texts. Anyone can reply STOP to stop them.</p>
-          <h3 class="gh mk-h">Text them when</h3>
+          <h3 class="gh">Text them when</h3>
           <div class="glist" id="alertChecks"></div>
           <div class="tline" style="margin-top:12px"><button class="btn sm" type="button" id="testAlert">Send a test text</button><span class="hint" id="testMsg"></span></div>
-          <h3 class="gh al-h"><span>2</span>Changes by others</h3>
-          <p class="gf top">When someone changes doors, rules or events, these people hear about it: in the app's Messages, and by text only if you pick it. Nobody hears about their own changes, and settings changes never send a text.</p>
+          </section>
+          <section data-tm="changes" hidden>
+          <p class="gf top">When someone changes doors, rules or events, these people hear about it. Pick <b>Off</b> to stop it for a person, <b>In the app</b> for Messages only, or <b>App and text</b>. Nobody hears about their own changes, and settings changes never send a text.</p>
           <div class="glist" id="chgTo"></div>
-          <h3 class="gh al-h"><span>3</span>Doors by text</h3>
-          <p class="gf top">People can text the shul's number to open or lock their doors. Who may do it is set on each person's page in Users and permissions.</p>
+          </section>
+          <section data-tm="doors" hidden>
+          <p class="gf top">People can text the shul's number to open or lock the doors they may change. Opening needs their text PIN; locking doesn't.</p>
           <div class="glist" id="tbRows"></div>
-          <h3 class="gh">Recent texts</h3>
-          <div class="glist" id="smsLog"><div class="row"><span class="hint">None yet.</span></div></div>
+          <h3 class="gh">Who may use it</h3>
+          <div class="glist" id="tbPeople"></div>
+          </section>
+          <section data-tm="log" hidden>
+          <div class="lg-f"><select id="tlWho" aria-label="Person"><option value="">Everyone</option></select><select id="tlDays" aria-label="How far back"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last year</option></select><input id="tlQ" type="search" placeholder="Search" aria-label="Search the texts"></div>
+          <div id="tlBody"><div class="glist"><div class="row"><span class="hint">Loading…</span></div></div></div>
+          </section>
         </div>
 
         <div class="panel admin-only" data-sp="users" data-ic="people" data-c="var(--gray)">
@@ -3868,17 +3878,17 @@ function renderMagnet(){
     const name=hol==="Shabbos"||!hol?hol:festName(hol);
     return `<div class="row"><span class="ic" style="--c:var(--o)">${ico("lock")}</span><div class="rt"><b>Off ${WDN[dow(p.from)]} ${esc(shortDate(p.from).replace(/, \d{4}$/,""))}, ${fmt(p.a)}</b><span>Back on ${WDN[dow(p.to)]} ${esc(shortDate(p.to).replace(/, \d{4}$/,""))}, ${fmt(p.b)}${name?" · "+esc(name):""}</span></div></div>`}).join("")||`<div class="row"><span class="hint">Nothing in the next weeks.</span></div>`;
 }
-let LG={t:"texts",data:{},key:""};
+let LG={t:"ai",p:"lg",data:{},key:""};
 function lgName(num){const d=String(num||"").replace(/\D/g,"").slice(-10);if(!d)return "";const u=S.users.find(x=>String(x.phone||"").replace(/\D/g,"").slice(-10)===d);if(u)return u.name;const c=(S.contacts||[]).find(x=>String(x.to||"").replace(/\D/g,"").slice(-10)===d);return c?c.name:fmtPhone(d)||num}
 const LG_KIND={change:"Change notice",test:"Test",password:"Password",textbot:"Doors by text",arrive:"Guest arrived",mikva:"Mikva alert",pin:"PIN alert",held:"Door held open",err:"Problem alert",clash:"Problem alert",in:"Incoming"};
-async function lgLoad(force){const days=$("#lgDays").value,k=LG.t+days;if(LG.data[k]&&!force){lgDraw();return}
+async function lgLoad(force,pre){if(pre){LG.p=pre;LG.t=pre==="tl"?"texts":"ai"}const days=$("#"+LG.p+"Days").value,k=LG.t+days;if(LG.data[k]&&!force){lgDraw();return}
   let list=[];if(ON_BOX){try{const j=await (await fetch(`api/logs/${LG.t==="ai"?"assistant":"texts"}?days=${days}`)).json();list=j.list||[]}catch(e){list=[]}}
   else{const n=Date.now();list=LG.t==="ai"?[{at:n-3e6,who:"Mendy Horowitz",via:"text",thread:"text:1",title:"Texts",c:"me",t:"open side door 20 min"},{at:n-3e6+4e3,who:"Mendy Horowitz",via:"text",thread:"text:1",title:"Texts",c:"ai",t:"Open Side Door for 20 min? Reply with your text PIN to confirm, or NO."},{at:n-3e6+3e4,who:"Mendy Horowitz",via:"text",thread:"text:1",title:"Texts",c:"me",t:"••••"},{at:n-3e6+3.4e4,who:"Mendy Horowitz",via:"text",thread:"text:1",title:"Texts",c:"ai",t:"Side Door is open for 20 min, until 7:40 PM."},{at:n-9e5,who:"Hershy",via:"app",thread:"a1",title:"Parking for the wedding",c:"me",t:"open parking 1 for an hour"},{at:n-8.9e5,who:"Hershy",via:"app",thread:"a1",title:"Parking for the wedding",c:"ai",t:"Tap Do it to confirm."},{at:n-8.8e5,who:"Hershy",via:"app",thread:"a1",title:"Parking for the wedding",c:"card",t:"Parking 1: Open for 1 hour (Done)"}]
     :[{at:n-6e5,to:"+13475551234",body:"K'hal Shaarei Zion: Side Door is open for 20 min. Reply STOP to opt out.",kind:"textbot",status:"sent"},{at:n-6.3e5,from:"+13475551234",body:"••••",kind:"in",status:"received"},{at:n-7e5,from:"+13475551234",body:"open side door 20 min",kind:"in",status:"received"},{at:n-4e6,to:"+17185550142",body:"K'hal Shaarei Zion: This is a test from Shul Manager. Reply STOP to opt out.",kind:"test",status:"sent"}]}
   LG.data[k]=list;lgDraw()}
-function lgDraw(){const el=$("#lgBody");if(!el)return;const list=LG.data[LG.t+$("#lgDays").value]||[],q=$("#lgQ").value.trim().toLowerCase(),who=$("#lgWho").value;
+function lgDraw(){const P=LG.p,el=$("#"+P+"Body");if(!el)return;const list=LG.data[LG.t+$("#"+P+"Days").value]||[],q=$("#"+P+"Q").value.trim().toLowerCase(),who=$("#"+P+"Who").value;
   const nameOf=e=>LG.t==="ai"?e.who:lgName(e.to||e.from);
-  const people=[...new Set(list.map(nameOf).filter(Boolean))].sort(),sel=$("#lgWho");const keep=sel.value;
+  const people=[...new Set(list.map(nameOf).filter(Boolean))].sort(),sel=$("#"+P+"Who");const keep=sel.value;
   sel.innerHTML=`<option value="">Everyone</option>`+people.map(n=>`<option${n===keep?" selected":""}>${esc(n)}</option>`).join("");
   const ok=e=>(!who||nameOf(e)===who)&&(!q||JSON.stringify(e).toLowerCase().includes(q)||String(nameOf(e)).toLowerCase().includes(q));
   if(LG.t==="texts"){const L=list.filter(ok);
@@ -3886,11 +3896,18 @@ function lgDraw(){const el=$("#lgBody");if(!el)return;const list=LG.data[LG.t+$(
   const th=new Map();list.filter(ok).forEach(e=>{const k=e.who+"|"+e.thread+"|"+(e.via==="text"?nyDate(e.at):"");if(!th.has(k))th.set(k,{who:e.who,via:e.via,title:e.title,items:[]});th.get(k).items.push(e)});
   const T=[...th.values()].sort((a,b)=>b.items[b.items.length-1].at-a.items[a.items.length-1].at);
   el.innerHTML=T.length?T.slice(0,200).map(c=>`<div class="lg-c glist" style="padding:12px 14px"><h4>${esc(c.who)} · ${c.via==="text"?"By text":"In the app"}${c.via==="text"?"":" · "+esc(c.title||"")} · ${esc(whenText(c.items[0].at))}</h4>${c.items.map(m=>`<div class="lg-m ${m.c}">${esc(m.t)}<small>${esc(new Date(m.at).toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"}))}</small></div>`).join("")}</div>`).join(""):`<div class="glist"><div class="row"><span class="hint">No conversations here.</span></div></div>`}
-document.addEventListener("click",ev=>{const b=ev.target.closest("[data-lgt]");if(!b)return;LG.t=b.dataset.lgt;document.querySelectorAll("[data-lgt]").forEach(x=>x.classList.toggle("on",x===b));$("#lgWho").value="";lgLoad()});
-document.addEventListener("change",ev=>{if(ev.target.id==="lgDays")lgLoad();if(ev.target.id==="lgWho")lgDraw()});
-document.addEventListener("input",ev=>{if(ev.target.id==="lgQ")lgDraw()});
+document.addEventListener("change",ev=>{const id=ev.target.id;if(id==="lgDays"||id==="tlDays")lgLoad(false,id.slice(0,2));if(id==="lgWho"||id==="tlWho"){LG.p=id.slice(0,2);LG.t=LG.p==="tl"?"texts":"ai";lgDraw()}});
+document.addEventListener("input",ev=>{const id=ev.target.id;if(id==="lgQ"||id==="tlQ"){LG.p=id.slice(0,2);LG.t=LG.p==="tl"?"texts":"ai";lgDraw()}});
+// Text messages page: one part at a time
+let TMS="alerts";
+function tmShow(k){TMS=k;document.querySelectorAll("[data-tms]").forEach(b=>b.classList.toggle("on",b.dataset.tms===k));document.querySelectorAll("section[data-tm]").forEach(x=>x.hidden=x.dataset.tm!==k);if(k==="log")lgLoad(false,"tl");if(k==="doors"){tbRows();tbPeople()}}
+document.addEventListener("click",ev=>{const b=ev.target.closest("[data-tms]");if(b)tmShow(b.dataset.tms)});
+function tbPeople(){const el=$("#tbPeople");if(!el)return;
+  el.innerHTML=S.users.map((u,i)=>{const sa=u.role==="Super admin",on=sa||!!(u.can&&u.can.text),pin=TB&&TB.pins?TB.pins.includes(u.name):null;
+    return `<div class="row"><span class="avatar">${esc(initials(u.name))}</span><span class="rt"><b>${esc(u.name)}</b><span>${!u.phone?"No mobile number":sa?"Super admin, always allowed":on?"Allowed":"Not allowed"}${pin==null?"":pin?" · PIN picked":on?" · no PIN yet":""}</span></span>${sa||!u.phone?"":`<input type="checkbox" class="switch" data-tbu="${i}" aria-label="${esc(u.name)} may open doors by text"${on?" checked":""}>`}${pin?`<button class="btn sm" type="button" data-tbreset="${esc(u.name)}">Reset PIN</button>`:""}</div>`}).join("")}
+document.addEventListener("change",ev=>{const t=ev.target;if(!t.matches("[data-tbu]"))return;const u=S.users[+t.dataset.tbu];if(!u)return;u.can={...(u.can||{}),text:t.checked};commit(`Users and permissions: ${u.name}: "Open and lock their doors by text" turned ${t.checked?"on":"off"}`);tbPeople()});
 function renderSetup(){
-  renderHolNames();renderMagnet();renderMyText();if(typeof SP!=="undefined"&&SP==="logs"&&isAdmin())lgLoad();if(typeof CUR_TAB!=="undefined"&&CUR_TAB==="setup")smsRefresh();
+  renderHolNames();renderMagnet();renderMyText();if(typeof SP!=="undefined"&&SP==="logs"&&isAdmin())lgLoad(false,"lg");if(typeof SP!=="undefined"&&SP==="alerts"&&isAdmin())tmShow(TMS);if(typeof CUR_TAB!=="undefined"&&CUR_TAB==="setup")smsRefresh();
   $("#doorRows").innerHTML=S.doors.map((d,i)=>`<div class="row"><span class="ic" style="--c:${modeColor(d.def)}">${ico(modeIco(d.def))}</span><div class="rt"><input class="plain" value="${esc(d.name)}" data-dname="${i}" aria-label="Name for ${esc(d.id)}"><span>${esc(d.id)}</span></div>
     <select data-ddef="${i}" aria-label="Default for ${esc(d.id)}">${MODES.map(m=>`<option value="${m}"${m===d.def?" selected":""}>${esc(modeLabel(m))}</option>`).join("")}</select><button class="btn sm danger" type="button" data-ddel="${i}">Remove</button></div>`).join("");
   $("#groupRows").innerHTML=S.groups.map(g=>`<div class="glist gblock"><div class="row"><span class="ic" style="--c:var(--teal)">${ico("grid")}</span><div class="rt"><b>${esc(g.name)}</b><span>${g.doors.length} door${g.doors.length===1?"":"s"}</span></div><button class="btn sm danger" type="button" data-gdel="${esc(g.id)}">Remove</button></div>
@@ -5861,10 +5878,10 @@ function renderMyText(){const el=$("#myText");if(!el)return;if(!TB){tbLoad().the
     <div class="row"><span class="ic" style="--c:var(--b)">${ico("door")}</span><div class="rt"><b>Doors you can change by text</b><span>${TB.doors} · the same as in the app</span></div></div></div>`}
 document.addEventListener("click",ev=>{if(!ev.target.closest("[data-goto-mytext]"))return;showTab("setup");SP="mytext";renderSetupIndex();renderMyText();const s=$("#split");if(s)s.classList.add("detail")});
 function tbRows(){const el=$("#tbRows");if(!el)return;const on=!!(S.alerts&&S.alerts.textDoors);
-  el.innerHTML=`<label class="row swrow" for="tbOn"><span class="rt"><b>Open and lock doors by text</b><span>Super admins, and people with “Open and lock their doors by text” turned on in Users and permissions, can text the shul's number to open or lock the doors they may change. Opening needs their text PIN.</span></span><input type="checkbox" class="switch" id="tbOn"${on?" checked":""}></label>`
+  el.innerHTML=`<label class="row swrow" for="tbOn"><span class="rt"><b>Open and lock doors by text</b><span>The shul's number answers people who are allowed below.</span></span><input type="checkbox" class="switch" id="tbOn"${on?" checked":""}></label>`
     +(on&&TB&&TB.hook?`<div class="row"><span class="rt"><b>Twilio incoming address</b><span>Your tunnel's texts address, then <code style="word-break:break-all">${esc(TB.hook)}</code></span></span><button type="button" class="btn sm" data-tbcopy>Copy</button></div>`:"")
     +(on&&TB&&!TB.live?`<div class="row"><span class="rt"><b>Texting isn't live yet</b><span>Turn on live texting in the add-on settings first.</span></span></div>`:"")
-    +(on&&TB&&TB.pins?`<div class="row"><span class="rt"><b>Picked a text PIN</b><span>${TB.pins.length?esc(TB.pins.join(", ")):"Nobody yet"}</span></span></div>`:"")}
+}
 document.addEventListener("change",ev=>{if(ev.target.id!=="tbOn")return;S.alerts.textDoors=ev.target.checked;commit(`Doors by text turned ${ev.target.checked?"on":"off"}`);tbLoad(true).then(()=>{tbRows();renderOpen()})});
 document.addEventListener("click",async ev=>{const t=ev.target;
   if(t.closest("[data-tbpin]")){$("#tpA").value="";$("#tpB").value="";$("#tpMsg").textContent="";$("#tpT").textContent=TB&&TB.hasPin?"Change text PIN":"Text PIN";openModal("mTpin");setTimeout(()=>$("#tpA").focus(),50);return}
@@ -6096,11 +6113,11 @@ function showTab(t){if((t==="mikvah"||t==="mtemp")&&!isAdmin())t=can("mtview")?"
   scrollTo({top:0})}
 let SP=null;
 function spAvailable(p){if(p.hasAttribute("data-gone"))return false;if(p.dataset.sp==="mytext"&&!(TB&&TB.on&&TB.live&&TB.doors))return false;if(p.classList.contains("admin-only")&&!isAdmin())return false;if(p.classList.contains("adv")&&SIMPLE)return false;if(p.classList.contains("cap-rabbi")&&!can("rabbi"))return false;return true}
-function renderSetupIndex(){if(SP==="logs"&&isAdmin())setTimeout(()=>lgLoad(),0);
+function renderSetupIndex(){if(SP==="logs"&&isAdmin())setTimeout(()=>lgLoad(false,"lg"),0);if(SP==="alerts"&&isAdmin())setTimeout(()=>tmShow(TMS),0);
   const panels=[...document.querySelectorAll("#tab-setup .panel")], ok=panels.filter(spAvailable);
   if(!ok.some(p=>p.dataset.sp===SP))SP=(["doors","users","view"].map(k=>ok.find(p=>p.dataset.sp===k)).find(Boolean)||ok[0]||{dataset:{}}).dataset.sp;
   panels.forEach(p=>p.classList.toggle("sp-off",p.dataset.sp!==SP));
-  const GRP=[["The doors",["doors","groups","magnet","zmanim","holnames"]],["People and alerts",["users","welmsg","people","alerts"]],["You",["mytext","view","teach"]],["System",["ctrl","logs","backup","reset"]]];
+  const GRP=[["The doors",["doors","groups","zmanim","holnames"]],["Devices",["ctrl","magnet"]],["People",["users","people","welmsg"]],["Text messages",["alerts"]],["Assistant",["teach","logs"]],["You",["mytext","view"]],["System",["backup","reset"]]];
   const row=p=>`<button type="button" class="row tap${p.dataset.sp===SP?" on":""}" data-sp="${p.dataset.sp}"><span class="ic" style="--c:${p.dataset.c}">${ico(p.dataset.ic)}</span><div class="rt"><b>${esc(p.querySelector("h2").textContent)}</b></div>${p.dataset.sp==="teach"&&isAdmin()&&S.notes.some(n=>n.status==="pending")?`<span class="pill blue">${S.notes.filter(n=>n.status==="pending").length} waiting</span>`:""}<span class="chev"></span></button>`;
   const peopleRow=isAdmin()?`<button type="button" class="row tap" data-goto="people"><span class="ic" style="--c:var(--green)">${ico("people")}</span><div class="rt"><b>People</b><small class="hint" style="display:block">Cards and PINs in Protector.Net</small></div><span class="chev"></span></button>`:"";
   const by=Object.fromEntries(ok.map(p=>[p.dataset.sp,p])),used=new Set();
