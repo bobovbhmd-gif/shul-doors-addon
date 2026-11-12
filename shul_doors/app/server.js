@@ -64,7 +64,11 @@ async function init() {
   store = loadStore();
   sms = createSms({ opts, file: file("sms.jsonl"), store, save: () => writeJson("store.json", store), log });
   if (!store.textHook) { store.textHook = crypto.randomBytes(18).toString("hex"); writeJson("store.json", store); }
-  textbot = createTextBot({ store, onIssue: (u, msg) => aiLog({ at: Date.now(), who: u.name, via: "text", thread: "text:" + u.phone, title: "Texts", c: "sys", t: msg }), save: () => writeJson("store.json", store), users: textUsers, doorsFor: textDoorsFor, isAdmin: (u) => u.role === "Super admin",
+  textbot = createTextBot({ store, chat: opts.anthropic_api_key ? async ({ system, messages, tools }) => {
+      const r = await aiAsk({ system, messages, tools, max_tokens: 500 });
+      if (r.status !== 200) throw new Error("assistant answered " + r.status + (r.body && r.body.code ? " (" + r.body.code + ")" : ""));
+      return r.body;
+    } : null, onIssue: (u, msg) => aiLog({ at: Date.now(), who: u.name, via: "text", thread: "text:" + u.phone, title: "Texts", c: "sys", t: msg }), save: () => writeJson("store.json", store), users: textUsers, doorsFor: textDoorsFor, isAdmin: (u) => u.role === "Super admin",
     act: textAct, ask: textAsk, alert: (t) => sms.toContacts(state, t, "pin"), log, timeText: nyTime });
   lastReport = readJson("last-report.json", null);
   engine.setState(state);
