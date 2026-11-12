@@ -135,15 +135,23 @@ function createTextBot({ store, onIssue = () => {}, save = () => {}, users, door
     try { r = await ask(text, mine, TOOL); }
     catch (e) { log("warn", "text door request: the AI didn't answer (" + e.message + "), reading it plainly instead"); onIssue(u, "The AI didn't answer (" + e.message + "). The text was read without it."); r = localParse(text, mine); }
     if (!r || r.action === "other" || !["open", "lock", "buzz"].includes(r.action)) return OTHER;
-    const ids = [...new Set((r.doors || []).map(String))], list = ids.map((id) => mine.find((d) => d.id === id)).filter(Boolean);
-    if (!list.length) return `Which door? For example: "open ${mine[0].name} 20 min" or "lock ${mine[0].name}".`;
+    // match what came back by id, by id without its prefix, or by name; if nothing matches, read the door from the text itself
+    const norm = (x) => String(x || "").toLowerCase().replace(/^(p:|out:)/, "").trim();
+    const find = (v) => mine.find((d) => d.id === v) || mine.find((d) => norm(d.id) === norm(v)) || mine.find((d) => d.name.toLowerCase() === String(v).toLowerCase());
+    let list = [...new Set((r.doors || []).map(String))].map(find).filter(Boolean);
+    if (!list.length) list = localParse(text, mine).doors.map(find).filter(Boolean);
+    if (!list.length) {
+      log("info", `${u.name}: text didn't name a door they can use (${mine.length} doors offered)`);
+      const some = mine.slice(0, 8).map((d) => d.name).join(", ");
+      return `Which door? You can use: ${some}${mine.length > 8 ? ", and more" : ""}. For example: "open ${mine[0].name} 20 min".`;
+    }
 
     if (r.action === "lock") {
       try { const out = await act.lock(u, list); log("info", `${u.name}: locked by text ${list.map((d) => d.id).join(",")}`); return out; }
       catch (e) { log("warn", "text lock: " + e.message); return `That didn't work: ${e.message}`; }
     }
     if (paused) return `Opening doors by text is paused for this phone until ${timeText(lock.until)}, after wrong PINs.`;
-    if (!hasPin(u.name)) return "To open doors by text, first pick a text PIN in Shul Manager, at the bottom of the Open a door page.";
+    if (!hasPin(u.name)) return "To open doors by text, first pick a text PIN in Shul Manager, under Settings, You, Doors by text.";
     let mins = Math.round(+r.minutes || 0);
     const max = isAdmin(u) ? 24 * 60 : 4 * 60;
     if (r.action === "open") {
