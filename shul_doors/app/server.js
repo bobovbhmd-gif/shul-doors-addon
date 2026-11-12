@@ -861,6 +861,27 @@ async function cloudStt(pcm) {
   } finally { clearTimeout(t); }
 }
 let sttProblem = "";   // the last OpenAI speech error, shown in the app
+// A voice note sent by text: OpenAI reads m4a, mp3, mp4, ogg, wav and webm; anything else (Android sends AMR or 3GP) is turned into wav first.
+async function sttFile(buf, type) {
+  let file = buf, name = "note." + ({ "audio/mp4": "m4a", "audio/x-m4a": "m4a", "audio/m4a": "m4a", "audio/mpeg": "mp3", "audio/mp3": "mp3", "audio/ogg": "ogg", "audio/wav": "wav", "audio/x-wav": "wav", "audio/webm": "webm", "video/mp4": "mp4" }[type] || ""), mime = type;
+  if (name === "note.") {
+    file = await new Promise((resolve, reject) => {
+      const p = require("child_process").spawn("ffmpeg", ["-hide_banner", "-loglevel", "error", "-i", "pipe:0", "-ar", "16000", "-ac", "1", "-f", "wav", "pipe:1"]);
+      const out = []; p.stdout.on("data", (c) => out.push(c)); p.on("error", () => reject(new Error("can't convert the voice note on this box")));
+      p.on("close", (code) => code === 0 && out.length ? resolve(Buffer.concat(out)) : reject(new Error("couldn't read that voice note")));
+      p.stdin.on("error", () => {}); p.stdin.end(buf);
+    });
+    name = "note.wav"; mime = "audio/wav";
+  }
+  const b = "----sd" + Date.now().toString(36);
+  const part = (n, v) => Buffer.from(`--${b}\r\nContent-Disposition: form-data; name="${n}"\r\n\r\n${v}\r\n`);
+  const body = Buffer.concat([part("model", STT_MODEL), part("language", "en"), part("prompt", sttWords()),
+    Buffer.from(`--${b}\r\nContent-Disposition: form-data; name="file"; filename="${name}"\r\nContent-Type: ${mime}\r\n\r\n`), file, Buffer.from(`\r\n--${b}--\r\n`)]);
+  const r = await fetch(STT_URL, { method: "POST", headers: { Authorization: "Bearer " + opts.openai_api_key, "Content-Type": "multipart/form-data; boundary=" + b }, body, signal: AbortSignal.timeout(45000) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error("OpenAI speech answered " + r.status + (j.error && j.error.message ? ": " + j.error.message.slice(0, 120) : ""));
+  return String(j.text || "").trim();
+}
 // Live typing: the box asks OpenAI for a short-lived key (a minute or so) set up for
 // transcription only, and the page talks to OpenAI with it directly over WebRTC. The
 // real key never leaves the box.
@@ -1081,15 +1102,31 @@ async function textNumberOf() {
 // every text is checked with Twilio by its id before anything is done, so a made-up post does nothing.
 async function textIn(q) {
   if (!textOn()) return;
-  const sid = q.get("MessageSid") || "", from = e164(q.get("From")), body = q.get("Body") || "";
+  const sid = q.get("MessageSid") || "", from = e164(q.get("From"));
+  let body = q.get("Body") || "";
   if (q.get("AccountSid") !== opts.twilio_account_sid || !/^(SM|MM)[0-9a-f]{32}$/.test(sid) || !from) return;
   try {
     const m = await twilioGet(`https://api.twilio.com/2010-04-01/Accounts/${opts.twilio_account_sid}/Messages/${sid}.json`);
     if (m.direction !== "inbound" || e164(m.from) !== from || String(m.body || "") !== body) { log("warn", "text: Twilio didn't confirm an incoming text, ignored"); return; }
   } catch (e) { log("warn", "text: couldn't check with Twilio: " + e.message); return; }
-  sms.keepIn(from, body);
+  // a voice note: listen to it and answer what was said
+  const nMedia = +q.get("NumMedia") || 0, mType = String(q.get("MediaContentType0") || "").toLowerCase(), mUrl = q.get("MediaUrl0") || "";
+  const known = textUsers().some((x) => x.phone === from); let voice = false;
+  if (nMedia && known && (/^audio\//.test(mType) || mType === "video/3gpp") && /^https:\/\/api\.twilio\.com\//.test(mUrl)) {
+    if (!opts.openai_api_key) { sms.keepIn(from, "(voice note)"); await sms.sendOne(from, "I can't listen to voice notes yet. Please type it.", "textbot"); return; }
+    try {
+      const r = await fetch(process.env.SD_TWILIO_API ? mUrl.replace(/^https:\/\/[^/]+/, process.env.SD_TWILIO_API) : mUrl, { headers: { Authorization: "Basic " + Buffer.from(opts.twilio_api_key_sid + ":" + opts.twilio_api_key_secret).toString("base64") }, signal: AbortSignal.timeout(30000) });
+      if (!r.ok) throw new Error("Twilio media answered " + r.status);
+      const buf = Buffer.from(await r.arrayBuffer()); if (buf.length > 8e6) throw new Error("the voice note is too long");
+      const heard = await sttFile(buf, mType);
+      if (!heard) throw new Error("nothing was said");
+      body = (body ? body + " " : "") + heard; voice = true;
+      sms.keepIn(from, "(voice note) " + heard);
+    } catch (e) { log("warn", "voice note: " + e.message); sms.keepIn(from, "(voice note)"); await sms.sendOne(from, "Sorry, I couldn't hear that voice note. Please type it.", "textbot"); return; }
+  } else if (nMedia && !body) { sms.keepIn(from, "(picture or file)"); if (known) await sms.sendOne(from, "I can read texts and voice notes, but not pictures.", "textbot"); return; }
+  else sms.keepIn(from, body);
   const u = textUsers().find((x) => x.phone === from), who = u ? u.name : `Unknown number ending ${from.slice(-4)}`, masked = /^\d{3,10}$/.test(body.trim()) ? "••••" : body.slice(0, 600);
-  aiLog({ at: Date.now(), who, via: "text", thread: "text:" + from, title: "Texts", c: "me", t: masked });
+  aiLog({ at: Date.now(), who, via: "text", thread: "text:" + from, title: "Texts", c: "me", t: (voice ? "(voice note) " : "") + masked });
   const answer = await textbot.handle({ from, body });
   if (answer) { await sms.sendOne(from, answer, "textbot"); aiLog({ at: Date.now(), who, via: "text", thread: "text:" + from, title: "Texts", c: "ai", t: answer }); }
 }
