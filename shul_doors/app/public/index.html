@@ -138,13 +138,13 @@ td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-s
 th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .tw{overflow-x:auto}
 .flash{outline:2px solid var(--brass);outline-offset:2px}
-:root{--t-open:#2e9c64;--t-card:#3f67b5;--t-lock:#b33b3b;--t-man:#7b55c7;--t-reg:#d9dde5}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--t-open:#3fb27a;--t-card:#6b8fd8;--t-lock:#d76464;--t-man:#a283e6;--t-reg:#2b3343}}
-:root[data-theme="dark"]{--t-open:#3fb27a;--t-card:#6b8fd8;--t-lock:#d76464;--t-man:#a283e6;--t-reg:#2b3343}
+:root{--t-open:#2e9c64;--t-card:#3f67b5;--t-lock:#b33b3b;--t-man:#7b55c7;--t-reg:#d9dde5;--t-only:#0f8a8a;--t-other:#c46a12}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--t-open:#3fb27a;--t-card:#6b8fd8;--t-lock:#d76464;--t-man:#a283e6;--t-reg:#2b3343;--t-only:#2bb3b3;--t-other:#e08a3c}}
+:root[data-theme="dark"]{--t-open:#3fb27a;--t-card:#6b8fd8;--t-lock:#d76464;--t-man:#a283e6;--t-reg:#2b3343;--t-only:#2bb3b3;--t-other:#e08a3c}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:13px;margin-bottom:12px}
 .legend span{display:inline-flex;gap:6px;align-items:center}
 .sw{display:inline-block;width:18px;height:10px;border-radius:3px}
-.t-open{background:var(--t-open)}.t-card{background:var(--t-card)}.t-lock{background:var(--t-lock)}
+.t-open{background:var(--t-open)}.t-card{background:var(--t-card)}.t-lock{background:var(--t-lock)}.t-only{background:var(--t-only)}.t-other{background:var(--t-other)}
 .t-man{background:repeating-linear-gradient(45deg,var(--t-man) 0 4px,color-mix(in srgb,var(--t-man) 60%,transparent) 4px 8px)}
 .t-reg{background:repeating-linear-gradient(45deg,var(--t-reg) 0 3px,var(--surface) 3px 6px);border:1px solid var(--line)}
 .t-shk{width:2px;height:14px;background:var(--brass);border-radius:0}
@@ -162,7 +162,7 @@ th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mu
 .tbar .seg2{position:absolute;top:0;bottom:0;cursor:pointer;border-right:1px solid var(--surface)}
 .tbar .seg2:focus-visible{outline:2px solid var(--fg);outline-offset:-2px}
 .tbar .seg2.def{opacity:.38}
-.tbar .seg2.open{background:var(--t-open)}.tbar .seg2.card{background:var(--t-card)}.tbar .seg2.lock{background:var(--t-lock)}
+.tbar .seg2.open{background:var(--t-open)}.tbar .seg2.card{background:var(--t-card)}.tbar .seg2.lock{background:var(--t-lock)}.tbar .seg2.only{background:var(--t-only)}.tbar .seg2.other{background:var(--t-other)}
 .tbar .seg2.man{background:repeating-linear-gradient(45deg,var(--t-man) 0 5px,color-mix(in srgb,var(--t-man) 70%,var(--surface)) 5px 10px)}
 .tbar .hr{position:absolute;top:0;bottom:0;width:1px;background:color-mix(in srgb,var(--fg) 12%,transparent);pointer-events:none}
 .tbar .shk{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--brass);pointer-events:none}
@@ -377,7 +377,7 @@ th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mu
   --f-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Segoe UI",system-ui,sans-serif;
   --f-body:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",system-ui,sans-serif;
   --f-mono:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",system-ui,sans-serif;
-  --t-open:#34c759;--t-card:#007aff;--t-lock:#ff3b30;--t-man:#af52de;--t-reg:#e5e5ea;
+  --t-open:#34c759;--t-card:#007aff;--t-lock:#ff3b30;--t-man:#af52de;--t-reg:#e5e5ea;--t-only:#00a5a5;--t-other:#ff9500;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#000000; --surface:#1c1c1e; --surface2:#2c2c2e; --line:#38383a; --fill:rgba(118,118,128,.24); --fill2:rgba(118,118,128,.16);
@@ -387,7 +387,7 @@ th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mu
   --man:#bf5af2; --man-soft:#2e1a3a;
   --g:#30d158; --b:#0a84ff; --r:#ff453a; --o:#ff9f0a; --p:#bf5af2;
   --shadow:none; --glass:rgba(28,28,30,.72);
-  --t-open:#30d158;--t-card:#0a84ff;--t-lock:#ff453a;--t-man:#bf5af2;--t-reg:#2c2c2e; color-scheme:dark}}
+  --t-open:#30d158;--t-card:#0a84ff;--t-lock:#ff453a;--t-man:#bf5af2;--t-reg:#2c2c2e;--t-only:#30c5c5;--t-other:#ff9f0a; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#000000; --surface:#1c1c1e; --surface2:#2c2c2e; --line:#38383a; --fill:rgba(118,118,128,.24); --fill2:rgba(118,118,128,.16);
   --fg:#f5f5f7; --muted:#98989d; --accent:#0a84ff; --accent-fg:#ffffff;
@@ -396,7 +396,7 @@ th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mu
   --man:#bf5af2; --man-soft:#2e1a3a;
   --g:#30d158; --b:#0a84ff; --r:#ff453a; --o:#ff9f0a; --p:#bf5af2;
   --shadow:none; --glass:rgba(28,28,30,.72);
-  --t-open:#30d158;--t-card:#0a84ff;--t-lock:#ff453a;--t-man:#bf5af2;--t-reg:#2c2c2e; color-scheme:dark}
+  --t-open:#30d158;--t-card:#0a84ff;--t-lock:#ff453a;--t-man:#bf5af2;--t-reg:#2c2c2e;--t-only:#30c5c5;--t-other:#ff9f0a; color-scheme:dark}
 body{margin:0;font-size:15px;line-height:1.47;letter-spacing:-.01em;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-variant-numeric:tabular-nums}
 .simple .adv{display:none!important}
 
@@ -2253,7 +2253,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
     <div id="warnSum"></div>
     <div id="dayHead"></div>
     <div class="secthead"><h2 class="gh">Doors</h2><select id="pvDoorF" class="pvf" aria-label="Show doors"></select><span class="grow"></span>
-      <div class="legend" id="tlLegend"><span><i class="sw t-open"></i>Open</span><span><i class="sw t-card"></i>Card or PIN</span><span><i class="sw t-lock"></i>Lockdown</span><span><i class="sw t-man"></i>By hand</span><span><i class="sw t-shk"></i>Shkiah</span></div></div>
+      <div class="legend" id="tlLegend"><span><i class="sw t-open"></i>Open</span><span><i class="sw t-card"></i>Card or PIN</span><span><i class="sw t-only"></i>Card only</span><span><i class="sw t-other"></i>PIN only or Card and PIN</span><span><i class="sw t-lock"></i>Lockdown</span><span><i class="sw t-man"></i>By hand</span><span><i class="sw t-shk"></i>Shkiah</span></div></div>
     <div class="glist dayrows" id="days"></div>
     <p class="gf">Tap a colored bar for details. Faded color means no rule is running and the door is on its default.</p>
     <div hidden><button type="button" id="vList"></button><button type="button" id="vBars"></button></div>
@@ -3325,7 +3325,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",
 /* ---------- UI helpers: plain labels, icons, sheets, toast ---------- */
 const MODE_LABEL={"Unlock":"Open","Card or Pin":"Card or PIN","Card":"Card only","Pin":"PIN only","Card and Pin":"Card and PIN","First Credential In":"Opens after first card","Lockdown":"Lockdown"};
 function modeLabel(m){return MODE_LABEL[m]||m}
-function modeColor(m){return m==="Unlock"?"var(--g)":m==="Lockdown"?"var(--r)":"var(--b)"}
+function modeColor(m){return m==="Unlock"?"var(--g)":m==="Lockdown"?"var(--r)":m==="Card"?"var(--t-only)":m==="Card or Pin"?"var(--b)":"var(--t-other)"}
 const IC={
   drop:'<path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z"/>',
   car:'<path d="M5 16V11l2-5h10l2 5v5M5 16h14M5 16v2M19 16v2"/><circle cx="8" cy="13" r=".8"/><circle cx="16" cy="13" r=".8"/>',
@@ -3379,7 +3379,7 @@ function whenText(ms){return new Date(ms).toLocaleString("en-US",{timeZone:TZ,mo
 /* ---------- timeline view: one colored bar per door per day ---------- */
 let VIEW="list";
 try{VIEW=localStorage.getItem("shulDoorView")||"list"}catch(e){}
-function modeKind(m){return m==="Unlock"?"open":m==="Lockdown"?"lock":"card"}
+function modeKind(m){return m==="Unlock"?"open":m==="Lockdown"?"lock":m==="Card"?"only":m==="Card or Pin"?"card":"other"}   // Card only is stricter than Card or PIN, so it gets its own color
 /*ENGINE:RESUME*/
 function daySegments(door,s){
   const info=dayInfo(s), cand=[];
@@ -3983,7 +3983,7 @@ function renderSheet(){
         return `<div class="wk-b" data-tip="${esc(k)}" tabindex="0" role="button" aria-label="${esc(TIPS[k].replace(/<[^>]+>/g," "))}" style="--c:${g.c.ov?"var(--p)":modeColor(mode)}">${g.a===0&&g.b<1440?`<b>Until ${fmt(g.b)}</b>`:g.a===0&&g.b>=1440?"<b>All day</b>":`<b>${fmt(g.a)}</b><b class="to">to ${g.b>=1440?"midnight":fmt(g.b)}</b>`}<span>${esc(modeLabel(mode))}${g.c.ov?", by hand":""}</span></div>`}).join("")||`<span class="wk-none" aria-label="On its default all day">–</span>`}</td>`}).join("")}</tr>`).join("");
   $("#sheet").innerHTML=`<header class="wk-head"><div><h2>Door schedule</h2><p>${esc(range)}</p><p class="heb">${esc(hrange)}</p></div>${par?`<div class="wk-par"><span>Parshas</span><b>${esc(par)}</b></div>`:""}</header>
     <div class="tw wk-scroll"><table class="wk-t"><thead><tr><th class="corner" scope="col"><span>Door</span></th>${head}</tr></thead><tbody>${rows}${quietRow}</tbody></table></div>
-    <footer class="wk-foot"><div class="legend"><span><i class="sw" style="background:var(--g)"></i>Open</span><span><i class="sw" style="background:var(--b)"></i>Card or PIN</span><span><i class="sw" style="background:var(--r)"></i>Lockdown</span><span><i class="sw" style="background:var(--p)"></i>Changed by hand</span></div>
+    <footer class="wk-foot"><div class="legend"><span><i class="sw" style="background:var(--g)"></i>Open</span><span><i class="sw" style="background:var(--b)"></i>Card or PIN</span><span><i class="sw" style="background:var(--t-only)"></i>Card only</span><span><i class="sw" style="background:var(--t-other)"></i>PIN only or Card and PIN</span><span><i class="sw" style="background:var(--r)"></i>Lockdown</span><span><i class="sw" style="background:var(--p)"></i>Changed by hand</span></div>
     <p>Outside the times shown, each door is on its default. A late change by hand can still alter these times. Printed ${esc(new Date().toLocaleDateString("en-US",{timeZone:TZ,month:"short",day:"numeric",year:"numeric"}))}.</p></footer>`;
 }
 /* ---------- live door board ---------- */
