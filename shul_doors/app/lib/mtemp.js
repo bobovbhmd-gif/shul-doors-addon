@@ -123,8 +123,9 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
     return a <= b ? m >= a && m < b : m >= a || m < b;
   }
   // rates: { id: usual ° an hour for where it's heading } (from the heat-up log)
-  // finals: { id: the highest set point in today's schedule }, the end of the day's warm-up
-  function check(list, cfg, rates = {}, finals = {}) {
+  // cycles: { id: { atFinal, readyM } } from today's schedule: whether the pool is at the top step of a warm-up
+  // (the next change goes down), and the minute of the day it must be ready for this warm-up
+  function check(list, cfg, rates = {}, cycles = {}) {
     const out = [], t = now();
     if (!cfg || !cfg.on) return out;
     const deg = Math.max(0.5, +cfg.deg || 3), offMs = Math.max(5, +cfg.mins || 15) * 60e3, heatMs = Math.max(15, +cfg.heatMins || 120) * 60e3, active = inWindow(cfg);
@@ -136,7 +137,7 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
       const settled = t - (s.setAt || 0) >= heatMs, standby = x.set != null && x.set < STANDBY;
       const low = x.online && x.cur != null && x.set != null && x.set - x.cur >= deg && settled;
       // too hot only counts once it's at the day's final set point (not during the warm-up steps, not when resting)
-      const atFinal = finals[x.id] != null ? x.set >= finals[x.id] : !standby;
+      const cy = cycles[x.id] || {}, atFinal = cy.atFinal != null ? cy.atFinal : !standby;
       const high = x.online && x.cur != null && x.set != null && x.cur - x.set >= deg && !standby && atFinal;
       const gone = !x.online, off = low || high, heat = x.online && x.heat === "heating" && x.cur != null && x.set != null && x.cur < x.set;
       s.gone = gone ? s.gone || t : 0; s.off = off ? s.off || t : 0; s.heat = heat ? s.heat || t : 0;
@@ -150,7 +151,7 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
       }
       // won't be ready on time: during the warm-up, check the pace against the pool's ready-by time
       let late = null;
-      const need = cfg.need && cfg.need[x.id];
+      const need = cy.readyM != null ? `${Math.floor(cy.readyM / 60) % 24}:${String(cy.readyM % 60).padStart(2, "0")}` : cfg.need && cfg.need[x.id];
       if (need && heat && !standby && t - s.heat >= 25 * 60e3 && x.set - x.cur >= 1) {
         const nm = String(need).split(":").map(Number), needM = (nm[0] || 0) * 60 + (nm[1] || 0), left = (needM - nyMinNow() + 1440) % 1440;
         if (left > 0 && left <= 8 * 60) {

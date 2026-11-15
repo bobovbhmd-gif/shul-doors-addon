@@ -519,6 +519,27 @@ const mikva = createMikva({ url: opts.mikva_url, username: opts.mikva_username, 
 const atrium = createAtrium({ url: opts.atrium_url, username: opts.atrium_username, password: opts.atrium_password, log });
 const ctrlAllow = (k) => !!(state && state.ctrl && state.ctrl[k]);
 const mtemp = createMtemp({ haUrl: HA_URL, token: HA_TOKEN, areas: () => haAuth.areas(), log });
+// Where a pool is in today's warm-ups. A warm-up's top step is a heated set point whose next change goes down
+// (morning 93 then 106 then 68: 106 is the top). Friday, erev yom tov and Chanukah can have a second warm-up in the
+// afternoon; each top step gets its own ready time, the same lead after the step starts as the morning's
+// ready-by time (2:00 AM step, ready by 4:15 = 2 h 15 min, so a 1:00 PM top step must be ready by 3:15 PM).
+function mtCycle(week, needStr, at = Date.now()) {
+  if (!week) return null;
+  const p = nyParts(at), DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"], dayOf = (d) => (week[DAYS[new Date(d + "T12:00:00Z").getUTCDay()]] || []).map((e) => [+e[0], +e[1]]).sort((a, b) => a[0] - b[0]);
+  const e = dayOf(p.d); if (!e.length) return null;
+  const next = dayOf(engine.addDays(p.d, 1)), after = (j) => (e[j + 1] ? e[j + 1][1] : next.length ? next[0][1] : e[0][1]);
+  const isTop = (j) => e[j][1] >= 80 && after(j) < e[j][1];
+  const i = e.reduce((k, x, j) => (x[0] <= p.m ? j : k), -1);
+  const out = { atFinal: i >= 0 ? isTop(i) : null, readyM: null };
+  if (needStr) {
+    const [h, mm] = String(needStr).split(":").map(Number), needM = (h || 0) * 60 + (mm || 0);
+    const tops = e.map((x, j) => j).filter(isTop);
+    const first = tops.find((j) => e[j][0] <= needM), lead = first != null ? needM - e[first][0] : null;
+    const k = tops.find((j) => j >= Math.max(0, i));
+    if (lead != null && lead > 0 && lead <= 6 * 60 && k != null) out.readyM = Math.min(24 * 60 - 1, e[k][0] + lead);
+  }
+  return out;
+}
 // mikva temperature alerts, checked every minute
 const tempLog = createTempLog({ minFile: file("mtemp-min.jsonl"), hourFile: file("mtemp-hour.jsonl") });
 async function mtTick() {
@@ -528,9 +549,9 @@ async function mtTick() {
   tempLog.record(list); mtLast = list;
   await mtHandTick(list).catch((e) => log("warn", "thermostats: " + e.message));
   const cfg = state.mtemp; if (!cfg || !cfg.on) return;
-  const finals = {}, p = nyParts(Date.now()), DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"], dk = DAYS[new Date(p.d + "T12:00:00Z").getUTCDay()];
-  for (const x of list) { try { const w = await mtWeek(x); const day = (w && w[dk]) || []; if (day.length) finals[x.id] = Math.max(...day.map((e) => +e[1])); } catch { /* no schedule */ } }
-  const found = mtemp.check(list, cfg, mtRates(list), finals); if (!found.length) return;
+  const cycles = {};
+  for (const x of list) { try { const c = mtCycle(await mtWeek(x), cfg.need && cfg.need[x.id]); if (c) cycles[x.id] = c; } catch { /* no schedule */ } }
+  const found = mtemp.check(list, cfg, mtRates(list), cycles); if (!found.length) return;
   const phones = (state.users || []).filter((u) => u.mtAlert && u.phone).map((u) => e164(u.phone)).filter(Boolean);
   store.mtMute = store.mtMute || {}; store.mtLastAlert = store.mtLastAlert || {};
   for (const a of found) {
