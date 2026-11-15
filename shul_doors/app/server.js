@@ -525,12 +525,17 @@ async function mtTick() {
   if (!HA_URL || !state) return;
   let list; try { list = await mtemp.list(); } catch { return; }
   if (!list.length) return;
-  tempLog.record(list);
+  tempLog.record(list); mtLast = list;
   await mtHandTick(list).catch((e) => log("warn", "thermostats: " + e.message));
   const cfg = state.mtemp; if (!cfg || !cfg.on) return;
   const found = mtemp.check(list, cfg, mtRates(list)); if (!found.length) return;
-  const phones = (state.users || []).filter((u) => u.mtAlert && u.phone).map((u) => u.phone);
-  for (const a of found) { log("info", "mikva temperature: " + a.text); if (sms && phones.length) { try { await sms.alertTo(state, phones, a.key, a.text, "mikva", 3600e3); } catch (e) { log("warn", "mikva alert text: " + e.message); } } }
+  const phones = (state.users || []).filter((u) => u.mtAlert && u.phone).map((u) => e164(u.phone)).filter(Boolean);
+  store.mtMute = store.mtMute || {}; store.mtLastAlert = store.mtLastAlert || {};
+  for (const a of found) {
+    log("info", "mikva temperature: " + a.text);
+    const id = a.key.split(":").slice(2).join(":"), pool = list.find((x) => x.id === id), now = Date.now();
+    const to = phones.filter((p) => !((store.mtMute[p] || {})[id] > now));
+    if (sms && to.length) { try { const sent = await sms.alertTo(state, to, a.key, a.text + " Reply SNOOZE 4H to pause alerts about this pool.", "mikva", 3600e3); if (sent) to.forEach((p) => { store.mtLastAlert[p] = { id, name: pool ? pool.name : id, at: now }; }); } catch (e) { log("warn", "mikva alert text: " + e.message); } } }
 }
 if (HA_URL) setInterval(() => mtTick().catch(() => {}), +process.env.SD_MT_MS || 60000).unref();
 // a temperature set by hand lasts until the thermostat's next scheduled change, then it goes back to its schedule,
@@ -1100,8 +1105,36 @@ async function textNumberOf() {
 }
 // Twilio posts each text here (through the Cloudflare tunnel). The address has a secret part, and
 // every text is checked with Twilio by its id before anything is done, so a made-up post does nothing.
+// "snooze": a reply to a mikva alert pauses alerts about that pool, for that person only
+function mtSnooze(from, body) {
+  const t = " " + String(body || "").toLowerCase().replace(/[^a-z0-9.\s]/g, " ").replace(/\s+/g, " ") + " ";
+  store.mtMute = store.mtMute || {}; store.mtLastAlert = store.mtLastAlert || {};
+  const mine = store.mtMute[from] = store.mtMute[from] || {}, last = store.mtLastAlert[from];
+  const pools = (mtLast || []).map((x) => ({ id: x.id, name: x.name }));
+  const named = pools.filter((p) => { const w = p.name.toLowerCase().split(/\s+/).filter((x) => x.length > 1); return w.length && w.every((x) => t.includes(" " + x + " ")); });
+  const nameOf = (id) => (pools.find((p) => p.id === id) || {}).name || (last && last.id === id ? last.name : "that pool");
+  if (/\b(alerts on|unsnooze|unmute|resume alerts|turn alerts back on)\b/.test(t)) {
+    const ids = named.length ? named.map((p) => p.id) : Object.keys(mine);
+    if (!ids.length) return "Mikva alerts are already on.";
+    ids.forEach((id) => delete mine[id]); writeJson("store.json", store);
+    return `Mikva alerts are back on for ${ids.map(nameOf).join(", ")}.`;
+  }
+  if (!/\b(snooze|mute|quiet|pause|silence|hold off|stop alert|stop alerting|no more alerts|stop texting)/.test(t)) return null;
+  let mins = 0, m;
+  if ((m = t.match(/(\d+(?:\.\d+)?)\s*(h|hr|hrs|hour|hours)\b/))) mins = Math.round(+m[1] * 60);
+  if ((m = t.match(/(\d+)\s*(m|min|mins|minute|minutes)\b/))) mins += +m[1];
+  if (!mins && /\b(an|one) hour\b/.test(t)) mins = 60;
+  if (!mins) mins = 240;
+  mins = Math.min(mins, 24 * 60);
+  const ids = named.length ? named.map((p) => p.id) : last && Date.now() - last.at < 24 * 3600e3 ? [last.id] : [];
+  if (!ids.length) return "Which pool? For example: \"snooze 15 Ave HOT 4 hours\".";
+  const until = Date.now() + mins * 60e3; ids.forEach((id) => { mine[id] = until; }); writeJson("store.json", store);
+  activityNote(from, `snoozed mikva alerts for ${ids.map(nameOf).join(", ")} until ${nyTime(until)}`);
+  return `OK, no alerts about ${ids.map(nameOf).join(", ")} until ${nyTime(until)}. Reply "alerts on" to turn them back on sooner.`;
+}
+let mtLast = [];
 async function textIn(q) {
-  if (!textOn()) return;
+  if (!sms || sms.mode !== "live" || !sms.configured) return;
   const sid = q.get("MessageSid") || "", from = e164(q.get("From"));
   let body = q.get("Body") || "";
   if (q.get("AccountSid") !== opts.twilio_account_sid || !/^(SM|MM)[0-9a-f]{32}$/.test(sid) || !from) return;
@@ -1109,6 +1142,12 @@ async function textIn(q) {
     const m = await twilioGet(`https://api.twilio.com/2010-04-01/Accounts/${opts.twilio_account_sid}/Messages/${sid}.json`);
     if (m.direction !== "inbound" || e164(m.from) !== from || String(m.body || "") !== body) { log("warn", "text: Twilio didn't confirm an incoming text, ignored"); return; }
   } catch (e) { log("warn", "text: couldn't check with Twilio: " + e.message); return; }
+  {   // a reply to a mikva alert, from someone who gets them: snooze or turn back on
+    const isAlertee = (state.users || []).some((u) => u.mtAlert && e164(u.phone) === from);
+    const r = isAlertee && !(+q.get("NumMedia")) ? mtSnooze(from, body) : null;
+    if (r) { sms.keepIn(from, body); await sms.sendOne(from, r, "textbot"); return; }
+  }
+  if (!textOn()) return;
   // a voice note: listen to it and answer what was said
   const nMedia = +q.get("NumMedia") || 0, mType = String(q.get("MediaContentType0") || "").toLowerCase(), mUrl = q.get("MediaUrl0") || "";
   const known = textUsers().some((x) => x.phone === from); let voice = false;
