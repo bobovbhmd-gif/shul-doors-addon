@@ -123,7 +123,8 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
     return a <= b ? m >= a && m < b : m >= a || m < b;
   }
   // rates: { id: usual ° an hour for where it's heading } (from the heat-up log)
-  function check(list, cfg, rates = {}) {
+  // finals: { id: the highest set point in today's schedule }, the end of the day's warm-up
+  function check(list, cfg, rates = {}, finals = {}) {
     const out = [], t = now();
     if (!cfg || !cfg.on) return out;
     const deg = Math.max(0.5, +cfg.deg || 3), offMs = Math.max(5, +cfg.mins || 15) * 60e3, heatMs = Math.max(15, +cfg.heatMins || 120) * 60e3, active = inWindow(cfg);
@@ -134,7 +135,9 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
       if (s.setVal !== x.set) { s.setVal = x.set; s.setAt = t; }
       const settled = t - (s.setAt || 0) >= heatMs, standby = x.set != null && x.set < STANDBY;
       const low = x.online && x.cur != null && x.set != null && x.set - x.cur >= deg && settled;
-      const high = x.online && x.cur != null && x.set != null && x.cur - x.set >= deg && !standby;
+      // too hot only counts once it's at the day's final set point (not during the warm-up steps, not when resting)
+      const atFinal = finals[x.id] != null ? x.set >= finals[x.id] : !standby;
+      const high = x.online && x.cur != null && x.set != null && x.cur - x.set >= deg && !standby && atFinal;
       const gone = !x.online, off = low || high, heat = x.online && x.heat === "heating" && x.cur != null && x.set != null && x.cur < x.set;
       s.gone = gone ? s.gone || t : 0; s.off = off ? s.off || t : 0; s.heat = heat ? s.heat || t : 0;
       // not warming up: heating for a while but rising less than half its usual speed

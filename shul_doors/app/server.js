@@ -528,7 +528,9 @@ async function mtTick() {
   tempLog.record(list); mtLast = list;
   await mtHandTick(list).catch((e) => log("warn", "thermostats: " + e.message));
   const cfg = state.mtemp; if (!cfg || !cfg.on) return;
-  const found = mtemp.check(list, cfg, mtRates(list)); if (!found.length) return;
+  const finals = {}, p = nyParts(Date.now()), DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"], dk = DAYS[new Date(p.d + "T12:00:00Z").getUTCDay()];
+  for (const x of list) { try { const w = await mtWeek(x); const day = (w && w[dk]) || []; if (day.length) finals[x.id] = Math.max(...day.map((e) => +e[1])); } catch { /* no schedule */ } }
+  const found = mtemp.check(list, cfg, mtRates(list), finals); if (!found.length) return;
   const phones = (state.users || []).filter((u) => u.mtAlert && u.phone).map((u) => e164(u.phone)).filter(Boolean);
   store.mtMute = store.mtMute || {}; store.mtLastAlert = store.mtLastAlert || {};
   for (const a of found) {
