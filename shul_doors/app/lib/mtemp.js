@@ -112,6 +112,8 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
   // ---- alerts: run every minute with the settings from the app ----
   const since = {};
   const STANDBY = 80;   // below this the pool is resting (°F), not being kept warm   // id -> { off, heat, gone } first time each problem was seen
+  const nyMinNow = (d = new Date(now())) => { const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(d); return +p.find((x) => x.type === "hour").value * 60 + +p.find((x) => x.type === "minute").value; };
+  const clockAt = (ms) => new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" }).format(new Date(ms));
   function inWindow(cfg, d = new Date(now())) {
     if (cfg.when !== "times") return true;
     const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(d);
@@ -143,11 +145,27 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
         const back = s.pts.find((p) => t - p[0] <= rateMs);
         if (back && t - back[0] >= rateMs * 0.9) { const rose = x.cur - back[1], hrs = (t - back[0]) / 3600e3; if (rose < usual * hrs * 0.5) slow = Math.round((rose / hrs) * 10) / 10; }
       }
+      // won't be ready on time: during the warm-up, check the pace against the pool's ready-by time
+      let late = null;
+      const need = cfg.need && cfg.need[x.id];
+      if (need && heat && !standby && t - s.heat >= 25 * 60e3 && x.set - x.cur >= 1) {
+        const nm = String(need).split(":").map(Number), needM = (nm[0] || 0) * 60 + (nm[1] || 0), left = (needM - nyMinNow() + 1440) % 1440;
+        if (left > 0 && left <= 8 * 60) {
+          const back = s.pts.find((p) => t - p[0] <= 30 * 60e3) || s.pts[0];
+          const hrs = back ? (t - back[0]) / 3600e3 : 0;
+          if (hrs >= 0.4) {
+            const pace = (x.cur - back[1]) / hrs, minsNeeded = pace > 0 ? ((x.set - x.cur) / pace) * 60 : Infinity;
+            if (minsNeeded > left + 10) late = { pace: Math.max(0, Math.round(pace * 10) / 10), at: isFinite(minsNeeded) && minsNeeded < 24 * 60 ? clockAt(t + minsNeeded * 60e3) : null, need };
+          }
+        }
+      }
+      // offline: at any hour, after 10 minutes
+      if (gone && cfg.offline !== false && t - s.gone >= 10 * 60e3) { out.push({ key: `mt:gone:${x.id}`, text: `Mikva ${x.name}: the thermostat is offline since ${clockAt(s.gone)}. Unplugging it for 10 seconds usually brings it back.` }); continue; }
+      if (late) { const nd = String(late.need).split(":").map(Number), ndTxt = `${((nd[0] + 11) % 12) + 1}:${String(nd[1] || 0).padStart(2, "0")} ${nd[0] < 12 ? "AM" : "PM"}`;
+        out.push({ key: `mt:late:${x.id}`, text: `Mikva ${x.name} won't be ready by ${ndTxt}: it's ${x.cur}${x.unit}, set to ${x.set}${x.unit}, rising ${late.pace}° an hour${late.at ? `, so about ${late.at}` : ", so it may not get there at all"}.` }); continue; }
       if (!active) continue;
-      if (gone && cfg.offline !== false && t - s.gone >= 5 * 60e3) out.push({ key: `mt:gone:${x.id}`, text: `Mikva ${x.name}: the thermostat is offline.` });
       else if (slow != null) out.push({ key: `mt:slow:${x.id}`, text: `Mikva ${x.name} isn't warming up: ${Math.max(0, slow)}° an hour for the last ${Math.round(rateMs / 60e3)} minutes, it usually rises about ${usual}° an hour. It's ${x.cur}${x.unit}, set to ${x.set}${x.unit}. Check the boiler.` });
-      else if (off && t - s.off >= offMs) out.push({ key: `mt:off:${x.id}`, text: `Mikva ${x.name} is ${x.cur}${x.unit}, ${Math.abs(x.cur - x.set).toFixed(1)}° ${x.cur < x.set ? "below" : "above"} its set point of ${x.set}${x.unit}.` });
-      else if (heat && t - s.heat >= heatMs) out.push({ key: `mt:heat:${x.id}`, text: `Mikva ${x.name} has been heating for ${Math.round((t - s.heat) / 60e3)} minutes and is still ${x.cur}${x.unit} (set to ${x.set}${x.unit}). The boiler may not be keeping up.` });
+      else if (high && t - s.off >= offMs) out.push({ key: `mt:off:${x.id}`, text: `Mikva ${x.name} is ${x.cur}${x.unit}, ${Math.abs(x.cur - x.set).toFixed(1)}° ${x.cur < x.set ? "below" : "above"} its set point of ${x.set}${x.unit}.` });
     }
     return out;
   }
