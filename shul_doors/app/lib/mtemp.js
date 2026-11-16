@@ -143,26 +143,33 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
       s.gone = gone ? s.gone || t : 0; s.off = off ? s.off || t : 0; s.heat = heat ? s.heat || t : 0;
       // not warming up: heating for a while but rising less than half its usual speed
       if (heat) { s.pts = (s.pts || []).filter((p) => t - p[0] <= 6 * 3600e3); s.pts.push([t, x.cur]); } else s.pts = [];
-      const rateMs = Math.max(15, +cfg.rateMins || 45) * 60e3, usual = rates[x.id];
+      // at least 45 minutes: the thermometers move in whole steps, so a shorter window reads a normal warm-up as slow
+      const rateMs = Math.max(45, +cfg.rateMins || 45) * 60e3, usual = rates[x.id];
       let slow = null;
-      if (heat && usual > 0 && t - s.heat >= rateMs && x.set - x.cur >= 1.5) {
+      // not in the last few degrees: the water slows down as it gets close
+      if (heat && usual > 0 && t - s.heat >= rateMs && x.set - x.cur >= 4) {
         const back = s.pts.find((p) => t - p[0] <= rateMs);
         if (back && t - back[0] >= rateMs * 0.9) { const rose = x.cur - back[1], hrs = (t - back[0]) / 3600e3; if (rose < usual * hrs * 0.5) slow = Math.round((rose / hrs) * 10) / 10; }
       }
       // won't be ready on time: during the warm-up, check the pace against the pool's ready-by time
       let late = null;
       const need = cy.readyM != null ? `${Math.floor(cy.readyM / 60) % 24}:${String(cy.readyM % 60).padStart(2, "0")}` : cfg.need && cfg.need[x.id];
-      if (need && heat && !standby && t - s.heat >= 25 * 60e3 && x.set - x.cur >= 1) {
+      // the water lags behind the boiler for the first half hour, so judge the pace only after 55 minutes, over the last 40
+      if (need && heat && !standby && t - s.heat >= 55 * 60e3 && x.set - x.cur >= 2) {
         const nm = String(need).split(":").map(Number), needM = (nm[0] || 0) * 60 + (nm[1] || 0), left = (needM - nyMinNow() + 1440) % 1440;
         if (left > 0 && left <= 8 * 60) {
-          const back = s.pts.find((p) => t - p[0] <= 30 * 60e3) || s.pts[0];
+          const back = s.pts.find((p) => t - p[0] <= 40 * 60e3) || s.pts[0];
           const hrs = back ? (t - back[0]) / 3600e3 : 0;
           if (hrs >= 0.4) {
             const pace = (x.cur - back[1]) / hrs, minsNeeded = pace > 0 ? ((x.set - x.cur) / pace) * 60 : Infinity;
-            if (minsNeeded > left + 10) late = { pace: Math.max(0, Math.round(pace * 10) / 10), at: isFinite(minsNeeded) && minsNeeded < 24 * 60 ? clockAt(t + minsNeeded * 60e3) : null, need };
+            if (minsNeeded > left + 15) late = { pace: Math.max(0, Math.round(pace * 10) / 10), at: isFinite(minsNeeded) && minsNeeded < 24 * 60 ? clockAt(t + minsNeeded * 60e3) : null, need };
           }
         }
       }
+      // only when it holds for 10 minutes, so one odd reading doesn't send a text
+      s.lateAt = late ? s.lateAt || t : 0; s.slowAt = slow != null ? s.slowAt || t : 0;
+      if (late && t - s.lateAt < 10 * 60e3) late = null;
+      if (slow != null && t - s.slowAt < 10 * 60e3) slow = null;
       // offline: at any hour, after 10 minutes
       if (gone && cfg.offline !== false && t - s.gone >= 10 * 60e3) { out.push({ key: `mt:gone:${x.id}`, text: `Mikva ${x.name}: the thermostat is offline since ${clockAt(s.gone)}. Unplugging it for 10 seconds usually brings it back.` }); continue; }
       if (late) { const nd = String(late.need).split(":").map(Number), ndTxt = `${((nd[0] + 11) % 12) + 1}:${String(nd[1] || 0).padStart(2, "0")} ${nd[0] < 12 ? "AM" : "PM"}`;
