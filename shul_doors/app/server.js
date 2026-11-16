@@ -1156,6 +1156,20 @@ function mtSnooze(from, body) {
   return `OK, no alerts about ${ids.map(nameOf).join(", ")} until ${nyTime(until)}. Reply "alerts on" to turn them back on sooner.`;
 }
 let mtLast = [];
+// "mikva temp": the state and temperature of every pool, for people who may see the mikva temperature
+function mtAsked(body) { const t = String(body || "").toLowerCase(); return /\bmi[ck]?v[ae]h?s?\b/.test(t) && /\b(temp|temps|temperature|temperatures|tempature|status|how hot|hot|warm)\b/.test(t) && t.length <= 60; }
+async function mtStatusText() {
+  let list; try { list = await mtemp.list(); } catch { list = mtLast; }
+  if (!list || !list.length) return "I can't read the mikva thermostats right now.";
+  const deg = (v, u) => (v == null ? "?" : Math.round(v * 10) / 10 + (u || "°F"));
+  const rows = list.map((x) => {
+    if (!x.online) return `${x.name}: offline`;
+    const hand = store.mtHand && store.mtHand[x.id] ? ", set by hand" : "";
+    const st = x.set != null && x.set < 80 ? "resting" : x.heat === "heating" ? "heating" : x.cur != null && x.set != null && x.cur >= x.set - 1 ? "ready" : "not heating";
+    return `${x.name}: ${deg(x.cur, x.unit)}, set ${deg(x.set, x.unit)}, ${st}${hand}`;
+  });
+  return `Mikva now (${nyTime(Date.now())}):\n` + rows.join("\n");
+}
 async function textIn(q) {
   if (!sms || sms.mode !== "live" || !sms.configured) return;
   const sid = q.get("MessageSid") || "", from = e164(q.get("From"));
@@ -1169,6 +1183,15 @@ async function textIn(q) {
     const isAlertee = (state.users || []).some((u) => u.mtAlert && e164(u.phone) === from);
     const r = isAlertee && !(+q.get("NumMedia")) ? mtSnooze(from, body) : null;
     if (r) { sms.keepIn(from, body); await sms.sendOne(from, r, "textbot"); return; }
+  }
+  {   // "mikva temp": works even when doors by text is off
+    const u = (state.users || []).find((x) => e164(x.phone) === from && x.login !== false);
+    if (u && (u.role === "Super admin" || (u.can || {}).mtview || u.mtAlert) && !(+q.get("NumMedia")) && mtAsked(body)) {
+      sms.keepIn(from, body); const ans = await mtStatusText(); await sms.sendOne(from, ans, "textbot");
+      aiLog({ at: Date.now(), who: u.name, via: "text", thread: "text:" + from, title: "Texts", c: "me", t: body.slice(0, 600) });
+      aiLog({ at: Date.now(), who: u.name, via: "text", thread: "text:" + from, title: "Texts", c: "ai", t: ans });
+      return;
+    }
   }
   if (!textOn()) return;
   // a voice note: listen to it and answer what was said
