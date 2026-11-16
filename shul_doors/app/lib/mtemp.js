@@ -234,8 +234,13 @@ function createTempLog({ minFile, hourFile, now = () => Date.now() }) {
           const startCur = pts[i - 1][1]; let j = i, done = null;
           for (; j < pts.length; j++) { if (pts[j][2] !== set) break; if (pts[j][1] >= set - 0.3) { done = pts[j][0]; break; } }
           if (done == null || set - startCur < 1) continue;
+          // the thermostat was offline just before the rise (it showed up late) or during the warm-up: mark it so it isn't counted
+          let off = Math.round((t - pts[i - 1][0]) / 60e3) - 1;
+          for (let k = i + 1; k <= j && k < pts.length; k++) off = Math.max(off, Math.round((pts[k][0] - pts[k - 1][0]) / 60e3) - 1);
           const took = Math.round((done - t) / 60e3), at = nyParts(t);
-          ev.push({ t, d: at.d, start: at.m, from: prev, to: set, startCur: Math.round(startCur * 10) / 10, took, ready: at.m + took, rate: Math.round(((set - startCur) / (took / 60)) * 10) / 10 });
+          const e = { t, d: at.d, start: at.m, from: prev, to: set, startCur: Math.round(startCur * 10) / 10, took, ready: at.m + took, rate: Math.round(((set - startCur) / (took / 60)) * 10) / 10 };
+          if (off >= 10) e.off = off;
+          ev.push(e);
         }
         ev.forEach((e, i) => { const nx = ev[i + 1]; e.kind = nx && nx.t - e.t < 8 * 3600e3 && nx.to > e.to ? "pre" : "main"; });
         out[id] = ev.sort((a, b) => b.t - a.t).map(({ t, ...e }) => e);
@@ -253,6 +258,7 @@ function nyParts(t) {
 // a pool's usual warming speed (° an hour) for the set point it's heading to, from its recent heat-ups
 function usualRate(rows, set) {
   if (!rows || !rows.length) return null;
+  rows = rows.filter((r) => !r.off); if (!rows.length) return null;
   const near = rows.filter((r) => Math.abs(r.to - set) <= 3), use = (near.length >= 2 ? near : rows).slice(0, 14).map((r) => r.rate).filter((v) => v > 0).sort((a, b) => a - b);
   return use.length ? use[Math.floor(use.length / 2)] : null;
 }
