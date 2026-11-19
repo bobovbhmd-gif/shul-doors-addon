@@ -6277,10 +6277,10 @@ function hvLogHtml(){const vis=HV.tstats.filter(t=>hvMay(t.serial));if(!vis.leng
 
 /* ---- setup (super admins) ---- */
 /* switching during the day: nothing is picked for the user. Each setting starts empty with a suggestion beside it */
-function hvSwitchHtml(){const w=hvCfg().wx,sel=(k,opts,sug,lab)=>`<div class="frow"><label for="hvS_${k}">${lab}</label><span class="tline"><select id="hvS_${k}" data-hvset="${k}" style="width:auto"><option value="">Pick…</option>${opts.map(([v,l])=>`<option value="${v}"${String(w[k]??"")===String(v)?" selected":""}>${l}</option>`).join("")}</select>${sug?`<span class="hint">Suggested: ${sug[1]}${String(w[k]??"")!==String(sug[0])?` <a class="lnk" href="#" data-hvsug="${k}" data-v="${sug[0]}">Use suggested</a>`:""}</span>`:""}</span></div>`;
+function hvSwitchHtml(part){const w=hvCfg().wx,sel=(k,opts,sug,lab)=>`<div class="frow"><label for="hvS_${k}">${lab}</label><span class="tline"><select id="hvS_${k}" data-hvset="${k}" style="width:auto"><option value="">Pick…</option>${opts.map(([v,l])=>`<option value="${v}"${String(w[k]??"")===String(v)?" selected":""}>${l}</option>`).join("")}</select>${sug?`<span class="hint">Suggested: ${sug[1]}${String(w[k]??"")!==String(sug[0])?` <a class="lnk" href="#" data-hvsug="${k}" data-v="${sug[0]}">Use suggested</a>`:""}</span>`:""}</span></div>`;
   const users=(S.users||[]).filter(u=>u.phone),tx=new Set((w.text||[]).map(String)),wx=HV.wx||{},fc=wx.days||{},t=todayNY(),tm=addDays(t,1);
   const ready=+w.every&&(w.max==="none"||+w.max>0);
-  return `<h3 class="gh mk-h">Switching during the day</h3>
+  if(part==="switch")return `
     <p class="gf" style="margin-top:0">For rules that can switch during the day. ${ready?"Switching is on.":"Switching is off until both how often and the most switches are picked."}</p>
     <div class="glist form box">
       ${sel("every",[["15","Every 15 min"],["30","Every 30 min"],["60","Every hour"],["120","Every 2 hours"]],["30","every 30 min"],"Check the weather")}
@@ -6291,28 +6291,40 @@ function hvSwitchHtml(){const w=hvCfg().wx,sel=(k,opts,sug,lab)=>`<div class="fr
       ${w.keep==null?`<div class="row"><span class="hint">Until you pick, manual changes are kept.</span></div>`:""}
       <details class="frow hpick hv-ms"${HOPEN.has("ms|tx")?" open":""}><summary><span class="hp-t">Text when it switches</span><span class="hint">${tx.size?esc(users.filter(u=>tx.has(String(u.id))).map(u=>u.name).join(", ")||"No one"):"No one"}</span><span class="chev"></span></summary>
         <div class="hp-body"><div class="hv-msg"><div class="checks">${users.map(u=>`<label><input type="checkbox" data-hvtx="${esc(String(u.id))}"${tx.has(String(u.id))?" checked":""}>${esc(u.name)}</label>`).join("")||`<span class="hint">No one has a phone number yet.</span>`}</div></div></div></details>
-    </div>
-    <h3 class="gh mk-h">Outdoor temperature</h3><div class="glist form box">
+    </div>`;
+  if(part==="weather")return `<div class="glist form box">
       <div class="frow"><label for="hvS_src">Source</label><span class="tline"><select id="hvS_src" data-hvset="src" style="width:auto"><option value="ha"${w.src!=="nws"?" selected":""}>Home Assistant forecast</option><option value="nws"${w.src==="nws"?" selected":""}>National Weather Service</option></select><button class="btn sm" type="button" data-hvwxgo>Check now</button></span></div>
-      <div class="row"><span class="hint">${wx.err?`<span class="errline">${esc(wx.err)}</span>`:wx.at?`Now ${wx.now!=null?Math.round(wx.now)+"°":"--"}. Today ${(fc[t]||{}).lo??"--"}° to ${(fc[t]||{}).hi??"--"}°. Tomorrow ${(fc[tm]||{}).lo??"--"}° to ${(fc[tm]||{}).hi??"--"}°. Updated ${esc(whenText(wx.at))}.`:"Not read yet."} Both use the location set in Home Assistant.</span></div></div>
-    <h3 class="gh mk-h">Each thermostat</h3><p class="gf" style="margin-top:0">Runs its schedule warmer or cooler, so one schedule fits rooms that need a little more or less. Heat and cool both move.</p>
-    <div class="glist">${HV.tstats.map(x=>{const a=+hvCfg().adj[x.serial]||0;return `<div class="row"><span class="rt"><b>${esc(x.name)}</b></span><select data-hvadj="${esc(x.serial)}" aria-label="Adjust ${esc(x.name)}" style="width:auto">${[-5,-4,-3,-2,-1,0,1,2,3,4,5].map(n=>`<option value="${n}"${n===a?" selected":""}>${n===0?"As planned":(n>0?n+"° warmer":(-n)+"° cooler")}</option>`).join("")}</select></div>`}).join("")}</div>`}
+      <div class="row"><span class="hint">${wx.err?`<span class="errline">${esc(wx.err)}</span>`:wx.at?`Now ${wx.now!=null?Math.round(wx.now)+"°":"--"}. Today ${(fc[t]||{}).lo??"--"}° to ${(fc[t]||{}).hi??"--"}°. Tomorrow ${(fc[tm]||{}).lo??"--"}° to ${(fc[tm]||{}).hi??"--"}°. Updated ${esc(whenText(wx.at))}.`:"Not read yet."} Both use the location set in Home Assistant.</span></div></div>`;
+  return `<p class="gf" style="margin-top:0">Each thermostat's area and schedule. The setting on the right runs its schedule warmer or cooler, so one schedule fits rooms that need a little more or less. Heat and cool both move.</p>
+    <div class="glist">${HV.tstats.map(x=>{const a=+hvCfg().adj[x.serial]||0;const ar=hvCfg().areas.find(a=>(a.tstats||[]).includes(x.serial)),sc=hvSchedOf(x.serial);return `<div class="row"><span class="rt"><b>${esc(x.name)}</b><span>${esc([ar?ar.name:"No area",sc?sc.name:"No schedule here",x.online?"":"Offline"].filter(Boolean).join(" · "))}</span></span><select data-hvadj="${esc(x.serial)}" aria-label="Adjust ${esc(x.name)}" style="width:auto">${[-5,-4,-3,-2,-1,0,1,2,3,4,5].map(n=>`<option value="${n}"${n===a?" selected":""}>${n===0?"As planned":(n>0?n+"° warmer":(-n)+"° cooler")}</option>`).join("")}</select></div>`}).join("")}</div>`}
 function hvHrRead(){const h=hvCfg().wx;(h.hours||[]).forEach((x,i)=>{const f=$("#hvHf"+i),t=$("#hvHt"+i);if(f)x.from={a:"clock",t:f.value};if(t)x.to={a:"clock",t:t.value}});save()}
-function hvSetupHtml(){const h=hvCfg(),inA=new Set(h.areas.flatMap(a=>a.tstats||[]));
-  const mode=HV.mode==="live"?"Live: changes go to every thermostat.":HV.mode==="pilot"?"Pilot: changes go only to the thermostats listed under pelican_pilot in the add-on settings. The rest show what would happen.":"Read only: the box reads the thermostats and shows what it would do, but sends nothing. To start testing, list a thermostat or two under pelican_pilot and set pelican_mode to pilot in the add-on settings.";
-  return `<p class="gf top">${esc(mode)}</p>
-    <h3 class="gh mk-h">Areas</h3><div class="glist">${h.areas.map((a,i)=>`<div class="row" style="flex-wrap:wrap"><input data-hvan="${i}" value="${esc(a.name)}" maxlength="30" aria-label="Area name" style="flex:1;min-width:140px"><button class="lnk danger" type="button" data-hvadel="${i}">Remove</button><div class="glist form box" style="flex-basis:100%;margin-top:8px">${hvMulti("a:"+i,a.tstats||[],HV.tstats,"Thermostats in this area",true)}</div></div>`).join("")||`<div class="row"><span class="hint">No areas yet.</span></div>`}</div>
+let HVSU=null;
+/* setup: a short menu, each part on its own page */
+function hvSetupHtml(){const h=hvCfg(),w=h.wx,inA=new Set(h.areas.flatMap(a=>a.tstats||[])),wx=HV.wx||{},adj=Object.keys(h.adj||{}).length,out=HV.tstats.filter(t=>!inA.has(t.serial)).length,would=(HV.would||[]).length;
+  const ready=+w.every&&(w.max==="none"||+w.max>0),every={"15":"every 15 min","30":"every 30 min","60":"every hour","120":"every 2 hours"}[w.every];
+  const secs=[["areas","Areas",`${h.areas.length} area${h.areas.length===1?"":"s"}${out?` · ${out} not in an area`:""}`],
+    ["tstats","Thermostats",`${HV.tstats.length}${adj?` · ${adj} run warmer or cooler`:""}`],
+    ["weather","Outdoor temperature",`${w.src==="nws"?"Weather Service":"Home Assistant"}${wx.now!=null?` · now ${Math.round(wx.now)}°`:""}${wx.err?" · not reading":""}`],
+    ["switch","Switching during the day",ready?`On · ${every}, up to ${w.max==="none"?"no limit":w.max+" a day"}`:"Off"]].concat(would?[["would","Not sent yet",`${would} change${would===1?"":"s"} held back`]]:[]);
+  if(HVSU){const sc=secs.find(x=>x[0]===HVSU)||secs[0];
+    const body=HVSU==="areas"?hvAreasHtml():HVSU==="tstats"?hvSwitchHtml("tstats"):HVSU==="weather"?hvSwitchHtml("weather"):HVSU==="switch"?hvSwitchHtml("switch"):
+      `<div class="glist">${(HV.would||[]).slice(0,40).map(x=>`<div class="row"><span class="rt"><b>${esc(x.name)}</b><span>${esc(x.what)} · ${esc(whenText(x.at))}</span></span></div>`).join("")}</div><p class="gf">${HV.mode==="read"?"Read only: nothing is sent.":"Only the pilot thermostats get changes. These are the rest."}</p>`;
+    return `<div class="hv-top" style="margin-bottom:6px"><button type="button" class="lnk" data-hvsu="">‹ Setup</button></div><h3 class="gh" style="margin-top:4px">${esc(sc[1])}</h3>${body}`}
+  const mode=HV.mode==="live"?["Live","Changes go to every thermostat.","ok"]:HV.mode==="pilot"?["Pilot",`Only ${(HV.pilot||[]).join(", ")||"the pilot thermostats"} ${(HV.pilot||[]).length===1?"gets":"get"} changes. The rest show what would happen.`,"warn"]:["Read only","Nothing is sent to the thermostats.","warn"];
+  return `<div class="glist">
+      <div class="row"><span class="rt"><b>${mode[0]}</b><span>${esc(mode[1])} Set in the add-on settings.</span></span><span class="hv-pill ${HV.err?"bad":"ok"}">${HV.err?"Pelican not connected":"Pelican connected"}</span></div>
+      <div class="row"><span class="rt"><b>${HV.syncAt?"Week loaded "+esc(whenText(HV.syncAt)):"Week not loaded yet"}</b><span>Every night at 12:15 AM, and a few seconds after a schedule is saved.</span></span><button class="btn sm" type="button" data-hvsync>Load now</button></div></div>
+    <div class="glist" style="margin-top:14px">${secs.map(([k,l,sub])=>`<button type="button" class="row tap" data-hvsu="${k}" style="width:100%;text-align:left"><span class="rt"><b>${l}</b></span><span class="hint" style="margin-left:auto">${esc(sub)}</span><span class="chev"></span></button>`).join("")}</div>`}
+function hvAreasHtml(){const h=hvCfg(),inA=new Set(h.areas.flatMap(a=>a.tstats||[]));
+  return `<div class="glist">${h.areas.map((a,i)=>`<div class="row" style="flex-wrap:wrap"><input data-hvan="${i}" value="${esc(a.name)}" maxlength="30" aria-label="Area name" style="flex:1;min-width:140px"><button class="lnk danger" type="button" data-hvadel="${i}">Remove</button><div class="glist form box" style="flex-basis:100%;margin-top:8px">${hvMulti("a:"+i,a.tstats||[],HV.tstats,"Thermostats in this area",true)}</div></div>`).join("")||`<div class="row"><span class="hint">No areas yet.</span></div>`}</div>
     <div style="display:flex;gap:8px;margin:10px 0;flex-wrap:wrap"><button class="btn" type="button" data-hvaadd>+ Add area</button>${HV.tstats.some(t=>t.group)?`<button class="btn" type="button" data-hvagrp>Use the groups from Pelican</button>`:""}</div>
     ${HV.tstats.some(t=>!inA.has(t.serial))?`<p class="gf">Not in an area yet: ${esc(HV.tstats.filter(t=>!inA.has(t.serial)).map(t=>t.name).join(", "))}. Only super admins see these.</p>`:""}
-    <p class="gf">Who can see or change each area is set on each person's page, under People.</p>
-    ${hvSwitchHtml()}
-    <h3 class="gh mk-h">The week on the thermostats</h3><div class="glist"><div class="row"><span class="rt"><b>${HV.syncAt?"Last loaded "+esc(whenText(HV.syncAt)):"Not loaded yet"}</b><span>Every night at 12:15 AM, and a few seconds after a schedule is saved. Thermostats with no rule are left alone.</span></span><button class="btn sm" type="button" data-hvsync>Load now</button></div></div>
-    ${(HV.would||[]).length?`<h3 class="gh mk-h">What it would have sent</h3><div class="glist">${HV.would.slice(0,30).map(w=>`<div class="row"><span class="rt"><b>${esc(w.name)}</b><span>${esc(w.what)} · ${esc(whenText(w.at))}</span></span></div>`).join("")}</div>`:""}`}
+    <p class="gf">Who can see or change each area is set on each person's page, under People.</p>`}
 
 
 /* ---- clicks and changes ---- */
 document.addEventListener("click",async ev=>{const t=ev.target,c=x=>t.closest(x);if(!c("#hvBody")&&!c("#opSheet"))return;let e;
-  if((e=c("[data-hvt]"))){HVT=e.dataset.hvt;HVS=null;HVSE=null;renderHv();return}
+  if((e=c("[data-hvt]"))){HVT=e.dataset.hvt;HVS=null;HVSE=null;HVSU=null;renderHv();return}
   if((e=c("[data-hvstep]"))){ev.stopPropagation();hvStep(e.dataset.hvstep,+e.dataset.d);return}
   if(c("[data-hvsm]")){HVSM=!HVSM;HVSEL.clear();renderHv();return}
   if((e=c("[data-hvall]"))){const g=hvGroups().find(x=>x.a.id===e.dataset.hvall);(g?g.ts:[]).filter(x=>hvMay(x.serial,"change")).forEach(x=>HVSEL.add(x.serial));renderHv();return}
@@ -6413,6 +6425,7 @@ document.addEventListener("click",async ev=>{const t=ev.target,c=x=>t.closest(x)
       HV.tstats.filter(t=>t.group===g).forEach(t=>{if(!a.tstats.includes(t.serial))a.tstats.push(t.serial)})});save();log("Heat and AC: areas made from the Pelican groups");toast(n?`Added ${n} area${n===1?"":"s"} from Pelican`:"The Pelican groups are already here");renderHv();return}
   if(c("[data-hvaadd]")){hvCfg().areas.push({id:"a"+Date.now(),name:"New area",tstats:[]});save();renderHv();return}
   if((e=c("[data-hvadel]"))){const a=hvCfg().areas.splice(+e.dataset.hvadel,1)[0];save();log(`Heat and AC area removed: ${a.name}`);renderHv();return}
+  if((e=c("[data-hvsu]"))){HVSU=e.dataset.hvsu||null;renderHv.force=true;renderHv();window.scrollTo(0,0);return}
   if(c("[data-hvsync]")){if(!ON_BOX){toast("Demo: nothing to load");return}toast("Loading the week…");let j;try{j=await (await fetch("api/hvac/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"})).json()}catch(x){j={ok:false}}
     toast(j.ok?(j.errors&&j.errors.length?j.errors[0]:`Loaded ${j.written} day${j.written===1?"":"s"}${j.would?`, ${j.would} not sent (${HV.mode==="read"?"read only":"not in the pilot"})`:""}`):"Didn't work");HV.t=0;hvLoad(true);return}});
 function hvTp(w){const h=w.querySelector("input[type=hidden]");if(!h)return;if(h.id==="hvAt"&&HVQ){HVQ.at=h.value;const x=$("#hvSum");if(x)x.textContent=hvSumText()}
