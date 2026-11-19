@@ -5,7 +5,7 @@
 // Selection and value are "name:value;" pairs. Answers are XML.
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const FIELDS = ["name", "groupName", "serialNo", "temperature", "humidity", "heatSetting", "coolSetting", "system", "fan", "runStatus", "setBy", "statusDisplay", "schedule", "minHeatSetting", "maxHeatSetting", "minCoolSetting", "maxCoolSetting"];
+const FIELDS = ["name", "groupName", "serialNo", "temperature", "humidity", "co2Level", "heatSetting", "coolSetting", "system", "fan", "runStatus", "setBy", "statusDisplay", "schedule", "minHeatSetting", "maxHeatSetting", "minCoolSetting", "maxCoolSetting"];
 
 const unxml = (s) => String(s).replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
 function blocks(xml, tag) {
@@ -56,7 +56,7 @@ function createPelican({ site, username, password, log = () => {}, fetchImpl = (
     const xml = await call("get", "Thermostat", "", FIELDS.join(";"));
     return blocks(xml, "Thermostat").filter((t) => t.serialNo).map((t) => ({
       serial: t.serialNo, name: t.name || t.serialNo, group: t.groupName || "",
-      temp: num(t.temperature), humidity: num(t.humidity), heat: num(t.heatSetting), cool: num(t.coolSetting),
+      temp: num(t.temperature), humidity: num(t.humidity) || null, co2: num(t.co2Level) || null, heat: num(t.heatSetting), cool: num(t.coolSetting),
       system: t.system || "", fan: t.fan || "", run: t.runStatus || "", setBy: t.setBy || "",
       online: !/unreachable/i.test(t.statusDisplay || ""), status: t.statusDisplay || "", schedule: t.schedule || "",
       limits: { heatMin: num(t.minHeatSetting), heatMax: num(t.maxHeatSetting), coolMin: num(t.minCoolSetting), coolMax: num(t.maxCoolSetting) },
@@ -88,9 +88,9 @@ function createPelican({ site, username, password, log = () => {}, fetchImpl = (
   }
   // readings Pelican kept: about every few minutes. At most 30 days per request. Times are the site's local time.
   async function history(serial, from, to) {
-    const xml = await call("get", "ThermostatHistory", pairs({ serialNo: serial, startDateTime: from, endDateTime: to }), "temperature;heatSetting;coolSetting;system;fan;runStatus;setBy;frontKeypad;timestamp");
+    const xml = await call("get", "ThermostatHistory", pairs({ serialNo: serial, startDateTime: from, endDateTime: to }), "temperature;humidity;co2Level;heatSetting;coolSetting;system;fan;runStatus;setBy;frontKeypad;timestamp");
     return blocks(xml, "History").map((h) => { const m = String(h.timestamp || "").match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/); if (!m) return null;
-      return { d: m[1], m: +m[2] * 60 + +m[3], temp: num(h.temperature), heat: num(h.heatSetting), cool: num(h.coolSetting), system: h.system || "", fan: h.fan || "", run: h.runStatus || "", setBy: h.setBy || "", keypad: h.frontKeypad || "" }; }).filter(Boolean);
+      return { d: m[1], m: +m[2] * 60 + +m[3], temp: num(h.temperature), hum: num(h.humidity) || null, co2: num(h.co2Level) || null, heat: num(h.heatSetting), cool: num(h.coolSetting), system: h.system || "", fan: h.fan || "", run: h.runStatus || "", setBy: h.setBy || "", keypad: h.frontKeypad || "" }; }).filter(Boolean);
   }
   // each day of the week has its own set times
   const weekly = (serial) => call("set", "Thermostat", pairs({ serialNo: serial }), pairs({ scheduleRepeat: "Weekly", schedule: "On" }));
