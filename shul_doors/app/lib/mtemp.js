@@ -14,16 +14,23 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
   const A = (id) => { const v = areaMap[id]; return typeof v === "string" ? { area: v } : v || {}; };
   const isThermo = (st, area) => /^climate\./.test(st.entity_id) && (/mts\d|meross/i.test(st.entity_id + " " + ((st.attributes || {}).friendly_name || "")) || /mikva|mikvah/i.test(area || ""));
   const nice = (area, st) => String(area || (st.attributes || {}).friendly_name || st.entity_id).replace(/^mikvah?\s+/i, "").trim();
+  let lastIds = new Set();
   async function list() {
     if (unit === null) { try { unit = ((await ha("/config")).unit_system || {}).temperature || "°F"; } catch { unit = "°F"; } }
-    if (now() - areaAt > 10 * 60e3) { try { areaMap = await areas(); } catch (e) { log("warn", "thermostats: couldn't read areas: " + e.message); } areaAt = now(); }
+    // the device list (which thermostats are Meross LAN) is read every 10 minutes; while it isn't in yet, try again each time
+    if (now() - areaAt > 10 * 60e3 || !Object.keys(areaMap || {}).length) { try { areaMap = await areas(); } catch (e) { log("warn", "thermostats: couldn't read areas: " + e.message); } areaAt = now(); }
     const states = await ha("/states");
     let found = states.filter((st) => isThermo(st, A(st.entity_id).area));
+    // other Meross integrations (Meross Cloud) add copies of the same thermostats with unscaled numbers: never use those.
+    // Without the device list, keep to the thermostats seen last time with it, instead of showing every copy.
+    if (!Object.keys(areaMap || {}).length && lastIds.size) found = found.filter((st) => lastIds.has(st.entity_id));
     // when Meross LAN is installed, each thermostat shows up twice (HomeKit and Meross LAN): keep the Meross LAN one
     const mlAreas = new Set(found.filter((st) => A(st.entity_id).uuid).map((st) => A(st.entity_id).area).filter(Boolean));
     found = found.filter((st) => A(st.entity_id).uuid || !mlAreas.has(A(st.entity_id).area));
     // once Meross LAN is in, show only the thermostats it was given (others on the same Meross account stay out)
     if (found.some((st) => A(st.entity_id).uuid)) found = found.filter((st) => A(st.entity_id).uuid);
+    found = found.filter((st) => A(st.entity_id).platform !== "meross_cloud");
+    if (Object.keys(areaMap || {}).length) lastIds = new Set(found.map((st) => st.entity_id));
     return found.map((st) => {
       const a = st.attributes || {}, online = !["unavailable", "unknown"].includes(st.state);
       return { id: st.entity_id, name: nice(A(st.entity_id).area, st), area: A(st.entity_id).area || "", uuid: A(st.entity_id).uuid || "", cur: online && a.current_temperature != null ? Number(a.current_temperature) : null, set: a.temperature != null ? Number(a.temperature) : null,
