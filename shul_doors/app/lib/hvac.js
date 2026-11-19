@@ -1,10 +1,10 @@
 "use strict";
 // Heating and cooling: the Pelican thermostats.
-// Day plans are named lists of changes for one day (up to 12, Pelican's limit), times by the clock or by zmanim.
-// Rules pick which plan each thermostat runs on a day, like the door rules: weekdays, holidays, events, dates,
-// situations, the Rav, summer or winter clock, and the outdoor temperature. The most specific rule wins; days no
-// rule covers run the default plan (a freeze guard unless another is picked). A rule can also switch plans during
-// the day when the outdoor temperature crosses lines the user typed, within the limits picked in Setup. Pelican stores one schedule per weekday on the thermostat, so every night the box writes
+// Schedules work like Pelican's: a named schedule repeats daily, weekday and weekend, or weekly, each day a list of
+// changes (up to 12, Pelican's limit), times by the clock or by zmanim. Each thermostat is on one schedule.
+// Special days (holidays, events, dates, situations, the Rav, summer or winter clock, the outdoor temperature) put
+// thermostats on another schedule for those days, like the door rules: the most specific one wins. One can also
+// switch during the day when the outdoor temperature crosses lines the user typed, within the limits in Setup. Pelican stores one schedule per weekday on the thermostat, so every night the box writes
 // the coming 7 days, each with its real times: the thermostat then holds a week on its own.
 // Quick changes: until the next scheduled change (Pelican goes back by itself), for a while or until a time
 // (the box puts it back), or permanent (until someone puts it back).
@@ -15,47 +15,35 @@ const MAX_PER_DAY = 12;
 const ANCHORS = ["alos", "sunrise", "chatzos", "plag", "sunset", "candles", "tzeis", "havdalah", "rt"];
 const SYSTEMS = ["Auto", "Heat", "Cool", "Off"];
 
-const FREEZE = { id: "freeze", name: "Freeze guard", entries: [{ at: { a: "clock", t: "00:00" }, system: "Auto", heat: 55, cool: 85, fan: "Auto", keypad: "On" }] };
 const WDS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Shabbos"];
 const C0 = () => ({ wd: [], fest: [], dates: [], hr: [] });
-function daysText(wd) {
-  const l = [...wd].sort((a, b) => a - b); if (l.length > 2 && l[l.length - 1] - l[0] === l.length - 1) return `${WDS[l[0]]} to ${WDS[l[l.length - 1]]}`;
-  return l.map((d) => WDS[d]).join(", ");
-}
-// The first version kept a week per thermostat plus special days. Turn them into day plans and rules once,
-// the same on the box and on the screen (ids are numbered so both come out the same). The old ones are kept.
-function migrate(h) {
-  if (h.v2) return false;
-  const plans = [], rules = [], byKey = new Map();
-  const planOf = (entries, name) => { const k = JSON.stringify(entries || []); if (!byKey.has(k)) { const p = { id: "p" + (plans.length + 1), name, entries: JSON.parse(k) }; plans.push(p); byKey.set(k, p); } return byKey.get(k); };
+// a schedule's list for a weekday: daily uses one list, weekday and weekend uses Sunday's for Sunday and Shabbos
+// and Monday's for Monday to Friday (like Pelican), weekly has one for each day
+function dayOf(sc, w) { const d = (sc && sc.days) || {}; if (sc.repeat === "daily") return d[0] || []; if (sc.repeat === "wkend") return w === 0 || w === 6 ? d[0] || [] : d[1] || []; return d[w] || []; }
+// The first version kept a week per thermostat plus special days with their own times. Turn them into schedules
+// once: thermostats with the same week share one; each special day gets its own schedule. The old ones are kept.
+function migrate(h, nameOf = (x) => x) {
+  if (h.v3) return false;
+  const scheds = [], rules = [], groups = new Map(), cl = (x) => JSON.parse(JSON.stringify(x || []));
+  Object.entries(h.sched || {}).forEach(([serial, week]) => {
+    const days = {}; for (let d = 0; d < 7; d++) days[d] = cl(week && week[d]);   // a day left empty stays empty, as before
+    const k = JSON.stringify(days); if (!groups.has(k)) groups.set(k, { days, tstats: [] }); groups.get(k).tstats.push(serial);
+  });
+  groups.forEach((g) => scheds.push({ id: "s" + (scheds.length + 1), name: g.tstats.map(nameOf).join(", ").slice(0, 40) || "Schedule " + (scheds.length + 1), repeat: "weekly", days: g.days, tstats: g.tstats }));
   (h.specials || []).forEach((sp) => {
     const inc = sp.inc || { wd: [], fest: (sp.when || {}).keys || [], dates: ((sp.when || {}).dates || []).map((d) => ({ from: d.from, to: d.to || d.from, yearly: false })), hr: [] };
-    const p = { id: "p" + (plans.length + 1), name: sp.name || "Special day", entries: JSON.parse(JSON.stringify(sp.entries || [])) }; plans.push(p);
-    rules.push({ id: "r" + (rules.length + 1), name: sp.name || "Special day", on: sp.on !== false, tstats: [...(sp.tstats || [])], inc: { ...C0(), ...inc }, exc: { ...C0(), ...(sp.exc || {}) }, rabbi: sp.rabbi || "any", season: sp.season || "any", sit: sp.sit || "", plan: p.id });
+    const sc = { id: "s" + (scheds.length + 1), name: sp.name || "Special day", repeat: "daily", days: { 0: cl(sp.entries) }, tstats: [] }; scheds.push(sc);
+    rules.push({ id: "r" + (rules.length + 1), name: sp.name || "Special day", on: sp.on !== false, tstats: [...(sp.tstats || [])], inc: { ...C0(), ...inc }, exc: { ...C0(), ...(sp.exc || {}) }, rabbi: sp.rabbi || "any", season: sp.season || "any", sit: sp.sit || "", sched: sc.id, wx: null });
   });
-  const uses = new Map();   // plan id -> weekday -> thermostats
-  Object.entries(h.sched || {}).forEach(([serial, week]) => {
-    for (let d = 0; d < 7; d++) { const p = planOf((week && week[d]) || [], "");   // a day left empty stays empty (the thermostat keeps its last setting), as before
-      const m = uses.get(p.id) || new Map(); uses.set(p.id, m); (m.get(d) || m.set(d, []).get(d)).push(serial); }
-  });
-  uses.forEach((m, pid) => {
-    const p = plans.find((x) => x.id === pid), groups = new Map();
-    m.forEach((serials, d) => { const k = serials.sort().join(","); (groups.get(k) || groups.set(k, []).get(k)).push(d); });
-    if (!p.name) { const all = [...m.keys()], base = (p.entries.length ? "" : "No changes, ") + daysText(all); p.name = plans.some((x) => x.name === base) ? base + " " + plans.indexOf(p) : base; }
-    groups.forEach((wds, k) => {
-      rules.push({ id: "r" + (rules.length + 1), name: daysText(wds), on: true, tstats: k.split(","), inc: { ...C0(), wd: wds.sort((a, b) => a - b) }, exc: C0(), rabbi: "any", season: "any", sit: "", plan: pid });
-    });
-  });
-  plans.forEach((p, i) => { if (!p.name) p.name = "Plan " + (i + 1); });
   h.legacy = { sched: h.sched || {}, specials: h.specials || [] };
-  h.plans = (h.plans || []).concat(plans); h.rules = (h.rules || []).concat(rules); h.sched = {}; h.specials = []; h.v2 = true;
+  h.scheds = (h.scheds || []).concat(scheds); h.rules = (h.rules || []).concat(rules); h.sched = {}; h.specials = []; h.v3 = true;
   return true;
 }
 
-function createHvac({ pelican, engine, weather = { get: () => ({ now: null, days: {} }), refresh: async () => ({ now: null, days: {} }) }, alert = () => {}, getState, getStore, save, mode = "read", pilot = [], log = () => {}, note = () => {}, now = () => Date.now(), nyParts, cache = { get: () => null, set: () => {} } }) {
+function createHvac({ pelican, engine, saveState = () => {}, weather = { get: () => ({ now: null, days: {} }), refresh: async () => ({ now: null, days: {} }) }, alert = () => {}, getState, getStore, save, mode = "read", pilot = [], log = () => {}, note = () => {}, now = () => Date.now(), nyParts, cache = { get: () => null, set: () => {} } }) {
   let list = [], listAt = 0, listErr = "";
   const st = () => getStore();
-  const cfg = () => { const s = getState() || {}; s.hvac = s.hvac || {}; const h = s.hvac; h.areas = h.areas || []; h.sched = h.sched || {}; h.specials = h.specials || []; h.quick = h.quick || []; h.plans = h.plans || []; h.rules = h.rules || []; h.adj = h.adj || {}; h.wx = h.wx || {}; migrate(h); return h; };
+  const cfg = () => { const s = getState() || {}; s.hvac = s.hvac || {}; const h = s.hvac; h.areas = h.areas || []; h.sched = h.sched || {}; h.specials = h.specials || []; h.quick = h.quick || []; h.scheds = h.scheds || []; h.rules = h.rules || []; h.adj = h.adj || {}; h.wx = h.wx || {}; return h; };
   const pilotSet = new Set(pilot.map((x) => String(x).toLowerCase()));
   const inPilot = (t) => pilotSet.has(String(t.serial).toLowerCase()) || pilotSet.has(String(t.name).toLowerCase());
   const canWrite = (t) => mode === "live" || (mode === "pilot" && inPilot(t));
@@ -80,6 +68,7 @@ function createHvac({ pelican, engine, weather = { get: () => ({ now: null, days
       let dirty = false;
       list.forEach((t) => { const p = prev.get(t.serial); if (p && p.online !== t.online) { event(t.serial, "", t.online ? "Back online" : "Went offline"); dirty = true; } });
       if (dirty) save();
+      const h = cfg(); if (!h.v3 && list.length && migrate(h, (x) => (find(x) || { name: x }).name)) { saveState(); log("info", "heat and AC: weekly schedules and special days turned into schedules"); }
     }
     catch (e) { listErr = e.message; }
     return list;
@@ -135,18 +124,20 @@ function createHvac({ pelican, engine, weather = { get: () => ({ now: null, days
     }
     return best;
   }
-  const planById = (id) => (id === "freeze" ? FREEZE : cfg().plans.find((p) => p.id === id) || null);
-  const defPlan = () => planById(cfg().defPlan || "freeze") || FREEZE;
-  const managed = (serial) => cfg().rules.some((r) => (r.tstats || []).includes(serial));
+  const schedById = (id) => cfg().scheds.find((x) => x.id === id) || null;
+  const schedOf = (serial) => cfg().scheds.find((x) => (x.tstats || []).includes(serial)) || null;
+  const managed = (serial) => !!schedOf(serial);   // only thermostats on a schedule made here are changed
   function plan(serial, date) {
-    const info = engine.info(date), r = ruleFor(serial, date, info), pl = (r && planById(r.plan)) || defPlan(), adj = +cfg().adj[serial] || 0;
+    const info = engine.info(date), base = schedOf(serial);
+    if (!base) return { date, w: info.w, src: "No schedule here", rule: null, sched: null, entries: [], over: 0 };
+    const r = ruleFor(serial, date, info), sc = (r && schedById(r.sched)) || base, adj = +cfg().adj[serial] || 0;
     const seen = new Map();
-    (pl.entries || []).forEach((e) => {
+    dayOf(sc, info.w).forEach((e) => {
       let m = minOf(e.at, info.z); if (m == null) return; m = Math.max(0, Math.min(1439, Math.round(m)));
       seen.set(m, { min: m, system: SYSTEMS.includes(e.system) ? e.system : "Auto", heat: (+e.heat || 68) + adj, cool: (+e.cool || 76) + adj, fan: e.fan === "On" ? "On" : "Auto", keypad: e.keypad === "Off" ? "Off" : "On" });   // keypad Off locks the screen. Two at the same minute: the later one in the list
     });
     const entries = [...seen.values()].sort((a, b) => a.min - b.min);
-    return { date, w: info.w, src: r ? (r.name === pl.name ? r.name : `${r.name} (${pl.name})`) : `Default (${pl.name})`, rule: r ? r.id : null, plan: pl.id, entries: entries.slice(0, MAX_PER_DAY), over: Math.max(0, entries.length - MAX_PER_DAY) };
+    return { date, w: info.w, src: r && sc !== base ? (r.name === sc.name ? r.name : `${r.name} (${sc.name})`) : sc.name, rule: r ? r.id : null, sched: sc.id, entries: entries.slice(0, MAX_PER_DAY), over: Math.max(0, entries.length - MAX_PER_DAY) };
   }
   // now and next, from today's plan (before the first change, yesterday's last one is still running)
   function nowNext(serial) {
@@ -245,8 +236,8 @@ function createHvac({ pelican, engine, weather = { get: () => ({ now: null, days
       if (sc < 0 || (lv.n[r.id] || 0) >= max) continue;
       const cur = wxValue(r.wx, t, true); if (cur == null) continue;
       const on = wxMatch(r, t), back = r.wx.back !== "" && r.wx.back != null && !isNaN(+r.wx.back);
-      const pn = (planById(r.plan) || {}).name || "its plan";
-      if (!on && crosses(r.wx, cur, r.wx.t)) { lv.on[r.id] = true; delete lv.off[r.id]; lv.n[r.id] = (lv.n[r.id] || 0) + 1; msgs.push(`${r.name}: ${cur}° outside, now running ${pn}`); }
+      const pn = (schedById(r.sched) || {}).name || "its schedule";
+      if (!on && crosses(r.wx, cur, r.wx.t)) { lv.on[r.id] = true; delete lv.off[r.id]; lv.n[r.id] = (lv.n[r.id] || 0) + 1; msgs.push(`${r.name}: ${cur}° outside, now on ${pn}`); }
       else if (on && back && crosses({ op: r.wx.op === "below" ? "above" : "below" }, cur, r.wx.back)) { lv.off[r.id] = true; delete lv.on[r.id]; lv.n[r.id] = (lv.n[r.id] || 0) + 1; msgs.push(`${r.name}: ${cur}° outside, switched back from ${pn}`); }
     }
     if (!msgs.length) return { same: true };
@@ -257,7 +248,7 @@ function createHvac({ pelican, engine, weather = { get: () => ({ now: null, days
       const held = s.hvHold || {}, keep = w.keep !== "end";   // until a choice is made, manual changes are kept
       const go = moved.filter((x) => !(keep && held[x]));
       if (go.length) await resume(go, "Shul Manager", "the outdoor temperature changed");
-      moved.forEach((x) => event(x, "Shul Manager", "Switched plans: " + msgs.join("; ")));
+      moved.forEach((x) => event(x, "Shul Manager", "Switched schedules: " + msgs.join("; ")));
     }
     msgs.forEach((m) => log("info", "heat and AC: " + m));
     try { alert(msgs.join(". ") + (moved.length ? `. ${moved.length} thermostat${moved.length === 1 ? "" : "s"} changed.` : ""), t + "|" + msgs.join("|")); } catch { /* no text */ }
@@ -324,7 +315,7 @@ function createHvac({ pelican, engine, weather = { get: () => ({ now: null, days
     };
   }
 
-  return { liveCheck, liveReady, ruleFor, migrate: () => migrate(cfg()), FREEZE, history, fromPelican, poll, plan, nowNext, setNow, resume, tick, sync, status, find, list: () => list, canWrite, MAX_PER_DAY, ANCHORS, SYSTEMS };
+  return { liveCheck, liveReady, ruleFor, schedOf, history, fromPelican, poll, plan, nowNext, setNow, resume, tick, sync, status, find, list: () => list, canWrite, MAX_PER_DAY, ANCHORS, SYSTEMS };
 }
 
-module.exports = { createHvac, migrate, MAX_PER_DAY, FREEZE };
+module.exports = { createHvac, migrate, dayOf, MAX_PER_DAY };

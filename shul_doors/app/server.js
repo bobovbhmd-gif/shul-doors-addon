@@ -534,7 +534,7 @@ function hvAlert(text, key) {
   const phones = ((state && state.users) || []).filter((u) => ids.includes(String(u.id)) && u.phone).map((u) => e164(u.phone)).filter(Boolean);
   if (sms && phones.length) sms.alertTo(state, phones, "hvwx:" + key, "Heat and AC: " + text, "hvac", 60e3).catch((e) => log("warn", "heat and AC text: " + e.message));
 }
-const hvac = createHvac({ pelican, weather: { get: () => weather.get(), refresh: async () => { const r = await wxRefresh(); return r; } }, alert: hvAlert, engine: { info: (d) => engine.info(d), addDays: (d, n) => engine.addDays(d, n), cond: (n, x, d) => engine.cond(n, x, d) }, getState: () => state, getStore: () => store, save: () => writeJson("store.json", store),
+const hvac = createHvac({ pelican, saveState: () => { try { backup(); version++; writeJson("state.json", state); writeJson("version.json", { v: version }); } catch (e) { log("warn", "heat and AC: " + e.message); } }, weather: { get: () => weather.get(), refresh: async () => { const r = await wxRefresh(); return r; } }, alert: hvAlert, engine: { info: (d) => engine.info(d), addDays: (d, n) => engine.addDays(d, n), cond: (n, x, d) => engine.cond(n, x, d) }, getState: () => state, getStore: () => store, save: () => writeJson("store.json", store),
   mode: HV_MODE, pilot: String(opts.pelican_pilot || "").split(/[,\n]+/).map((x) => x.trim()).filter(Boolean), log, note: (who, t) => activityNote(who, t), nyParts,
   cache: { get: (serial, d) => { try { return JSON.parse(fs.readFileSync(file(`hvhist/${slug(serial)}/${d}.json`), "utf8")); } catch { return null; } },
     set: (serial, d, rows) => { try { fs.mkdirSync(file(`hvhist/${slug(serial)}`), { recursive: true }); fs.writeFileSync(file(`hvhist/${slug(serial)}/${d}.json`), JSON.stringify(rows)); } catch { /* not kept */ } } } });
@@ -601,18 +601,17 @@ function hvMerge(req, before, after) {
   if (meAdmin(req)) return after.hvac;
   const old = before.hvac || {}, nw = after.hvac || {}, ok = (serial) => hvRole(req, serial) === "sched";
   const out = JSON.parse(JSON.stringify(old));
-  // rules: only ones whose thermostats they may all schedule (before and after); others stay as they were
-  const rOk = (x) => !x || (x.tstats || []).every(ok);
-  const oR = new Map((old.rules || []).map((x) => [x.id, x])), nR = new Map((nw.rules || []).map((x) => [x.id, x]));
-  out.rules = (nw.rules || []).map((y) => { const o = oR.get(y.id); return !o ? (rOk(y) ? y : null) : rOk(o) && rOk(y) ? y : o; }).filter(Boolean)
-    .concat((old.rules || []).filter((x) => !nR.has(x.id) && !rOk(x)));
-  // day plans: a plan can be changed or removed only if every rule using it is one of theirs; new plans are fine
-  const usedByOthers = (pid) => (old.rules || []).some((r) => r.plan === pid && !rOk(r));
-  const oP = new Map((old.plans || []).map((x) => [x.id, x])), nP = new Map((nw.plans || []).map((x) => [x.id, x]));
-  out.plans = (nw.plans || []).map((y) => { const o = oP.get(y.id); return !o ? y : usedByOthers(o.id) ? o : y; })
-    .concat((old.plans || []).filter((x) => !nP.has(x.id) && usedByOthers(x.id)));
+  const allOk = (x) => !x || (x.tstats || []).every(ok);
+  // special days, and schedules: only ones whose thermostats they may all schedule (before and after)
+  const keep = (ol, nl, extra = () => true) => { const oM = new Map((ol || []).map((x) => [x.id, x])), nM = new Map((nl || []).map((x) => [x.id, x]));
+    return (nl || []).map((y) => { const o = oM.get(y.id); return !o ? (allOk(y) ? y : null) : allOk(o) && allOk(y) && extra(o) ? y : o; }).filter(Boolean)
+      .concat((ol || []).filter((x) => !nM.has(x.id) && !(allOk(x) && extra(x)))); };
+  out.rules = keep(old.rules, nw.rules);
+  // a schedule a special day of someone else's uses stays as it is
+  const usedByOthers = (sc) => (old.rules || []).some((r) => r.sched === sc.id && !allOk(r));
+  out.scheds = keep(old.scheds, nw.scheds, (o) => !usedByOthers(o));
   out.adj = { ...(old.adj || {}) }; Object.keys({ ...(old.adj || {}), ...(nw.adj || {}) }).forEach((k) => { if (ok(k)) { if ((nw.adj || {})[k]) out.adj[k] = nw.adj[k]; else delete out.adj[k]; } });
-  return out;   // areas, the default plan and the switching settings stay as they were (super admins only)
+  return out;   // areas and the switching settings stay as they were (super admins only)
 }
 const ctrlAllow = (k) => !!(state && state.ctrl && state.ctrl[k]);
 const mtemp = createMtemp({ haUrl: HA_URL, token: HA_TOKEN, areas: () => haAuth.areas(), log });
@@ -1598,8 +1597,6 @@ const server = http.createServer((req, res) => {
 });
 
 init().then(() => {
-  // heat and AC: the first version's weekly schedules and special days become day plans and rules (once; the old ones are kept)
-  try { if (state && state.hvac && !state.hvac.v2) { backup(); require("./lib/hvac").migrate(state.hvac); version++; writeJson("state.json", state); writeJson("version.json", { v: version }); log("info", "heat and AC: schedules turned into day plans and rules"); } } catch (e) { log("warn", "heat and AC: " + e.message); }
   server.listen(PORT, () => log("info", `portal on port ${PORT}`));
   textServer.listen(TEXT_PORT, () => log("info", `texts from Twilio on port ${TEXT_PORT}`));
   setTimeout(() => runSync("start"), 5000);
