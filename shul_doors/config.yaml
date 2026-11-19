@@ -1,5 +1,5 @@
 name: Shul Manager
-version: "0.3.14"
+version: "0.4.00"
 slug: shul_doors
 description: Runs the shul's doors, the mikva magnet and the parking lot by zmanim, Jewish holidays, events and situations.
 url: https://github.com/bobovbhmd-gif/shul-doors-addon
@@ -41,6 +41,11 @@ options:
   atrium_url: ""
   atrium_username: ""
   atrium_password: ""
+  pelican_site: ""
+  pelican_username: ""
+  pelican_password: ""
+  pelican_mode: read
+  pelican_pilot: ""
 schema:
   mode: list(practice|pilot|live|restore)
   protector_url: str?
@@ -75,3 +80,8 @@ schema:
   atrium_url: str?
   atrium_username: str?
   atrium_password: password?
+  pelican_site: str?
+  pelican_username: str?
+  pelican_password: password?
+  pelican_mode: list(read|pilot|live)
+  pelican_pilot: str?
