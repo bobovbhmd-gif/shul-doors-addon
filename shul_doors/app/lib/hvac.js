@@ -124,6 +124,18 @@ function createHvac({ pelican, engine, saveState = () => {}, weather = { get: ()
     }
     return best;
   }
+  // a change can have its own rule: skip it on some days, or only make it on some days
+  function whenHit(k, info) {
+    if (k === "rav:away") return !!info.away; if (k === "rav:home") return !info.away;
+    if (k === "clock:dst") return !!info.dst; if (k === "clock:std") return !info.dst;
+    if (k.startsWith("sit:")) return (info.sits || []).includes(k.slice(4));
+    const keys = info.keys || [];
+    if (k === "chanuka") return keys.some((x) => /^chanuka\d$/.test(x));
+    if (keys.includes(k)) return true;
+    const i = k.indexOf(":"), h = k.slice(0, i);
+    return (h === "ev" || h === "type") && keys.includes(h + "@hvac" + k.slice(i));   // events kept to heat and AC
+  }
+  const okWhen = (e, info) => { const w = e.when; if (!w || !(w.keys || []).length) return true; const hit = w.keys.some((k) => whenHit(String(k), info)); return w.mode === "only" ? hit : !hit; };
   const schedById = (id) => cfg().scheds.find((x) => x.id === id) || null;
   const schedOf = (serial) => cfg().scheds.find((x) => (x.tstats || []).includes(serial)) || null;
   const managed = (serial) => !!schedOf(serial);   // only thermostats on a schedule made here are changed
@@ -133,6 +145,7 @@ function createHvac({ pelican, engine, saveState = () => {}, weather = { get: ()
     const r = ruleFor(serial, date, info), sc = (r && schedById(r.sched)) || base, adj = +cfg().adj[serial] || 0;
     const seen = new Map();
     dayOf(sc, info.w).forEach((e) => {
+      if (!okWhen(e, info)) return;
       let m = minOf(e.at, info.z); if (m == null) return; m = Math.max(0, Math.min(1439, Math.round(m)));
       seen.set(m, { min: m, system: SYSTEMS.includes(e.system) ? e.system : "Auto", heat: (+e.heat || 68) + adj, cool: (+e.cool || 76) + adj, fan: e.fan === "On" ? "On" : "Auto", keypad: e.keypad === "Off" ? "Off" : "On" });   // keypad Off locks the screen. Two at the same minute: the later one in the list
     });
