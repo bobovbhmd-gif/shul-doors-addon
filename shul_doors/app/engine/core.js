@@ -257,6 +257,14 @@ function keyLabel(k){
   return k;
 }
 function keyRank(k){ if(FEST[k]) return FEST[k].rank; return 70 }
+// how well a set of days (weekdays, holidays, dates, Hebrew dates) fits a date: -1 if not at all; exc is "but not on"
+function condScore(n,info,x){
+  if(x&&((x.wd||[]).includes(info.w)||(x.fest||[]).some(k=>info.keys.has(k))||(x.dates||[]).some(d=>dateMatch(d,info.s))||(x.hr||[]).some(hr=>hrMatches(hr,info.h,info.s))))return -1;
+  let best=-1;if((n.wd||[]).includes(info.w))best=10;
+  (n.hr||[]).forEach(hr=>{if(hrMatches(hr,info.h,info.s))best=Math.max(best,55)});
+  (n.fest||[]).forEach(k=>{if(info.keys.has(k))best=Math.max(best,keyRank(k))});
+  (n.dates||[]).forEach(d=>{if(dateMatch(d,info.s))best=Math.max(best,d.yearly?55:100)});
+  return best}
 // US federal holidays, on the day they are observed (Saturday moves to Friday, Sunday to Monday)
 function nthWd(y,m,wd,n){const first=new Date(Date.UTC(y,m-1,1)).getUTCDay();let d=1+((wd-first+7)%7)+(n-1)*7;if(n<0){const last=new Date(Date.UTC(y,m,0)).getUTCDate();const lw=new Date(Date.UTC(y,m-1,last)).getUTCDay();d=last-((lw-wd+7)%7)}return iso(y,m,d)}
 function observed(y,m,d){const s=iso(y,m,d),w=dow(s);return w===6?addDays(s,-1):w===0?addDays(s,1):s}

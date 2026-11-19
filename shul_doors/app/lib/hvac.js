@@ -53,15 +53,19 @@ function createHvac({ pelican, engine, getState, getStore, save, mode = "read", 
     if (!ANCHORS.includes(at.a) || !z || z[at.a] == null) return null;
     return z[at.a] + (+at.o || 0);
   };
-  function specialFor(serial, date, info) {
-    const keys = new Set(info.keys || []);
-    const hits = cfg().specials.filter((sp) => sp.on !== false && (sp.tstats || []).includes(serial) && (
-      ((sp.when || {}).dates || []).some((r) => date >= r.from && date <= (r.to || r.from)) || ((sp.when || {}).keys || []).some((k) => keys.has(k))));
-    // a special for these dates beats one from the calendar; otherwise the one higher in the list
-    return hits.find((sp) => ((sp.when || {}).dates || []).some((r) => date >= r.from && date <= (r.to || r.from))) || hits[0] || null;
+  // a special schedule's days: weekdays, holidays, dates and Hebrew dates, like a door rule (older ones kept a simple list)
+  const incOf = (sp) => sp.inc || { wd: [], fest: (sp.when || {}).keys || [], dates: ((sp.when || {}).dates || []).map((d) => ({ from: d.from, to: d.to || d.from, yearly: false })), hr: [] };
+  function specialFor(serial, date) {
+    let best = null, bs = -1;
+    for (const sp of cfg().specials) {
+      if (sp.on === false || !(sp.tstats || []).includes(serial)) continue;
+      let sc = -1; try { sc = engine.cond(incOf(sp), sp.exc || null, date); } catch { sc = -1; }
+      if (sc > bs) { bs = sc; best = sp; }   // the closest fit wins (set dates beat holidays beat weekdays); a tie goes to the one higher in the list
+    }
+    return best;
   }
   function plan(serial, date) {
-    const info = engine.info(date), sp = specialFor(serial, date, info);
+    const info = engine.info(date), sp = specialFor(serial, date);
     const raw = sp ? sp.entries || [] : ((cfg().sched[serial] || {})[info.w] || []);
     const seen = new Map();
     raw.forEach((e) => {

@@ -49,6 +49,7 @@ function createEngine({ state, calendar, now }) {
             rule: g.c.ov ? "By hand" : g.c.isDef ? "Default" : g.c.r.name, via: g.c.src || "" }));
         } finally { PLAIN = false; NO_OV = false; DI_CACHE = null; } })()`);
     },
+    cond(inc, exc, date) { ctx.__s = date; ctx.__n = inc; ctx.__x = exc || null; return run(`condScore(__n, dayInfoRaw(__s), __x)`); },
     info(date) { ctx.__s = date; return run(`(() => { const i = dayInfoRaw(__s); return { s: i.s, w: i.w, h: i.h, keys: [...i.keys], z: i.z, dst: i.dst, away: i.away, sits: [...i.sits] }; })()`); },
     // the Shabbos magnet (or another output) on one date: [{a,b,mode:"On"|"Off"}]
     output(o, date) { ctx.__o = o; ctx.__s = date; return run("outputDay(__o, __s)"); },

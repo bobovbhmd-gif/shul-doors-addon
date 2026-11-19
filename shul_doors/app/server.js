@@ -66,7 +66,7 @@ async function init() {
   store = loadStore();
   sms = createSms({ opts, file: file("sms.jsonl"), store, save: () => writeJson("store.json", store), log });
   if (!store.textHook) { store.textHook = crypto.randomBytes(18).toString("hex"); writeJson("store.json", store); }
-  textbot = createTextBot({ store, chat: opts.anthropic_api_key ? async ({ system, messages, tools }) => {
+  textbot = createTextBot({ hvac: hvTextApi, store, chat: opts.anthropic_api_key ? async ({ system, messages, tools }) => {
       const r = await aiAsk({ system, messages, tools, max_tokens: 500 });
       if (r.status !== 200) throw new Error("assistant answered " + r.status + (r.body && r.body.code ? " (" + r.body.code + ")" : ""));
       return r.body;
@@ -522,7 +522,7 @@ const atrium = createAtrium({ url: opts.atrium_url, username: opts.atrium_userna
 // heating and cooling: Pelican thermostats (through Pelican's cloud). Starts read only, like the doors did.
 const pelican = createPelican({ site: opts.pelican_site, username: opts.pelican_username, password: opts.pelican_password, log });
 const HV_MODE = ["read", "pilot", "live"].includes(opts.pelican_mode) ? opts.pelican_mode : "read";
-const hvac = createHvac({ pelican, engine: { info: (d) => engine.info(d), addDays: (d, n) => engine.addDays(d, n) }, getState: () => state, getStore: () => store, save: () => writeJson("store.json", store),
+const hvac = createHvac({ pelican, engine: { info: (d) => engine.info(d), addDays: (d, n) => engine.addDays(d, n), cond: (n, x, d) => engine.cond(n, x, d) }, getState: () => state, getStore: () => store, save: () => writeJson("store.json", store),
   mode: HV_MODE, pilot: String(opts.pelican_pilot || "").split(/[,\n]+/).map((x) => x.trim()).filter(Boolean), log, note: (who, t) => activityNote(who, t), nyParts,
   cache: { get: (serial, d) => { try { return JSON.parse(fs.readFileSync(file(`hvhist/${slug(serial)}/${d}.json`), "utf8")); } catch { return null; } },
     set: (serial, d, rows) => { try { fs.mkdirSync(file(`hvhist/${slug(serial)}`), { recursive: true }); fs.writeFileSync(file(`hvhist/${slug(serial)}/${d}.json`), JSON.stringify(rows)); } catch { /* not kept */ } } } });
@@ -536,11 +536,44 @@ if (pelican.configured) {
 // who may do what with a thermostat: "sched" (schedules and quick changes), "change" (quick changes), "see", or "" (hidden)
 function hvRole(req, serial) {
   if (meAdmin(req)) return "sched";
-  const u = matchUser(haUser(req)); if (!u) return "";
+  return hvRoleU(matchUser(haUser(req)), serial);
+}
+function hvRoleU(u, serial) {
+  if (!u) return ""; if (u.role === "Super admin") return "sched";
   const areas = ((state && state.hvac && state.hvac.areas) || []).filter((a) => (a.tstats || []).includes(serial));
   const rank = { "": 0, see: 1, change: 2, sched: 3 };
   return areas.map((a) => (u.hvac || {})[a.id] || "").sort((x, y) => rank[y] - rank[x])[0] || "";
 }
+// thermostats by text: the same people who may change doors by text, on the areas they may change
+const hvTextOn = (u) => pelican.configured && (u.role === "Super admin" || (u.can || {}).text);
+const hvTextApi = {
+  async list(u) {
+    if (!hvTextOn(u)) return [];
+    if (!hvac.list().length) await hvac.poll();
+    return hvac.list().map((t) => ({ t, r: hvRoleU(u, t.serial) })).filter((x) => x.r).map(({ t, r }) => ({ serial: t.serial, name: t.name, change: r === "change" || r === "sched",
+      now: `${t.online ? (t.temp != null ? Math.round(t.temp) + "°" : "?") : "offline"}, ${t.system}${t.system === "Off" ? "" : t.system === "Cool" ? " " + t.cool + "°" : " " + t.heat + "°"}` }));
+  },
+  async act(u, i) {
+    const mine = await this.list(u), norm = (x) => String(x || "").toLowerCase().trim();
+    const pick = (v) => mine.find((t) => norm(t.name) === norm(v)) || mine.find((t) => norm(t.name).includes(norm(v))) || mine.find((t) => norm(v).split(/\s+/).every((w) => norm(t.name).includes(w)));
+    const ts = [...new Set((i.thermostats || []).map(pick).filter(Boolean))];
+    if (!ts.length) return { status: "refused", why: "none of those thermostats are on this person's list", their_thermostats: mine.map((t) => t.name) };
+    if (i.action === "status") return { status: "done", result: ts.map((t) => { const x = hvac.find(t.serial) || {}, h = (store.hvHold || {})[t.serial]; return `${t.name}: ${t.now}${x.humidity ? ", humidity " + Math.round(x.humidity) + "%" : ""}${x.co2 ? ", CO2 " + Math.round(x.co2) : ""}${h ? ", held" + (h.kind === "perm" ? " with no end" : h.until ? " until " + nyTime(h.until) : "") : ""}`; }).join("; ") };
+    const no = ts.filter((t) => !t.change); if (no.length) return { status: "refused", why: `${u.name} may only see ${no.map((t) => t.name).join(", ")}` };
+    const who = u.name + " (text)";
+    if (i.action === "back") { const r = await hvac.resume(ts.map((t) => t.serial), who); return { status: "done", result: `${ts.map((t) => t.name).join(", ")} back on the schedule${r.some((x) => x.would) ? " (saved, not sent: " + (HV_MODE === "read" ? "read only" : "not in the pilot") + ")" : ""}` }; }
+    const v = {}; if (i.mode) v.system = i.mode; if (i.heat != null) v.heat = Math.round(i.heat); if (i.cool != null) v.cool = Math.round(i.cool); if (i.fan) v.fan = i.fan;
+    if (!Object.keys(v).length) return { status: "refused", why: "say what to change: mode, heat, cool or fan" };
+    if ((v.heat != null && (v.heat < 45 || v.heat > 90)) || (v.cool != null && (v.cool < 60 || v.cool > 95))) return { status: "refused", why: "heat can be 45 to 90, cool 60 to 95" };
+    let until = "next";
+    if (i.until === "permanent") until = "perm";
+    else if (i.until === "minutes") { const m = Math.round(+i.minutes || 0); if (m < 5 || m > 14 * 1440) return { status: "refused", why: "how long, 5 minutes to 14 days" }; until = Date.now() + m * 60e3; }
+    else if (i.until === "time") { const m = String(i.time || "").match(/^(\d{1,2}):(\d{2})$/); if (!m) return { status: "refused", why: "give the time as HH:MM" }; const p = nyParts(Date.now()), min = +m[1] * 60 + +m[2]; let t = Date.now() + (min - p.m) * 60e3; if (t <= Date.now()) t += 864e5; until = t; }
+    const r = await hvac.setNow(ts.map((t) => t.serial), v, until, who), bad = r.find((x) => !x.ok);
+    if (bad) return { status: "refused", why: bad.error };
+    return { status: "done", result: `${ts.map((t) => t.name).join(", ")}: ${[v.system, v.heat != null ? "heat " + v.heat : "", v.cool != null ? "cool " + v.cool : "", v.fan ? "fan " + v.fan : ""].filter(Boolean).join(", ")} ${until === "next" ? "until the next scheduled change" : until === "perm" ? "with no end" : "until " + nyTime(until)}${r.some((x) => x.would) ? " (saved, not sent: " + (HV_MODE === "read" ? "read only" : "not in the pilot") + ")" : ""}` };
+  },
+};
 // a non admin saving the rules: only the schedules of thermostats they may schedule can change
 function hvMerge(req, before, after) {
   if (meAdmin(req)) return after.hvac;
