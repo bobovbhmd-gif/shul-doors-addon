@@ -13,7 +13,7 @@ const MAX_PER_DAY = 12;
 const ANCHORS = ["alos", "sunrise", "chatzos", "plag", "sunset", "candles", "tzeis", "havdalah", "rt"];
 const SYSTEMS = ["Auto", "Heat", "Cool", "Off"];
 
-function createHvac({ pelican, engine, getState, getStore, save, mode = "read", pilot = [], log = () => {}, note = () => {}, now = () => Date.now(), nyParts }) {
+function createHvac({ pelican, engine, getState, getStore, save, mode = "read", pilot = [], log = () => {}, note = () => {}, now = () => Date.now(), nyParts, cache = { get: () => null, set: () => {} } }) {
   let list = [], listAt = 0, listErr = "";
   const st = () => getStore();
   const cfg = () => { const s = getState() || {}; s.hvac = s.hvac || {}; const h = s.hvac; h.areas = h.areas || []; h.sched = h.sched || {}; h.specials = h.specials || []; h.quick = h.quick || []; return h; };
@@ -27,13 +27,21 @@ function createHvac({ pelican, engine, getState, getStore, save, mode = "read", 
     s.hvWould.push({ at: now(), serial: t.serial, name: t.name, what }); if (s.hvWould.length > 300) s.hvWould.splice(0, s.hvWould.length - 300);
     log("info", `thermostat ${t.name}: would ${what} (${mode === "read" ? "read only" : "not in the pilot"})`);
   }
+  // the thermostat log: changes made from here and offline times (Pelican's own readings fill in the rest)
+  function event(serial, by, text) { const s = st(); s.hvEvents = s.hvEvents || []; s.hvEvents.push({ t: now(), serial, by: by || "", text }); if (s.hvEvents.length > 5000) s.hvEvents.splice(0, s.hvEvents.length - 5000); }
   async function act(t, what, fn) {
     if (!canWrite(t)) { would(t, what); return { would: true }; }
     await fn(); log("info", `thermostat ${t.name}: ${what}`); return { done: true };
   }
 
   async function poll() {
-    try { list = (await pelican.list()).map((t) => ({ ...t, pilot: inPilot(t), writable: canWrite(t) })); listAt = now(); listErr = ""; }
+    try {
+      const prev = new Map(list.map((t) => [t.serial, t]));
+      list = (await pelican.list()).map((t) => ({ ...t, pilot: inPilot(t), writable: canWrite(t) })); listAt = now(); listErr = "";
+      let dirty = false;
+      list.forEach((t) => { const p = prev.get(t.serial); if (p && p.online !== t.online) { event(t.serial, "", t.online ? "Back online" : "Went offline"); dirty = true; } });
+      if (dirty) save();
+    }
     catch (e) { listErr = e.message; }
     return list;
   }
@@ -97,6 +105,7 @@ function createHvac({ pelican, engine, getState, getStore, save, mode = "read", 
         s.hvHold[serial] = { kind, until: end, by, at: now(), v: val, would: !!r.would };
         if (r.done) Object.assign(t, val.heat != null ? { heat: val.heat } : {}, val.cool != null ? { cool: val.cool } : {}, val.system ? { system: val.system } : {}, val.fan ? { fan: val.fan } : {});
         note(by, `${t.name}: ${what}${r.would ? " (not sent: " + (mode === "read" ? "read only" : "not in the pilot") + ")" : ""}`);
+        event(serial, by, (r.would ? "Would set " : "Set ") + what);
         out.push({ serial, ok: true, would: !!r.would });
       } catch (e) { out.push({ serial, ok: false, error: e.message }); }
     }
@@ -109,6 +118,7 @@ function createHvac({ pelican, engine, getState, getStore, save, mode = "read", 
       const cur = nowNext(serial).cur, val = cur ? { system: cur.system, heat: cur.heat, cool: cur.cool, fan: cur.fan } : {};
       try {
         const r = await act(t, "back to the schedule" + (cur ? ` (${desc(val)})` : ""), () => pelican.set(serial, { ...val, schedule: "On" }));
+        event(serial, by, (r.would ? "Would go " : "") + "Back to the schedule" + (why ? " (" + why + ")" : ""));
         delete s.hvHold[serial]; note(by, `${t.name}: back to the schedule${why ? " (" + why + ")" : ""}${r.would ? " (not sent)" : ""}`); out.push({ serial, ok: true, would: !!r.would });
       } catch (e) { out.push({ serial, ok: false, error: e.message }); }
     }
@@ -136,6 +146,7 @@ function createHvac({ pelican, engine, getState, getStore, save, mode = "read", 
       const sent = (s.hvSent[t.serial] = s.hvSent[t.serial] || {}), wsent = (s.hvWouldSent[t.serial] = s.hvWouldSent[t.serial] || {});
       for (let i = 0; i < 7; i++) {
         const date = engine.addDays(today, i), p = plan(t.serial, date), key = date + "|" + hash(p);
+        { s.hvDays = s.hvDays || {}; const dd = (s.hvDays[t.serial] = s.hvDays[t.serial] || {}); dd[date] = { src: p.src, entries: p.entries, would: !canWrite(t) }; }
         if (!canWrite(t)) { if (wsent[p.w] !== key || force) { wsent[p.w] = key; would(t, `load ${pelican.DAYS[p.w]} ${date}: ${p.entries.length} changes (${p.src})`); out.would++; } else out.same++; continue; }
         if (!force && sent[p.w] === key) { out.same++; continue; }
         try {
@@ -145,6 +156,7 @@ function createHvac({ pelican, engine, getState, getStore, save, mode = "read", 
         } catch (e) { out.errors.push(`${t.name}: ${e.message}`); log("warn", `thermostat ${t.name}: couldn't load ${date}: ${e.message}`); break; }
       }
     }
+    { const cut = engine.addDays(today, -400); Object.values(s.hvDays || {}).forEach((dd) => Object.keys(dd).forEach((d) => { if (d < cut) delete dd[d]; })); }   // keep about a year
     s.hvSyncAt = now(); save(); return out;
   }
 
@@ -155,6 +167,20 @@ function createHvac({ pelican, engine, getState, getStore, save, mode = "read", 
       (week[d] = week[d] || []).push({ n: r.n, at: { a: "clock", t: `${m[1].padStart(2, "0")}:${m[2]}` }, system: SYSTEMS.includes(r.system) ? r.system : "Auto", heat: r.heat ?? 68, cool: r.cool ?? 76, fan: r.fan === "On" ? "On" : "Auto", keypad: r.keypad === "Off" ? "Off" : "On" }); });
     Object.values(week).forEach((l) => { l.sort((a, b) => a.at.t.localeCompare(b.at.t)); l.forEach((e) => delete e.n); });
     return week;
+  }
+  // Pelican's readings for a thermostat, from one date to another (days that are over are kept on the box)
+  async function history(serial, from, to) {
+    const today = nyParts(now()).d, out = [];
+    let d = from;
+    while (d <= to) {
+      const cached = d < today ? cache.get(serial, d) : null;
+      if (cached) { out.push(...cached); d = engine.addDays(d, 1); continue; }
+      let end = d; for (let i = 0; i < 29 && end < to && !(engine.addDays(end, 1) < today && cache.get(serial, engine.addDays(end, 1))); i++) end = engine.addDays(end, 1);
+      const rows = await pelican.history(serial, d + "T00:00", end + "T23:59");
+      for (let x = d; x <= end; x = engine.addDays(x, 1)) { const day = rows.filter((r) => r.d === x); if (x < today) cache.set(serial, x, day); out.push(...day); }
+      d = engine.addDays(end, 1);
+    }
+    return out.sort((a, b) => (a.d === b.d ? a.m - b.m : a.d < b.d ? -1 : 1));
   }
   const clock = (ms) => { const p = nyParts(ms); let h = Math.floor(p.m / 60), mm = String(p.m % 60).padStart(2, "0"); const ap = h >= 12 ? "PM" : "AM"; h = h % 12 || 12; return `${h}:${mm} ${ap}`; };
   const desc = (v) => [v.system, v.heat != null ? `heat ${v.heat}°` : "", v.cool != null ? `cool ${v.cool}°` : "", v.fan ? `fan ${v.fan}` : ""].filter(Boolean).join(", ");
@@ -168,7 +194,7 @@ function createHvac({ pelican, engine, getState, getStore, save, mode = "read", 
     };
   }
 
-  return { fromPelican, poll, plan, nowNext, setNow, resume, tick, sync, status, find, list: () => list, canWrite, MAX_PER_DAY, ANCHORS, SYSTEMS };
+  return { history, fromPelican, poll, plan, nowNext, setNow, resume, tick, sync, status, find, list: () => list, canWrite, MAX_PER_DAY, ANCHORS, SYSTEMS };
 }
 
 module.exports = { createHvac, MAX_PER_DAY };

@@ -86,10 +86,16 @@ function createPelican({ site, username, password, log = () => {}, fetchImpl = (
         pairs({ startTime: `${hh}:${mm}`, system: e.system || "Auto", heatSetting: Math.round(e.heat), coolSetting: Math.round(e.cool), fan: e.fan || "Auto", keypad: e.keypad === "Off" ? "Off" : "On" }));
     }
   }
+  // readings Pelican kept: about every few minutes. At most 30 days per request. Times are the site's local time.
+  async function history(serial, from, to) {
+    const xml = await call("get", "ThermostatHistory", pairs({ serialNo: serial, startDateTime: from, endDateTime: to }), "temperature;heatSetting;coolSetting;system;fan;runStatus;setBy;frontKeypad;timestamp");
+    return blocks(xml, "History").map((h) => { const m = String(h.timestamp || "").match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/); if (!m) return null;
+      return { d: m[1], m: +m[2] * 60 + +m[3], temp: num(h.temperature), heat: num(h.heatSetting), cool: num(h.coolSetting), system: h.system || "", fan: h.fan || "", run: h.runStatus || "", setBy: h.setBy || "", keypad: h.frontKeypad || "" }; }).filter(Boolean);
+  }
   // each day of the week has its own set times
   const weekly = (serial) => call("set", "Thermostat", pairs({ serialNo: serial }), pairs({ scheduleRepeat: "Weekly", schedule: "On" }));
 
-  return { configured, base, list, set, schedule, writeDay, weekly, status: () => ({ ...last, configured, site: base.replace(/^https:\/\//, "") }), DAYS };
+  return { configured, base, list, set, schedule, writeDay, weekly, history, status: () => ({ ...last, configured, site: base.replace(/^https:\/\//, "") }), DAYS };
 }
 
 module.exports = { createPelican, DAYS, _blocks: blocks };

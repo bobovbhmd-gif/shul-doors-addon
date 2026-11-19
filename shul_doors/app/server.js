@@ -523,7 +523,9 @@ const atrium = createAtrium({ url: opts.atrium_url, username: opts.atrium_userna
 const pelican = createPelican({ site: opts.pelican_site, username: opts.pelican_username, password: opts.pelican_password, log });
 const HV_MODE = ["read", "pilot", "live"].includes(opts.pelican_mode) ? opts.pelican_mode : "read";
 const hvac = createHvac({ pelican, engine: { info: (d) => engine.info(d), addDays: (d, n) => engine.addDays(d, n) }, getState: () => state, getStore: () => store, save: () => writeJson("store.json", store),
-  mode: HV_MODE, pilot: String(opts.pelican_pilot || "").split(/[,\n]+/).map((x) => x.trim()).filter(Boolean), log, note: (who, t) => activityNote(who, t), nyParts });
+  mode: HV_MODE, pilot: String(opts.pelican_pilot || "").split(/[,\n]+/).map((x) => x.trim()).filter(Boolean), log, note: (who, t) => activityNote(who, t), nyParts,
+  cache: { get: (serial, d) => { try { return JSON.parse(fs.readFileSync(file(`hvhist/${slug(serial)}/${d}.json`), "utf8")); } catch { return null; } },
+    set: (serial, d, rows) => { try { fs.mkdirSync(file(`hvhist/${slug(serial)}`), { recursive: true }); fs.writeFileSync(file(`hvhist/${slug(serial)}/${d}.json`), JSON.stringify(rows)); } catch { /* not kept */ } } } });
 let hvSyncT = null;
 function hvSyncSoon(ms = 20000) { clearTimeout(hvSyncT); hvSyncT = setTimeout(() => hvac.sync(false).catch((e) => log("warn", "thermostats: " + e.message)), ms); }
 if (pelican.configured) {
@@ -826,6 +828,21 @@ async function ctrlApi(req, res, p, u) {
       if (until !== "next" && until !== "perm") until = Math.min(+until, Date.now() + 14 * 864e5);
       const r = await hvac.setNow(serials, b, until, who);
       return send(res, 200, { ok: r.every((x) => x.ok), results: r, error: (r.find((x) => !x.ok) || {}).error });
+    }
+    if (req.method === "GET" && p === "/api/hvac/log") {
+      const serial = String(u.searchParams.get("serial") || ""), D = /^\d{4}-\d{2}-\d{2}$/;
+      if (!hvRole(req, serial)) return send(res, 403, { error: "You may not see this thermostat." });
+      let from = String(u.searchParams.get("from") || ""), to = String(u.searchParams.get("to") || "");
+      if (!D.test(from) || !D.test(to) || to < from) return send(res, 400, { error: "Pick the dates." });
+      if (engine.addDays(from, 92) < to) from = engine.addDays(to, -92);
+      const events = ((store && store.hvEvents) || []).filter((e) => e.serial === serial && nyParts(e.t).d >= from && nyParts(e.t).d <= to);
+      try { return send(res, 200, { ok: true, points: await hvac.history(serial, from, to), events }); }
+      catch (e) { return send(res, 200, { ok: false, error: e.message, points: [], events }); }
+    }
+    if (req.method === "GET" && p === "/api/hvac/days") {
+      const out = {}, all = (store && store.hvDays) || {}, from = String(u.searchParams.get("from") || ""), to = String(u.searchParams.get("to") || "9999");
+      Object.keys(all).forEach((serial) => { if (!hvRole(req, serial)) return; out[serial] = {}; Object.entries(all[serial]).forEach(([d, v]) => { if (d >= from && d <= to) out[serial][d] = v; }); });
+      return send(res, 200, { ok: true, days: out });
     }
     if (req.method === "GET" && p === "/api/hvac/pelican-schedule") {
       const serial = String(u.searchParams.get("serial") || "");
