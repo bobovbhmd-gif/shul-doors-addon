@@ -22,6 +22,7 @@ const { createMikva } = require("./lib/mikva");
 const { createAtrium } = require("./lib/atrium");
 const { createPelican } = require("./lib/pelican");
 const { createHvac } = require("./lib/hvac");
+const { createWeather } = require("./lib/weather");
 const { createMtemp, createTempLog, usualRate, nyParts, nextChange } = require("./lib/mtemp");
 const sched = require("./lib/sched");
 
@@ -522,7 +523,18 @@ const atrium = createAtrium({ url: opts.atrium_url, username: opts.atrium_userna
 // heating and cooling: Pelican thermostats (through Pelican's cloud). Starts read only, like the doors did.
 const pelican = createPelican({ site: opts.pelican_site, username: opts.pelican_username, password: opts.pelican_password, log });
 const HV_MODE = ["read", "pilot", "live"].includes(opts.pelican_mode) ? opts.pelican_mode : "read";
-const hvac = createHvac({ pelican, engine: { info: (d) => engine.info(d), addDays: (d, n) => engine.addDays(d, n), cond: (n, x, d) => engine.cond(n, x, d) }, getState: () => state, getStore: () => store, save: () => writeJson("store.json", store),
+// the outdoor temperature (Home Assistant's forecast, or the National Weather Service) for the heat and AC rules
+const weather = createWeather({ haUrl: HA_URL, token: HA_TOKEN, log, nyParts });
+try { weather.set(readJson("weather.json", null)); } catch { /* none yet */ }
+const wxSave = () => { try { writeJson("weather.json", weather.get()); } catch { /* not kept */ } };
+const wxRefresh = async () => { const w = (state && state.hvac && state.hvac.wx) || {}; const r = await weather.refresh(w.src || "ha", w.entity || ""); wxSave(); return r; };
+// a text to the people picked in Setup when a plan switches during the day
+function hvAlert(text, key) {
+  const ids = ((state && state.hvac && state.hvac.wx && state.hvac.wx.text) || []).map(String);
+  const phones = ((state && state.users) || []).filter((u) => ids.includes(String(u.id)) && u.phone).map((u) => e164(u.phone)).filter(Boolean);
+  if (sms && phones.length) sms.alertTo(state, phones, "hvwx:" + key, "Heat and AC: " + text, "hvac", 60e3).catch((e) => log("warn", "heat and AC text: " + e.message));
+}
+const hvac = createHvac({ pelican, saveState: () => { try { backup(); version++; writeJson("state.json", state); writeJson("version.json", { v: version }); } catch (e) { log("warn", "heat and AC: " + e.message); } }, weather: { get: () => weather.get(), refresh: async () => { const r = await wxRefresh(); return r; } }, alert: hvAlert, engine: { info: (d) => engine.info(d), addDays: (d, n) => engine.addDays(d, n), cond: (n, x, d) => engine.cond(n, x, d) }, getState: () => state, getStore: () => store, save: () => writeJson("store.json", store),
   mode: HV_MODE, pilot: String(opts.pelican_pilot || "").split(/[,\n]+/).map((x) => x.trim()).filter(Boolean), log, note: (who, t) => activityNote(who, t), nyParts,
   cache: { get: (serial, d) => { try { return JSON.parse(fs.readFileSync(file(`hvhist/${slug(serial)}/${d}.json`), "utf8")); } catch { return null; } },
     set: (serial, d, rows) => { try { fs.mkdirSync(file(`hvhist/${slug(serial)}`), { recursive: true }); fs.writeFileSync(file(`hvhist/${slug(serial)}/${d}.json`), JSON.stringify(rows)); } catch { /* not kept */ } } } });
@@ -531,7 +543,14 @@ function hvSyncSoon(ms = 20000) { clearTimeout(hvSyncT); hvSyncT = setTimeout(()
 if (pelican.configured) {
   setTimeout(() => hvac.poll().then(() => hvSyncSoon(5000)), 8000).unref();
   setInterval(() => hvac.poll(), 120000).unref();
-  setInterval(() => { hvac.tick().catch(() => {}); const p = nyParts(Date.now()); if (p.m === 15 && store && store.hvSyncDay !== p.d) { store.hvSyncDay = p.d; hvSyncSoon(1000); } }, 60000).unref();   // 12:15 AM: the new day's week
+  setInterval(() => { hvac.tick().catch(() => {}); hvac.liveCheck().catch((e) => log("warn", "heat and AC switching: " + e.message));
+    const p = nyParts(Date.now());
+    if (p.m === 5 && store && store.hvWxDay0 !== p.d) { store.hvWxDay0 = p.d; wxRefresh().catch(() => {}); }   // 12:05 AM: the fresh forecast for the night's pick
+    if (p.m === 15 && store && store.hvSyncDay !== p.d) { store.hvSyncDay = p.d; hvSyncSoon(1000); }   // 12:15 AM: the new day's week
+    if (p.m === 300 && store && store.hvSyncDay5 !== p.d) { store.hvSyncDay5 = p.d; wxRefresh().then(() => hvSyncSoon(1000)).catch(() => {}); }   // 5:00 AM: again, for the days ahead whose forecast changed
+  }, 60000).unref();
+  setInterval(() => { wxRefresh().catch(() => {}); }, 3600e3).unref();   // the forecast for the screen and the days ahead
+  setTimeout(() => { wxRefresh().catch(() => {}); }, 15000).unref();
 }
 // who may do what with a thermostat: "sched" (schedules and quick changes), "change" (quick changes), "see", or "" (hidden)
 function hvRole(req, serial) {
@@ -581,13 +600,18 @@ const hvTextApi = {
 function hvMerge(req, before, after) {
   if (meAdmin(req)) return after.hvac;
   const old = before.hvac || {}, nw = after.hvac || {}, ok = (serial) => hvRole(req, serial) === "sched";
-  const out = JSON.parse(JSON.stringify(old)); out.sched = out.sched || {};
-  Object.keys({ ...(old.sched || {}), ...(nw.sched || {}) }).forEach((k) => { if (ok(k)) { if (nw.sched && nw.sched[k]) out.sched[k] = nw.sched[k]; else delete out.sched[k]; } });
-  const oSp = new Map((old.specials || []).map((x) => [x.id, x])), nSp = new Map((nw.specials || []).map((x) => [x.id, x]));
-  const spOk = (x) => !x || (x.tstats || []).every(ok);
-  out.specials = (nw.specials || []).map((y) => { const o = oSp.get(y.id); return !o ? (spOk(y) ? y : null) : spOk(o) && spOk(y) ? y : o; }).filter(Boolean)
-    .concat((old.specials || []).filter((x) => !nSp.has(x.id) && !spOk(x)));   // ones they can't touch stay
-  return out;
+  const out = JSON.parse(JSON.stringify(old));
+  const allOk = (x) => !x || (x.tstats || []).every(ok);
+  // special days, and schedules: only ones whose thermostats they may all schedule (before and after)
+  const keep = (ol, nl, extra = () => true) => { const oM = new Map((ol || []).map((x) => [x.id, x])), nM = new Map((nl || []).map((x) => [x.id, x]));
+    return (nl || []).map((y) => { const o = oM.get(y.id); return !o ? (allOk(y) ? y : null) : allOk(o) && allOk(y) && extra(o) ? y : o; }).filter(Boolean)
+      .concat((ol || []).filter((x) => !nM.has(x.id) && !(allOk(x) && extra(x)))); };
+  out.rules = keep(old.rules, nw.rules);
+  // a schedule a special day of someone else's uses stays as it is
+  const usedByOthers = (sc) => (old.rules || []).some((r) => r.sched === sc.id && !allOk(r));
+  out.scheds = keep(old.scheds, nw.scheds, (o) => !usedByOthers(o));
+  out.adj = { ...(old.adj || {}) }; Object.keys({ ...(old.adj || {}), ...(nw.adj || {}) }).forEach((k) => { if (ok(k)) { if ((nw.adj || {})[k]) out.adj[k] = nw.adj[k]; else delete out.adj[k]; } });
+  return out;   // areas and the switching settings stay as they were (super admins only)
 }
 const ctrlAllow = (k) => !!(state && state.ctrl && state.ctrl[k]);
 const mtemp = createMtemp({ haUrl: HA_URL, token: HA_TOKEN, areas: () => haAuth.areas(), log });
@@ -851,7 +875,13 @@ async function ctrlApi(req, res, p, u) {
       const tstats = s.tstats.map((t) => ({ ...t, role: hvRole(req, t.serial) })).filter((t) => t.role);
       const plans = {}; const days = Math.max(1, Math.min(14, +u.searchParams.get("days") || 7));
       if (u.searchParams.get("plans")) for (const t of tstats) { plans[t.serial] = []; for (let i = 0; i < days; i++) { try { plans[t.serial].push(hvac.plan(t.serial, engine.addDays(engine.today(), i))); } catch { /* skip */ } } }
-      return send(res, 200, { ...s, tstats, plans, would: admin ? s.would : [], admin });
+      const wx = weather.get(), t0 = engine.today();
+      return send(res, 200, { ...s, tstats, plans, would: admin ? s.would : [], admin, wx: { now: wx.now, days: wx.days, at: wx.at, src: wx.src, err: wx.err, entity: wx.entity }, live: { ready: hvac.liveReady(), today: (store.hvLive || {})[t0] || null, fixed: Object.fromEntries(Object.entries(store.hvWxDay || {}).filter(([d]) => d >= engine.addDays(t0, -60))) } });
+    }
+    if (req.method === "POST" && p === "/api/hvac/weather") {
+      if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can do that." });
+      const b = (await readBody(req)) || {}; const r = await weather.refresh(b.src === "nws" ? "nws" : "ha", String(b.entity || "")); wxSave();
+      return send(res, 200, { ok: !r.err, wx: r, error: r.err || undefined });
     }
     if (req.method === "POST" && (p === "/api/hvac/set" || p === "/api/hvac/resume")) {
       const b = (await readBody(req)) || {}, serials = (Array.isArray(b.serials) ? b.serials : []).map(String).slice(0, 60);
