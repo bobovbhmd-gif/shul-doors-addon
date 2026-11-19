@@ -2741,8 +2741,9 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
           <div class="frow"><label for="evFrom">Starts</label><input type="date" id="evFrom"></div>
           <div class="frow"><label for="evTo">Ends</label><input type="date" id="evTo"></div>
         </div>
-        <p class="gf">Leave Ends empty for a one-day event. The rules for this type decide which doors open and when.</p>
+        <p class="gf">Leave Ends empty for a one-day event. Anything set for this event, or for every event of its type, follows it: doors, parking and heat and AC. Change the dates and they all move with it.</p>
         <div id="evMsg"></div>
+        <div id="evUses"></div>
       </div>
     </div>
   </div>
@@ -3650,7 +3651,7 @@ const monOpts=()=>HMONTHS.map(([v,n])=>`<option value="${v}">${n}</option>`).joi
 
 let E=null,E_ORIG=null;
 const HOPEN=new Set(), HQ={};
-function holUses(k){return S.rules.filter(r=>r.inc.fest.includes(k)||r.exc.fest.includes(k)).length}
+function holUses(k){return S.rules.filter(r=>r.inc.fest.includes(k)||r.exc.fest.includes(k)).length+((S.hvac||{}).specials||[]).filter(sp=>(hvInc(sp).fest||[]).includes(k)||((sp.exc||{}).fest||[]).includes(k)).length}
 function holHidden(k){return !!(S.holHide&&S.holHide.includes(k))}
 function pickGroups(keep){
   const g=GROUPS.map(([n,items])=>[n,items.filter(([k])=>!holHidden(k)||(keep&&keep.includes(k))).map(([k])=>[k,festName(k)])]).filter(([,it])=>it.length);
@@ -5954,8 +5955,8 @@ async function hvLoad(force){
 /* the plan for a thermostat on a date, the same way the box works it out */
 function hvMin(at,s){if(!at)return null;if(at.a==="clock"){const m=String(at.t||"").match(/^(\d{1,2}):(\d{2})$/);return m?+m[1]*60+ +m[2]:null}const z=dayInfo(s).z;return z[at.a]==null?null:z[at.a]+(+at.o||0)}
 function hvInc(sp){return sp.inc||{wd:[],fest:(sp.when||{}).keys||[],dates:((sp.when||{}).dates||[]).map(d=>({from:d.from,to:d.to||d.from,yearly:false})),hr:[]}}
-function hvSpOk(sp,info){return !((sp.rabbi==="away"&&!info.away)||(sp.rabbi==="local"&&info.away)||(sp.season==="dst"&&!info.dst)||(sp.season==="std"&&info.dst))}
-function hvSpBonus(sp){return (sp.rabbi&&sp.rabbi!=="any"?10:0)+(sp.season&&sp.season!=="any"?5:0)}
+function hvSpOk(sp,info){return !((sp.sit&&!(info.sits&&info.sits.has(sp.sit)))||(sp.rabbi==="away"&&!info.away)||(sp.rabbi==="local"&&info.away)||(sp.season==="dst"&&!info.dst)||(sp.season==="std"&&info.dst))}
+function hvSpBonus(sp){return (sp.sit?((sitOf(sp.sit)||{}).top?200:10):0)+(sp.rabbi&&sp.rabbi!=="any"?10:0)+(sp.season&&sp.season!=="any"?5:0)}
 function hvSpecial(serial,s){const info=dayInfo(s);let best=null,bs=-1;hvCfg().specials.forEach(sp=>{if(sp.on===false||!(sp.tstats||[]).includes(serial)||!hvSpOk(sp,info))return;let sc=condScore(hvInc(sp),info,sp.exc||null);if(sc>=0)sc+=hvSpBonus(sp);if(sc>bs){bs=sc;best=sp}});return best}
 function hvPlan(serial,s){const sp=hvSpecial(serial,s),raw=sp?sp.entries||[]:((hvCfg().sched[serial]||{})[dow(s)]||[]),m=new Map();
   raw.forEach(e=>{let x=hvMin(e.at,s);if(x==null)return;x=Math.max(0,Math.min(1439,Math.round(x)));m.set(x,{...e,min:x})});
@@ -6081,7 +6082,7 @@ function hvDayDraw(){const s=hvSampleDate();
     <button class="btn pri" type="button" data-hvdsave style="width:100%;margin-top:14px">Save</button>`}
 
 /* ---- special days ---- */
-function hvSpText(sp){const t=condText(hvInc(sp)),x=sp.exc&&condText(sp.exc);return (t||"No days picked")+(x?", but not "+x:"")+(sp.rabbi==="away"?", when the Rav is away":sp.rabbi==="local"?", when the Rav is home":"")+(sp.season==="dst"?", summer clock":sp.season==="std"?", winter clock":"")}
+function hvSpText(sp){const t=condText(hvInc(sp)),x=sp.exc&&condText(sp.exc);return (t||"No days picked")+(x?", but not "+x:"")+(sp.rabbi==="away"?", when the Rav is away":sp.rabbi==="local"?", when the Rav is home":"")+(sp.season==="dst"?", summer clock":sp.season==="std"?", winter clock":"")+(sp.sit&&sitOf(sp.sit)?`, while "${sitOf(sp.sit).name}" is on`:"")}
 function hvSpecialHtml(){const list=hvSchedTs();if(!list.length)return `<p class="none">You can't change thermostat schedules.</p>`;
   if(HVS)return hvSpEditHtml();
   const sps=hvCfg().specials.filter(sp=>isAdmin()||(sp.tstats||[]).every(s=>hvMay(s,"sched")));
@@ -6107,7 +6108,8 @@ function hvSpEditHtml(){const sp=HVS,list=hvSchedTs(),s=(()=>{for(let i=0;i<400;
   return `<div class="glist" style="padding:12px 14px"><label class="tline"><span class="hint">Name</span><input id="hvSpName" value="${esc(sp.name||"")}" maxlength="40" style="flex:1" aria-label="Name"></label></div>
     ${hvCondBox("hvsp",sp.inc,"Which days?")}
     <div class="glist form box" style="margin-top:8px"><div class="frow"><label for="hvSpRabbi">The Rav</label><select id="hvSpRabbi" data-hvspf="rabbi"><option value="any">Home or away</option><option value="local"${sp.rabbi==="local"?" selected":""}>Only when the Rav is home</option><option value="away"${sp.rabbi==="away"?" selected":""}>Only when the Rav is away</option></select></div>
-      <div class="frow"><label for="hvSpSeason">Summer or winter</label><select id="hvSpSeason" data-hvspf="season"><option value="any">All year</option><option value="dst"${sp.season==="dst"?" selected":""}>Summer clock only</option><option value="std"${sp.season==="std"?" selected":""}>Winter clock only</option></select></div></div>
+      <div class="frow"><label for="hvSpSeason">Summer or winter</label><select id="hvSpSeason" data-hvspf="season"><option value="any">All year</option><option value="dst"${sp.season==="dst"?" selected":""}>Summer clock only</option><option value="std"${sp.season==="std"?" selected":""}>Winter clock only</option></select></div>
+      ${(S.situations||[]).length?`<div class="frow"><label for="hvSpSit">Only when…</label><select id="hvSpSit" data-hvspf="sit"><option value="">Always</option>${S.situations.map(x=>`<option value="${esc(x.id)}"${sp.sit===x.id?" selected":""}>"${esc(x.name)}" is on</option>`).join("")}</select></div>`:""}</div>
     <details class="more2" style="margin:12px 0 0 4px"${(sp.exc.wd.length+sp.exc.fest.length+sp.exc.dates.length+sp.exc.hr.length)?" open":""}><summary>Except on</summary>${hvCondBox("hvspx",sp.exc,"Not on these days")}</details>
     <h3 class="gh">Thermostats</h3><div class="glist form box">${hvMulti("sp",sp.tstats,list,"Thermostats")}</div>
     <h3 class="gh mk-h">That day</h3><button type="button" class="glist row tap hv-drow" data-hvspent style="width:100%;grid-template-columns:minmax(0,1fr) 16px;padding:14px 16px"><span class="hv-dbar">${hvBar(pl,null)}<small>${esc(hvEntriesText(pl))}</small></span><span class="chev"></span></button>
@@ -6794,7 +6796,24 @@ $("#rules").addEventListener("click",ev=>{if(ev.target.closest("[data-pick]"))re
 // one form for a new event and for changing a saved one
 let EV_EDIT=null;
 function openEventForm(e){EV_EDIT=e?e.id:null;$("#mEvT").textContent=e?"Edit event":"New event";$("#addEv").textContent=e?"Save":"Add";
-  $("#evName").value=e?e.name:"";$("#evType").value=e?e.type:(S.types[0]||"");$("#evFrom").value=e?e.from:"";$("#evTo").value=e&&e.to!==e.from?e.to:"";$("#evMsg").innerHTML="";openModal("mEvent")}
+  $("#evName").value=e?e.name:"";$("#evType").value=e?e.type:(S.types[0]||"");$("#evFrom").value=e?e.from:"";$("#evTo").value=e&&e.to!==e.from?e.to:"";$("#evMsg").innerHTML="";evUsesDraw(e);openModal("mEvent")}
+// Everything in the system that follows this event, or every event of its type: doors, parking, heat and AC
+function evUses(e){const k1="ev:"+e.id,k2="type:"+e.type,hit=c=>c&&((c.fest||[]).includes(k1)||(c.fest||[]).includes(k2)),why=c=>(c.fest||[]).includes(k1)?"This event":"Every "+e.type.toLowerCase();
+  const rules=S.rules.filter(r=>hit(r.inc)),hv=((S.hvac||{}).specials||[]).filter(sp=>hit(hvInc(sp)));
+  return {doors:rules.filter(r=>!((r.doors||[]).length&&r.doors.every(isPk))).map(r=>({id:r.id,name:r.name,why:why(r.inc)})),park:rules.filter(r=>(r.doors||[]).length&&r.doors.every(isPk)).map(r=>({id:r.id,name:r.name,why:why(r.inc)})),hv:hv.map(sp=>({id:sp.id,name:sp.name,why:why(hvInc(sp))}))}}
+function evUsesDraw(e){const b=$("#evUses");if(!b)return;if(!e){b.innerHTML=`<p class="gf">Add the event first. Then you can set the doors, parking and heat for it here.</p>`;return}
+  const u=evUses(e),canR=sched()!=="none",canH=hvAny()&&(isAdmin()||Object.values(me().hvac||{}).includes("sched"));
+  const sec=(kind,title,list,canAdd)=>(list.length||canAdd)?`<h3 class="gh">${title}</h3><div class="glist">${list.map(x=>`<div class="row tap" role="button" tabindex="0" data-evuse="${kind}" data-id="${esc(String(x.id))}"><div class="rt"><b>${esc(x.name)}</b><span>${esc(x.why)}</span></div><span class="chev"></span></div>`).join("")}${canAdd?`<div class="row tap" role="button" tabindex="0" data-evadd="${kind}"><b style="color:var(--b)">+ Set ${kind==="hv"?"heat and AC":title.toLowerCase()} for this event</b></div>`:""}</div>`:"";
+  b.innerHTML=`<h2 class="gh" style="margin-top:18px">What this event sets</h2>${sec("doors","Doors",u.doors,canR)}${pkDoors().length?sec("park","Parking",u.park,canR):""}${sec("hv","Heat and AC",u.hv,canH)}`}
+document.addEventListener("click",ev=>{const t=ev.target;if(!t.closest||!t.closest("#evUses"))return;const e=S.events.find(x=>x.id===EV_EDIT);if(!e)return;
+  const a=t.closest("[data-evadd]"),u=t.closest("[data-evuse]");if(!a&&!u)return;closeModal("mEvent");
+  if(a){const k=a.dataset.evadd;
+    if(k==="park"){showTab("parking");pkNewRule("for:ev:"+e.id);return}
+    if(k==="doors"){showTab("rules");openEditor({id:Date.now(),name:e.name,doors:[],rabbi:"any",season:"any",stop:true,inc:{...C(),fest:["ev:"+e.id]},exc:C(),start:{a:"clock",t:"18:00",o:0},end:{a:"clock",t:"23:00",o:0},mode:"Unlock"},true);return}
+    if(k==="hv"){showTab("climate");HVT="special";HVS={id:"sp"+Date.now(),name:e.name,on:true,rabbi:"any",season:"any",sit:"",inc:{wd:[],fest:["ev:"+e.id],dates:[],hr:[]},exc:{wd:[],fest:[],dates:[],hr:[]},tstats:[],entries:[]};renderHv.force=true;renderHv();return}}
+  const k=u.dataset.evuse,id=u.dataset.id;
+  if(k==="hv"){showTab("climate");HVT="special";const sp=hvCfg().specials.find(x=>x.id===id);if(sp){HVS=structuredClone(sp);HVS.inc=Object.assign({wd:[],fest:[],dates:[],hr:[]},structuredClone(hvInc(sp)));HVS.exc=Object.assign({wd:[],fest:[],dates:[],hr:[]},HVS.exc||{});delete HVS.when;HVS.entries=HVS.entries||[]}renderHv.force=true;renderHv();return}
+  const r=S.rules.find(x=>String(x.id)===id);if(r){showTab(k==="park"?"parking":"rules");openEditor(r,false)}});
 $("#addEv").onclick=()=>{const n=$("#evName").value.trim(),f=$("#evFrom").value,t=$("#evTo").value||f;
   if(!n){$("#evMsg").innerHTML=`<p class="errline">Give the event a name.</p>`;return}
   if(!f||t<f){$("#evMsg").innerHTML=`<p class="errline">${f?"The end can't be before the start.":"Pick the day it starts."}</p>`;return}

@@ -59,12 +59,12 @@ function createHvac({ pelican, engine, getState, getStore, save, mode = "read", 
     let best = null, bs = -1, info = null;
     for (const sp of cfg().specials) {
       if (sp.on === false || !(sp.tstats || []).includes(serial)) continue;
-      if ((sp.rabbi && sp.rabbi !== "any") || (sp.season && sp.season !== "any")) {
+      if ((sp.rabbi && sp.rabbi !== "any") || (sp.season && sp.season !== "any") || sp.sit) {
         if (!info) info = engine.info(date);
-        if ((sp.rabbi === "away" && !info.away) || (sp.rabbi === "local" && info.away) || (sp.season === "dst" && !info.dst) || (sp.season === "std" && info.dst)) continue;
+        if ((sp.sit && !(info.sits || []).includes(sp.sit)) || (sp.rabbi === "away" && !info.away) || (sp.rabbi === "local" && info.away) || (sp.season === "dst" && !info.dst) || (sp.season === "std" && info.dst)) continue;
       }
       let sc = -1; try { sc = engine.cond(incOf(sp), sp.exc || null, date); } catch { sc = -1; }
-      if (sc >= 0) sc += (sp.rabbi && sp.rabbi !== "any" ? 10 : 0) + (sp.season && sp.season !== "any" ? 5 : 0);   // like the door rules: a narrower one wins
+      if (sc >= 0) sc += (sp.sit ? ((((getState() || {}).situations || []).find((x) => x.id === sp.sit) || {}).top ? 200 : 10) : 0) + (sp.rabbi && sp.rabbi !== "any" ? 10 : 0) + (sp.season && sp.season !== "any" ? 5 : 0);   // like the door rules: a narrower one wins
       if (sc > bs) { bs = sc; best = sp; }   // the closest fit wins (set dates beat holidays beat weekdays); a tie goes to the one higher in the list
     }
     return best;

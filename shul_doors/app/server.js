@@ -1551,8 +1551,8 @@ const server = http.createServer((req, res) => {
       const pick = (x) => JSON.stringify([x.overrides || [], (x.situations || []).map((t) => [t.id, t.on, t.ranges || []]), x.rabbiAwayNow || false, x.away || []]);
       const urgent = pick(state) !== pick(body.state);
       try { body.state.hvac = hvMerge(req, state, body.state); } catch (e) { log("warn", "thermostat schedules: " + e.message); body.state.hvac = state.hvac; }
-      const awayKey = (x) => JSON.stringify([x.rabbiAwayNow || false, x.rabbiAwaySince || "", x.away || []]);
-      const hvChanged = JSON.stringify(state.hvac || {}) !== JSON.stringify(body.state.hvac || {}) || awayKey(state) !== awayKey(body.state);   // the Rav away dates change which special days run
+      const awayKey = (x) => JSON.stringify([x.rabbiAwayNow || false, x.rabbiAwaySince || "", x.away || [], x.events || [], x.situations || [], x.hdates || [], x.gdates || []]);
+      const hvChanged = JSON.stringify(state.hvac || {}) !== JSON.stringify(body.state.hvac || {}) || awayKey(state) !== awayKey(body.state);   // events, situations, the Rav away and set dates are shared with the thermostats, so they resync too
       const before = state; state = body.state; version++;
       if (hvChanged && pelican.configured) { engine.setState(state); hvSyncSoon(); }
       try { changeAlerts(before, state, personOf(req)); } catch (e) { log("warn", "change alerts: " + e.message); }
