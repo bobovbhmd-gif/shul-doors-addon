@@ -2740,8 +2740,9 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
           <div class="frow"><label for="evType">Type</label><select id="evType"></select></div>
           <div class="frow"><label for="evFrom">Starts</label><input type="date" id="evFrom"></div>
           <div class="frow"><label for="evTo">Ends</label><input type="date" id="evTo"></div>
+          <div class="frow"><label for="evOnly">For</label><select id="evOnly"><option value="">The whole system</option><option value="doors">Doors only</option><option value="parking">Parking only</option><option value="hvac">Heat and AC only</option><option value="lights">Lighting only</option></select></div>
         </div>
-        <p class="gf">Leave Ends empty for a one-day event. Anything set for this event, or for every event of its type, follows it: doors, parking and heat and AC. Change the dates and they all move with it.</p>
+        <p class="gf">Leave Ends empty for a one-day event. Pick "For" to keep it to one part of the system. Anything set for this event, or for every event of its type, follows it: doors, parking and heat and AC. Change the dates and they all move with it.</p>
         <div id="evMsg"></div>
         <div id="evUses"></div>
       </div>
@@ -3112,7 +3113,8 @@ function dayInfoRaw(s){
   const {m:gm,d:gd}=parseIso(s);
   S.gdates.forEach(x=>{ if(x.m===gm&&x.d===gd) keys.add("gd:"+x.id) });
   usHolidays(s).forEach(k=>{keys.add(k);keys.add("legal_any")});
-  S.events.forEach(e=>{ if(s>=e.from&&s<=e.to){ keys.add("ev:"+e.id); keys.add("type:"+e.type) } });
+  // an event kept to one part of the system (doors, parking, hvac, lights) only counts there
+  S.events.forEach(e=>{ if(s>=e.from&&s<=e.to){ const p=e.only?"@"+e.only:""; keys.add("ev"+p+":"+e.id); keys.add("type"+p+":"+e.type) } });
   return {s,w,h,keys,z:zmanim(s),dst:isDST(s),away:rabbiAway(s),sits:sitsOn(s)};
 }
 function sitsOn(s){const out=new Set();(S.situations||[]).forEach(x=>{if((x.on&&s>=(x.since||todayNY()))||x.ranges.some(r=>s>=r.from&&s<=r.to))out.add(x.id)});return out}
@@ -3122,7 +3124,7 @@ function rabbiAway(s){
   if(S.rabbiAwayNow && s>=(S.rabbiAwaySince||todayNY())) return true;
   return S.away.some(r=>r.from&&r.to&&s>=r.from&&s<=r.to);
 }
-function keyLabel(k){
+function keyLabel(k){k=String(k).replace(/^(ev|type)@\w+:/,"$1:");
   if(FEST[k]) return festName(k);
   if(k.startsWith("hd:")){const x=S.hdates.find(h=>"hd:"+h.id===k);return x?x.name:"(deleted date)"}
   if(k.startsWith("gd:")){const x=S.gdates.find(h=>"gd:"+h.id===k);return x?x.name:"(deleted date)"}
@@ -3132,11 +3134,11 @@ function keyLabel(k){
 }
 function keyRank(k){ if(FEST[k]) return FEST[k].rank; return 70 }
 // how well a set of days (weekdays, holidays, dates, Hebrew dates) fits a date: -1 if not at all; exc is "but not on"
-function condScore(n,info,x){
-  if(x&&((x.wd||[]).includes(info.w)||(x.fest||[]).some(k=>info.keys.has(k))||(x.dates||[]).some(d=>dateMatch(d,info.s))||(x.hr||[]).some(hr=>hrMatches(hr,info.h,info.s))))return -1;
+function condScore(n,info,x,sec){
+  if(x&&((x.wd||[]).includes(info.w)||(x.fest||[]).some(k=>hasKey(info,k,sec))||(x.dates||[]).some(d=>dateMatch(d,info.s))||(x.hr||[]).some(hr=>hrMatches(hr,info.h,info.s))))return -1;
   let best=-1;if((n.wd||[]).includes(info.w))best=10;
   (n.hr||[]).forEach(hr=>{if(hrMatches(hr,info.h,info.s))best=Math.max(best,55)});
-  (n.fest||[]).forEach(k=>{if(info.keys.has(k))best=Math.max(best,keyRank(k))});
+  (n.fest||[]).forEach(k=>{if(hasKey(info,k,sec))best=Math.max(best,keyRank(k))});
   (n.dates||[]).forEach(d=>{if(dateMatch(d,info.s))best=Math.max(best,d.yearly?55:100)});
   return best}
 // US federal holidays, on the day they are observed (Saturday moves to Friday, Sunday to Monday)
@@ -3186,7 +3188,10 @@ function givesWay(r,info,door,seen){
   }
   return false;
 }
+function secOf(r,door){return (door?isPk(door):((r.doors||[]).length&&r.doors.every(isPk)))?"parking":"doors"}
+function hasKey(info,k,sec){if(info.keys.has(k))return true;if(!sec)return false;const i=k.indexOf(":"),h=k.slice(0,i);return (h==="ev"||h==="type")&&info.keys.has(h+"@"+sec+k.slice(i))}
 function evalRule(r,info,door,seen){
+  const sec=secOf(r,door);
   if(r.rabbi==="local"&&info.away) return null;
   if(r.rabbi==="away"&&!info.away) return null;
   if(r.sit&&!info.sits.has(r.sit)) return null;
@@ -3199,14 +3204,14 @@ function evalRule(r,info,door,seen){
   // the plain week (what goes into each door's weekly schedule) only uses weekday rules;
   // anything tied to dates, Hebrew dates or holidays is sent separately as one-time overrides
   if(info.plain) return r.inc.wd.includes(info.w)&&!givesWay(r,info,door,seen)?{score:10+(r.rabbi!=="any"?10:0)+(r.season!=="any"?5:0),via:WDN[info.w]}:null;
-  if(x.fest.some(k=>info.keys.has(k))) return null;
+  if(x.fest.some(k=>hasKey(info,k,sec))) return null;
   if(x.dates.some(d=>dateMatch(d,info.s))) return null;
   if(x.hr.some(hr=>hrMatches(hr,info.h,info.s))) return null;
   let best=-1, via="";
   const n=r.inc;
   if(n.wd.includes(info.w)&&10>best){best=10;via=WDN[info.w]}
   n.hr.forEach(hr=>{ if(hrMatches(hr,info.h,info.s)&&55>best){best=55;via=hrText(hr)} });
-  n.fest.forEach(k=>{ if(info.keys.has(k)&&keyRank(k)>best){best=keyRank(k);via=keyLabel(k)} });
+  n.fest.forEach(k=>{ if(hasKey(info,k,sec)&&keyRank(k)>best){best=keyRank(k);via=keyLabel(k)} });
   n.dates.forEach(d=>{ const r=d.yearly?55:100; if(dateMatch(d,info.s)&&r>best){best=r;via=dateText(d)} });
   if(best<0) return null;
   if(givesWay(r,info,door,seen)) return null;
@@ -3653,19 +3658,20 @@ let E=null,E_ORIG=null;
 const HOPEN=new Set(), HQ={};
 function holUses(k){return S.rules.filter(r=>r.inc.fest.includes(k)||r.exc.fest.includes(k)).length+((S.hvac||{}).specials||[]).filter(sp=>(hvInc(sp).fest||[]).includes(k)||((sp.exc||{}).fest||[]).includes(k)).length}
 function holHidden(k){return !!(S.holHide&&S.holHide.includes(k))}
-function pickGroups(keep){
+function pickSec(kind){return /^hvsp/.test(kind||"")?"hvac":(E&&E.pk?"parking":"doors")}
+function pickGroups(keep,sec){
   const g=GROUPS.map(([n,items])=>[n,items.filter(([k])=>!holHidden(k)||(keep&&keep.includes(k))).map(([k])=>[k,festName(k)])]).filter(([,it])=>it.length);
   if(S.gdates.length)g.push(["Your yearly dates",S.gdates.map(x=>["gd:"+x.id,x.name])]);
   if(S.hdates.length)g.push(["Your Hebrew dates",S.hdates.map(x=>["hd:"+x.id,x.name])]);
   if(S.types.length)g.push(["Event types",S.types.map(t=>["type:"+t,"Any "+t])]);
-  if(S.events.length)g.push(["One event",S.events.map(e=>["ev:"+e.id,e.name])]);
+  {const evs=S.events.filter(e=>!e.only||!sec||e.only===sec||(keep&&keep.includes("ev:"+e.id)));if(evs.length)g.push(["One event",evs.map(e=>["ev:"+e.id,e.name])])}
   return g;
 }
 function festPick(kind,c){
   const n=c.fest.length;
   return `<details class="frow hpick" data-hp="${kind}"${HOPEN.has(kind)?" open":""}><summary><span class="hp-t">Holidays and special days</span><span class="hint">${n?n+" chosen":kind==="exc"?"None":"Tap to choose"}</span><span class="chev"></span></summary>
    <div class="hp-body"><input type="search" class="hsearch" data-hsearch value="${esc(HQ[kind]||"")}" placeholder="Search, like Pesach or fast" aria-label="Search holidays">
-   ${pickGroups(c.fest).map(([g,items])=>{const on=items.filter(([k])=>c.fest.includes(k)).length, id=kind+"|"+g;
+   ${pickGroups(c.fest,pickSec(kind)).map(([g,items])=>{const on=items.filter(([k])=>c.fest.includes(k)).length, id=kind+"|"+g;
      return `<details class="hgrp" data-hg="${esc(id)}"${HOPEN.has(id)?" open":""}><summary><span class="chev"></span><b>${esc(g)}</b>${on?`<span class="hcount">${on}</span>`:""}<button type="button" class="lnk" data-hall="${esc(g)}">${on===items.length?"Clear":"Select all"}</button></summary>
      <div class="checks">${items.map(([k,l])=>`<label data-hl="${esc((l+" "+g).toLowerCase())}"><input type="checkbox" data-fk="${esc(k)}"${c.fest.includes(k)?" checked":""}>${esc(l)}</label>`).join("")}</div></details>`}).join("")}
    <p class="hint hnone" hidden>Nothing matches.</p></div></details>`;
@@ -3826,7 +3832,7 @@ function drawEditor(){
     box.addEventListener("click",ev=>{
       const t=ev.target, w=t.closest("[data-wd]"), rf=t.closest("[data-rmfest]"), rd=t.closest("[data-rmdate]"), rh=t.closest("[data-rmhr]");
       const ha=t.closest("[data-hall]");
-      if(ha){ev.preventDefault();const it=(pickGroups(c.fest).find(([g])=>g===ha.dataset.hall)||[0,[]])[1].map(([k])=>k);const all=it.every(k=>c.fest.includes(k));c.fest=all?c.fest.filter(k=>!it.includes(k)):[...c.fest,...it.filter(k=>!c.fest.includes(k))];HOPEN.add(box.dataset.box+"|"+ha.dataset.hall);redraw();return}
+      if(ha){ev.preventDefault();const it=(pickGroups(c.fest,pickSec()).find(([g])=>g===ha.dataset.hall)||[0,[]])[1].map(([k])=>k);const all=it.every(k=>c.fest.includes(k));c.fest=all?c.fest.filter(k=>!it.includes(k)):[...c.fest,...it.filter(k=>!c.fest.includes(k))];HOPEN.add(box.dataset.box+"|"+ha.dataset.hall);redraw();return}
       if(w){const i=+w.dataset.wd;c.wd=c.wd.includes(i)?c.wd.filter(x=>x!==i):[...c.wd,i].sort()}
       else if(rf){c.fest=c.fest.filter(k=>k!==rf.dataset.rmfest)}
       else if(rd){c.dates.splice(+rd.dataset.rmdate,1)}
@@ -3899,7 +3905,7 @@ function renderEvents(){
   $("#evType").innerHTML=S.types.map(t=>`<option>${esc(t)}</option>`).join("");
   const evs=[...S.events].sort((a,b)=>a.from<b.from?-1:1), up=evs.filter(e=>e.to>=today), past=evs.filter(e=>e.to<today).reverse();
   const row=e=>{const {m,d}=parseIso(e.from);const days=daysBetween(e.from,e.to)+1;
-    return `<div class="row tap" data-evedit="${esc(e.id)}" role="button" tabindex="0" aria-label="Edit ${esc(e.name)}">${calIc(GMON[m-1],d,e.to<today?"past":"")}<div class="rt"><b>${esc(e.name)}</b><span>${esc(e.type)}, ${esc(rangeText(e.from,e.to))}${days>1?`, ${days} days`:""}</span></div><button class="btn sm danger cap-events" type="button" data-evdel="${esc(e.id)}">Remove</button><span class="chev cap-events"></span></div>`};
+    return `<div class="row tap" data-evedit="${esc(e.id)}" role="button" tabindex="0" aria-label="Edit ${esc(e.name)}">${calIc(GMON[m-1],d,e.to<today?"past":"")}<div class="rt"><b>${esc(e.name)}</b><span>${esc(e.type)}, ${esc(rangeText(e.from,e.to))}${days>1?`, ${days} days`:""}${e.only?`, ${EV_ONLY[e.only]||e.only} only`:""}</span></div><button class="btn sm danger cap-events" type="button" data-evdel="${esc(e.id)}">Remove</button><span class="chev cap-events"></span></div>`};
   $("#evRows").innerHTML=(up.length?`<h2 class="gh">Coming up</h2><div class="glist">${up.map(row).join("")}</div>`:emptyState("cal","No events coming up","Add a wedding, kiddush or sheva brachos and the doors follow that event type's rules.",`<button class="btn pri cap-events" type="button" data-evnew>New event</button>`))
     +(past.length?`<details class="arch"><summary class="gh">Past (${past.length})</summary><div class="glist">${past.map(row).join("")}</div></details>`:"");
   $("#typeTags").innerHTML=S.types.map(t=>{const n=S.events.filter(e=>e.type===t).length,rn=S.rules.filter(r=>r.inc.fest.includes("type:"+t)).length;
@@ -4908,7 +4914,7 @@ function renderPk(){const b=$("#pkBody");if(!b)return;pkDemo();pkLoad();pkMigrat
       <div><span class="hint">Today</span>${pkTimeline(t,d.id,nm)}<div class="mk-axis"><span>12 AM</span><span>6 AM</span><span>Noon</span><span>6 PM</span><span>12 AM</span></div></div></div>`}).join("")||`<p class="none">Reading the parking lot…</p>`}</div>
     <div class="pk-leg"><span><i style="background:color-mix(in srgb,var(--b) 18%,var(--fill))"></i>Normal</span><span><i style="background:var(--ok)"></i>Open</span><span><i style="background:var(--r)"></i>Locked</span></div>
     <p class="gf">A change by hand stays until you tap Back to the schedule. Every change is saved in Activity.</p>`}
-  if(PKT==="sched"){const up=(S.events||[]).filter(e=>e.to>=t).sort((a,b)=>a.from.localeCompare(b.from)).slice(0,4);
+  if(PKT==="sched"){const up=(S.events||[]).filter(e=>e.to>=t&&(!e.only||e.only==="parking")).sort((a,b)=>a.from.localeCompare(b.from)).slice(0,4);
     h=`<p class="gf top">The parking lot uses the same rules as the doors, so weddings and other events, the Rav away, Yom Tov, the summer and winter clock, situations and special dates all work here too.</p>
     <div class="glist">${rules.map(r=>{const k=pkModeOf(r.mode);return `<button type="button" class="row tap pk-rule" data-pkrule="${esc(String(r.id))}"><span class="pk-pill" style="background:${PK_MODES[k][2]}">${PK_MODES[k][0]}</span><div class="rt"><b>${esc(r.name)}</b><span>${esc(pkRuleText(r))}${expandDoors(r.doors).filter(isPk).length<pkDoors().length?` · ${esc(expandDoors(r.doors).filter(isPk).map(id=>(pkDoors().find(x=>x.id===id)||{name:id}).name).join(", "))}`:""}</span></div><span class="chev"></span></button>`}).join("")||`<div class="row"><span class="hint">No parking times yet. The entrances stay Normal: key tags work.</span></div>`}</div>
     <h3 class="gh mk-h">Add a parking time</h3><div class="pk-quick">${PK_QUICK.map(([k,l])=>`<button type="button" class="btn" data-pknew="${k}">${l}</button>`).join("")}</div>
@@ -4917,7 +4923,7 @@ function renderPk(){const b=$("#pkBody");if(!b)return;pkDemo();pkLoad();pkMigrat
     <p class="gf">Outside these times an entrance is Normal. When two times overlap, the app asks which one runs, the same as for doors.</p>`}
   if(PKT==="ev"){const sp=pkRules(),line=(list,why)=>list.length?list.map(r=>{const k=pkModeOf(r.mode);return `<span class="pk-eff"><i style="background:${PK_MODES[k][2]}"></i>${PK_MODES[k][0]} ${esc(ruleTime(r))}${why(r)?` <em>${esc(why(r))}</em>`:""}</span>`}).join(""):`<span class="pk-eff none">No parking change. Key tags work as usual.</span>`;
     const btn=(key,r)=>r?`<button class="btn sm" type="button" data-pkrule="${esc(String(r.id))}">Change parking</button>`:`<button class="btn sm" type="button" data-pkfor="${esc(key)}">Set parking</button>`;
-    const up=(S.events||[]).filter(e=>e.to>=t).sort((a,b)=>a.from.localeCompare(b.from));
+    const up=(S.events||[]).filter(e=>e.to>=t&&(!e.only||e.only==="parking")).sort((a,b)=>a.from.localeCompare(b.from));
     const evRow=e=>{const own=sp.find(r=>r.inc.fest.includes("ev:"+e.id)),byType=sp.filter(r=>r.inc.fest.includes("type:"+e.type)&&r!==own);
       return `<div class="row pk-evr"><div class="rt"><b>${esc(e.name)}</b><span>${esc(rangeText(e.from,e.to))} · ${esc(e.type)}</span><div class="pk-effs">${line([own,...byType].filter(Boolean),r=>r===own?"":`for every ${e.type}`)}</div></div><div class="pk-evb">${btn("ev:"+e.id,own)}<button class="lnk" type="button" data-pkev="${esc(e.id)}">Edit event</button></div></div>`};
     const yr=[...(S.hdates||[]).map(x=>["hd:"+x.id,x.name,"Every year, Hebrew date"]),...(S.gdates||[]).map(x=>["gd:"+x.id,x.name,`Every year, ${GMON[x.m-1]} ${x.d}`])];
@@ -5957,7 +5963,7 @@ function hvMin(at,s){if(!at)return null;if(at.a==="clock"){const m=String(at.t||
 function hvInc(sp){return sp.inc||{wd:[],fest:(sp.when||{}).keys||[],dates:((sp.when||{}).dates||[]).map(d=>({from:d.from,to:d.to||d.from,yearly:false})),hr:[]}}
 function hvSpOk(sp,info){return !((sp.sit&&!(info.sits&&info.sits.has(sp.sit)))||(sp.rabbi==="away"&&!info.away)||(sp.rabbi==="local"&&info.away)||(sp.season==="dst"&&!info.dst)||(sp.season==="std"&&info.dst))}
 function hvSpBonus(sp){return (sp.sit?((sitOf(sp.sit)||{}).top?200:10):0)+(sp.rabbi&&sp.rabbi!=="any"?10:0)+(sp.season&&sp.season!=="any"?5:0)}
-function hvSpecial(serial,s){const info=dayInfo(s);let best=null,bs=-1;hvCfg().specials.forEach(sp=>{if(sp.on===false||!(sp.tstats||[]).includes(serial)||!hvSpOk(sp,info))return;let sc=condScore(hvInc(sp),info,sp.exc||null);if(sc>=0)sc+=hvSpBonus(sp);if(sc>bs){bs=sc;best=sp}});return best}
+function hvSpecial(serial,s){const info=dayInfo(s);let best=null,bs=-1;hvCfg().specials.forEach(sp=>{if(sp.on===false||!(sp.tstats||[]).includes(serial)||!hvSpOk(sp,info))return;let sc=condScore(hvInc(sp),info,sp.exc||null,"hvac");if(sc>=0)sc+=hvSpBonus(sp);if(sc>bs){bs=sc;best=sp}});return best}
 function hvPlan(serial,s){const sp=hvSpecial(serial,s),raw=sp?sp.entries||[]:((hvCfg().sched[serial]||{})[dow(s)]||[]),m=new Map();
   raw.forEach(e=>{let x=hvMin(e.at,s);if(x==null)return;x=Math.max(0,Math.min(1439,Math.round(x)));m.set(x,{...e,min:x})});
   return {src:sp?sp.name:"Schedule",sp,entries:[...m.values()].sort((a,b)=>a.min-b.min).slice(0,12)}}
@@ -6104,7 +6110,7 @@ function hvCondBox(kind,c,title){const tags=[...c.fest.map(k=>`<span class="tag"
       <div class="tline dcal"><input type="date" data-df aria-label="Date"><span class="dto hint">to</span><input class="dto" type="date" data-dt aria-label="To date"></div>
       <div class="tline dyr"><label class="inl"><input type="checkbox" data-yearly> Every year</label><button class="btn sm pri" type="button" data-hvaddd>Add</button></div>
       </div></details></div>`}
-function hvSpEditHtml(){const sp=HVS,list=hvSchedTs(),s=(()=>{for(let i=0;i<400;i++){const d=addDays(todayNY(),i);{const i=dayInfo(d);if(hvSpOk(sp,i)&&condScore(sp.inc,i,sp.exc)>=0)return d}}return todayNY()})(),pl=(sp.entries||[]).map(e=>({...e,min:hvMin(e.at,s)})).filter(e=>e.min!=null).sort((a,b)=>a.min-b.min);
+function hvSpEditHtml(){const sp=HVS,list=hvSchedTs(),s=(()=>{for(let i=0;i<400;i++){const d=addDays(todayNY(),i);{const i=dayInfo(d);if(hvSpOk(sp,i)&&condScore(sp.inc,i,sp.exc,"hvac")>=0)return d}}return todayNY()})(),pl=(sp.entries||[]).map(e=>({...e,min:hvMin(e.at,s)})).filter(e=>e.min!=null).sort((a,b)=>a.min-b.min);
   return `<div class="glist" style="padding:12px 14px"><label class="tline"><span class="hint">Name</span><input id="hvSpName" value="${esc(sp.name||"")}" maxlength="40" style="flex:1" aria-label="Name"></label></div>
     ${hvCondBox("hvsp",sp.inc,"Which days?")}
     <div class="glist form box" style="margin-top:8px"><div class="frow"><label for="hvSpRabbi">The Rav</label><select id="hvSpRabbi" data-hvspf="rabbi"><option value="any">Home or away</option><option value="local"${sp.rabbi==="local"?" selected":""}>Only when the Rav is home</option><option value="away"${sp.rabbi==="away"?" selected":""}>Only when the Rav is away</option></select></div>
@@ -6261,7 +6267,7 @@ document.addEventListener("click",async ev=>{const t=ev.target,c=x=>t.closest(x)
   if((e=c("[data-hvspnew]"))){const k=e.dataset.hvspnew;HVS={id:"sp"+Date.now(),name:k==="yt"?"Yom tov":k==="erev"?"Erev yom tov":"",on:true,inc:{wd:[],fest:k==="yt"?["yt_any"]:k==="erev"?["erev_yt_any"]:[],dates:[],hr:[]},exc:{wd:[],fest:[],dates:[],hr:[]},tstats:hvSchedTs().map(t=>t.serial),entries:[]};renderHv();return}
   if((e=c("[data-hvsped]"))){const sp=hvCfg().specials.find(x=>x.id===e.dataset.hvsped);if(sp){HVS=structuredClone(sp);HVS.inc=Object.assign({wd:[],fest:[],dates:[],hr:[]},structuredClone(hvInc(sp)));HVS.exc=Object.assign({wd:[],fest:[],dates:[],hr:[]},HVS.exc||{});delete HVS.when;HVS.entries=HVS.entries||[]}renderHv();return}
   if(HVS&&(e=c(".hvbox"))){const box=e,kind=box.dataset.hvbox,cd=kind==="hvspx"?HVS.exc:HVS.inc;let x;hvSpName();
-    if((x=c("[data-hall]"))){ev.preventDefault();const it=(pickGroups(cd.fest).find(([g])=>g===x.dataset.hall)||[0,[]])[1].map(([k])=>k),all=it.every(k=>cd.fest.includes(k));cd.fest=all?cd.fest.filter(k=>!it.includes(k)):[...cd.fest,...it.filter(k=>!cd.fest.includes(k))];HOPEN.add(kind+"|"+x.dataset.hall);renderHv.force=true;renderHv();return}
+    if((x=c("[data-hall]"))){ev.preventDefault();const it=(pickGroups(cd.fest,"hvac").find(([g])=>g===x.dataset.hall)||[0,[]])[1].map(([k])=>k),all=it.every(k=>cd.fest.includes(k));cd.fest=all?cd.fest.filter(k=>!it.includes(k)):[...cd.fest,...it.filter(k=>!cd.fest.includes(k))];HOPEN.add(kind+"|"+x.dataset.hall);renderHv.force=true;renderHv();return}
     if((x=c("[data-hvwd]"))){const i=+x.dataset.hvwd;cd.wd=cd.wd.includes(i)?cd.wd.filter(v=>v!==i):[...cd.wd,i].sort();renderHv();return}
     if((x=c("[data-hvrmf]"))){cd.fest=cd.fest.filter(k=>k!==x.dataset.hvrmf);renderHv();return}
     if((x=c("[data-hvrmd]"))){cd.dates.splice(+x.dataset.hvrmd,1);renderHv();return}
@@ -6796,15 +6802,17 @@ $("#rules").addEventListener("click",ev=>{if(ev.target.closest("[data-pick]"))re
 // one form for a new event and for changing a saved one
 let EV_EDIT=null;
 function openEventForm(e){EV_EDIT=e?e.id:null;$("#mEvT").textContent=e?"Edit event":"New event";$("#addEv").textContent=e?"Save":"Add";
-  $("#evName").value=e?e.name:"";$("#evType").value=e?e.type:(S.types[0]||"");$("#evFrom").value=e?e.from:"";$("#evTo").value=e&&e.to!==e.from?e.to:"";$("#evMsg").innerHTML="";evUsesDraw(e);openModal("mEvent")}
+  $("#evName").value=e?e.name:"";$("#evType").value=e?e.type:(S.types[0]||"");$("#evFrom").value=e?e.from:"";$("#evTo").value=e&&e.to!==e.from?e.to:"";$("#evOnly").value=e&&e.only||"";$("#evMsg").innerHTML="";evUsesDraw(e);openModal("mEvent")}
 // Everything in the system that follows this event, or every event of its type: doors, parking, heat and AC
+const EV_ONLY={doors:"Doors",parking:"Parking",hvac:"Heat and AC",lights:"Lighting"};
 function evUses(e){const k1="ev:"+e.id,k2="type:"+e.type,hit=c=>c&&((c.fest||[]).includes(k1)||(c.fest||[]).includes(k2)),why=c=>(c.fest||[]).includes(k1)?"This event":"Every "+e.type.toLowerCase();
   const rules=S.rules.filter(r=>hit(r.inc)),hv=((S.hvac||{}).specials||[]).filter(sp=>hit(hvInc(sp)));
   return {doors:rules.filter(r=>!((r.doors||[]).length&&r.doors.every(isPk))).map(r=>({id:r.id,name:r.name,why:why(r.inc)})),park:rules.filter(r=>(r.doors||[]).length&&r.doors.every(isPk)).map(r=>({id:r.id,name:r.name,why:why(r.inc)})),hv:hv.map(sp=>({id:sp.id,name:sp.name,why:why(hvInc(sp))}))}}
 function evUsesDraw(e){const b=$("#evUses");if(!b)return;if(!e){b.innerHTML=`<p class="gf">Add the event first. Then you can set the doors, parking and heat for it here.</p>`;return}
   const u=evUses(e),canR=sched()!=="none",canH=hvAny()&&(isAdmin()||Object.values(me().hvac||{}).includes("sched"));
   const sec=(kind,title,list,canAdd)=>(list.length||canAdd)?`<h3 class="gh">${title}</h3><div class="glist">${list.map(x=>`<div class="row tap" role="button" tabindex="0" data-evuse="${kind}" data-id="${esc(String(x.id))}"><div class="rt"><b>${esc(x.name)}</b><span>${esc(x.why)}</span></div><span class="chev"></span></div>`).join("")}${canAdd?`<div class="row tap" role="button" tabindex="0" data-evadd="${kind}"><b style="color:var(--b)">+ Set ${kind==="hv"?"heat and AC":title.toLowerCase()} for this event</b></div>`:""}</div>`:"";
-  b.innerHTML=`<h2 class="gh" style="margin-top:18px">What this event sets</h2>${sec("doors","Doors",u.doors,canR)}${pkDoors().length?sec("park","Parking",u.park,canR):""}${sec("hv","Heat and AC",u.hv,canH)}`}
+  const o=e.only||"",show=k=>!o||o===k;
+  b.innerHTML=`<h2 class="gh" style="margin-top:18px">What this event sets</h2>${show("doors")?sec("doors","Doors",u.doors,canR):""}${show("parking")&&pkDoors().length?sec("park","Parking",u.park,canR):""}${show("hvac")?sec("hv","Heat and AC",u.hv,canH):""}${o==="lights"?`<p class="gf">Lighting isn't connected yet. This event will be ready for it.</p>`:""}`}
 document.addEventListener("click",ev=>{const t=ev.target;if(!t.closest||!t.closest("#evUses"))return;const e=S.events.find(x=>x.id===EV_EDIT);if(!e)return;
   const a=t.closest("[data-evadd]"),u=t.closest("[data-evuse]");if(!a&&!u)return;closeModal("mEvent");
   if(a){const k=a.dataset.evadd;
@@ -6819,10 +6827,10 @@ $("#addEv").onclick=()=>{const n=$("#evName").value.trim(),f=$("#evFrom").value,
   if(!f||t<f){$("#evMsg").innerHTML=`<p class="errline">${f?"The end can't be before the start.":"Pick the day it starts."}</p>`;return}
   const old=EV_EDIT&&S.events.find(x=>x.id===EV_EDIT);
   if(old){const prev={...old},a=prev.from<f?prev.from:f,z=prev.to>t?prev.to:t;
-    attempt({change:()=>Object.assign(S.events.find(x=>x.id===prev.id),{name:n,type:$("#evType").value,from:f,to:t}),doors:S.doors.map(d=>d.id).concat(pkDoors().map(d=>d.id)),from:addDays(a,-1),days:daysBetween(a,z)+3,el:$("#evMsg"),
+    attempt({change:()=>Object.assign(S.events.find(x=>x.id===prev.id),{name:n,type:$("#evType").value,from:f,to:t,only:$("#evOnly").value||undefined}),doors:S.doors.map(d=>d.id).concat(pkDoors().map(d=>d.id)),from:addDays(a,-1),days:daysBetween(a,z)+3,el:$("#evMsg"),
       done:sum=>{$("#evMsg").innerHTML="";commit(`Changed event "${n}"${prev.from!==f||prev.to!==t?` to ${rangeText(f,t)} (was ${rangeText(prev.from,prev.to)})`:""}${sum}`);EV_EDIT=null;closeModal("mEvent");toast("Event saved")}});return}
-  const ev={id:"e"+Date.now(),name:n,type:$("#evType").value,from:f,to:t};
-  attempt({change:()=>S.events.push(ev),doors:S.doors.map(d=>d.id).concat(pkDoors().map(d=>d.id)),from:addDays(f,-1),days:daysBetween(f,t)+3,el:$("#evMsg"),done:sum=>{$("#evName").value="";$("#evFrom").value="";$("#evTo").value="";$("#evMsg").innerHTML="";commit(`Added event "${n}"${sum}`);closeModal("mEvent");toast("Event added")}})};
+  const ev={id:"e"+Date.now(),name:n,type:$("#evType").value,from:f,to:t,only:$("#evOnly").value||undefined};
+  attempt({change:()=>S.events.push(ev),doors:S.doors.map(d=>d.id).concat(pkDoors().map(d=>d.id)),from:addDays(f,-1),days:daysBetween(f,t)+3,el:$("#evMsg"),done:sum=>{$("#evName").value="";$("#evFrom").value="";$("#evTo").value="";$("#evMsg").innerHTML="";commit(`Added event "${n}"${sum}`);toast("Event added");openEventForm(ev)}})};
 
 $("#evRows").addEventListener("click",ev=>{if(ev.target.closest("[data-evnew]")){openEventForm(null);return}const ed=ev.target.closest("[data-evedit]");if(ed&&!ev.target.closest("[data-evdel]")){if(!can("events")&&!isAdmin())return;const e=S.events.find(x=>x.id===ed.dataset.evedit);if(e)openEventForm(e);return}const b=ev.target.closest("[data-evdel]");if(!b)return;if(inUse(b,"ev:"+b.dataset.evdel))return;const e=S.events.find(x=>x.id===b.dataset.evdel);S.events=S.events.filter(x=>x!==e);commit(`Removed event "${e.name}"`)});
 $("#addType").onclick=()=>{const t=$("#newType").value.trim();if(!t){toast("Type a name for the event type first.");$("#newType").focus();return}if(S.types.includes(t)){toast("That type is already in the list.");return}S.types.push(t);$("#newType").value="";commit(`Added event type "${t}"`)};
@@ -7390,7 +7398,7 @@ async function boxSampler(){
       inputSchema:{type:"object",properties:{date:{type:"string"},doors:{type:"array",items:{type:"string"},description:"Optional door IDs or group names"}},required:["date"]},
       execute(i){const s=String(i.date);if(!/^\d{4}-\d{2}-\d{2}$/.test(s))throw new Error("date must be YYYY-MM-DD");const info=dayInfo(s);
         const ids=i.doors?expandDoors(resolveDoors(i.doors)).filter(d=>perm(d)!=="hidden"):visIds();
-        return {date:s,weekday:WDN[info.w],hebrew:hebText(info.h),holidays:[...info.keys].filter(k=>!k.startsWith("type:")).map(keyLabel),rabbi:info.away?"away":"local",
+        return {date:s,weekday:WDN[info.w],hebrew:hebText(info.h),holidays:[...info.keys].filter(k=>!/^type/.test(k)).map(keyLabel),rabbi:info.away?"away":"local",
           zmanim:Object.fromEntries(["alos","sunrise","plag","sunset","candles","tzeis","havdalah"].map(k=>[k,fmt(info.z[k])])),
           doors:ids.map(d=>({door:d,name:doorName(d),windows:daySegments(d,s).map(g=>({from:fmt(g.a),to:g.b>=1440?"midnight":fmt(g.b),mode:g.c.ov?g.c.ov.mode:g.c.r.mode,set_by:g.c.ov?"manual override by "+g.c.ov.by:g.c.isDef?"door default":`rule "${g.c.r.name}" (${g.c.src})`}))}))}}},
     {name:"list_rules",description:"All rules this person can see: id, name, doors, when it runs and its exceptions, start and end, mode, layer (schedule, event or situation), notes.",

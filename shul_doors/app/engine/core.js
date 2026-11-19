@@ -238,7 +238,8 @@ function dayInfoRaw(s){
   const {m:gm,d:gd}=parseIso(s);
   S.gdates.forEach(x=>{ if(x.m===gm&&x.d===gd) keys.add("gd:"+x.id) });
   usHolidays(s).forEach(k=>{keys.add(k);keys.add("legal_any")});
-  S.events.forEach(e=>{ if(s>=e.from&&s<=e.to){ keys.add("ev:"+e.id); keys.add("type:"+e.type) } });
+  // an event kept to one part of the system (doors, parking, hvac, lights) only counts there
+  S.events.forEach(e=>{ if(s>=e.from&&s<=e.to){ const p=e.only?"@"+e.only:""; keys.add("ev"+p+":"+e.id); keys.add("type"+p+":"+e.type) } });
   return {s,w,h,keys,z:zmanim(s),dst:isDST(s),away:rabbiAway(s),sits:sitsOn(s)};
 }
 function sitsOn(s){const out=new Set();(S.situations||[]).forEach(x=>{if((x.on&&s>=(x.since||todayNY()))||x.ranges.some(r=>s>=r.from&&s<=r.to))out.add(x.id)});return out}
@@ -248,7 +249,7 @@ function rabbiAway(s){
   if(S.rabbiAwayNow && s>=(S.rabbiAwaySince||todayNY())) return true;
   return S.away.some(r=>r.from&&r.to&&s>=r.from&&s<=r.to);
 }
-function keyLabel(k){
+function keyLabel(k){k=String(k).replace(/^(ev|type)@\w+:/,"$1:");
   if(FEST[k]) return festName(k);
   if(k.startsWith("hd:")){const x=S.hdates.find(h=>"hd:"+h.id===k);return x?x.name:"(deleted date)"}
   if(k.startsWith("gd:")){const x=S.gdates.find(h=>"gd:"+h.id===k);return x?x.name:"(deleted date)"}
@@ -258,11 +259,11 @@ function keyLabel(k){
 }
 function keyRank(k){ if(FEST[k]) return FEST[k].rank; return 70 }
 // how well a set of days (weekdays, holidays, dates, Hebrew dates) fits a date: -1 if not at all; exc is "but not on"
-function condScore(n,info,x){
-  if(x&&((x.wd||[]).includes(info.w)||(x.fest||[]).some(k=>info.keys.has(k))||(x.dates||[]).some(d=>dateMatch(d,info.s))||(x.hr||[]).some(hr=>hrMatches(hr,info.h,info.s))))return -1;
+function condScore(n,info,x,sec){
+  if(x&&((x.wd||[]).includes(info.w)||(x.fest||[]).some(k=>hasKey(info,k,sec))||(x.dates||[]).some(d=>dateMatch(d,info.s))||(x.hr||[]).some(hr=>hrMatches(hr,info.h,info.s))))return -1;
   let best=-1;if((n.wd||[]).includes(info.w))best=10;
   (n.hr||[]).forEach(hr=>{if(hrMatches(hr,info.h,info.s))best=Math.max(best,55)});
-  (n.fest||[]).forEach(k=>{if(info.keys.has(k))best=Math.max(best,keyRank(k))});
+  (n.fest||[]).forEach(k=>{if(hasKey(info,k,sec))best=Math.max(best,keyRank(k))});
   (n.dates||[]).forEach(d=>{if(dateMatch(d,info.s))best=Math.max(best,d.yearly?55:100)});
   return best}
 // US federal holidays, on the day they are observed (Saturday moves to Friday, Sunday to Monday)
@@ -312,7 +313,10 @@ function givesWay(r,info,door,seen){
   }
   return false;
 }
+function secOf(r,door){return (door?isPk(door):((r.doors||[]).length&&r.doors.every(isPk)))?"parking":"doors"}
+function hasKey(info,k,sec){if(info.keys.has(k))return true;if(!sec)return false;const i=k.indexOf(":"),h=k.slice(0,i);return (h==="ev"||h==="type")&&info.keys.has(h+"@"+sec+k.slice(i))}
 function evalRule(r,info,door,seen){
+  const sec=secOf(r,door);
   if(r.rabbi==="local"&&info.away) return null;
   if(r.rabbi==="away"&&!info.away) return null;
   if(r.sit&&!info.sits.has(r.sit)) return null;
@@ -325,14 +329,14 @@ function evalRule(r,info,door,seen){
   // the plain week (what goes into each door's weekly schedule) only uses weekday rules;
   // anything tied to dates, Hebrew dates or holidays is sent separately as one-time overrides
   if(info.plain) return r.inc.wd.includes(info.w)&&!givesWay(r,info,door,seen)?{score:10+(r.rabbi!=="any"?10:0)+(r.season!=="any"?5:0),via:WDN[info.w]}:null;
-  if(x.fest.some(k=>info.keys.has(k))) return null;
+  if(x.fest.some(k=>hasKey(info,k,sec))) return null;
   if(x.dates.some(d=>dateMatch(d,info.s))) return null;
   if(x.hr.some(hr=>hrMatches(hr,info.h,info.s))) return null;
   let best=-1, via="";
   const n=r.inc;
   if(n.wd.includes(info.w)&&10>best){best=10;via=WDN[info.w]}
   n.hr.forEach(hr=>{ if(hrMatches(hr,info.h,info.s)&&55>best){best=55;via=hrText(hr)} });
-  n.fest.forEach(k=>{ if(info.keys.has(k)&&keyRank(k)>best){best=keyRank(k);via=keyLabel(k)} });
+  n.fest.forEach(k=>{ if(hasKey(info,k,sec)&&keyRank(k)>best){best=keyRank(k);via=keyLabel(k)} });
   n.dates.forEach(d=>{ const r=d.yearly?55:100; if(dateMatch(d,info.s)&&r>best){best=r;via=dateText(d)} });
   if(best<0) return null;
   if(givesWay(r,info,door,seen)) return null;
