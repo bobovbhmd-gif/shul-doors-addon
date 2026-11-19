@@ -1905,6 +1905,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 .mk-seg{display:flex;gap:4px;background:var(--fill);border-radius:12px;padding:4px;margin:0 0 16px;max-width:560px}
 .mk-seg button{flex:1;border:0;background:none;border-radius:9px;padding:9px 6px;font:inherit;font-size:14.5px;font-weight:600;color:var(--muted);cursor:pointer}
 .mk-seg button.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.hv-ms{display:block!important}.hv-ms > summary{width:100%}.hv-msg{padding:6px 0}.hv-msh{display:flex;justify-content:space-between;align-items:center;padding:4px 2px}.hv-ms .hp-body{max-height:none}
 .hv-tabs{max-width:none;overflow-x:auto}#hvBody .mk-seg button{white-space:nowrap;padding-left:12px;padding-right:12px}.hv-tabs button{white-space:nowrap}
 .hb-lo{background:color-mix(in srgb,var(--o) 38%,var(--surface))}.hb-mid{background:var(--o)}.hb-hi{background:#e8590c}.hb-cool{background:var(--b)}.hb-off{background:var(--line)}.hb-none{background:var(--fill)}
 .hv-bar2{position:relative;height:14px;border-radius:7px;background:var(--fill);overflow:hidden}.hv-bar2 i{position:absolute;top:0;bottom:0}.hv-bar2 .nowl{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--r)}
@@ -5953,7 +5954,9 @@ async function hvLoad(force){
 /* the plan for a thermostat on a date, the same way the box works it out */
 function hvMin(at,s){if(!at)return null;if(at.a==="clock"){const m=String(at.t||"").match(/^(\d{1,2}):(\d{2})$/);return m?+m[1]*60+ +m[2]:null}const z=dayInfo(s).z;return z[at.a]==null?null:z[at.a]+(+at.o||0)}
 function hvInc(sp){return sp.inc||{wd:[],fest:(sp.when||{}).keys||[],dates:((sp.when||{}).dates||[]).map(d=>({from:d.from,to:d.to||d.from,yearly:false})),hr:[]}}
-function hvSpecial(serial,s){const info=dayInfo(s);let best=null,bs=-1;hvCfg().specials.forEach(sp=>{if(sp.on===false||!(sp.tstats||[]).includes(serial))return;const sc=condScore(hvInc(sp),info,sp.exc||null);if(sc>bs){bs=sc;best=sp}});return best}
+function hvSpOk(sp,info){return !((sp.rabbi==="away"&&!info.away)||(sp.rabbi==="local"&&info.away)||(sp.season==="dst"&&!info.dst)||(sp.season==="std"&&info.dst))}
+function hvSpBonus(sp){return (sp.rabbi&&sp.rabbi!=="any"?10:0)+(sp.season&&sp.season!=="any"?5:0)}
+function hvSpecial(serial,s){const info=dayInfo(s);let best=null,bs=-1;hvCfg().specials.forEach(sp=>{if(sp.on===false||!(sp.tstats||[]).includes(serial)||!hvSpOk(sp,info))return;let sc=condScore(hvInc(sp),info,sp.exc||null);if(sc>=0)sc+=hvSpBonus(sp);if(sc>bs){bs=sc;best=sp}});return best}
 function hvPlan(serial,s){const sp=hvSpecial(serial,s),raw=sp?sp.entries||[]:((hvCfg().sched[serial]||{})[dow(s)]||[]),m=new Map();
   raw.forEach(e=>{let x=hvMin(e.at,s);if(x==null)return;x=Math.max(0,Math.min(1439,Math.round(x)));m.set(x,{...e,min:x})});
   return {src:sp?sp.name:"Schedule",sp,entries:[...m.values()].sort((a,b)=>a.min-b.min).slice(0,12)}}
@@ -6004,11 +6007,11 @@ function hvAt(d,min){let t=Date.parse(d+"T00:00:00Z")+min*60e3+5*3600e3;for(let 
 function hvUntilText(){const u=hvUntil();return u==="next"?"until the next scheduled change. Then back to the schedule":u==="perm"?"with no end. It stays until someone taps Back to schedule":u?`until ${whenText(u)}. Then back to the schedule`:"until the time you pick"}
 function hvSheetDraw(){const q=HVQ,st=(k,lab)=>`<div class="hv-box"><div class="hint">${lab}</div><div class="hv-st"><button type="button" data-hvq="${k}" data-d="-1" aria-label="Lower ${lab}">−</button><span><b>${q[k]}°</b></span><button type="button" data-hvq="${k}" data-d="1" aria-label="Raise ${lab}">+</button></div></div>`;
   const ch=HV.tstats.filter(t=>hvMay(t.serial,"change"));
-  $("#opSheet").innerHTML=`${q.pick?`<h3 class="op-sh">Thermostats</h3><div class="hv-chips">${ch.map(t=>`<button type="button" class="${q.serials.includes(t.serial)?"on":""}" data-hvqs="${esc(t.serial)}">${esc(t.name)}</button>`).join("")}</div>`:q.serials.length>1?`<p class="gf">${esc(q.serials.map(hvName).join(", "))}</p>`:`<p class="gf">Now ${(()=>{const t=hvT(q.serials[0]);return t&&t.temp!=null?Math.round(t.temp)+"°":"--"})()}</p>`}
-    <div class="hv-chips">${HV_SYS.map(m=>`<button type="button" class="${q.system===m?"on":""}" data-hvqm="${m}">${m}</button>`).join("")}</div>
+  $("#opSheet").innerHTML=`${q.pick?`<div class="glist form box" style="margin-bottom:10px">${hvMulti("q",q.serials,ch,"Thermostats")}</div>`:q.serials.length>1?`<p class="gf">${esc(q.serials.map(hvName).join(", "))}</p>`:`<p class="gf">Now ${(()=>{const t=hvT(q.serials[0]);return t&&t.temp!=null?Math.round(t.temp)+"°":"--"})()}</p>`}
+    <h3 class="op-sh">Mode</h3><div class="hv-seg">${HV_SYS.map(m=>`<button type="button" class="${q.system===m?"on":""}" data-hvqm="${m}">${m}</button>`).join("")}</div>
     ${q.system==="Off"?"":`<div class="hv-two">${q.system!=="Cool"?st("heat","Heat to"):""}${q.system!=="Heat"?st("cool","Cool to"):""}</div>`}
-    <h3 class="op-sh">Fan</h3><div class="hv-chips">${["Auto","On"].map(f=>`<button type="button" class="${q.fan===f?"on":""}" data-hvqf="${f}">${f}</button>`).join("")}</div>
-    <h3 class="op-sh">For how long</h3><div class="hv-chips">${hvUntilChips().map(([k,l])=>`<button type="button" class="${q.until===k?"on":""}" data-hvqu="${k}">${esc(l)}</button>`).join("")}</div>
+    <h3 class="op-sh">Fan</h3><div class="hv-seg">${["Auto","On"].map(f=>`<button type="button" class="${q.fan===f?"on":""}" data-hvqf="${f}">${f}</button>`).join("")}</div>
+    <h3 class="op-sh">For how long</h3><select id="hvUntil" aria-label="For how long" style="width:100%">${hvUntilChips().map(([k,l])=>`<option value="${esc(k)}"${q.until===k?" selected":""}>${esc(l)}</option>`).join("")}</select>
     ${q.until==="pick"?`<div class="tline"><span class="hint">Until</span>${tpick("hvAt",q.at||"23:00","Until")}</div>`:""}
     <p class="gf" id="hvSum" style="margin:10px 0 14px">${esc(hvSumText())}</p>
     <div style="display:flex;gap:8px"><button class="btn pri" type="button" data-hvgo style="flex:1">Apply</button>${q.pick?"":`<button class="btn" type="button" data-hvback style="flex:1">Back to schedule</button>`}</div>
@@ -6048,7 +6051,7 @@ function hvSchedHtml(){const list=hvSchedTs();if(!list.length)return `<p class="
   if(!HVSER||!list.some(t=>t.serial===HVSER))HVSER=list[0].serial;const rows=hvWeekRows(HVSER),j=x=>JSON.stringify(x.raw);
   const head=`<div class="hv-top hv-noprint"><select id="hvSer" aria-label="Thermostat" style="max-width:280px">${list.map(t=>`<option value="${esc(t.serial)}"${t.serial===HVSER?" selected":""}>${esc(t.name)}</option>`).join("")}</select>
     <span style="display:flex;gap:6px;flex-wrap:wrap">${HVDSEL?`<button class="btn sm pri" type="button" data-hvdedit>Edit ${HVDSEL.size} day${HVDSEL.size===1?"":"s"}</button><button class="btn sm" type="button" data-hvdsel>Cancel</button>`:`<button class="btn sm" type="button" data-hvdsel>Select days</button><button class="btn sm" type="button" data-hvcopy>Copy to…</button>`}</span></div>`;
-  const copy=HVCOPY?`<div class="glist" style="padding:12px 14px;margin-bottom:12px"><b>Copy ${esc(hvName(HVSER))}'s week to</b><div class="hv-chips">${list.filter(t=>t.serial!==HVSER).map(t=>`<button type="button" class="${HVCOPY.has(t.serial)?"on":""}" data-hvcpt="${esc(t.serial)}">${esc(t.name)}</button>`).join("")}</div><div style="display:flex;gap:8px"><button class="btn sm pri" type="button" data-hvcpgo>Copy</button><button class="btn sm" type="button" data-hvcopy>Cancel</button></div><p class="gf" style="margin:8px 0 0">Their whole week is replaced with this one.</p></div>`:"";
+  const copy=HVCOPY?`<div class="glist" style="padding:12px 14px;margin-bottom:12px"><b>Copy ${esc(hvName(HVSER))}'s week</b><div class="glist form box" style="margin:8px 0">${hvMulti("cp",HVCOPY,list.filter(t=>t.serial!==HVSER),"To these thermostats")}</div><div style="display:flex;gap:8px"><button class="btn sm pri" type="button" data-hvcpgo>Copy</button><button class="btn sm" type="button" data-hvcopy>Cancel</button></div><p class="gf" style="margin:8px 0 0">Their whole week is replaced with this one.</p></div>`:"";
   return head+copy+`<div class="glist hv-week2">${hvAxis.replace('class="hv-axis"','class="hv-axis hv-wax"')}${rows.map((r,i)=>{const same=rows.slice(0,i).find(x=>x.raw.length&&j(x)===j(r)),sel=HVDSEL&&HVDSEL.has(i);
     return `<button type="button" class="row tap hv-drow${sel?" sel":""}" data-hvday="${i}">${HVDSEL?`<span class="hv-ck${sel?" on":""}" aria-hidden="true"></span>`:""}<span class="dn"><b>${HV_DAYS[i]}</b></span><span class="hv-dbar">${hvBar(r.entries,r.prev)}<small>${same?"Same as "+HV_DAYS[same.day]:esc(hvEntriesText(r.entries))}${r.raw.some(e=>e.keypad==="Off")?' · <span class="hv-lk">Screen locked</span>':""}</small></span>${HVDSEL?"":`<span class="chev"></span>`}</button>`}).join("")}</div>
     ${hvLegend()}<p class="gf">Special days, like yom tov, replace a day's schedule. See them under Special days and in the Calendar. Every night the box loads the coming 7 days onto each thermostat.</p>`}
@@ -6078,7 +6081,7 @@ function hvDayDraw(){const s=hvSampleDate();
     <button class="btn pri" type="button" data-hvdsave style="width:100%;margin-top:14px">Save</button>`}
 
 /* ---- special days ---- */
-function hvSpText(sp){const t=condText(hvInc(sp)),x=sp.exc&&condText(sp.exc);return (t||"No days picked")+(x?", but not "+x:"")}
+function hvSpText(sp){const t=condText(hvInc(sp)),x=sp.exc&&condText(sp.exc);return (t||"No days picked")+(x?", but not "+x:"")+(sp.rabbi==="away"?", when the Rav is away":sp.rabbi==="local"?", when the Rav is home":"")+(sp.season==="dst"?", summer clock":sp.season==="std"?", winter clock":"")}
 function hvSpecialHtml(){const list=hvSchedTs();if(!list.length)return `<p class="none">You can't change thermostat schedules.</p>`;
   if(HVS)return hvSpEditHtml();
   const sps=hvCfg().specials.filter(sp=>isAdmin()||(sp.tstats||[]).every(s=>hvMay(s,"sched")));
@@ -6100,11 +6103,13 @@ function hvCondBox(kind,c,title){const tags=[...c.fest.map(k=>`<span class="tag"
       <div class="tline dcal"><input type="date" data-df aria-label="Date"><span class="dto hint">to</span><input class="dto" type="date" data-dt aria-label="To date"></div>
       <div class="tline dyr"><label class="inl"><input type="checkbox" data-yearly> Every year</label><button class="btn sm pri" type="button" data-hvaddd>Add</button></div>
       </div></details></div>`}
-function hvSpEditHtml(){const sp=HVS,list=hvSchedTs(),s=(()=>{for(let i=0;i<400;i++){const d=addDays(todayNY(),i);if(condScore(sp.inc,dayInfo(d),sp.exc)>=0)return d}return todayNY()})(),pl=(sp.entries||[]).map(e=>({...e,min:hvMin(e.at,s)})).filter(e=>e.min!=null).sort((a,b)=>a.min-b.min);
+function hvSpEditHtml(){const sp=HVS,list=hvSchedTs(),s=(()=>{for(let i=0;i<400;i++){const d=addDays(todayNY(),i);{const i=dayInfo(d);if(hvSpOk(sp,i)&&condScore(sp.inc,i,sp.exc)>=0)return d}}return todayNY()})(),pl=(sp.entries||[]).map(e=>({...e,min:hvMin(e.at,s)})).filter(e=>e.min!=null).sort((a,b)=>a.min-b.min);
   return `<div class="glist" style="padding:12px 14px"><label class="tline"><span class="hint">Name</span><input id="hvSpName" value="${esc(sp.name||"")}" maxlength="40" style="flex:1" aria-label="Name"></label></div>
     ${hvCondBox("hvsp",sp.inc,"Which days?")}
-    <details class="more2" style="margin-top:8px"${(sp.exc.wd.length+sp.exc.fest.length+sp.exc.dates.length+sp.exc.hr.length)?" open":""}><summary>Except on</summary>${hvCondBox("hvspx",sp.exc,"Not on these days")}</details>
-    <div class="glist" style="padding:12px 14px;margin-top:12px"><h3 class="op-sh">Thermostats</h3><div class="hv-chips">${list.map(t=>`<button type="button" class="${(sp.tstats||[]).includes(t.serial)?"on":""}" data-hvspt="${esc(t.serial)}">${esc(t.name)}</button>`).join("")}</div></div>
+    <div class="glist form box" style="margin-top:8px"><div class="frow"><label for="hvSpRabbi">The Rav</label><select id="hvSpRabbi" data-hvspf="rabbi"><option value="any">Home or away</option><option value="local"${sp.rabbi==="local"?" selected":""}>Only when the Rav is home</option><option value="away"${sp.rabbi==="away"?" selected":""}>Only when the Rav is away</option></select></div>
+      <div class="frow"><label for="hvSpSeason">Summer or winter</label><select id="hvSpSeason" data-hvspf="season"><option value="any">All year</option><option value="dst"${sp.season==="dst"?" selected":""}>Summer clock only</option><option value="std"${sp.season==="std"?" selected":""}>Winter clock only</option></select></div></div>
+    <details class="more2" style="margin:12px 0 0 4px"${(sp.exc.wd.length+sp.exc.fest.length+sp.exc.dates.length+sp.exc.hr.length)?" open":""}><summary>Except on</summary>${hvCondBox("hvspx",sp.exc,"Not on these days")}</details>
+    <h3 class="gh">Thermostats</h3><div class="glist form box">${hvMulti("sp",sp.tstats,list,"Thermostats")}</div>
     <h3 class="gh mk-h">That day</h3><button type="button" class="glist row tap hv-drow" data-hvspent style="width:100%;grid-template-columns:minmax(0,1fr) 16px;padding:14px 16px"><span class="hv-dbar">${hvBar(pl,null)}<small>${esc(hvEntriesText(pl))}</small></span><span class="chev"></span></button>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn pri" type="button" data-hvspsave>Save</button><button class="btn" type="button" data-hvspcancel>Cancel</button>${hvCfg().specials.some(x=>x.id===sp.id)?`<button class="btn" type="button" data-hvspup>Move up</button><button class="btn danger" type="button" data-hvspdel>Remove</button>`:""}</div>`}
 
@@ -6185,7 +6190,7 @@ function hvLogHtml(){const vis=HV.tstats.filter(t=>hvMay(t.serial));if(!vis.leng
 function hvSetupHtml(){const h=hvCfg(),inA=new Set(h.areas.flatMap(a=>a.tstats||[]));
   const mode=HV.mode==="live"?"Live: changes go to every thermostat.":HV.mode==="pilot"?"Pilot: changes go only to the thermostats listed under pelican_pilot in the add-on settings. The rest show what would happen.":"Read only: the box reads the thermostats and shows what it would do, but sends nothing. To start testing, list a thermostat or two under pelican_pilot and set pelican_mode to pilot in the add-on settings.";
   return `<p class="gf top">${esc(mode)}</p>
-    <h3 class="gh mk-h">Areas</h3><div class="glist">${h.areas.map((a,i)=>`<div class="row" style="flex-wrap:wrap"><input data-hvan="${i}" value="${esc(a.name)}" maxlength="30" aria-label="Area name" style="flex:1;min-width:140px"><button class="lnk danger" type="button" data-hvadel="${i}">Remove</button><div class="hv-chips" style="flex-basis:100%">${HV.tstats.map(t=>`<button type="button" class="${(a.tstats||[]).includes(t.serial)?"on":""}" data-hvat="${i}" data-s="${esc(t.serial)}">${esc(t.name)}</button>`).join("")}</div></div>`).join("")||`<div class="row"><span class="hint">No areas yet.</span></div>`}</div>
+    <h3 class="gh mk-h">Areas</h3><div class="glist">${h.areas.map((a,i)=>`<div class="row" style="flex-wrap:wrap"><input data-hvan="${i}" value="${esc(a.name)}" maxlength="30" aria-label="Area name" style="flex:1;min-width:140px"><button class="lnk danger" type="button" data-hvadel="${i}">Remove</button><div class="glist form box" style="flex-basis:100%;margin-top:8px">${hvMulti("a:"+i,a.tstats||[],HV.tstats,"Thermostats in this area",true)}</div></div>`).join("")||`<div class="row"><span class="hint">No areas yet.</span></div>`}</div>
     <div style="display:flex;gap:8px;margin:10px 0;flex-wrap:wrap"><button class="btn" type="button" data-hvaadd>+ Add area</button>${HV.tstats.some(t=>t.group)?`<button class="btn" type="button" data-hvagrp>Use the groups from Pelican</button>`:""}</div>
     ${HV.tstats.some(t=>!inA.has(t.serial))?`<p class="gf">Not in an area yet: ${esc(HV.tstats.filter(t=>!inA.has(t.serial)).map(t=>t.name).join(", "))}. Only super admins see these.</p>`:""}
     <p class="gf">Who can see or change each area is set on each person's page, under People.</p>
@@ -6208,10 +6213,11 @@ document.addEventListener("click",async ev=>{const t=ev.target,c=x=>t.closest(x)
     if(k==="event"){HVARM="";hvSheet([],{system:"Auto",heat:72,cool:75,until:"pick",at:"23:00"},true);return}
     if(k==="off"){if(HVARM!=="off"){HVARM="off";renderHv();clearTimeout(hvStep.arm);hvStep.arm=setTimeout(()=>{HVARM="";renderHv()},5000);return}HVARM="";await hvSend(mine.map(x=>x.serial),{system:"Off"},"next","All off until the next change");return}}
   if((e=c("[data-hvqc]"))){const q=hvCfg().quick.find(x=>x.id===e.dataset.hvqc);if(!q)return;const ss=(q.serials||[]).filter(s=>hvMay(s,"change"));await hvSend(ss,q.v||{},q.until==="next"||q.until==="perm"?q.until:Date.now()+(+q.mins||60)*60e3,q.name);return}
+  if((e=c("[data-hvmsall]"))){ev.preventDefault();const key=e.dataset.hvmsall,ref=hvMsRef(key);if(!ref)return;const box=e.closest(".hv-msg"),ids=[...box.querySelectorAll("[data-hvmsk]")].map(x=>x.dataset.hvmsk),all=ids.every(x=>ref.includes(x));
+    if(all)ids.forEach(x=>{const k=ref.indexOf(x);if(k>=0)ref.splice(k,1)});else ids.forEach(x=>{if(!ref.includes(x))ref.push(x)});HOPEN.add("ms|"+key);hvMsDone(key);return}
   if((e=c("#opSheet [data-tpap]"))){hvTp(e.closest(".tpick"));return}
   /* sheet */
   if(HVQ&&c("#opSheet")){
-    if((e=c("[data-hvqs]"))){const s=e.dataset.hvqs,l=HVQ.serials;l.includes(s)?l.splice(l.indexOf(s),1):l.push(s);hvSheetDraw();return}
     if((e=c("[data-hvqm]"))){HVQ.system=e.dataset.hvqm;hvSheetDraw();return}
     if((e=c("[data-hvqf]"))){HVQ.fan=e.dataset.hvqf;hvSheetDraw();return}
     if((e=c("[data-hvqu]"))){HVQ.until=e.dataset.hvqu;hvSheetDraw();if(HVQ.until==="pick"&&!HVQ.at){HVQ.at="23:00";hvSheetDraw()}return}
@@ -6226,9 +6232,8 @@ document.addEventListener("click",async ev=>{const t=ev.target,c=x=>t.closest(x)
   if((e=c("[data-hvday]"))){const i=+e.dataset.hvday;if(HVDSEL){HVDSEL.has(i)?HVDSEL.delete(i):HVDSEL.add(i);renderHv();return}hvDayOpen({mode:"sched",serial:HVSER,days:[i],rows:(hvCfg().sched[HVSER]||{})[i]||[]});return}
   if(c("[data-hvdsel]")){HVDSEL=HVDSEL?null:new Set();HVCOPY=null;renderHv();return}
   if(c("[data-hvdedit]")){if(!HVDSEL.size){toast("Pick the days first.");return}const days=[...HVDSEL].sort();hvDayOpen({mode:"sched",serial:HVSER,days,rows:(hvCfg().sched[HVSER]||{})[days[0]]||[]});return}
-  if(c("[data-hvcopy]")){HVCOPY=HVCOPY?null:new Set();HVDSEL=null;renderHv();return}
-  if((e=c("[data-hvcpt]"))){const s=e.dataset.hvcpt;HVCOPY.has(s)?HVCOPY.delete(s):HVCOPY.add(s);renderHv();return}
-  if(c("[data-hvcpgo]")){if(!HVCOPY.size){toast("Pick where to copy it.");return}const h=hvCfg(),src=structuredClone(h.sched[HVSER]||{});HVCOPY.forEach(s=>{h.sched[s]=structuredClone(src)});save();log(`Heat and AC: copied ${hvName(HVSER)}'s week to ${[...HVCOPY].map(hvName).join(", ")}`);toast("Copied");HVCOPY=null;renderHv();return}
+  if(c("[data-hvcopy]")){HVCOPY=HVCOPY?null:[];HVDSEL=null;renderHv();return}
+  if(c("[data-hvcpgo]")){if(!HVCOPY.length){toast("Pick where to copy it.");return}const h=hvCfg(),src=structuredClone(h.sched[HVSER]||{});HVCOPY.forEach(s=>{h.sched[s]=structuredClone(src)});save();log(`Heat and AC: copied ${hvName(HVSER)}'s week to ${HVCOPY.map(hvName).join(", ")}`);toast("Copied");HVCOPY=null;renderHv();return}
   /* the day sheet */
   if(HVD&&c("#opSheet")){
     if((e=c("[data-hvdrow]"))){HVD.edit=+e.dataset.hvdrow;HVD.isNew=false;HVD.backup=structuredClone(HVD.rows[HVD.edit]);hvDayDraw();return}
@@ -6264,7 +6269,6 @@ document.addEventListener("click",async ev=>{const t=ev.target,c=x=>t.closest(x)
       if(k.dataset.dkind==="heb"){const fd=+box.querySelector("[data-hfd]").value,fm=+box.querySelector("[data-hfm]").value,h={fd,fm,td:many?+box.querySelector("[data-htd]").value:fd,tm:many?+box.querySelector("[data-htm]").value:fm};if(!yearly)h.y=hebYear(todayNY())+(MORD[fm]*31+fd<hOrd(heb(todayNY()))?1:0);cd.hr.push(h)}
       else{const f=box.querySelector("[data-df]").value,to=many?(box.querySelector("[data-dt]").value||f):f;if(!f){box.querySelector("[data-df]").focus();toast("Pick the date.");return}if(to<f){toast("The end is before the start.");return}cd.dates.push({from:f,to,yearly})}
       renderHv();return}}
-  if((e=c("[data-hvspt]"))){const s=e.dataset.hvspt,l=HVS.tstats;l.includes(s)?l.splice(l.indexOf(s),1):l.push(s);hvSpName();renderHv();return}
   if(c("[data-hvspcancel]")){HVS=null;renderHv();return}
   if(c("[data-hvspsave]")){hvSpName();if(!HVS.name){toast("Name it first.");return}if(!HVS.tstats.length){toast("Pick a thermostat.");return}{const n=HVS.inc;if(!(n.wd.length+n.fest.length+n.dates.length+n.hr.length)){toast("Pick the days.");return}}
     if(HVS.entries.some(r=>hvMin(r.at,todayNY())==null)){toast("Every change needs a time.");return}
@@ -6276,15 +6280,27 @@ document.addEventListener("click",async ev=>{const t=ev.target,c=x=>t.closest(x)
       HV.tstats.filter(t=>t.group===g).forEach(t=>{if(!a.tstats.includes(t.serial))a.tstats.push(t.serial)})});save();log("Heat and AC: areas made from the Pelican groups");toast(n?`Added ${n} area${n===1?"":"s"} from Pelican`:"The Pelican groups are already here");renderHv();return}
   if(c("[data-hvaadd]")){hvCfg().areas.push({id:"a"+Date.now(),name:"New area",tstats:[]});save();renderHv();return}
   if((e=c("[data-hvadel]"))){const a=hvCfg().areas.splice(+e.dataset.hvadel,1)[0];save();log(`Heat and AC area removed: ${a.name}`);renderHv();return}
-  if((e=c("[data-hvat]"))){const a=hvCfg().areas[+e.dataset.hvat],s=e.dataset.s;a.tstats=a.tstats||[];a.tstats.includes(s)?a.tstats.splice(a.tstats.indexOf(s),1):a.tstats.push(s);save();renderHv();return}
   if(c("[data-hvsync]")){if(!ON_BOX){toast("Demo: nothing to load");return}toast("Loading the week…");let j;try{j=await (await fetch("api/hvac/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"})).json()}catch(x){j={ok:false}}
     toast(j.ok?(j.errors&&j.errors.length?j.errors[0]:`Loaded ${j.written} day${j.written===1?"":"s"}${j.would?`, ${j.would} not sent (${HV.mode==="read"?"read only":"not in the pilot"})`:""}`):"Didn't work");HV.t=0;hvLoad(true);return}});
 function hvTp(w){const h=w.querySelector("input[type=hidden]");if(!h)return;if(h.id==="hvAt"&&HVQ){HVQ.at=h.value;const x=$("#hvSum");if(x)x.textContent=hvSumText()}
   if(h.id==="hvdT"&&HVD&&HVD.edit!=null){HVD.rows[HVD.edit].at={a:"clock",t:h.value};const s=hvSampleDate(),p=$("#opSheet .gf");if(p)p.textContent=""}}
+function hvMulti(key,sel,list,label,flat){const n=sel.length,h=hvCfg(),seen=new Set();
+  const groups=flat?[["Thermostats",list]]:h.areas.map(a=>[a.name,list.filter(t=>(a.tstats||[]).includes(t.serial)&&!seen.has(t.serial)&&seen.add(t.serial))]).filter(g=>g[1].length);
+  if(!flat){const rest=list.filter(t=>!seen.has(t.serial));if(rest.length)groups.push([groups.length?"Not in an area":"Thermostats",rest])}
+  const names=list.filter(t=>sel.includes(t.serial)).map(t=>t.name);
+  return `<details class="frow hpick hv-ms" data-hvms="${esc(key)}"${HOPEN.has("ms|"+key)?" open":""}><summary><span class="hp-t">${esc(label)}</span><span class="hint">${n?(n===list.length&&n>1?"All "+n:names.length<=2?esc(names.join(", ")):n+" chosen"):"Tap to choose"}</span><span class="chev"></span></summary>
+    <div class="hp-body">${groups.map(([g,ts])=>{const on=ts.filter(t=>sel.includes(t.serial)).length;return `<div class="hv-msg"><div class="hv-msh"><b>${esc(g)}</b><button type="button" class="lnk" data-hvmsall="${esc(key)}" data-g="${esc(g)}">${on===ts.length?"Clear":"Select all"}</button></div>
+      <div class="checks">${ts.map(t=>`<label><input type="checkbox" data-hvmsk="${esc(t.serial)}"${sel.includes(t.serial)?" checked":""}>${esc(t.name)}</label>`).join("")}</div></div>`}).join("")}</div></details>`}
+function hvMsRef(key){if(key==="sp")return HVS&&HVS.tstats;if(key==="q")return HVQ&&HVQ.serials;if(key==="cp")return HVCOPY;if(key.startsWith("a:")){const a=hvCfg().areas[+key.slice(2)];if(a){a.tstats=a.tstats||[];return a.tstats}}return null}
+function hvMsList(key){if(key==="q")return HV.tstats.filter(t=>hvMay(t.serial,"change"));if(key==="cp")return hvSchedTs().filter(t=>t.serial!==HVSER);if(key==="sp")return hvSchedTs();return HV.tstats}
+function hvMsDone(key){if(key==="q"){hvSheetDraw();return}if(key.startsWith("a:"))save();renderHv.force=true;renderHv()}
 function hvFind(v){const q=String(v||"").trim().toLowerCase();if(!q)return null;const l=HV.tstats.filter(t=>hvMay(t.serial));return l.find(t=>t.serial.toLowerCase()===q)||l.find(t=>t.name.toLowerCase()===q)||l.find(t=>t.name.toLowerCase().includes(q))||l.find(t=>q.split(/\s+/).every(w=>t.name.toLowerCase().includes(w)))||null}
 function hvVals(){const q=HVQ,v={system:q.system,fan:q.fan};if(q.system!=="Off"){if(q.system!=="Cool")v.heat=q.heat;if(q.system!=="Heat")v.cool=q.cool}return v}
 function hvSpName(){const i=$("#hvSpName");if(i&&HVS)HVS.name=i.value.trim()}
 document.addEventListener("change",ev=>{const t=ev.target;if(!t.closest("#hvBody")&&!t.closest("#opSheet"))return;const d=t.dataset;
+  if(HVS&&d.hvspf){hvSpName();HVS[d.hvspf]=t.value;return}
+  if(d.hvmsk&&t.closest("[data-hvms]")){const key=t.closest("[data-hvms]").dataset.hvms,ref=hvMsRef(key);if(!ref)return;const k=ref.indexOf(d.hvmsk);if(t.checked&&k<0)ref.push(d.hvmsk);if(!t.checked&&k>=0)ref.splice(k,1);if(HVS&&key==="sp")hvSpName();HOPEN.add("ms|"+key);hvMsDone(key);return}
+  if(t.id==="hvUntil"&&HVQ){HVQ.until=t.value;if(HVQ.until==="pick"&&!HVQ.at)HVQ.at="23:00";hvSheetDraw();return}
   if(t.matches("[data-tph],[data-tpm]")&&t.closest("#opSheet .tpick")){hvTp(t.closest(".tpick"));return}
   if(t.id==="hvSer"){HVSER=t.value;HVDSEL=null;HVCOPY=null;renderHv.force=true;renderHv();return}
   if(t.id==="hvCD"&&t.value){HVCD=t.value;renderHv.force=true;renderHv();return}
@@ -6295,7 +6311,7 @@ document.addEventListener("change",ev=>{const t=ev.target;if(!t.closest("#hvBody
   if(d.hvspon!==undefined){const sp=hvCfg().specials.find(x=>x.id===d.hvspon);if(sp){sp.on=t.checked;save();log(`Heat and AC special day ${sp.name} turned ${t.checked?"on":"off"}`)}return}
   if(d.hvan!==undefined){const a=hvCfg().areas[+d.hvan];if(a){a.name=t.value.trim()||a.name;save()}return}});
 document.addEventListener("input",ev=>{const t=ev.target;if(!t.matches||!t.matches("#hvBody .hvbox [data-hsearch]"))return;const box=t.closest(".hvbox"),kind=box.dataset.hvbox;HQ[kind]=t.value;hpFilter(box,kind)});
-document.addEventListener("toggle",ev=>{const d=ev.target;if(!d.closest||!d.closest("#hvBody .hvbox"))return;const id=d.dataset&&(d.dataset.hp||d.dataset.hg);if(!id)return;d.open?HOPEN.add(id):HOPEN.delete(id)},true);
+document.addEventListener("toggle",ev=>{const d=ev.target;if(d.dataset&&d.dataset.hvms){d.open?HOPEN.add("ms|"+d.dataset.hvms):HOPEN.delete("ms|"+d.dataset.hvms);return}if(!d.closest||!d.closest("#hvBody .hvbox"))return;const id=d.dataset&&(d.dataset.hp||d.dataset.hg);if(!id)return;d.open?HOPEN.add(id):HOPEN.delete(id)},true);
 document.addEventListener("focusout",()=>{if(renderHv.later&&CUR_TAB==="climate"){setTimeout(()=>{const ae=document.activeElement;if(!(ae&&$("#hvBody").contains(ae)&&/SELECT|INPUT/.test(ae.tagName))){renderHv.later=false;renderHv()}},0)}});
 setInterval(()=>{if(typeof CUR_TAB!=="undefined"&&CUR_TAB==="climate"&&!document.hidden){HV.t=0;hvLoad(true)}},60000);
 

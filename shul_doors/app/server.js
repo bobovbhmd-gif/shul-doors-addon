@@ -553,7 +553,7 @@ const hvTextApi = {
     return hvac.list().map((t) => ({ t, r: hvRoleU(u, t.serial) })).filter((x) => x.r).map(({ t, r }) => ({ serial: t.serial, name: t.name, change: r === "change" || r === "sched",
       now: `${t.online ? (t.temp != null ? Math.round(t.temp) + "°" : "?") : "offline"}, ${t.system}${t.system === "Off" ? "" : t.system === "Cool" ? " " + t.cool + "°" : " " + t.heat + "°"}` }));
   },
-  async act(u, i) {
+  async act(u, i, opt = {}) {
     const mine = await this.list(u), norm = (x) => String(x || "").toLowerCase().trim();
     const pick = (v) => mine.find((t) => norm(t.name) === norm(v)) || mine.find((t) => norm(t.name).includes(norm(v))) || mine.find((t) => norm(v).split(/\s+/).every((w) => norm(t.name).includes(w)));
     const ts = [...new Set((i.thermostats || []).map(pick).filter(Boolean))];
@@ -561,6 +561,7 @@ const hvTextApi = {
     if (i.action === "status") return { status: "done", result: ts.map((t) => { const x = hvac.find(t.serial) || {}, h = (store.hvHold || {})[t.serial]; return `${t.name}: ${t.now}${x.humidity ? ", humidity " + Math.round(x.humidity) + "%" : ""}${x.co2 ? ", CO2 " + Math.round(x.co2) : ""}${h ? ", held" + (h.kind === "perm" ? " with no end" : h.until ? " until " + nyTime(h.until) : "") : ""}`; }).join("; ") };
     const no = ts.filter((t) => !t.change); if (no.length) return { status: "refused", why: `${u.name} may only see ${no.map((t) => t.name).join(", ")}` };
     const who = u.name + " (text)";
+    if (i.action === "back" && opt.dry) return { status: "needs_confirm", summary: `Put ${ts.map((t) => t.name).join(", ")} back on the schedule` };
     if (i.action === "back") { const r = await hvac.resume(ts.map((t) => t.serial), who); return { status: "done", result: `${ts.map((t) => t.name).join(", ")} back on the schedule${r.some((x) => x.would) ? " (saved, not sent: " + (HV_MODE === "read" ? "read only" : "not in the pilot") + ")" : ""}` }; }
     const v = {}; if (i.mode) v.system = i.mode; if (i.heat != null) v.heat = Math.round(i.heat); if (i.cool != null) v.cool = Math.round(i.cool); if (i.fan) v.fan = i.fan;
     if (!Object.keys(v).length) return { status: "refused", why: "say what to change: mode, heat, cool or fan" };
@@ -569,6 +570,8 @@ const hvTextApi = {
     if (i.until === "permanent") until = "perm";
     else if (i.until === "minutes") { const m = Math.round(+i.minutes || 0); if (m < 5 || m > 14 * 1440) return { status: "refused", why: "how long, 5 minutes to 14 days" }; until = Date.now() + m * 60e3; }
     else if (i.until === "time") { const m = String(i.time || "").match(/^(\d{1,2}):(\d{2})$/); if (!m) return { status: "refused", why: "give the time as HH:MM" }; const p = nyParts(Date.now()), min = +m[1] * 60 + +m[2]; let t = Date.now() + (min - p.m) * 60e3; if (t <= Date.now()) t += 864e5; until = t; }
+    const desc = `${ts.map((t) => t.name).join(", ")}: ${[v.system, v.heat != null ? "heat " + v.heat + "°" : "", v.cool != null ? "cool " + v.cool + "°" : "", v.fan ? "fan " + v.fan : ""].filter(Boolean).join(", ")} ${until === "next" ? "until the next scheduled change" : until === "perm" ? "with no end" : "until " + nyTime(until)}`;
+    if (opt.dry) return { status: "needs_confirm", summary: "Set " + desc };
     const r = await hvac.setNow(ts.map((t) => t.serial), v, until, who), bad = r.find((x) => !x.ok);
     if (bad) return { status: "refused", why: bad.error };
     return { status: "done", result: `${ts.map((t) => t.name).join(", ")}: ${[v.system, v.heat != null ? "heat " + v.heat : "", v.cool != null ? "cool " + v.cool : "", v.fan ? "fan " + v.fan : ""].filter(Boolean).join(", ")} ${until === "next" ? "until the next scheduled change" : until === "perm" ? "with no end" : "until " + nyTime(until)}${r.some((x) => x.would) ? " (saved, not sent: " + (HV_MODE === "read" ? "read only" : "not in the pilot") + ")" : ""}` };
@@ -1548,7 +1551,8 @@ const server = http.createServer((req, res) => {
       const pick = (x) => JSON.stringify([x.overrides || [], (x.situations || []).map((t) => [t.id, t.on, t.ranges || []]), x.rabbiAwayNow || false, x.away || []]);
       const urgent = pick(state) !== pick(body.state);
       try { body.state.hvac = hvMerge(req, state, body.state); } catch (e) { log("warn", "thermostat schedules: " + e.message); body.state.hvac = state.hvac; }
-      const hvChanged = JSON.stringify(state.hvac || {}) !== JSON.stringify(body.state.hvac || {});
+      const awayKey = (x) => JSON.stringify([x.rabbiAwayNow || false, x.rabbiAwaySince || "", x.away || []]);
+      const hvChanged = JSON.stringify(state.hvac || {}) !== JSON.stringify(body.state.hvac || {}) || awayKey(state) !== awayKey(body.state);   // the Rav away dates change which special days run
       const before = state; state = body.state; version++;
       if (hvChanged && pelican.configured) { engine.setState(state); hvSyncSoon(); }
       try { changeAlerts(before, state, personOf(req)); } catch (e) { log("warn", "change alerts: " + e.message); }
