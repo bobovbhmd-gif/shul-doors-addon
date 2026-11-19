@@ -1284,13 +1284,14 @@ function mtSnooze(from, body) {
   const pools = (mtLast || []).map((x) => ({ id: x.id, name: x.name }));
   const named = pools.filter((p) => { const w = p.name.toLowerCase().split(/\s+/).filter((x) => x.length > 1); return w.length && w.every((x) => t.includes(" " + x + " ")); });
   const nameOf = (id) => (pools.find((p) => p.id === id) || {}).name || (last && last.id === id ? last.name : "that pool");
-  if (/\b(alerts on|unsnooze|unmute|resume alerts|turn alerts back on)\b/.test(t)) {
+  if (/\b(alerts on|unsnooze|unmute|resume alerts|turn alerts back on)\b/.test(t) || t.trim().split(" ").some((w) => w.length >= 6 && near(w, ["unsnooze", "unmute"]))) {
     const ids = named.length ? named.map((p) => p.id) : Object.keys(mine);
     if (!ids.length) return "Mikva alerts are already on.";
     ids.forEach((id) => delete mine[id]); writeJson("store.json", store);
     return `Mikva alerts are back on for ${ids.map(nameOf).join(", ")}.`;
   }
-  if (!/\b(snooze|mute|quiet|pause|silence|hold off|stop alert|stop alerting|no more alerts|stop texting)/.test(t)) return null;
+  const tw = t.trim().split(" ");
+  if (!/\b(snooze|mute|quiet|pause|silence|hold off|stop alert|stop alerting|no more alerts|stop texting)/.test(t) && !tw.some((w) => near(w, ["snooze", "snoozed", "mute", "pause", "silence"]))) return null;   // "snoze 4h" works too
   let mins = 0, m;
   if ((m = t.match(/(\d+(?:\.\d+)?)\s*(h|hr|hrs|hour|hours)\b/))) mins = Math.round(+m[1] * 60);
   if ((m = t.match(/(\d+)\s*(m|min|mins|minute|minutes)\b/))) mins += +m[1];
@@ -1305,7 +1306,18 @@ function mtSnooze(from, body) {
 }
 let mtLast = [];
 // "mikva temp": the state and temperature of every pool, for people who may see the mikva temperature
-function mtAsked(body) { const t = String(body || "").toLowerCase(); return /\bmi[ck]?v[ae]h?s?\b/.test(t) && /\b(temp|temps|temperature|temperatures|tempature|status|how hot|hot|warm)\b/.test(t) && t.length <= 60; }
+// typos are fine: "nikva temp", "mikvah tmp", "mikve temperture", "mikvatemp"
+function lev(a, b) { const d = Array.from({ length: a.length + 1 }, (_, i) => [i]); for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) { d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1); }   // a swap of two letters counts as one
+  return d[a.length][b.length]; }
+const near = (w, list) => list.some((x) => w === x || (w.length >= 3 && lev(w, x) <= (x.length >= 8 ? 2 : 1)));
+function mtAsked(body) {
+  const t = String(body || "").toLowerCase().trim(); if (!t || t.length > 60) return false;
+  const words = t.replace(/[^a-z\s]/g, " ").split(/\s+/).filter(Boolean);
+  const MK = ["mikva", "mikve", "mikvah", "mikvas", "mikvos", "mikveh", "mikvaot"], TP = ["temp", "temps", "temperature", "temperatures", "status", "hot", "warm", "heat", "degrees"];
+  if (words.some((w) => near(w, MK)) && (words.some((w) => near(w, TP)) || /how hot|how warm/.test(t))) return true;
+  return words.some((w) => w.length >= 8 && MK.some((m) => w.startsWith(m.slice(0, 3)) && TP.some((x) => near(w.slice(-x.length), [x]) && near(w.slice(0, w.length - x.length), MK))));   // run together
+}
 async function mtStatusText() {
   let list; try { list = await mtemp.list(); } catch { list = mtLast; }
   if (!list || !list.length) return "I can't read the mikva thermostats right now.";
