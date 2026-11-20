@@ -1942,7 +1942,7 @@ details.skip>summary.gh,details.more>summary.gh{cursor:pointer}
 .hv-tile+.hv-tile::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:1px;background:var(--line)}
 button.hv-tile{cursor:pointer}button.hv-tile:hover{background:color-mix(in srgb,var(--fg) 3%,transparent)}.hv-tile small{font-size:11.5px;color:var(--muted);font-weight:500;white-space:nowrap}.hv-tile small i{font-style:normal;opacity:.8}.hv-tile b{font-size:21px;font-weight:600;letter-spacing:-.4px;line-height:1.15;color:var(--muted)}
 .hv-tile.t-o b{color:var(--fg)}.hv-tile.t-h b{color:var(--o)}.hv-tile.t-c b{color:var(--b)}.hv-tile.t-held b{color:var(--brass)}.hv-tile.t-x b{color:var(--r)}.hv-tile.on{background:color-mix(in srgb,var(--accent) 10%,transparent)}
-@media (max-width:420px){.hv-tile small i{display:none}}
+@media (max-width:420px){.hv-tile small i{display:none}.hv-ft .hint{display:none}}
 .hv-grid{grid-template-columns:repeat(auto-fill,minmax(168px,1fr))!important;gap:10px!important}
 .hv-c{--k:var(--muted);padding:12px 13px 10px!important;border-radius:16px!important;display:flex;flex-direction:column;gap:4px;position:relative;overflow:hidden;transition:transform .12s}
 .hv-c:active{transform:scale(.985)}
@@ -1960,6 +1960,25 @@ button.hv-tile{cursor:pointer}button.hv-tile:hover{background:color-mix(in srgb,
 .hv-ft{display:flex;align-items:center;justify-content:space-between;gap:6px;border-top:1px solid var(--line);margin-top:4px;padding-top:7px}
 .hv-mode select{width:auto;border:0;background:transparent;font:inherit;font-size:13px;font-weight:600;color:var(--fg);padding:2px 18px 2px 0;cursor:pointer}
 .hv-ft .lnk{font-size:13px}.hv-ft .hint{font-size:12px}
+.hv-sum{display:flex;background:var(--surface);border-radius:12px;box-shadow:var(--shadow);margin:0 0 10px;overflow:hidden;max-width:520px}
+.hv-tile{flex:1;border:0;background:none;padding:5px 4px;text-align:center;font:inherit;color:var(--fg);display:flex;flex-direction:row;align-items:baseline;justify-content:center;gap:5px;min-width:0;position:relative}
+.hv-tile+.hv-tile::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:1px;background:var(--line)}
+button.hv-tile{cursor:pointer}button.hv-tile:hover{background:color-mix(in srgb,var(--fg) 3%,transparent)}.hv-tile small{font-size:11px;color:var(--muted);font-weight:500;white-space:nowrap}.hv-tile small i{font-style:normal;opacity:.8}.hv-tile b{font-size:15px;font-weight:600;line-height:1.3;color:var(--muted)}
+.hv-c{padding:9px 11px 7px!important;border-radius:14px!important;gap:2px!important}
+.hv-c .h1 b{font-size:13.5px!important}.hv-chip{font-size:10.5px;padding:1px 7px}
+.hv-c .h2{min-height:0!important;margin:0!important}
+.hv-c .tmp{font-size:32px!important}.hv-c .tmp sup{font-size:15px;top:2px}
+.hv-step{flex-direction:row!important;gap:4px!important}.hv-step button{width:26px!important;height:26px!important;border-radius:50%!important;font-size:15px!important}
+.hv-step>span,.hv-set{min-width:40px}.hv-step b,.hv-set b{font-size:21px!important;font-weight:600;letter-spacing:-.4px}.hv-step small,.hv-set small{font-size:9px!important}
+.hv-c .hv-line{min-height:0!important;font-size:11.5px!important}
+.hv-ft{padding-top:5px!important;margin-top:3px!important;gap:4px!important}
+.hv-mode select,.hv-fan select{width:auto;border:0;background:transparent;font:inherit;font-size:12.5px;font-weight:600;color:var(--fg);padding:1px 14px 1px 0;cursor:pointer}
+.hv-mode{font-size:12.5px;font-weight:600}
+.hv-mode small{font-size:10.5px;color:var(--muted);font-weight:500;margin-right:3px}.hv-step button[data-d="-1"]{order:-1}.hv-step button[data-d="1"]{order:1}.hv-mode{display:inline-flex;align-items:center;white-space:nowrap}.hv-line .lnk{font-size:inherit;font-weight:600;padding:0}
+.hv-fan{display:inline-flex;align-items:center;gap:3px;font-size:12.5px;color:var(--muted)}.hv-fan svg{width:14px;height:14px;fill:currentColor;flex:none}
+.hv-fan.run{color:var(--b)}.hv-fan.run svg{animation:hvspin 1.6s linear infinite}@keyframes hvspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.hv-fan.run svg{animation:none}}
+.hv-fan select{color:inherit}
 .hv-qa button.hv-selb{background:transparent!important;box-shadow:none!important;color:var(--accent)}
 .hv-card2{display:grid;grid-template-columns:44px minmax(0,1fr);background:var(--surface);border-radius:12px;overflow:hidden;margin-bottom:10px;box-shadow:0 0 0 1px var(--line)}.hv-cn{background:#34a853;color:#fff;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:10px 0}.hv-cn b{font-size:20px}.hv-cn .lnk{color:#fff;font-size:11px;writing-mode:vertical-rl;transform:rotate(180deg)}.hv-cb{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 .hv-wsg{display:grid;grid-template-columns:120px repeat(7,minmax(0,1fr));gap:6px;font-size:12.5px}
@@ -6088,18 +6107,21 @@ function hvCardLine(t){if(!t.online)return "Can't reach it. It keeps running the
   if(t.hold){const h=t.hold;return h.kind==="perm"?"No end, until someone resumes":h.until?"Until "+(new Date(h.until).toDateString()===new Date().toDateString()?fmt(nyMinutes(h.until)):whenText(h.until)):"Until the next change"}
   const sc=hvSchedOf(t.serial);if(!sc)return "No schedule here";const n=hvNext(t.serial),p=hvPlan(t.serial,todayNY());
   return p.src+(n?` · ${n.day===todayNY()?fmt(n.min):WDN[dow(n.day)]+" "+fmt(n.min)} → ${hvTempText(n).replace(/ heat$/,"")}`:"")}
+const HV_FAN_ICO=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c0-3 1-7 4-7s3 4 0 6l-4 1zm0 0c3 0 7 1 7 4s-4 3-6 0l-1-4zm0 0c0 3-1 7-4 7s-3-4 0-6l4-1zm0 0c-3 0-7-1-7-4s4-3 6 0l1 4z"/></svg>`;
 function hvKind(t){if(!t.online)return "x";if(/^Heat/.test(t.run))return "h";if(/^Cool/.test(t.run))return "c";if(t.system==="Off")return "o";return "i"}
 function hvCard(t){const [st]=hvState(t),k=hvSet(t),pend=HVPEND[t.serial],v=pend!=null?pend:t[k],ch=hvMay(t.serial,"change")&&t.online&&!HVSM,kd=hvKind(t);
-  const held=!!t.hold,line=hvCardLine(t);
+  const held=!!t.hold,line=hvCardLine(t),fanRun=t.online&&(t.fan==="On"||/^(Heat|Cool|Fan)/.test(t.run||""));
   return `<div class="hv-c k-${kd}${HVSEL.has(t.serial)?" sel":""}" data-hvc="${esc(t.serial)}">
     <div class="h1"><b>${esc(t.name)}</b><span class="hv-chip">${st}</span></div>
     <div class="h2"><span class="tmp">${t.temp!=null?Math.round(t.temp)+"<sup>°</sup>":"--"}</span>${t.online&&t.system!=="Off"&&v!=null?(ch?`<span class="hv-step"><button type="button" data-hvstep="${esc(t.serial)}" data-d="1" aria-label="Raise">+</button><span><small>${k==="cool"?"Cool to":"Set"}</small><b>${v}°</b></span><button type="button" data-hvstep="${esc(t.serial)}" data-d="-1" aria-label="Lower">−</button></span>`:`<span class="hv-set"><small>${k==="cool"?"Cool to":"Set"}</small><b>${v}°</b></span>`):""}</div>
-    <div class="hv-line">${held?`<span class="hv-held">${t.hold.would?"Not sent":"Held"}</span> `:""}${esc(line)}</div>
-    ${t.online?`<div class="hv-ft">${ch?`<label class="hv-mode"><select data-hvcm="${esc(t.serial)}" aria-label="Mode for ${esc(t.name)}">${HV_SYS.map(m=>`<option${t.system===m?" selected":""}>${m}</option>`).join("")}</select></label>`:`<span class="hint">${esc(t.system||"")}</span>`}${held&&ch?`<button type="button" class="lnk" data-hvres="${esc(t.serial)}">Resume</button>`:t.humidity?`<span class="hint">${Math.round(t.humidity)}% RH</span>`:""}</div>`:""}
+    <div class="hv-line">${held?`<span class="hv-held">${t.hold.would?"Not sent":"Held"}</span> `:""}${esc(line)}${held&&ch?` · <button type="button" class="lnk" data-hvres="${esc(t.serial)}">Resume</button>`:""}</div>
+    ${t.online?`<div class="hv-ft">${ch?`<label class="hv-mode"><small>Mode</small><select data-hvcm="${esc(t.serial)}" aria-label="Mode for ${esc(t.name)}">${HV_SYS.map(m=>`<option${t.system===m?" selected":""}>${m}</option>`).join("")}</select></label>`:`<span class="hv-mode">${esc(t.system||"")}</span>`}
+      <span class="hv-fan${fanRun?" run":""}" title="Fan ${fanRun?"running":"not running"}">${HV_FAN_ICO}${ch?`<select data-hvcfan="${esc(t.serial)}" aria-label="Fan for ${esc(t.name)}">${["Auto","On"].map(f=>`<option value="${f}"${(t.fan||"Auto")===f?" selected":""}>${f}</option>`).join("")}</select>`:`<span>${esc(t.fan||"Auto")}</span>`}</span>
+      ${t.humidity?`<span class="hint" title="Humidity">${Math.round(t.humidity)}%</span>`:""}</div>`:""}
   </div>`}
 function hvSummary(){const ts=HV.tstats,n=k=>ts.filter(t=>hvKind(t)===k).length,held=ts.filter(t=>t.hold).length,w=HV.wx||{},d=(w.days||{})[todayNY()]||{};
   const tile=(lab,val,cls,f,sub)=>`<${f?`button type="button" data-hvf="${f}"`:"div"} class="hv-tile${val===0?"":" "+cls}${f&&HVF===f?" on":""}"${f?` aria-pressed="${HVF===f}"`:""}><b>${val}</b><small>${lab}${sub?` <i>${sub}</i>`:""}</small></${f?"button":"div"}>`;
-  return `<div class="hv-sum">${w.now!=null||d.hi!=null?tile("Outside",w.now!=null?Math.round(w.now)+"°":"--","t-o","",d.hi!=null?`${d.lo??"--"}/${d.hi}°`:""):""}${tile("Heating",n("h"),"t-h","h")}${n("c")||hvSeasonCool()?tile("Cooling",n("c"),"t-c","c"):""}${tile("Held",held,"t-held","held")}${n("x")?tile("Offline",n("x"),"t-x","x"):""}</div>`}
+  return `<div class="hv-sum">${w.now!=null||d.hi!=null?tile("Outside",w.now!=null?Math.round(w.now)+"°":"--","t-o",""):""}${tile("Heating",n("h"),"t-h","h")}${n("c")||hvSeasonCool()?tile("Cooling",n("c"),"t-c","c"):""}${tile("Held",held,"t-held","held")}${n("x")?tile("Offline",n("x"),"t-x","x"):""}</div>`}
 function hvSeasonCool(){const m=+todayNY().slice(5,7);return m>=5&&m<=9}
 function hvQuick(){const h=hvCfg(),mine=h.quick.filter(q=>(q.serials||[]).some(s=>hvMay(s,"change")));
   const qa=[["back","All back to schedule","Ends every hold"],["warm","Warm up now","Pick thermostats and how long"],["night","Night setback","60° until the next change"],["event","Event tonight","72° until a time"],["off",HVARM==="off"?"Tap again to turn off":"All off",HVARM==="off"?"Every thermostat you can change":"Asks first"]];
@@ -6428,7 +6450,7 @@ document.addEventListener("click",async ev=>{const t=ev.target,c=x=>t.closest(x)
   if((e=c("[data-hvstep]"))){ev.stopPropagation();hvStep(e.dataset.hvstep,+e.dataset.d);return}
   if(c("[data-hvsm]")){HVSM=!HVSM;HVSEL.clear();renderHv();return}
   if((e=c("[data-hvall]"))){const g=hvGroups().find(x=>x.a.id===e.dataset.hvall);(g?g.ts:[]).filter(x=>hvMay(x.serial,"change")).forEach(x=>HVSEL.add(x.serial));renderHv();return}
-  if(c(".hv-mode"))return;
+  if(c(".hv-mode")||c(".hv-fan"))return;
   if((e=c("[data-hvf]"))){HVF=HVF===e.dataset.hvf?"":e.dataset.hvf;renderHv.force=true;renderHv();return}
   if((e=c("[data-hvres]"))){ev.stopPropagation();hvResume([e.dataset.hvres]);return}
   if((e=c("[data-hvc]"))){const s=e.dataset.hvc;if(HVSM){if(hvMay(s,"change")){HVSEL.has(s)?HVSEL.delete(s):HVSEL.add(s)}renderHv();return}if(hvMay(s,"change")&&(hvT(s)||{}).online)hvSheet([s]);return}
@@ -6564,6 +6586,7 @@ document.addEventListener("change",ev=>{const t=ev.target;if(!t.closest("#hvBody
   if(HVSE&&d.hvse==="repeat"){hvSeName();HVSE.repeat=t.value;renderHv.force=true;renderHv();return}
   if(HVS&&d.hvwx){hvSpName();const k=d.hvwx;if(k==="on"){HVS.wx=t.value?(HVS.wx||{use:"now",op:"above",t:"",live:false,back:""}):null}else if(k==="live"){hvWxRead();HVS.wx.live=t.checked}else{hvWxRead();if(k!=="op")return}renderHv.force=true;renderHv();return}
   if(d.hvset){const h=hvCfg(),k=d.hvset;if(t.value==="")delete h.wx[k];else h.wx[k]=t.value;save();log(`HVAC setting changed: ${k}`);renderHv.force=true;renderHv();return}
+  if(d.hvcfan){const s=d.hvcfan,tt=hvT(s);if(tt)hvSend([s],{fan:t.value},"next",`${tt.name}: fan ${t.value} until the next change`);return}
   if(d.hvcm){const s=d.hvcm,tt=hvT(s);if(!tt)return;const v={system:t.value};if(t.value!=="Off"&&tt.system==="Off"){v.heat=tt.heat??68;v.cool=tt.cool??76}hvSend([s],v,"next",`${tt.name}: ${t.value} until the next change`);return}
   if(d.hvqsc){const h=hvCfg(),s=d.hvqsc;h.scheds.forEach(x=>{x.tstats=(x.tstats||[]).filter(t=>t!==s)});const sc=h.scheds.find(x=>x.id===t.value);if(sc)sc.tstats.push(s);save();log(`HVAC: ${hvName(s)} ${sc?"put on "+sc.name:"taken off its schedule"}`);toast(sc?`${hvName(s)} is on ${sc.name} now. The thermostat gets it in a few seconds.`:`${hvName(s)} keeps what's on the thermostat now.`);if(HVQ)hvSheetDraw();return}
   if(d.hvadj){const h=hvCfg();if(+t.value)h.adj[d.hvadj]=+t.value;else delete h.adj[d.hvadj];save();log(`HVAC: ${hvName(d.hvadj)} runs ${+t.value?(+t.value>0?"+":"")+t.value+"°":"as planned"}`);renderHv.force=true;renderHv();if(HVQ)hvSheetDraw();return}
