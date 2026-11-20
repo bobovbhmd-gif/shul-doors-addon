@@ -46,6 +46,8 @@ options:
   pelican_password: ""
   pelican_mode: read
   pelican_pilot: ""
+  light_mode: read
+  light_pilot: ""
 schema:
   mode: list(practice|pilot|live|restore)
   protector_url: str?
@@ -85,3 +87,5 @@ schema:
   pelican_password: password?
   pelican_mode: list(read|pilot|live)
   pelican_pilot: str?
+  light_mode: list(read|pilot|live)
+  light_pilot: str?
