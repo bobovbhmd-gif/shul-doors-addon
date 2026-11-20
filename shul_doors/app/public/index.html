@@ -1984,6 +1984,9 @@ button.hv-tile{cursor:pointer}button.hv-tile:hover{background:color-mix(in srgb,
 @media (prefers-reduced-motion:reduce){.hv-fan.run svg{animation:none}}
 .hv-fan select{color:inherit}
 .lt-gh{display:flex;justify-content:space-between;align-items:center}.lt-ga{display:flex;gap:14px;font-size:13px;font-weight:500}.lt-ga .lnk+.lnk{margin-left:16px}.lt-lgh{flex-wrap:wrap;gap:8px;justify-content:flex-start}.lt-lgh select{width:auto}.lt-dot{width:9px;height:9px;border-radius:50%;background:var(--line);flex:none;margin-right:12px}.lt-dot.on{background:#f5b301}.lt-dot.off{background:#8e8e93}.lt-lr{align-items:center}
+.hv-arrbar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:color-mix(in srgb,var(--accent) 9%,var(--surface));border-radius:12px;padding:9px 12px;margin:0 0 12px;font-size:13px}
+.hv-mv{display:inline-flex;gap:4px}.hv-mv button{width:30px;height:28px;border:0;border-radius:8px;background:var(--surface);box-shadow:var(--shadow);font-size:15px;color:var(--fg);cursor:pointer}.hv-mv button:disabled{opacity:.3;cursor:default}
+.hv-area.arr h3{background:var(--line);border-radius:10px;padding:6px 10px}.hv-arrc{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13.5px}
 .hv-qa button.hv-selb{background:transparent!important;box-shadow:none!important;color:var(--accent)}
 .hv-card2{display:grid;grid-template-columns:44px minmax(0,1fr);background:var(--surface);border-radius:12px;overflow:hidden;margin-bottom:10px;box-shadow:0 0 0 1px var(--line)}.hv-cn{background:#34a853;color:#fff;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:10px 0}.hv-cn b{font-size:20px}.hv-cn .lnk{color:#fff;font-size:11px;writing-mode:vertical-rl;transform:rotate(180deg)}.hv-cb{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 .hv-wsg{display:grid;grid-template-columns:120px repeat(7,minmax(0,1fr));gap:6px;font-size:12.5px}
@@ -6101,7 +6104,7 @@ function renderHv(){const b=$("#hvBody");if(!b)return;const ae=document.activeEl
   b.innerHTML=`<div class="hv-status hv-noprint">${hvStatusLine()}</div>${seg}${hist}`+({now:hvNowHtml,cal:hvCalHtml,sched:hvSchedsHtml,rules:hvSpecialHtml,log:hvLogHtml,setup:hvSetupHtml}[HVT]||hvNowHtml)();b.querySelectorAll(".hvbox").forEach(x=>hpFilter(x,x.dataset.hvbox))}
 
 /* ---- now ---- */
-function hvGroups(){const h=hvCfg(),vis=HV.tstats.filter(t=>hvMay(t.serial)),seen=new Set();const out=h.areas.map(a=>({a,ts:vis.filter(t=>(a.tstats||[]).includes(t.serial)&&!seen.has(t.serial)&&seen.add(t.serial))})).filter(g=>g.ts.length);
+function hvGroups(){const h=hvCfg(),vis=HV.tstats.filter(t=>hvMay(t.serial)),seen=new Set();const out=h.areas.map(a=>({a,ts:(a.tstats||[]).map(s=>vis.find(t=>t.serial===s)).filter(t=>t&&!seen.has(t.serial)&&seen.add(t.serial))})).filter(g=>g.ts.length);
   const rest=vis.filter(t=>!seen.has(t.serial));if(rest.length)out.push({a:{id:"",name:h.areas.length?"Not in an area":"Thermostats"},ts:rest});return out}
 // one plain line: what it's doing until when
 function hvLine(t){if(!t.online)return "Can't reach it. It keeps running the schedule it has.";
@@ -6133,16 +6136,19 @@ function hvSummary(){const ts=HV.tstats,n=k=>ts.filter(t=>hvKind(t)===k).length,
 function hvSeasonCool(){const m=+todayNY().slice(5,7);return m>=5&&m<=9}
 function hvQuick(){const h=hvCfg(),mine=h.quick.filter(q=>(q.serials||[]).some(s=>hvMay(s,"change")));
   const qa=[["back","All back to schedule","Ends every hold"],["warm","Warm up now","Pick thermostats and how long"],["night","Night setback","60° until the next change"],["event","Event tonight","72° until a time"],["off",HVARM==="off"?"Tap again to turn off":"All off",HVARM==="off"?"Every thermostat you can change":"Asks first"]];
-  return `<div class="hv-qa">${qa.map(([k,l,s])=>`<button type="button" data-hvqa="${k}"${HVARM===k?' class="arm"':""}><b>${esc(l)}</b><small>${esc(s)}</small></button>`).join("")}${mine.map(q=>`<button type="button" data-hvqc="${esc(q.id)}"><b>${esc(q.name)}</b><small>${esc(hvQText(q))}</small></button>`).join("")}${HVSM?"":`<button type="button" class="hv-selb" data-hvsm><b>Select…</b></button>`}</div>`}
+  return `<div class="hv-qa">${qa.map(([k,l,s])=>`<button type="button" data-hvqa="${k}"${HVARM===k?' class="arm"':""}><b>${esc(l)}</b><small>${esc(s)}</small></button>`).join("")}${mine.map(q=>`<button type="button" data-hvqc="${esc(q.id)}"><b>${esc(q.name)}</b><small>${esc(hvQText(q))}</small></button>`).join("")}${HVSM?"":`<button type="button" class="hv-selb" data-hvsm><b>Select…</b></button>`}${isAdmin()&&!HVSM?`<button type="button" class="hv-selb" data-hvarr><b>${HVARR?"Done arranging":"Arrange"}</b></button>`:""}</div>`}
 function hvQText(q){const v=q.v||{};return [v.system&&v.system!=="Auto"?v.system:"",v.heat!=null?v.heat+"° heat":"",v.cool!=null?v.cool+"° cool":""].filter(Boolean).join(", ")+" · "+(q.until==="perm"?"no end":q.until==="next"?"until next change":q.mins?durText(q.mins):"")}
-let HVF="";
+let HVF="",HVARR=false;
 function hvNowHtml(){if(!HV.tstats.length)return `<p class="none">${esc(HV.err||"Reading the thermostats…")}</p>`;
   const anyCh=HV.tstats.some(t=>hvMay(t.serial,"change"));
   let h=hvSummary()+(anyCh?hvQuick():"");
   if(HVSM)h+=`<div class="hv-top" style="margin-top:-4px"><span class="hint">Tap thermostats to pick them</span><button class="btn sm" type="button" data-hvsm>Done</button></div>`;
   const fl=t=>!HVF||(HVF==="held"?!!t.hold:hvKind(t)===HVF);
   if(HVF)h+=`<div class="hv-top" style="margin:-4px 0 8px"><span class="hint">Showing ${esc({h:"heating",c:"cooling",held:"held",x:"offline"}[HVF])} only</span><button class="lnk" type="button" data-hvf="">Show all</button></div>`;
-  h+=hvGroups().map(g=>({...g,ts:g.ts.filter(fl)})).filter(g=>g.ts.length).map(g=>`<div class="hv-area"><h3><span>${esc(g.a.name)}</span>${HVSM?`<button class="lnk" type="button" data-hvall="${esc(g.a.id)}">Select all</button>`:""}</h3><div class="hv-grid">${g.ts.map(hvCard).join("")}</div></div>`).join("");
+  if(HVARR)h+=`<div class="hv-arrbar"><span>Move areas up or down, and thermostats left or right. Saved as you go.</span><button class="btn sm pri" type="button" data-hvarr>Done</button></div>`;
+  const gs=hvGroups().map(g=>({...g,ts:g.ts.filter(fl)})).filter(g=>g.ts.length),ai=id=>hvCfg().areas.findIndex(a=>a.id===id),na=hvCfg().areas.length;
+  h+=gs.map(g=>`<div class="hv-area${HVARR?" arr":""}"><h3><span>${esc(g.a.name)}</span>${HVSM?`<button class="lnk" type="button" data-hvall="${esc(g.a.id)}">Select all</button>`:""}${HVARR&&g.a.id?`<span class="hv-mv"><button type="button" data-hvamv="${esc(g.a.id)}" data-d="-1" aria-label="Move ${esc(g.a.name)} up"${ai(g.a.id)===0?" disabled":""}>↑</button><button type="button" data-hvamv="${esc(g.a.id)}" data-d="1" aria-label="Move ${esc(g.a.name)} down"${ai(g.a.id)===na-1?" disabled":""}>↓</button></span>`:""}</h3><div class="hv-grid">${g.ts.map((t,i)=>HVARR&&g.a.id?`<div class="hv-arrc"><b>${esc(t.name)}</b><span class="hv-mv"><button type="button" data-hvtmv="${esc(g.a.id)}|${esc(t.serial)}" data-d="-1" aria-label="Move ${esc(t.name)} earlier"${i===0?" disabled":""}>←</button><button type="button" data-hvtmv="${esc(g.a.id)}|${esc(t.serial)}" data-d="1" aria-label="Move ${esc(t.name)} later"${i===g.ts.length-1?" disabled":""}>→</button></span></div>`:hvCard(t)).join("")}</div></div>`).join("");
+  if(HVARR&&gs.some(g=>!g.a.id))h+=`<p class="gf">Thermostats not in an area always show last. Put them in an area under ⚙︎ Setup, Areas.</p>`;
   if(HVSM&&HVSEL.size)h+=`<div class="hv-bar"><b>${HVSEL.size} selected</b><span style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm pri" type="button" data-hvbulk="set">Set temperature</button><button class="btn sm" type="button" data-hvbulk="back">Back to schedule</button>${[...HVSEL].every(s=>hvMay(s,"sched"))?`<button class="btn sm" type="button" data-hvbulk="sched">Edit schedule</button>`:""}</span></div>`;
   return h+`<p class="gf">Changes here last until the next scheduled change. Pelican may take a minute to show them.</p>`}
 
@@ -6446,7 +6452,7 @@ function hvSetupHtml(){const h=hvCfg(),w=h.wx,inA=new Set(h.areas.flatMap(a=>a.t
       <div class="row"><span class="rt"><b>${HV.syncAt?"Week loaded "+esc(whenText(HV.syncAt)):"Week not loaded yet"}</b><span>Every night at 12:15 AM, and a few seconds after a schedule is saved.</span></span><button class="btn sm" type="button" data-hvsync>Load now</button></div></div>
     <div class="glist" style="margin-top:14px">${secs.map(([k,l,sub])=>`<button type="button" class="row tap" data-hvsu="${k}" style="width:100%;text-align:left"><span class="rt"><b>${l}</b></span><span class="hint" style="margin-left:auto">${esc(sub)}</span><span class="chev"></span></button>`).join("")}</div>`}
 function hvAreasHtml(){const h=hvCfg(),inA=new Set(h.areas.flatMap(a=>a.tstats||[]));
-  return `<div class="glist">${h.areas.map((a,i)=>`<div class="row" style="flex-wrap:wrap"><input data-hvan="${i}" value="${esc(a.name)}" maxlength="30" aria-label="Area name" style="flex:1;min-width:140px"><button class="lnk danger" type="button" data-hvadel="${i}">Remove</button><div class="glist form box" style="flex-basis:100%;margin-top:8px">${hvMulti("a:"+i,a.tstats||[],HV.tstats,"Thermostats in this area",true)}</div></div>`).join("")||`<div class="row"><span class="hint">No areas yet.</span></div>`}</div>
+  return `<div class="glist">${h.areas.map((a,i)=>`<div class="row" style="flex-wrap:wrap"><input data-hvan="${i}" value="${esc(a.name)}" maxlength="30" aria-label="Area name" style="flex:1;min-width:140px"><span class="hv-mv"><button type="button" data-hvamv="${esc(a.id)}" data-d="-1" aria-label="Move up"${i===0?" disabled":""}>↑</button><button type="button" data-hvamv="${esc(a.id)}" data-d="1" aria-label="Move down"${i===h.areas.length-1?" disabled":""}>↓</button></span><button class="lnk danger" type="button" data-hvadel="${i}">Remove</button><div class="glist form box" style="flex-basis:100%;margin-top:8px">${hvMulti("a:"+i,a.tstats||[],HV.tstats,"Thermostats in this area",true)}</div></div>`).join("")||`<div class="row"><span class="hint">No areas yet.</span></div>`}</div>
     <div style="display:flex;gap:8px;margin:10px 0;flex-wrap:wrap"><button class="btn" type="button" data-hvaadd>+ Add area</button>${HV.tstats.some(t=>t.group)?`<button class="btn" type="button" data-hvagrp>Use the groups from Pelican</button>`:""}</div>
     ${HV.tstats.some(t=>!inA.has(t.serial))?`<p class="gf">Not in an area yet: ${esc(HV.tstats.filter(t=>!inA.has(t.serial)).map(t=>t.name).join(", "))}. Only super admins see these.</p>`:""}
     <p class="gf">Who can see or change each area is set on each person's page, under People.</p>`}
@@ -6459,6 +6465,11 @@ document.addEventListener("click",async ev=>{const t=ev.target,c=x=>t.closest(x)
   if(c("[data-hvsm]")){HVSM=!HVSM;HVSEL.clear();renderHv();return}
   if((e=c("[data-hvall]"))){const g=hvGroups().find(x=>x.a.id===e.dataset.hvall);(g?g.ts:[]).filter(x=>hvMay(x.serial,"change")).forEach(x=>HVSEL.add(x.serial));renderHv();return}
   if(c(".hv-mode")||c(".hv-fan"))return;
+  if(c("[data-hvarr]")){HVARR=!HVARR;HVSM=false;renderHv.force=true;renderHv();return}
+  if((e=c("[data-hvamv]"))){const l=hvCfg().areas,i=l.findIndex(a=>a.id===e.dataset.hvamv),j=i+ +e.dataset.d;if(i<0||j<0||j>=l.length)return;[l[i],l[j]]=[l[j],l[i]];save();renderHv.force=true;renderHv();return}
+  if((e=c("[data-hvtmv]"))){const [aid,ser]=e.dataset.hvtmv.split("|"),a=hvCfg().areas.find(x=>x.id===aid);if(!a)return;
+    const vis=new Set(HV.tstats.filter(t=>hvMay(t.serial)).map(t=>t.serial)),l=a.tstats||[],shown=l.filter(x=>vis.has(x)),k=shown.indexOf(ser),other=shown[k+ +e.dataset.d];if(k<0||!other)return;
+    const i=l.indexOf(ser),j=l.indexOf(other);[l[i],l[j]]=[l[j],l[i]];save();renderHv.force=true;renderHv();return}
   if((e=c("[data-hvf]"))){HVF=HVF===e.dataset.hvf?"":e.dataset.hvf;renderHv.force=true;renderHv();return}
   if((e=c("[data-hvres]"))){ev.stopPropagation();hvResume([e.dataset.hvres]);return}
   if((e=c("[data-hvc]"))){const s=e.dataset.hvc;if(HVSM){if(hvMay(s,"change")){HVSEL.has(s)?HVSEL.delete(s):HVSEL.add(s)}renderHv();return}if(hvMay(s,"change")&&(hvT(s)||{}).online)hvSheet([s]);return}
