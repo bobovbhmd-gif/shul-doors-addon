@@ -2013,6 +2013,12 @@ button.hv-tile{cursor:pointer}button.hv-tile:hover{background:color-mix(in srgb,
 .hv-ms{display:inline-flex;align-items:center;gap:5px;background:var(--line);border-radius:10px;padding:3px 6px}.hv-ms small{font-size:11.5px;color:var(--muted);margin-right:2px}.hv-ms button{width:26px;height:26px;border:0;border-radius:50%;background:var(--surface);font-size:15px;color:var(--fg);cursor:pointer}.hv-ms b{font-size:15px;min-width:34px;text-align:center}
 .hv-ef{justify-content:space-between;border-top:1px solid var(--line);margin-top:2px}.hv-ef>div{flex:1}
 .lt-cr{grid-template-columns:22px minmax(0,auto) minmax(0,1fr) 14px}.lt-ce .tline{padding:7px 0;gap:8px}.lt-ce .tline>b{font-size:12px;font-weight:500;color:var(--muted);min-width:46px!important}.lt-ce .hv-seg{margin:0;padding:2px}.lt-ce .hv-seg button{padding:4px 10px;font-size:12.5px;min-height:0}
+.hv-hd2{display:flex;align-items:center;gap:14px;margin:-2px 0 10px}.hv-hd2 .big{font-size:44px;font-weight:600;line-height:1;letter-spacing:-1.5px}.hv-hd2 .inf{min-width:0;display:flex;flex-direction:column;gap:2px}
+.hv-hd2 .l1{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px}.hv-hd2 .l2{font-size:13.5px;font-weight:600;line-height:1.3}.hv-hd2 .l3{font-size:12.5px;color:var(--muted)}
+.hv-lkt{display:inline-flex;align-items:center;gap:3px;color:var(--r);font-weight:600;font-size:12px}.hv-lkt svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4}
+.hv-tabs3{margin:0 0 12px!important}.hv-tabs3 button{padding:6px!important;font-size:13.5px!important}
+.hv-now2{padding:4px 14px}.hv-now2 .hv-er{border-top:1px solid var(--line)}.hv-now2 .hv-er:first-child{border-top:0}.hv-now2 select{padding:6px 10px;font-size:14px}
+.hv-act{display:flex;gap:8px;margin-top:12px}.hv-act .btn{flex:1;min-height:40px;padding:8px}.hv-foot2{margin-top:8px}
 .hv-qa button.hv-selb{background:transparent!important;box-shadow:none!important;color:var(--accent)}
 .hv-card2{display:grid;grid-template-columns:44px minmax(0,1fr);background:var(--surface);border-radius:12px;overflow:hidden;margin-bottom:10px;box-shadow:0 0 0 1px var(--line)}.hv-cn{background:#34a853;color:#fff;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:10px 0}.hv-cn b{font-size:20px}.hv-cn .lnk{color:#fff;font-size:11px;writing-mode:vertical-rl;transform:rotate(180deg)}.hv-cb{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 .hv-wsg{display:grid;grid-template-columns:120px repeat(7,minmax(0,1fr));gap:6px;font-size:12.5px}
@@ -6197,24 +6203,27 @@ function hvUntilText(){const u=hvUntil();return u==="next"?"until the next sched
 function hvSheetDraw(){const q=HVQ,st=(k,lab)=>`<div class="hv-box"><div class="hint">${lab}</div><div class="hv-st"><button type="button" data-hvq="${k}" data-d="-1" aria-label="Lower ${lab}">−</button><span><b>${q[k]}°</b></span><button type="button" data-hvq="${k}" data-d="1" aria-label="Raise ${lab}">+</button></div></div>`;
   const ch=HV.tstats.filter(t=>hvMay(t.serial,"change")),one=!q.pick&&q.serials.length===1?hvT(q.serials[0]):null;
   if(one){const [st,cl]=hvState(one),sc=hvSchedOf(one.serial),n=hvNext(one.serial);
-    const head=`<div class="hv-head"><span class="big">${one.temp!=null?Math.round(one.temp)+"°":"--"}</span><span class="hv-stt"><span class="dot ${cl||"idle"}"></span>${esc(st)}${one.system!=="Off"&&/^(Heat|Cool)/.test(one.run||"")?" to "+(/^Cool/.test(one.run)?one.cool:one.heat)+"°":""}</span></div>
-      <div class="hv-kv">${one.humidity?`<span>Humidity</span><b>${Math.round(one.humidity)}%</b>`:""}${one.co2?`<span>CO₂</span><b>${Math.round(one.co2)} ppm</b>`:""}<span>Right now</span><b>${esc(hvLine(one))}</b>${one.keypad?`<span>Screen</span><b>${one.keypad==="Off"?"Locked":"Unlocked"}</b>`:""}${sc&&one.hold?`<span>Schedule</span><b>${esc(sc.name)}</b>`:""}${n?`<span>Then</span><b>${esc(n.day===todayNY()?fmt(n.min):WDN[dow(n.day)]+" "+fmt(n.min))}: ${esc(hvTempText(n))}</b>`:""}</div>
-      <div class="hv-seg2">${[["now","Change now"],["sched","Schedule"],["hist","History"]].map(([k,l])=>`<button type="button" class="${q.tab===k?"on":""}" data-hvqt="${k}">${l}</button>`).join("")}</div>`;
+    const nx=n?`${n.day===todayNY()?fmt(n.min):WDN[dow(n.day)]+" "+fmt(n.min)} → ${hvTempText(n)}`:"",lockS=`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`;
+    const head=`<div class="hv-hd2"><span class="big">${one.temp!=null?Math.round(one.temp)+"°":"--"}</span><div class="inf">
+        <div class="l1"><span class="hv-stt"><span class="dot ${cl||"idle"}"></span>${esc(st)}${one.system!=="Off"&&/^(Heat|Cool)/.test(one.run||"")?" to "+(/^Cool/.test(one.run)?one.cool:one.heat)+"°":""}</span>${one.humidity?`<span class="hint">${Math.round(one.humidity)}%</span>`:""}${one.co2?`<span class="hint">CO₂ ${Math.round(one.co2)}</span>`:""}${one.keypad==="Off"?`<span class="hv-lkt">${lockS}Locked</span>`:""}</div>
+        <div class="l2">${esc(hvLine(one))}</div>${nx&&!one.hold?`<div class="l3">Then ${esc(nx)}</div>`:""}</div></div>
+      <div class="hv-seg2 hv-tabs3">${[["now","Change now"],["sched","Schedule"],["hist","History"]].map(([k,l])=>`<button type="button" class="${q.tab===k?"on":""}" data-hvqt="${k}">${l}</button>`).join("")}</div>`;
     if(q.tab==="sched"){$("#opSheet").innerHTML=head+hvSheetSched(one.serial);return}
     if(q.tab==="hist"){$("#opSheet").innerHTML=head+hvSheetHist(one.serial);return}
     $("#opSheet").innerHTML=head+hvSheetNow();return}
   $("#opSheet").innerHTML=hvSheetNow(ch)}
-function hvSheetNow(ch){const q=HVQ,st=(k,lab)=>`<div class="hv-box"><div class="hint">${lab}</div><div class="hv-st"><button type="button" data-hvq="${k}" data-d="-1" aria-label="Lower ${lab}">−</button><span><b>${q[k]}°</b></span><button type="button" data-hvq="${k}" data-d="1" aria-label="Raise ${lab}">+</button></div></div>`;
+function hvSheetNow(ch){const q=HVQ,step=(k,lab)=>`<span class="hv-ms"><small>${lab}</small><button type="button" data-hvq="${k}" data-d="-1" aria-label="Lower ${lab}">−</button><b>${q[k]}°</b><button type="button" data-hvq="${k}" data-d="1" aria-label="Raise ${lab}">+</button></span>`;
   ch=ch||HV.tstats.filter(t=>hvMay(t.serial,"change"));
+  const mini=(attr,opts,cur)=>`<div class="hv-seg hv-sm">${opts.map(v=>`<button type="button" class="${cur===v?"on":""}" ${attr}="${v}">${v}</button>`).join("")}</div>`;
   return `${q.pick?`<div class="glist form box" style="margin-bottom:10px">${hvMulti("q",q.serials,ch,"Thermostats")}</div>`:q.serials.length>1?`<p class="gf">${esc(q.serials.map(hvName).join(", "))}</p>`:""}
-    <h3 class="op-sh">Mode</h3><div class="hv-seg">${HV_SYS.map(m=>`<button type="button" class="${q.system===m?"on":""}" data-hvqm="${m}">${m}</button>`).join("")}</div>
-    ${q.system==="Off"?"":`<div class="hv-two">${q.system!=="Cool"?st("heat","Heat to"):""}${q.system!=="Heat"?st("cool","Cool to"):""}</div>`}
-    <h3 class="op-sh">Fan</h3><div class="hv-seg">${["Auto","On"].map(f=>`<button type="button" class="${q.fan===f?"on":""}" data-hvqf="${f}">${f}</button>`).join("")}</div>
-    <h3 class="op-sh">For how long</h3><select id="hvUntil" aria-label="For how long" style="width:100%">${hvUntilChips().map(([k,l])=>`<option value="${esc(k)}"${q.until===k?" selected":""}>${esc(l)}</option>`).join("")}</select>
-    ${q.until==="pick"?`<div class="tline"><span class="hint">Until</span>${tpick("hvAt",q.at||"23:00","Until")}</div>`:""}
-    <p class="gf" id="hvSum" style="margin:10px 0 14px">${esc(hvSumText())}</p>
-    <div style="display:flex;gap:8px"><button class="btn pri" type="button" data-hvgo style="flex:1">Apply</button>${q.pick?"":`<button class="btn" type="button" data-hvback style="flex:1">Back to schedule</button>`}</div>
-    <div class="op-foot"><span class="gf" style="margin:0">${HV.mode==="live"?"":esc(HV.mode==="pilot"?"Pilot: only thermostats in the pilot get it.":"Read only: nothing is sent yet.")}</span><button type="button" class="lnk" data-hvsave>Save as a button</button></div>
+    <div class="hv-card3 hv-now2">
+      <div class="hv-er"><span class="lb">Mode</span><div class="hv-ev">${mini("data-hvqm",HV_SYS,q.system)}</div></div>
+      ${q.system==="Off"?"":`<div class="hv-er"><span class="lb">Set to</span><div class="hv-ev">${q.system!=="Cool"?step("heat","Heat"):""}${q.system!=="Heat"?step("cool","Cool"):""}</div></div>`}
+      <div class="hv-er"><span class="lb">Fan</span><div class="hv-ev">${mini("data-hvqf",["Auto","On"],q.fan)}</div></div>
+      <div class="hv-er"><span class="lb">Until</span><div class="hv-ev"><select id="hvUntil" aria-label="For how long" style="flex:1;min-width:0">${hvUntilChips().map(([k,l])=>`<option value="${esc(k)}"${q.until===k?" selected":""}>${esc(l)}</option>`).join("")}</select>${q.until==="pick"?tpick("hvAt",q.at||"23:00","Until"):""}</div></div>
+    </div>
+    <div class="hv-act"><button class="btn pri" type="button" data-hvgo>Apply</button>${q.pick?"":`<button class="btn" type="button" data-hvback>Back to schedule</button>`}</div>
+    <div class="op-foot hv-foot2"><span class="hint">${HV.mode==="live"?"":esc(HV.mode==="pilot"?"Pilot: only thermostats in the pilot get it.":"Read only: nothing is sent yet.")}</span><button type="button" class="lnk" data-hvsave>Save as a button</button></div>
     <div class="op-custom" id="hvSaveRow" ${q.save?"":"hidden"}><label class="op-n" style="flex:1"><input id="hvSaveName" maxlength="28" placeholder="Shiur in the beis medrash" aria-label="Button name" style="width:100%" data-keepkb></label><button type="button" class="btn pri" data-hvsavego>Save</button></div>`}
 /* the Schedule tab of a thermostat: today as a bar with hours and now, each change, what's coming up */
 function hvSheetSched(serial){const h=hvCfg(),sc=hvSchedOf(serial),d=todayNY(),p=hvPlan(serial,d),nm=mkNowMin(),adj=+h.adj[serial]||0;
