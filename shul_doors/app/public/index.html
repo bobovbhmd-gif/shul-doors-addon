@@ -3531,7 +3531,7 @@ function ico(k){return `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]||""}
 function modeIco(m){return m==="Unlock"?"open":m==="Lockdown"?"lockdown":"lock"}
 function initials(n){return String(n||"?").replace(/[^A-Za-z ]/g,"").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("")||"?"}
 let LAST_FOCUS=null;
-function openModal(id){const m=$("#"+id);if(!m)return;LAST_FOCUS=document.activeElement;m.hidden=false;if(window.vvPlace)vvPlace();document.body.classList.add("modal-open");
+function openModal(id){try{window.vvPlace&&window.vvPlace()}catch(e){}const m=$("#"+id);if(!m)return;LAST_FOCUS=document.activeElement;m.hidden=false;if(window.vvPlace)vvPlace();document.body.classList.add("modal-open");
   requestAnimationFrame(()=>m.classList.add("show"));
   // no typing box on open for touch screens (keyboard pops up) or when editing an existing rule
   const touch=window.matchMedia&&matchMedia("(pointer:coarse)").matches;if(touch||(id==="mRule"&&E&&!E.isNew))return;
@@ -8472,14 +8472,16 @@ new MutationObserver(()=>{clearTimeout(PL_T);PL_T=setTimeout(()=>document.queryS
   const typing=el=>el&&(/^(TEXTAREA|SELECT)$/.test(el.tagName)||(el.tagName==="INPUT"&&!/^(checkbox|radio|button|submit|range|color|file|hidden)$/.test(el.type))||el.isContentEditable);
   let done=null;
   // inside Home Assistant the page sits in a frame that can be taller than the screen, so measure the part of the frame you can see
-  let fe=null,pw=null;try{if(window.parent!==window&&window.frameElement){fe=window.frameElement;pw=window.parent}}catch(e){}
+  // Home Assistant can nest the page two frames deep (its add-on page, then the app), so walk every frame up to the top and keep only what's on screen
+  const anc=[];try{let w=window;while(w.parent!==w&&w.frameElement){anc.push({fe:w.frameElement,p:w.parent});w=w.parent}}catch(e){}
+  const fe=anc.length?anc[0].fe:null,pw=anc.length?anc[0].p:null;
   const place=()=>{if(!vv)return;let t=vv.offsetTop,h=vv.height;
-    if(fe)try{const r=fe.getBoundingClientRect(),pv=pw.visualViewport,pt=pv?pv.offsetTop:0,ph=pv?pv.height:pw.innerHeight,top=Math.max(r.top,pt),bot=Math.min(r.bottom,pt+ph);
-      if(bot-top>120){const vt=top-r.top,vb=bot-r.top;t=Math.max(t,vt);h=Math.max(120,Math.min(t+h,vb)-t)}}catch(e){}
+    if(anc.length)try{let A=t,B=t+h,off=0;for(const {fe:f,p} of anc){const r=f.getBoundingClientRect(),pv=p.visualViewport,pt=pv?pv.offsetTop:0,ph=pv?pv.height:p.innerHeight;A+=r.top;B+=r.top;off+=r.top;A=Math.max(A,pt);B=Math.min(B,pt+ph)}
+      if(B-A>120){t=A-off;h=B-A}}catch(e){}
     root.style.setProperty("--vvh",h+"px");root.style.setProperty("--vvt",t+"px");
     if(done){const kb=Math.max(0,innerHeight-h-t);done.style.bottom=(kb+10)+"px";done.style.top="auto"}};
   if(vv){vv.addEventListener("resize",place);vv.addEventListener("scroll",place);addEventListener("resize",place);
-    if(pw)try{const pv=pw.visualViewport;if(pv){pv.addEventListener("resize",place);pv.addEventListener("scroll",place)}pw.addEventListener("resize",place);pw.addEventListener("scroll",place,true)}catch(e){}
+    anc.forEach(({p})=>{try{const pv=p.visualViewport;if(pv){pv.addEventListener("resize",place);pv.addEventListener("scroll",place)}p.addEventListener("resize",place);p.addEventListener("scroll",place,true)}catch(e){}});
     place();setTimeout(place,600)}
   window.vvPlace=place;
   if(!coarse)return;
