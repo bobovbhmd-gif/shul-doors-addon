@@ -68,7 +68,7 @@ function createHvac({ pelican, engine, saveState = () => {}, weather = { get: ()
       let dirty = false;
       list.forEach((t) => { const p = prev.get(t.serial); if (p && p.online !== t.online) { event(t.serial, "", t.online ? "Back online" : "Went offline"); dirty = true; } });
       if (dirty) save();
-      const h = cfg(); if (!h.v3 && list.length && migrate(h, (x) => (find(x) || { name: x }).name)) { saveState(); log("info", "heat and AC: weekly schedules and special days turned into schedules"); }
+      const h = cfg(); if (!h.v3 && list.length && migrate(h, (x) => (find(x) || { name: x }).name)) { saveState(); log("info", "HVAC: weekly schedules and special days turned into schedules"); }
     }
     catch (e) { listErr = e.message; }
     return list;
@@ -133,7 +133,7 @@ function createHvac({ pelican, engine, saveState = () => {}, weather = { get: ()
     if (k === "chanuka") return keys.some((x) => /^chanuka\d$/.test(x));
     if (keys.includes(k)) return true;
     const i = k.indexOf(":"), h = k.slice(0, i);
-    return (h === "ev" || h === "type") && keys.includes(h + "@hvac" + k.slice(i));   // events kept to heat and AC
+    return (h === "ev" || h === "type") && keys.includes(h + "@hvac" + k.slice(i));   // events kept to HVAC
   }
   const okWhen = (e, info) => { const w = e.when; if (!w || !(w.keys || []).length) return true; const hit = w.keys.some((k) => whenHit(String(k), info)); return w.mode === "only" ? hit : !hit; };
   const schedById = (id) => cfg().scheds.find((x) => x.id === id) || null;
@@ -263,7 +263,7 @@ function createHvac({ pelican, engine, saveState = () => {}, weather = { get: ()
       if (go.length) await resume(go, "Shul Manager", "the outdoor temperature changed");
       moved.forEach((x) => event(x, "Shul Manager", "Switched schedules: " + msgs.join("; ")));
     }
-    msgs.forEach((m) => log("info", "heat and AC: " + m));
+    msgs.forEach((m) => log("info", "HVAC: " + m));
     try { alert(msgs.join(". ") + (moved.length ? `. ${moved.length} thermostat${moved.length === 1 ? "" : "s"} changed.` : ""), t + "|" + msgs.join("|")); } catch { /* no text */ }
     save(); return { switched: msgs, moved };
   }

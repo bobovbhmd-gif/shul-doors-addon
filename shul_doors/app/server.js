@@ -523,7 +523,7 @@ const atrium = createAtrium({ url: opts.atrium_url, username: opts.atrium_userna
 // heating and cooling: Pelican thermostats (through Pelican's cloud). Starts read only, like the doors did.
 const pelican = createPelican({ site: opts.pelican_site, username: opts.pelican_username, password: opts.pelican_password, log });
 const HV_MODE = ["read", "pilot", "live"].includes(opts.pelican_mode) ? opts.pelican_mode : "read";
-// the outdoor temperature (Home Assistant's forecast, or the National Weather Service) for the heat and AC rules
+// the outdoor temperature (Home Assistant's forecast, or the National Weather Service) for the HVAC rules
 const weather = createWeather({ haUrl: HA_URL, token: HA_TOKEN, log, nyParts });
 try { weather.set(readJson("weather.json", null)); } catch { /* none yet */ }
 const wxSave = () => { try { writeJson("weather.json", weather.get()); } catch { /* not kept */ } };
@@ -532,9 +532,9 @@ const wxRefresh = async () => { const w = (state && state.hvac && state.hvac.wx)
 function hvAlert(text, key) {
   const ids = ((state && state.hvac && state.hvac.wx && state.hvac.wx.text) || []).map(String);
   const phones = ((state && state.users) || []).filter((u) => ids.includes(String(u.id)) && u.phone).map((u) => e164(u.phone)).filter(Boolean);
-  if (sms && phones.length) sms.alertTo(state, phones, "hvwx:" + key, "Heat and AC: " + text, "hvac", 60e3).catch((e) => log("warn", "heat and AC text: " + e.message));
+  if (sms && phones.length) sms.alertTo(state, phones, "hvwx:" + key, "HVAC: " + text, "hvac", 60e3).catch((e) => log("warn", "HVAC text: " + e.message));
 }
-const hvac = createHvac({ pelican, saveState: () => { try { backup(); version++; writeJson("state.json", state); writeJson("version.json", { v: version }); } catch (e) { log("warn", "heat and AC: " + e.message); } }, weather: { get: () => weather.get(), refresh: async () => { const r = await wxRefresh(); return r; } }, alert: hvAlert, engine: { info: (d) => engine.info(d), addDays: (d, n) => engine.addDays(d, n), cond: (n, x, d) => engine.cond(n, x, d) }, getState: () => state, getStore: () => store, save: () => writeJson("store.json", store),
+const hvac = createHvac({ pelican, saveState: () => { try { backup(); version++; writeJson("state.json", state); writeJson("version.json", { v: version }); } catch (e) { log("warn", "HVAC: " + e.message); } }, weather: { get: () => weather.get(), refresh: async () => { const r = await wxRefresh(); return r; } }, alert: hvAlert, engine: { info: (d) => engine.info(d), addDays: (d, n) => engine.addDays(d, n), cond: (n, x, d) => engine.cond(n, x, d) }, getState: () => state, getStore: () => store, save: () => writeJson("store.json", store),
   mode: HV_MODE, pilot: String(opts.pelican_pilot || "").split(/[,\n]+/).map((x) => x.trim()).filter(Boolean), log, note: (who, t) => activityNote(who, t), nyParts,
   cache: { get: (serial, d) => { try { return JSON.parse(fs.readFileSync(file(`hvhist/${slug(serial)}/${d}.json`), "utf8")); } catch { return null; } },
     set: (serial, d, rows) => { try { fs.mkdirSync(file(`hvhist/${slug(serial)}`), { recursive: true }); fs.writeFileSync(file(`hvhist/${slug(serial)}/${d}.json`), JSON.stringify(rows)); } catch { /* not kept */ } } } });
@@ -543,7 +543,7 @@ function hvSyncSoon(ms = 20000) { clearTimeout(hvSyncT); hvSyncT = setTimeout(()
 if (pelican.configured) {
   setTimeout(() => hvac.poll().then(() => hvSyncSoon(5000)), 8000).unref();
   setInterval(() => hvac.poll(), 120000).unref();
-  setInterval(() => { hvac.tick().catch(() => {}); hvac.liveCheck().catch((e) => log("warn", "heat and AC switching: " + e.message));
+  setInterval(() => { hvac.tick().catch(() => {}); hvac.liveCheck().catch((e) => log("warn", "HVAC switching: " + e.message));
     const p = nyParts(Date.now());
     if (p.m === 5 && store && store.hvWxDay0 !== p.d) { store.hvWxDay0 = p.d; wxRefresh().catch(() => {}); }   // 12:05 AM: the fresh forecast for the night's pick
     if (p.m === 15 && store && store.hvSyncDay !== p.d) { store.hvSyncDay = p.d; hvSyncSoon(1000); }   // 12:15 AM: the new day's week
