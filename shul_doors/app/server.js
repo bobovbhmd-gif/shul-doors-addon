@@ -561,7 +561,7 @@ if (pelican.configured) {
     if (p.m === 15 && store && store.hvSyncDay !== p.d) { store.hvSyncDay = p.d; hvSyncSoon(1000); }   // 12:15 AM: the new day's week
     if (p.m === 300 && store && store.hvSyncDay5 !== p.d) { store.hvSyncDay5 = p.d; wxRefresh().then(() => hvSyncSoon(1000)).catch(() => {}); }   // 5:00 AM: again, for the days ahead whose forecast changed
   }, 60000).unref();
-  setInterval(() => { wxRefresh().catch(() => {}); }, 3600e3).unref();   // the forecast for the screen and the days ahead
+  setInterval(() => { wxRefresh().catch(() => {}); }, 20 * 60e3).unref();   // the weather now and the forecast, for the Home page and the days ahead
   setTimeout(() => { wxRefresh().catch(() => {}); }, 15000).unref();
 }
 // who may do what with a thermostat: "sched" (schedules and quick changes), "change" (quick changes), "see", or "" (hidden)
@@ -880,6 +880,8 @@ async function ctrlApi(req, res, p, u) {
       activityNote(haUser(req), p.endsWith("save") ? "Saved the mikva magnet settings" : `Mikva magnet: ${["back to the schedule", "released now", "held open"][+b.v] || "changed"}`);
       return send(res, 200, r);
     }
+    // the weather for the Home page (anyone signed in)
+    if (req.method === "GET" && p === "/api/weather") { const w = weather.get(); return send(res, 200, { ok: true, now: w.now, cond: w.cond || "", hum: w.hum, wind: w.wind, windUnit: w.windUnit || "", feels: w.feels, days: w.days || {}, hours: w.hours || [], at: w.at, err: w.err }); }
     // lighting (Pelican power modules)
     if (p.startsWith("/api/lights")) {
       if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can use the lights for now." });
@@ -1457,7 +1459,7 @@ const server = http.createServer((req, res) => {
     return send(res, 200, { visits: (store.visits || []).filter((x) => !who || x.u === who) });
   }
   if (p === "/api/chats" || p.startsWith("/api/chats/") || p === "/api/memory" || p === "/api/seen") { chatApi(req, res, p); return; }
-  if (p === "/api/controllers" || p.startsWith("/api/controllers/") || p.startsWith("/api/mikva") || p.startsWith("/api/mtemp") || p.startsWith("/api/parking") || p.startsWith("/api/hvac") || p.startsWith("/api/lights") || p.startsWith("/api/logins")) { ctrlApi(req, res, p, u); return; }
+  if (p === "/api/controllers" || p.startsWith("/api/controllers/") || p.startsWith("/api/mikva") || p.startsWith("/api/mtemp") || p.startsWith("/api/parking") || p.startsWith("/api/hvac") || p.startsWith("/api/lights") || p === "/api/weather" || p.startsWith("/api/logins")) { ctrlApi(req, res, p, u); return; }
   if (req.method === "GET" && p === "/api/status" && haUser(req)) visit(personOf(req));
   if (req.method === "GET" && p === "/api/status") return send(res, 200, { problem: stateProblem, mode: opts.mode, pilotDoors, version, last: lastReport && { at: lastReport.at, ok: lastReport.ok, actions: lastReport.actions, errors: lastReport.errors, warnings: lastReport.warnings, loadedThrough: lastReport.loadedThrough, compare: lastReport.compare }, codes: codeStatus() });
   if (req.method === "GET" && p === "/api/report") {
