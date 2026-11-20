@@ -11,6 +11,7 @@
 // Modes, like the doors: "read" changes nothing (shows what it would do), "pilot" changes only the thermostats
 // listed in the add-on settings, "live" changes all of them.
 
+const HP = require("./hvplan");
 const MAX_PER_DAY = 12;
 const ANCHORS = ["alos", "sunrise", "chatzos", "plag", "sunset", "candles", "tzeis", "havdalah", "rt"];
 const SYSTEMS = ["Auto", "Heat", "Cool", "Off"];
@@ -69,6 +70,7 @@ function createHvac({ pelican, engine, saveState = () => {}, weather = { get: ()
       list.forEach((t) => { const p = prev.get(t.serial); if (p && p.online !== t.online) { event(t.serial, "", t.online ? "Back online" : "Went offline"); dirty = true; } });
       if (dirty) save();
       const h = cfg(); if (!h.v3 && list.length && migrate(h, (x) => (find(x) || { name: x }).name)) { saveState(); log("info", "HVAC: weekly schedules and special days turned into schedules"); }
+      if (h.v3 && !h.v4 && list.length && !(h.rules || []).length && HP.migrate(h)) { saveState(); log("info", "HVAC: schedules moved to the new seasons and special days (same times)"); }
     }
     catch (e) { listErr = e.message; }
     return list;
@@ -138,8 +140,32 @@ function createHvac({ pelican, engine, saveState = () => {}, weather = { get: ()
   const okWhen = (e, info) => { const w = e.when; if (!w || !(w.keys || []).length) return true; const hit = w.keys.some((k) => whenHit(String(k), info)); return w.mode === "only" ? hit : !hit; };
   const schedById = (id) => cfg().scheds.find((x) => x.id === id) || null;
   const schedOf = (serial) => cfg().scheds.find((x) => (x.tstats || []).includes(serial)) || null;
-  const managed = (serial) => !!schedOf(serial);   // only thermostats on a schedule made here are changed
+  const managed = (serial) => { const h = cfg(); return h.v4 ? !!HP.groupOf(h.v4, serial) : !!schedOf(serial); };   // only thermostats on a schedule made here are changed
+  // the season a date runs: today's is fixed when the day starts (so a forecast change doesn't flip it mid-day)
+  const hiOf = (date) => { const d = W().days || {}, t = today(); return (d[date] || {}).hi ?? (date > t ? (d[t] || {}).hi ?? null : null); };
+  function seasonFor(v, date) {
+    const t = today(), s = st(); s.hvSeasonDay = s.hvSeasonDay || {};
+    if (date <= t && s.hvSeasonDay[date] && v.seasons.some((x) => x.id === s.hvSeasonDay[date].id) && !v.seasons.some((x) => x.mode === "hand" && x.on && !x.paused && x.id !== s.hvSeasonDay[date].id)) return s.hvSeasonDay[date];
+    let r = HP.seasonInfo(v, date, hiOf);
+    if (r.why === "no forecast") { const last = Object.keys(s.hvSeasonDay).filter((d) => d <= t).sort().pop(); if (last && v.seasons.some((x) => x.id === s.hvSeasonDay[last].id && !x.paused)) r = { id: s.hvSeasonDay[last].id, why: "no forecast, same as " + last }; }
+    if (date === t && r.why !== "no forecast") { s.hvSeasonDay[t] = r; Object.keys(s.hvSeasonDay).forEach((d) => { if (d < engine.addDays(t, -400)) delete s.hvSeasonDay[d]; }); }
+    return r;
+  }
+  function keyName(k) {
+    if (k === "rav") return "Rav away"; const h = cfg();
+    if (k.startsWith("sit:")) return (((getState() || {}).situations || []).find((x) => x.id === k.slice(4)) || { name: "Situation" }).name;
+    if (k.startsWith("u:")) return ((h.v4 && h.v4.own || []).find((x) => x.id === k) || { name: "Custom dates" }).name;
+    try { return engine.raw(`keyLabel(${JSON.stringify(k)})`); } catch { return k; }
+  }
+  function plan4(serial, date) {
+    const v = cfg().v4, g = HP.groupOf(v, serial), info = engine.info(date);
+    if (!g) return { date, w: info.w, src: "No schedule here", rule: null, sched: null, entries: [], over: 0 };
+    const season = seasonFor(v, date), r = HP.planGroup({ v, g, serial, date, info, season, nameOf: keyName });
+    const { entries, over } = HP.toEntries(r.list, info.z, minOf, +cfg().adj[serial] || 0, MAX_PER_DAY);
+    return { date, w: info.w, src: r.src, rule: r.kind, sched: g.id, season: season.id, entries, over };
+  }
   function plan(serial, date) {
+    if (cfg().v4) return plan4(serial, date);
     const info = engine.info(date), base = schedOf(serial);
     if (!base) return { date, w: info.w, src: "No schedule here", rule: null, sched: null, entries: [], over: 0 };
     const r = ruleFor(serial, date, info), sc = (r && schedById(r.sched)) || base, adj = +cfg().adj[serial] || 0;
