@@ -1483,6 +1483,8 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
 .pl-wrap{width:100%}
 .pl-empty{padding:14px;color:var(--muted);font-size:14px}
 
+#sideNav .navbtn.dsub{display:none!important}
+.ptabs2{margin-top:-4px;gap:8px}.ptabs2 button{font-size:13px;min-height:30px;padding:4px 10px;border-radius:14px}.ptabs2 button.on{background:var(--line)}.ptabs2 button.on::after{display:none}
 .ptabs{display:flex;gap:22px;margin-top:10px;overflow-x:auto;scrollbar-width:none}
 .ptabs button{border:0;background:none;font:inherit;font-size:15px;font-weight:500;color:var(--muted);padding:8px 0 10px;cursor:pointer;position:relative;white-space:nowrap;min-height:40px}
 .ptabs button.on{color:var(--text);font-weight:600}
@@ -2240,17 +2242,18 @@ button.hv-tile{cursor:pointer}button.hv-tile:hover{background:color-mix(in srgb,
 
   <nav class="side" id="sideNav" aria-label="Sections">
     <button type="button" class="navbtn on" data-tab="board"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></i>Home</button>
-    <button type="button" class="navbtn" data-tab="open" id="openNav"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg></i>Open a door</button>
-    <button type="button" class="navbtn" data-tab="doors"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4.5L14 3v18M14 21h5V6h-5M3 21h18"/><circle cx="11" cy="12.5" r=".9"/></svg></i>Doors</button>
-    <button type="button" class="navbtn" data-tab="preview" data-also="sheet"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></i>Schedule</button>
-    <button type="button" class="navbtn" data-tab="rules" data-also="events special"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></i>Rules and events</button>
-    <button type="button" class="navbtn cap-codes" data-tab="codes"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg></i>Guest codes</button>
+    <button type="button" class="navbtn dsub" data-tab="open" id="openNav"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg></i>Open a door</button>
+    <button type="button" class="navbtn" data-tab="doors" data-also="open preview sheet rules special codes activity live reports"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4.5L14 3v18M14 21h5V6h-5M3 21h18"/><circle cx="11" cy="12.5" r=".9"/></svg></i>Doors</button>
+    <button type="button" class="navbtn dsub" data-tab="preview" data-also="sheet"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></i>Schedule</button>
+    <button type="button" class="navbtn dsub" data-tab="rules" data-also="special"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></i>Rules and events</button>
+    <button type="button" class="navbtn dsub cap-codes" data-tab="codes"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg></i>Guest codes</button>
     <button type="button" class="navbtn" data-tab="msgs" hidden><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></i>Messages <span class="badge" id="msgBadge" hidden></span></button>
-    <button type="button" class="navbtn" data-tab="activity" data-also="live reports" id="actNav"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i>Activity</button>
+    <button type="button" class="navbtn dsub" data-tab="activity" data-also="live reports" id="actNav"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i>Activity</button>
     <button type="button" class="navbtn admin-only" data-tab="parking"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 16V11l2-5h10l2 5v5M5 16h14M5 16v2M19 16v2"/><circle cx="8" cy="13" r=".8"/><circle cx="16" cy="13" r=".8"/></svg></i>Parking</button>
     <button type="button" class="navbtn" id="navMikva" data-tab="mikvah"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z"/></svg></i>Mikva</button>
     <button type="button" class="navbtn" id="navHv" data-tab="climate" hidden><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14.5V5a2 2 0 0 1 4 0v9.5a4 4 0 1 1-4 0z"/><path d="M12 9v7"/></svg></i>HVAC</button>
     <button type="button" class="navbtn admin-only" id="navLt" data-tab="lights"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1.3 1.7 1.5 2.5h5c.2-.8.7-1.7 1.5-2.5A6 6 0 0 0 12 3z"/></svg></i>Lighting</button>
+    <button type="button" class="navbtn cap-events" data-tab="events"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M12 13.5l1 2 2.2.3-1.6 1.5.4 2.2-2-1-2 1 .4-2.2-1.6-1.5 2.2-.3z"/></svg></i>Events</button>
     <div class="ng"></div>
     <button type="button" class="navbtn lkbtn admin-only" data-tab="lockdown"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><path d="M12 15v2"/></svg></i>Lockdown</button>
     <button type="button" class="navbtn" data-tab="setup" data-also="people"><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></i>Settings</button>
@@ -6999,7 +7002,7 @@ function useCount(t){t=NAV_HOME[t]||t;if(t==="board")return;try{const k=useKey()
 var BNAV_KEY="";
 function buildBnav(){const bar=document.querySelector(".bnav");if(!bar)return;
   let u={};try{u=JSON.parse(localStorage.getItem(useKey())||"{}")}catch(e){}
-  const vis=t=>{const b=document.querySelector(`#sideNav .navbtn[data-tab="${t}"]`);return b&&getComputedStyle(b).display!=="none"&&!b.hidden};
+  const vis=t=>{const b=document.querySelector(`#sideNav .navbtn[data-tab="${t}"]`);if(!b||b.hidden)return false;if(b.classList.contains("dsub"))return t==="codes"?can("codes"):t==="activity"?!!actFirst():true;return getComputedStyle(b).display!=="none"};
   const dflt=["open","doors","preview"],total=Object.values(u).reduce((a,b)=>a+b,0);
   let pick=total>=12?Object.keys(u).filter(vis).sort((a,b)=>u[b]-u[a]||dflt.indexOf(b)-dflt.indexOf(a)).slice(0,3):[];
   dflt.forEach(t=>{if(pick.length<3&&!pick.includes(t)&&vis(t))pick.push(t)});
@@ -7007,7 +7010,7 @@ function buildBnav(){const bar=document.querySelector(".bnav");if(!bar)return;
   const short={open:"Open",preview:"Schedule",rules:"Rules",codes:"Codes",setup:"Settings",activity:"Activity"};
   const more=$("#moreBtn");
   bar.querySelectorAll("[data-tab]").forEach(b=>b.remove());
-  tabs.forEach(t=>{const src=document.querySelector(`#sideNav .navbtn[data-tab="${t}"]`);const b=document.createElement("button");b.type="button";const cur=(()=>{try{return CUR_TAB}catch(e){return "board"}})();b.className="navbtn"+(t===cur||(src.dataset.also||"").split(" ").includes(cur)?" on":"");b.dataset.tab=t;if(src.dataset.also)b.dataset.also=src.dataset.also;
+  tabs.forEach(t=>{const src=document.querySelector(`#sideNav .navbtn[data-tab="${t}"]`);const b=document.createElement("button");b.type="button";const cur=(()=>{try{return CUR_TAB}catch(e){return "board"}})();b.className="navbtn"+(t===cur||(src.dataset.also||"").split(" ").filter(x=>!tabs.includes(x)).includes(cur)?" on":"");b.dataset.tab=t;if(src.dataset.also)b.dataset.also=src.dataset.also.split(" ").filter(x=>!tabs.includes(x)).join(" ");
     b.innerHTML=src.querySelector("i").outerHTML+esc(short[t]||src.textContent.trim().replace(/\s*\d+$/,""))+(t==="msgs"?'<span class="badge" id="msgBadge2" hidden></span>':"");
     b.onclick=()=>showTab(t==="activity"?actFirst()||"board":t);bar.insertBefore(b,more)});
   if(!tabs.includes("msgs")&&!$("#msgBadge2")){more.insertAdjacentHTML("beforeend",'<span class="badge" id="msgBadge2" hidden></span>')}
@@ -7015,18 +7018,26 @@ function buildBnav(){const bar=document.querySelector(".bnav");if(!bar)return;
 }
 
 // pages that share one menu item get tabs under the title
-const PAGE_TABS=[[["mikvah","Magnet"],["mtemp","Temperature"]],[["rules","Rules"],["events","Events"],["special","Special times"]],[["activity","History"],["live","Live"],["reports","Reports"]],[["preview","Day"],["sheet","Week sheet"]]];
+const PAGE_TABS=[[["mikvah","Magnet"],["mtemp","Temperature"]],[["rules","Rules"],["special","Special times"]],[["activity","History"],["live","Live"],["reports","Reports"]],[["preview","Day"],["sheet","Week sheet"]]];
 function tabOk(k){if(k==="mikvah")return isAdmin();if(k==="special")return isAdmin()||can("rabbi");if(k==="live")return isAdmin();if(k==="reports")return isAdmin()&&!SIMPLE;if(k==="activity")return !SIMPLE;return true}
+// everything about doors lives under Doors, with a tab for each part
+const DOOR_TABS=[["open","Open a door",["open"]],["doors","Doors",["doors"]],["preview","Schedule",["preview","sheet"]],["rules","Rules",["rules","special"]],["codes","Guest codes",["codes"]],["activity","Activity",["activity","live","reports"]]];
+function doorTabOk(k){if(k==="open"){const n=$("#openNav");return !(n&&n.hidden)}if(k==="codes")return can("codes");if(k==="activity")return !!actFirst();return true}
+function isDoorPage(t){return DOOR_TABS.some(x=>x[2].includes(t))}
 function drawPageTabs(t){const el=$("#pageTabs");if(!el)return;const grp=PAGE_TABS.find(g=>g.some(x=>x[0]===t)&&g[0][0]!=="preview");
-  if(t==="people"){el.hidden=false;el.innerHTML=`<button type="button" class="pback" data-pt="setup">\u2039 Settings</button>`;return}
-  const ok=grp?grp.filter(x=>tabOk(x[0])):[];el.hidden=ok.length<2;
-  el.innerHTML=ok.map(([k,l])=>`<button type="button" role="tab" aria-selected="${k===t}" class="${k===t?"on":""}" data-pt="${k}">${l}</button>`).join("")}
-document.addEventListener("click",ev=>{const b=ev.target.closest("#pageTabs [data-pt]");if(b)showTab(b.dataset.pt)});
+  if(t==="people"){el.hidden=false;el.classList.remove("ptabs2");el.innerHTML=`<button type="button" class="pback" data-pt="setup">\u2039 Settings</button>`;$("#pageTabs2")&&($("#pageTabs2").hidden=true);return}
+  const ok=grp?grp.filter(x=>tabOk(x[0])):[],row=(list)=>list.map(([k,l])=>`<button type="button" role="tab" aria-selected="${k===t}" class="${k===t?"on":""}" data-pt="${k}">${l}</button>`).join("");
+  let el2=$("#pageTabs2");if(!el2){el.insertAdjacentHTML("afterend",`<div class="ptabs ptabs2" id="pageTabs2" role="tablist" hidden></div>`);el2=$("#pageTabs2")}
+  if(isDoorPage(t)){const top=DOOR_TABS.filter(x=>doorTabOk(x[0]));el.hidden=false;
+    el.innerHTML=top.map(([k,l,m])=>{const on=m.includes(t);return `<button type="button" role="tab" aria-selected="${on}" class="${on?"on":""}" data-pt="${k==="activity"?actFirst():k}">${l}</button>`}).join("");
+    el2.hidden=ok.length<2;el2.innerHTML=ok.length<2?"":row(ok);return}
+  el2.hidden=true;el.hidden=ok.length<2;el.innerHTML=row(ok)}
+document.addEventListener("click",ev=>{const b=ev.target.closest("#pageTabs [data-pt],#pageTabs2 [data-pt]");if(b)showTab(b.dataset.pt)});
 // Activity opens the first part this person can see; hidden when they can see none
 function actFirst(){return ["activity","live","reports"].find(tabOk)}
 function fixActNav(){const n=$("#actNav");if(n)n.hidden=!actFirst()}
 
-const TITLES={climate:"HVAC",lights:"Lighting",parking:"Parking lot",mtemp:"Mikva",mikvah:"Mikva",open:"Open a door",lockdown:"Lockdown",people:"People",live:"Activity",board:"Home",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules and events",events:"Rules and events",special:"Rules and events",codes:"Guest codes",msgs:"Messages",reports:"Activity",activity:"Activity",setup:"Settings"};
+const TITLES={climate:"HVAC",lights:"Lighting",parking:"Parking lot",mtemp:"Mikva",mikvah:"Mikva",open:"Doors",lockdown:"Lockdown",people:"People",live:"Doors",board:"Home",doors:"Doors",preview:"Doors",sheet:"Doors",rules:"Doors",events:"Events",special:"Doors",codes:"Doors",msgs:"Messages",reports:"Doors",activity:"Doors",setup:"Settings"};
 document.querySelectorAll(".navbtn[data-tab]").forEach(b=>b.onclick=()=>showTab(b.dataset.tab==="activity"?actFirst()||"board":b.dataset.tab));
 function setDrawer(open){document.body.classList.toggle("drawer",open);$("#scrim").hidden=!open;$("#menuBtn").setAttribute("aria-expanded",open)}
 document.querySelectorAll(".viewseg button").forEach(b=>b.onclick=()=>{SIMPLE=b.dataset.view==="simple";try{localStorage.setItem("shulDoorSimple",SIMPLE?"1":"0")}catch(e){}setPref("simple",SIMPLE);renderView();fixActNav();if(!tabOk(CUR_TAB))showTab(actFirst()||"board");else drawPageTabs(CUR_TAB);if(CUR_TAB==="setup")renderSetupIndex()});
