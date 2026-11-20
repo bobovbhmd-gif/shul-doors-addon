@@ -23,6 +23,7 @@ const { createAtrium } = require("./lib/atrium");
 const { createPelican } = require("./lib/pelican");
 const { createHvac } = require("./lib/hvac");
 const { createWeather } = require("./lib/weather");
+const { createLights } = require("./lib/lights");
 const { createMtemp, createTempLog, usualRate, nyParts, nextChange } = require("./lib/mtemp");
 const sched = require("./lib/sched");
 
@@ -523,7 +524,7 @@ const atrium = createAtrium({ url: opts.atrium_url, username: opts.atrium_userna
 // heating and cooling: Pelican thermostats (through Pelican's cloud). Starts read only, like the doors did.
 const pelican = createPelican({ site: opts.pelican_site, username: opts.pelican_username, password: opts.pelican_password, log });
 const HV_MODE = ["read", "pilot", "live"].includes(opts.pelican_mode) ? opts.pelican_mode : "read";
-// the outdoor temperature (Home Assistant's forecast, or the National Weather Service) for the heat and AC rules
+// the outdoor temperature (Home Assistant's forecast, or the National Weather Service) for the HVAC rules
 const weather = createWeather({ haUrl: HA_URL, token: HA_TOKEN, log, nyParts });
 try { weather.set(readJson("weather.json", null)); } catch { /* none yet */ }
 const wxSave = () => { try { writeJson("weather.json", weather.get()); } catch { /* not kept */ } };
@@ -532,18 +533,29 @@ const wxRefresh = async () => { const w = (state && state.hvac && state.hvac.wx)
 function hvAlert(text, key) {
   const ids = ((state && state.hvac && state.hvac.wx && state.hvac.wx.text) || []).map(String);
   const phones = ((state && state.users) || []).filter((u) => ids.includes(String(u.id)) && u.phone).map((u) => e164(u.phone)).filter(Boolean);
-  if (sms && phones.length) sms.alertTo(state, phones, "hvwx:" + key, "Heat and AC: " + text, "hvac", 60e3).catch((e) => log("warn", "heat and AC text: " + e.message));
+  if (sms && phones.length) sms.alertTo(state, phones, "hvwx:" + key, "HVAC: " + text, "hvac", 60e3).catch((e) => log("warn", "HVAC text: " + e.message));
 }
-const hvac = createHvac({ pelican, saveState: () => { try { backup(); version++; writeJson("state.json", state); writeJson("version.json", { v: version }); } catch (e) { log("warn", "heat and AC: " + e.message); } }, weather: { get: () => weather.get(), refresh: async () => { const r = await wxRefresh(); return r; } }, alert: hvAlert, engine: { info: (d) => engine.info(d), addDays: (d, n) => engine.addDays(d, n), cond: (n, x, d) => engine.cond(n, x, d) }, getState: () => state, getStore: () => store, save: () => writeJson("store.json", store),
+const hvac = createHvac({ pelican, saveState: () => { try { backup(); version++; writeJson("state.json", state); writeJson("version.json", { v: version }); } catch (e) { log("warn", "HVAC: " + e.message); } }, weather: { get: () => weather.get(), refresh: async () => { const r = await wxRefresh(); return r; } }, alert: hvAlert, engine: { info: (d) => engine.info(d), addDays: (d, n) => engine.addDays(d, n), cond: (n, x, d) => engine.cond(n, x, d) }, getState: () => state, getStore: () => store, save: () => writeJson("store.json", store),
   mode: HV_MODE, pilot: String(opts.pelican_pilot || "").split(/[,\n]+/).map((x) => x.trim()).filter(Boolean), log, note: (who, t) => activityNote(who, t), nyParts,
   cache: { get: (serial, d) => { try { return JSON.parse(fs.readFileSync(file(`hvhist/${slug(serial)}/${d}.json`), "utf8")); } catch { return null; } },
     set: (serial, d, rows) => { try { fs.mkdirSync(file(`hvhist/${slug(serial)}`), { recursive: true }); fs.writeFileSync(file(`hvhist/${slug(serial)}/${d}.json`), JSON.stringify(rows)); } catch { /* not kept */ } } } });
+// lighting on Pelican's power modules: its own mode and pilot list, so lights and thermostats roll out separately
+const LT_MODE = ["read", "pilot", "live"].includes(opts.light_mode) ? opts.light_mode : "read";
+const lights = createLights({ pelican, saveState: () => { try { backup(); version++; writeJson("state.json", state); writeJson("version.json", { v: version }); } catch (e) { log("warn", "lights: " + e.message); } }, engine: { info: (d) => engine.info(d), addDays: (d, n) => engine.addDays(d, n), cond: (n, x, d, sec) => engine.cond(n, x, d, sec) }, getState: () => state, getStore: () => store, save: () => writeJson("store.json", store),
+  mode: () => LT_MODE, pilot: () => String(opts.light_pilot || "").split(/[,\n]+/).map((x) => x.trim()).filter(Boolean), log, note: (who, t) => activityNote(who, t), nyParts });
+let ltSyncT = null;
+function ltSyncSoon(ms = 20000) { clearTimeout(ltSyncT); ltSyncT = setTimeout(() => lights.sync(false).catch((e) => log("warn", "lights: " + e.message)), ms); }
+if (pelican.configured) {
+  setTimeout(() => lights.poll().then(() => ltSyncSoon(8000)), 12000).unref();
+  setInterval(() => lights.poll(), 120000).unref();
+  setInterval(() => { lights.tick().catch(() => {}); const p = nyParts(Date.now()); if (p.m === 20 && store && store.ltSyncDay !== p.d) { store.ltSyncDay = p.d; ltSyncSoon(1000); } }, 60000).unref();   // 12:20 AM: the new day's 14 days
+}
 let hvSyncT = null;
 function hvSyncSoon(ms = 20000) { clearTimeout(hvSyncT); hvSyncT = setTimeout(() => hvac.sync(false).catch((e) => log("warn", "thermostats: " + e.message)), ms); }
 if (pelican.configured) {
   setTimeout(() => hvac.poll().then(() => hvSyncSoon(5000)), 8000).unref();
   setInterval(() => hvac.poll(), 120000).unref();
-  setInterval(() => { hvac.tick().catch(() => {}); hvac.liveCheck().catch((e) => log("warn", "heat and AC switching: " + e.message));
+  setInterval(() => { hvac.tick().catch(() => {}); hvac.liveCheck().catch((e) => log("warn", "HVAC switching: " + e.message));
     const p = nyParts(Date.now());
     if (p.m === 5 && store && store.hvWxDay0 !== p.d) { store.hvWxDay0 = p.d; wxRefresh().catch(() => {}); }   // 12:05 AM: the fresh forecast for the night's pick
     if (p.m === 15 && store && store.hvSyncDay !== p.d) { store.hvSyncDay = p.d; hvSyncSoon(1000); }   // 12:15 AM: the new day's week
@@ -867,6 +879,16 @@ async function ctrlApi(req, res, p, u) {
       const r = p.endsWith("save") ? await mikva.write(b.regs, b.cgVer) : await mikva.manual(b.v, b.exp);
       activityNote(haUser(req), p.endsWith("save") ? "Saved the mikva magnet settings" : `Mikva magnet: ${["back to the schedule", "released now", "held open"][+b.v] || "changed"}`);
       return send(res, 200, r);
+    }
+    // lighting (Pelican power modules)
+    if (p.startsWith("/api/lights")) {
+      if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can use the lights for now." });
+      if (req.method === "GET" && p === "/api/lights") { if (pelican.configured && Date.now() - (lights.status().at || 0) > 60000) await lights.poll(); return send(res, 200, { ok: true, ...lights.status() }); }
+      const b = (await readBody(req)) || {};
+      if (req.method === "POST" && p === "/api/lights/set") { const until = b.until === "next" || !b.until ? "next" : +b.until; return send(res, 200, { ok: true, results: await lights.setNow([].concat(b.ids || []).map(String), !!b.on, until, haUser(req)) }); }
+      if (req.method === "POST" && p === "/api/lights/sync") return send(res, 200, await lights.sync(true));
+      if (req.method === "POST" && p === "/api/lights/giveback") { try { return send(res, 200, await lights.giveBack(String(b.id || ""), haUser(req))); } catch (e) { return send(res, 200, { ok: false, error: e.message }); } }
+      return send(res, 404, { error: "not found" });
     }
     // heating and cooling (Pelican)
     if (req.method === "GET" && p === "/api/hvac") {
@@ -1284,13 +1306,14 @@ function mtSnooze(from, body) {
   const pools = (mtLast || []).map((x) => ({ id: x.id, name: x.name }));
   const named = pools.filter((p) => { const w = p.name.toLowerCase().split(/\s+/).filter((x) => x.length > 1); return w.length && w.every((x) => t.includes(" " + x + " ")); });
   const nameOf = (id) => (pools.find((p) => p.id === id) || {}).name || (last && last.id === id ? last.name : "that pool");
-  if (/\b(alerts on|unsnooze|unmute|resume alerts|turn alerts back on)\b/.test(t)) {
+  if (/\b(alerts on|unsnooze|unmute|resume alerts|turn alerts back on)\b/.test(t) || t.trim().split(" ").some((w) => w.length >= 6 && near(w, ["unsnooze", "unmute"]))) {
     const ids = named.length ? named.map((p) => p.id) : Object.keys(mine);
     if (!ids.length) return "Mikva alerts are already on.";
     ids.forEach((id) => delete mine[id]); writeJson("store.json", store);
     return `Mikva alerts are back on for ${ids.map(nameOf).join(", ")}.`;
   }
-  if (!/\b(snooze|mute|quiet|pause|silence|hold off|stop alert|stop alerting|no more alerts|stop texting)/.test(t)) return null;
+  const tw = t.trim().split(" ");
+  if (!/\b(snooze|mute|quiet|pause|silence|hold off|stop alert|stop alerting|no more alerts|stop texting)/.test(t) && !tw.some((w) => near(w, ["snooze", "snoozed", "mute", "pause", "silence"]))) return null;   // "snoze 4h" works too
   let mins = 0, m;
   if ((m = t.match(/(\d+(?:\.\d+)?)\s*(h|hr|hrs|hour|hours)\b/))) mins = Math.round(+m[1] * 60);
   if ((m = t.match(/(\d+)\s*(m|min|mins|minute|minutes)\b/))) mins += +m[1];
@@ -1305,7 +1328,18 @@ function mtSnooze(from, body) {
 }
 let mtLast = [];
 // "mikva temp": the state and temperature of every pool, for people who may see the mikva temperature
-function mtAsked(body) { const t = String(body || "").toLowerCase(); return /\bmi[ck]?v[ae]h?s?\b/.test(t) && /\b(temp|temps|temperature|temperatures|tempature|status|how hot|hot|warm)\b/.test(t) && t.length <= 60; }
+// typos are fine: "nikva temp", "mikvah tmp", "mikve temperture", "mikvatemp"
+function lev(a, b) { const d = Array.from({ length: a.length + 1 }, (_, i) => [i]); for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) { d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1); }   // a swap of two letters counts as one
+  return d[a.length][b.length]; }
+const near = (w, list) => list.some((x) => w === x || (w.length >= 3 && lev(w, x) <= (x.length >= 8 ? 2 : 1)));
+function mtAsked(body) {
+  const t = String(body || "").toLowerCase().trim(); if (!t || t.length > 60) return false;
+  const words = t.replace(/[^a-z\s]/g, " ").split(/\s+/).filter(Boolean);
+  const MK = ["mikva", "mikve", "mikvah", "mikvas", "mikvos", "mikveh", "mikvaot"], TP = ["temp", "temps", "temperature", "temperatures", "status", "hot", "warm", "heat", "degrees"];
+  if (words.some((w) => near(w, MK)) && (words.some((w) => near(w, TP)) || /how hot|how warm/.test(t))) return true;
+  return words.some((w) => w.length >= 8 && MK.some((m) => w.startsWith(m.slice(0, 3)) && TP.some((x) => near(w.slice(-x.length), [x]) && near(w.slice(0, w.length - x.length), MK))));   // run together
+}
 async function mtStatusText() {
   let list; try { list = await mtemp.list(); } catch { list = mtLast; }
   if (!list || !list.length) return "I can't read the mikva thermostats right now.";
@@ -1422,7 +1456,7 @@ const server = http.createServer((req, res) => {
     return send(res, 200, { visits: (store.visits || []).filter((x) => !who || x.u === who) });
   }
   if (p === "/api/chats" || p.startsWith("/api/chats/") || p === "/api/memory" || p === "/api/seen") { chatApi(req, res, p); return; }
-  if (p === "/api/controllers" || p.startsWith("/api/controllers/") || p.startsWith("/api/mikva") || p.startsWith("/api/mtemp") || p.startsWith("/api/parking") || p.startsWith("/api/hvac") || p.startsWith("/api/logins")) { ctrlApi(req, res, p, u); return; }
+  if (p === "/api/controllers" || p.startsWith("/api/controllers/") || p.startsWith("/api/mikva") || p.startsWith("/api/mtemp") || p.startsWith("/api/parking") || p.startsWith("/api/hvac") || p.startsWith("/api/lights") || p.startsWith("/api/logins")) { ctrlApi(req, res, p, u); return; }
   if (req.method === "GET" && p === "/api/status" && haUser(req)) visit(personOf(req));
   if (req.method === "GET" && p === "/api/status") return send(res, 200, { problem: stateProblem, mode: opts.mode, pilotDoors, version, last: lastReport && { at: lastReport.at, ok: lastReport.ok, actions: lastReport.actions, errors: lastReport.errors, warnings: lastReport.warnings, loadedThrough: lastReport.loadedThrough, compare: lastReport.compare }, codes: codeStatus() });
   if (req.method === "GET" && p === "/api/report") {
@@ -1583,8 +1617,11 @@ const server = http.createServer((req, res) => {
       try { body.state.hvac = hvMerge(req, state, body.state); } catch (e) { log("warn", "thermostat schedules: " + e.message); body.state.hvac = state.hvac; }
       const awayKey = (x) => JSON.stringify([x.rabbiAwayNow || false, x.rabbiAwaySince || "", x.away || [], x.events || [], x.situations || [], x.hdates || [], x.gdates || []]);
       const hvChanged = JSON.stringify(state.hvac || {}) !== JSON.stringify(body.state.hvac || {}) || awayKey(state) !== awayKey(body.state);   // events, situations, the Rav away and set dates are shared with the thermostats, so they resync too
+      if (!meAdmin(req)) body.state.lights = state.lights;   // lighting: super admins only for now
+      const ltChanged = JSON.stringify(state.lights || {}) !== JSON.stringify(body.state.lights || {});
       const before = state; state = body.state; version++;
       if (hvChanged && pelican.configured) { engine.setState(state); hvSyncSoon(); }
+      if ((hvChanged || ltChanged) && pelican.configured) { engine.setState(state); ltSyncSoon(); }
       try { changeAlerts(before, state, personOf(req)); } catch (e) { log("warn", "change alerts: " + e.message); }
       const em = (x) => JSON.stringify((x.users || []).map((u) => [u.email || "", u.role]));
       if (em(before) !== em(state)) accessSoon();

@@ -95,7 +95,25 @@ function createPelican({ site, username, password, log = () => {}, fetchImpl = (
   // each day of the week has its own set times
   const weekly = (serial) => call("set", "Thermostat", pairs({ serialNo: serial }), pairs({ scheduleRepeat: "Weekly", schedule: "On" }));
 
-  return { configured, base, list, set, schedule, writeDay, weekly, history, status: () => ({ ...last, configured, site: base.replace(/^https:\/\//, "") }), DAYS };
+  // ---- Power Control Modules (light relays) ----
+  // A relay is found by its serial number and name. Run times (PowerSchedule) can be for one date (repeat None)
+  // or recurring; Pelican joins overlapping ones. Ones the API adds are "External"; the app's own are "Internal".
+  async function powerList() {
+    const xml = await call("get", "PowerOutput", "", "name;groupName;serialNo;output;setBy");
+    return blocks(xml, "PowerOutput").filter((x) => x.serialNo && x.name).map((x) => ({ id: x.serialNo + ":" + x.name, serial: x.serialNo, name: x.name, group: x.groupName || "", on: /^on$/i.test(x.output || ""), setBy: x.setBy || "" }));
+  }
+  const relaySel = (r) => pairs({ serialNo: r.serial, name: r.name });
+  const powerSet = (r, v) => call("set", "PowerOutput", relaySel(r), pairs({ output: v.output, schedule: v.schedule }));
+  async function powerSchedules(r) {
+    const xml = await call("get", "PowerSchedule", pairs({ serialNo: r.serial, name: r.name, origin: "all" }), "scheduleId;title;startDate;endDate;startTime;endTime;repeat;origin;name");
+    return blocks(xml, "PowerSchedule").filter((x) => !x.name || x.name === r.name).map((x) => ({ id: x.scheduleId, title: x.title || "", startDate: x.startDate || "", endDate: x.endDate || "", start: x.startTime || "", end: x.endTime || "", repeat: x.repeat || "", origin: x.origin || "" }));
+  }
+  // one run on one date: start and end are minutes; the API can't cross midnight
+  const hm = (m) => String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+  const powerAdd = (r, run) => call("set", "PowerSchedule", relaySel(r), pairs({ scheduleId: run.id, title: run.title || "Shul Manager", startDate: run.date, endDate: run.repeat ? "" : run.date, startTime: hm(run.start), endTime: hm(Math.min(run.end, 1439)), repeat: run.repeat || "None", editable: run.repeat ? "Yes" : "No" }));
+  const powerDel = (id) => call("set", "PowerSchedule", pairs({ scheduleId: id }), "delete:Yes;");
+
+  return { configured, base, list, set, schedule, writeDay, weekly, history, powerList, powerSet, powerSchedules, powerAdd, powerDel, status: () => ({ ...last, configured, site: base.replace(/^https:\/\//, "") }), DAYS };
 }
 
 module.exports = { createPelican, DAYS, _blocks: blocks };
