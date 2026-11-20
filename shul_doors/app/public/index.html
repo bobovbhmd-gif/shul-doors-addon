@@ -1485,6 +1485,7 @@ th.istoday .wk-n{color:#fff;background:var(--accent);border-radius:999px;padding
 
 #sideNav .navbtn.dsub{display:none!important}
 .ptabs2{margin-top:-4px;gap:8px}.ptabs2 button{font-size:13px;min-height:30px;padding:4px 10px;border-radius:14px}.ptabs2 button.on{background:var(--line)}.ptabs2 button.on::after{display:none}
+.navback{display:inline-flex;align-items:center;gap:2px;border:0;background:none;color:var(--accent);font:inherit;font-size:15px;font-weight:500;padding:4px 8px 4px 0;margin:0 0 -6px -4px;cursor:pointer}.navback svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .ptabs{display:flex;gap:22px;margin-top:10px;overflow-x:auto;scrollbar-width:none}
 .ptabs button{border:0;background:none;font:inherit;font-size:15px;font-weight:500;color:var(--muted);padding:8px 0 10px;cursor:pointer;position:relative;white-space:nowrap;min-height:40px}
 .ptabs button.on{color:var(--text);font-weight:600}
@@ -1982,6 +1983,7 @@ button.hv-tile{cursor:pointer}button.hv-tile:hover{background:color-mix(in srgb,
 .hv-fan.run{color:var(--b)}.hv-fan.run svg{animation:hvspin 1.6s linear infinite}@keyframes hvspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.hv-fan.run svg{animation:none}}
 .hv-fan select{color:inherit}
+.lt-gh{display:flex;justify-content:space-between;align-items:center}.lt-ga{display:flex;gap:14px;font-size:13px;font-weight:500}.lt-ga .lnk+.lnk{margin-left:16px}.lt-lgh{flex-wrap:wrap;gap:8px;justify-content:flex-start}.lt-lgh select{width:auto}.lt-dot{width:9px;height:9px;border-radius:50%;background:var(--line);flex:none;margin-right:12px}.lt-dot.on{background:#f5b301}.lt-dot.off{background:#8e8e93}.lt-lr{align-items:center}
 .hv-qa button.hv-selb{background:transparent!important;box-shadow:none!important;color:var(--accent)}
 .hv-card2{display:grid;grid-template-columns:44px minmax(0,1fr);background:var(--surface);border-radius:12px;overflow:hidden;margin-bottom:10px;box-shadow:0 0 0 1px var(--line)}.hv-cn{background:#34a853;color:#fff;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:10px 0}.hv-cn b{font-size:20px}.hv-cn .lnk{color:#fff;font-size:11px;writing-mode:vertical-rl;transform:rotate(180deg)}.hv-cb{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 .hv-wsg{display:grid;grid-template-columns:120px repeat(7,minmax(0,1fr));gap:6px;font-size:12.5px}
@@ -2270,6 +2272,7 @@ button.hv-tile{cursor:pointer}button.hv-tile:hover{background:color-mix(in srgb,
 
   <main class="main">
     <div id="sdBanner" class="sdbanner" hidden></div>
+  <button type="button" class="navback" id="navBack" hidden aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span id="navBackT">Back</span></button>
   <div class="pagehead">
     <div class="ph-txt"><h1 class="ptitle"><span id="pageTitle">Home</span><button type="button" class="phelp" id="pageHelp" aria-label="About this page" title="About this page"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></button></h1><p class="psub" id="pageSub"></p><div class="ptabs" id="pageTabs" role="tablist" hidden></div></div>
     <div class="pact" id="pageAct">
@@ -6077,7 +6080,7 @@ function hvEnt(list,s,adj,all){const m=new Map(),info=all?null:dayInfo(s);(list|
 // what a thermostat does on a date: its schedule's day, unless a special day puts it on another schedule
 function hvPlan(serial,s){const base=hvSchedOf(serial);if(!base)return {src:"No schedule here",rule:null,sc:null,entries:[]};const r=hvRuleFor(serial,s),sc=(r&&hvSchedById(r.sched))||base;
   return {src:r&&sc!==base?(r.name===sc.name?r.name:`${r.name} (${sc.name})`):sc.name,rule:r&&sc!==base?r:null,sc,entries:hvEnt(hvDayList(sc,dow(s)),s,+hvCfg().adj[serial]||0).slice(0,12)}}
-function hvNext(serial){const t=hvT(serial);if(t&&t.next)return t.next;const d=todayNY(),nm=mkNowMin();for(let i=0;i<8;i++){const s=addDays(d,i),e=hvPlan(serial,s).entries.find(x=>i>0||x.min>nm);if(e)return {at:0,day:s,min:e.min,heat:e.heat,cool:e.cool,system:e.system}}return null}
+function hvNext(serial){const t=hvT(serial);if(t&&t.next){const n={...t.next};if(n.at&&!n.day){n.day=nyDate(n.at);n.min=nyMinutes(n.at)}n.system=n.system||"Auto";return n.day?n:null}const d=todayNY(),nm=mkNowMin();for(let i=0;i<8;i++){const s=addDays(d,i),e=hvPlan(serial,s).entries.find(x=>i>0||x.min>nm);if(e)return {at:0,day:s,min:e.min,heat:e.heat,cool:e.cool,system:e.system}}return null}
 function hvNextText(n){if(!n)return "";const when=n.at?whenText(n.at):(n.day===todayNY()?fmt(n.min):`${WDN[dow(n.day)]} ${fmt(n.min)}`);return `${when}, ${n.system==="Cool"?n.cool:n.heat}°`}
 function hvState(t){if(!t.online)return ["Offline","bad"];if(/^Heat/.test(t.run))return ["Heating","warn"];if(/^Cool/.test(t.run))return ["Cooling","ok"];if(/^Fan/.test(t.run))return ["Fan",""];return [t.system==="Off"?"Off":"Idle",""]}
 const hvSet=t=>t.system==="Cool"?"cool":"heat";
@@ -6115,7 +6118,7 @@ const HV_LOCK=`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" wi
 const HV_FAN_ICO=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c0-3 1-7 4-7s3 4 0 6l-4 1zm0 0c3 0 7 1 7 4s-4 3-6 0l-1-4zm0 0c0 3-1 7-4 7s-3-4 0-6l4-1zm0 0c-3 0-7-1-7-4s4-3 6 0l1 4z"/></svg>`;
 function hvKind(t){if(!t.online)return "x";if(/^Heat/.test(t.run))return "h";if(/^Cool/.test(t.run))return "c";if(t.system==="Off")return "o";return "i"}
 function hvCard(t){const [st]=hvState(t),k=hvSet(t),pend=HVPEND[t.serial],v=pend!=null?pend:t[k],ch=hvMay(t.serial,"change")&&t.online&&!HVSM,kd=hvKind(t);
-  const held=!!t.hold,line=hvCardLine(t),fanRun=t.online&&(t.fan==="On"||/^(Heat|Cool|Fan)/.test(t.run||""));
+  const held=!!t.hold&&t.online,line=hvCardLine(t),fanRun=t.online&&(t.fan==="On"||/^(Heat|Cool|Fan)/.test(t.run||""));
   return `<div class="hv-c k-${kd}${HVSEL.has(t.serial)?" sel":""}" data-hvc="${esc(t.serial)}">
     <div class="h1"><b>${esc(t.name)}</b><span class="hv-chip">${st}</span></div>
     <div class="h2"><span class="tmp">${t.temp!=null?Math.round(t.temp)+"<sup>°</sup>":"--"}</span>${t.online&&t.system!=="Off"&&v!=null?(ch?`<span class="hv-step"><button type="button" data-hvstep="${esc(t.serial)}" data-d="1" aria-label="Raise">+</button><span><small>${k==="cool"?"Cool to":"Set"}</small><b>${v}°</b></span><button type="button" data-hvstep="${esc(t.serial)}" data-d="-1" aria-label="Lower">−</button></span>`:`<span class="hv-set"><small>${k==="cool"?"Cool to":"Set"}</small><b>${v}°</b></span>`):""}</div>
@@ -6632,14 +6635,14 @@ function ltNow(id){const s=todayNY(),m=nowMin(),p=ltPlan(id,s),on=p.runs.some(x=
 function nowMin(){const p=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hour:"numeric",minute:"numeric",hour12:false}).formatToParts(new Date());return (+p.find(x=>x.type==="hour").value%24)*60+ +p.find(x=>x.type==="minute").value}
 
 async function renderLt(){const b=$("#ltBody");if(!b)return;await ltLoad();
-  const tabs=[["now","Dashboard"],["sched","Schedules"],["rules","Special days"],["setup","Setup"]];
+  const tabs=[["now","Dashboard"],["sched","Schedules"],["rules","Special days"],["log","Log"],["setup","Setup"]];
   const mode=LT.mode==="live"?["ok","Live"]:LT.mode==="pilot"?["warn",`Pilot: ${(LT.pilot||[]).length?"only "+LT.pilot.join(", "):"no lights yet"}`]:["warn","Read only: nothing is sent to the lights"];
   b.innerHTML=`<div class="hv-top" style="justify-content:flex-end"><span style="display:flex;gap:6px;flex-wrap:wrap"><span class="hv-pill ${mode[0]}">${esc(mode[1])}</span><span class="hv-pill ${LT.err?"bad":"ok"}">${LT.err?"Pelican: "+esc(LT.err):"Pelican connected"}</span></span></div>
-    <div class="mk-seg hv-tabs" role="tablist">${tabs.map(([k,l])=>`<button type="button" role="tab" class="${LTT===k?"on":""}" data-ltt="${k}">${l}</button>`).join("")}</div>`+({now:ltNowHtml,sched:ltSchedsHtml,rules:ltSpecialHtml,setup:ltSetupHtml}[LTT]||ltNowHtml)()}
+    <div class="mk-seg hv-tabs" role="tablist">${tabs.map(([k,l])=>`<button type="button" role="tab" class="${LTT===k?"on":""}" data-ltt="${k}">${l}</button>`).join("")}</div>`+({now:ltNowHtml,sched:ltSchedsHtml,rules:ltSpecialHtml,log:ltLogHtml,setup:ltSetupHtml}[LTT]||ltNowHtml)()}
 
 function ltNowHtml(){if(!LT.relays.length)return `<p class="none">${esc(LT.err||"Reading the lights…")}</p>`;
   const groups=[...new Set(LT.relays.map(r=>r.group||"Lights"))];
-  return groups.map(g=>`<h3 class="gh">${esc(g)}</h3><div class="hv-grid">${LT.relays.filter(r=>(r.group||"Lights")===g).map(r=>{const n=ltNow(r.id),sc=ltSchedOf(r.id),hold=r.hold&&r.hold.until>Date.now();
+  return ltQuick()+groups.map(g=>`<h3 class="gh lt-gh"><span>${esc(g)}</span><span class="lt-ga"><button type="button" class="lnk" data-ltgrp="${esc(g)}" data-on="1">All on</button><button type="button" class="lnk" data-ltgrp="${esc(g)}" data-on="0">All off</button></span></h3><div class="hv-grid">${LT.relays.filter(r=>(r.group||"Lights")===g).map(r=>{const n=ltNow(r.id),sc=ltSchedOf(r.id),hold=r.hold&&r.hold.until>Date.now();
     return `<div class="hv-c" data-ltc="${esc(r.id)}"><div class="h1"><b>${esc(r.name)}</b><span class="hv-pill ${r.on?"lt-on":""}">${r.on?"On":"Off"}</span></div>
       <div class="h2"><span class="hint">${esc(sc?sc.name:"No schedule here")}</span></div>
       ${sc?ltBar(n.p.runs):""}
@@ -6647,6 +6650,15 @@ function ltNowHtml(){if(!LT.relays.length)return `<p class="none">${esc(LT.err||
       <button type="button" class="btn sm" data-ltgo="${esc(r.id)}" data-on="${r.on?0:1}" style="width:100%;margin-top:8px">${r.on?"Turn off":"Turn on"}</button></div>`}).join("")}</div>`).join("")+
     `<p class="gf">Turning a light on or off lasts until the next scheduled change. Tap a light for more choices.</p>`}
 
+/* ---- quick actions: built in, plus buttons saved from a light's sheet ---- */
+let LTARM="";
+function ltQText(q){return `${q.on?"On":"Off"} · ${(q.ids||[]).length} light${(q.ids||[]).length===1?"":"s"} · ${q.mins?durText(q.mins):"until the next change"}`}
+function ltQuick(){const mine=ltCfg().quick||[];
+  const qa=[["back","All back to schedule"],["on1","All on for 1 hour"],["off",LTARM==="off"?"Tap again: all off":"All off"]];
+  return `<div class="hv-qa">${qa.map(([k,l])=>`<button type="button" data-ltqa="${k}"${LTARM===k?' class="arm"':""}><b>${esc(l)}</b></button>`).join("")}${mine.map(q=>`<button type="button" data-ltqc="${esc(q.id)}" title="${esc(ltQText(q))}"><b>${esc(q.name)}</b></button>`).join("")}<button type="button" class="hv-selb" data-ltqnew><b>+ Button</b></button></div>`}
+async function ltBack(ids){const on=[],off=[];ids.forEach(id=>{if(!ltSchedOf(id))return;(ltNow(id).on?on:off).push(id)});
+  if(!on.length&&!off.length){toast("None of these are on a schedule here.");return}
+  if(on.length)await ltSend(on,true,"next",true);if(off.length)await ltSend(off,false,"next",true);toast("Back to the schedule");LT.t=0;renderLt()}
 /* the sheet for one light: on or off for how long, and its schedule and special days */
 function ltSheet(id){const r=LT.relays.find(x=>x.id===id);if(!r)return;LTQ={id,on:!r.on,until:"next",at:"23:00"};$("#opT").textContent=r.name;ltSheetDraw();openModal("mOpen")}
 function ltSheetDraw(){const q=LTQ,h=ltCfg(),sc=ltSchedOf(q.id),d=todayNY(),p=ltPlan(q.id,d),sp=h.rules.filter(r=>(r.relays||[]).includes(q.id));
@@ -6654,16 +6666,37 @@ function ltSheetDraw(){const q=LTQ,h=ltCfg(),sc=ltSchedOf(q.id),d=todayNY(),p=lt
     <h3 class="op-sh">For how long</h3><select id="ltUntil" style="width:100%">${[["next","Until the next scheduled change"],["30","30 minutes"],["60","1 hour"],["120","2 hours"],["240","4 hours"],["pick","Until a time I pick"]].map(([k,l])=>`<option value="${k}"${q.until===k?" selected":""}>${l}</option>`).join("")}</select>
     ${q.until==="pick"?`<div class="tline" style="margin-top:8px"><span class="hint">Until</span>${tpick("ltAt",q.at,"Until")}</div>`:""}
     <button class="btn pri" type="button" data-ltqgo style="width:100%;margin-top:14px">Apply</button>
+    <div class="op-foot"><span></span><button type="button" class="lnk" data-ltqsave>Save as a button</button></div>
+    <div class="op-custom" id="ltSaveRow" hidden><label class="op-n" style="flex:1"><input id="ltSaveName" maxlength="28" placeholder="Hallway on for a simcha" aria-label="Button name" style="width:100%" data-keepkb></label><button type="button" class="btn pri" data-ltqsavego>Save</button></div>
     <h3 class="op-sh" style="margin-top:22px">Schedule and rules</h3>
     <div class="glist form box"><div class="frow"><label for="ltQSc">Schedule</label><select id="ltQSc" data-ltqsc="${esc(q.id)}"><option value="">Not on a schedule here</option>${h.scheds.map(x=>`<option value="${esc(x.id)}"${sc&&x.id===sc.id?" selected":""}>${esc(x.name)}</option>`).join("")}</select></div>
       ${sc?`<div class="row"><span class="hv-dbar" style="width:100%"><small><b>Today${p.rule?", "+esc(p.rule.name):""}</b></small>${ltBar(p.runs)}<small>${esc(ltRunsText(ltRuns(hvDayList(p.sc,dow(d)),d,true),true))}</small></span></div><div class="row"><button type="button" class="lnk" data-ltqsced="${esc(sc.id)}">Change the times on ${esc(sc.name)}</button></div>`:`<div class="row"><span class="hint">It keeps Pelican's own schedule.</span><button type="button" class="lnk" data-ltqscnew="${esc(q.id)}">+ New schedule</button></div>`}</div>
     <h3 class="op-sh">Special days</h3><div class="glist">${sp.map(r=>`<button type="button" class="row tap" data-ltqsp="${esc(r.id)}" style="width:100%;text-align:left"><span class="rt"><b>${esc(r.name)}</b><span>${esc(hvSpText(r))}${ltSchedById(r.sched)?" · uses "+esc(ltSchedById(r.sched).name):""}</span></span><span class="chev"></span></button>`).join("")||`<div class="row"><span class="hint">None.</span></div>`}
       <button type="button" class="row tap" data-ltqspnew="${esc(q.id)}" style="width:100%;text-align:left"><b style="color:var(--b)">+ Add a special day</b></button></div>`}
-async function ltSend(ids,on,until){
-  if(!ON_BOX){ids.forEach(id=>{const r=LT.relays.find(x=>x.id===id);if(r){r.on=!!on;r.hold=until==="next"?null:{until,on}}});toast("Demo: not sent to a light");renderLt();return}
+async function ltSend(ids,on,until,quiet){
+  if(!ON_BOX){ids.forEach(id=>{const r=LT.relays.find(x=>x.id===id);if(r){r.on=!!on;r.hold=until==="next"?null:{until,on}}});LT.demoLog=LT.demoLog||[];ids.forEach(id=>LT.demoLog.unshift({at:Date.now(),id,name:ltName(id),who:S.me||"You",what:`turned ${on?"on":"off"}`}));if(!quiet){toast("Demo: not sent to a light");renderLt()}return}
   let j;try{j=await (await fetch("api/lights/set",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ids,on:!!on,until})})).json()}catch(e){j={ok:false,error:"Can't reach the box."}}
-  const r=(j.results||[])[0]||{};if(!j.ok||r.ok===false){toast(r.error||j.error||"Didn't work");return}
+  const r=(j.results||[])[0]||{};if(!j.ok||r.ok===false){toast(r.error||j.error||"Didn't work");return}if(quiet)return;
   toast(r.would?"Saved. Not sent to the light: "+(LT.mode==="read"?"read only.":"not in the pilot."):`${ids.map(ltName).join(", ")} turned ${on?"on":"off"}`);LT.t=0;renderLt()}
+
+/* ---- log: what each light did and who did it ---- */
+let LTLG={id:"",days:"1",who:"",data:null,key:""};
+async function ltLogLoad(){const key=LTLG.id+"|"+LTLG.days;if(LTLG.key===key)return;LTLG.key=key;LTLG.data=null;
+  if(!ON_BOX){const t=Date.now(),demo=[];LT.relays.forEach((r,i)=>{demo.push({at:t-(i*47+20)*60e3,id:r.id,name:r.name,who:"Schedule",what:"turned on"},{at:t-(i*31+400)*60e3,id:r.id,name:r.name,who:i%2?"Switch":"Schedule",what:i%2?"pressed at the switch: off":"turned off"})});
+    LTLG.data=[...(LT.demoLog||[]),...demo].filter(e=>!LTLG.id||e.id===LTLG.id).sort((a,b)=>b.at-a.at);renderLt();return}
+  try{const j=await (await fetch(`api/lights/log?days=${LTLG.days}&id=${encodeURIComponent(LTLG.id)}`)).json();LTLG.data=j.events||[]}catch(e){LTLG.data=[]}if(CUR_TAB==="lights"&&LTT==="log")renderLt()}
+function ltWho(e){return e.who==="Schedule"?"sc":e.who==="Switch"?"sw":e.who==="Shul Manager"?"sm":"p"}
+function ltLogHtml(){ltLogLoad();const ev=(LTLG.data||[]).filter(e=>!LTLG.who||ltWho(e)===LTLG.who);
+  const head=`<div class="hv-top lt-lgh"><select id="ltLgI" aria-label="Light"><option value="">All lights</option>${LT.relays.map(r=>`<option value="${esc(r.id)}"${r.id===LTLG.id?" selected":""}>${esc(r.name)}</option>`).join("")}</select>
+    <select id="ltLgD" aria-label="How far back">${[["1","Today"],["2","Since yesterday"],["7","7 days"],["30","30 days"],["90","90 days"]].map(([k,l])=>`<option value="${k}"${LTLG.days===k?" selected":""}>${l}</option>`).join("")}</select>
+    <select id="ltLgW" aria-label="Who">${[["","Everyone"],["sc","The schedule"],["sw","The light switch"],["p","People"],["sm","Shul Manager"]].map(([k,l])=>`<option value="${k}"${LTLG.who===k?" selected":""}>${l}</option>`).join("")}</select></div>`;
+  if(!LTLG.data)return head+`<p class="none">Reading the log…</p>`;
+  const t0=todayNY(),from=LTLG.days==="1"?t0:addDays(t0,-(+LTLG.days-1)),list=ev.filter(e=>nyDate(e.at)>=from);
+  let last="",out="";list.slice(0,400).forEach(e=>{const d=nyDate(e.at);if(d!==last){if(last)out+="</div>";out+=`<h3 class="gh mk-h">${d===t0?"Today":d===addDays(t0,-1)?"Yesterday":esc(shortDate(d))}</h3><div class="glist">`;last=d}
+    const k=ltWho(e),on=/turned on|: on$|would turn on/.test(e.what),off=/turned off|: off$|would turn off/.test(e.what);
+    out+=`<div class="row lt-lr"><span class="lt-dot ${on?"on":off?"off":""}"></span><div class="rt"><b>${LTLG.id?"":esc(e.name)+": "}${esc(e.what)}</b><span>${esc(fmt(nyMinutes(e.at)))} · ${esc(k==="sc"?"Pelican's schedule":k==="sw"?"At the light switch":e.who)}</span></div></div>`});
+  if(last)out+="</div>";
+  return head+(out||`<div class="glist"><div class="row"><span class="hint">Nothing in these days.</span></div></div>`)+`<p class="gf">The box checks the lights every 2 minutes, so a light turned on and off quickly in between may not show. Changes from here and from the switch are always logged.</p>`}
 
 /* ---- schedules ---- */
 function ltSchedsHtml(){if(LTSE)return ltSchedEditHtml();const h=ltCfg(),none=LT.relays.filter(r=>!ltSchedOf(r.id));
@@ -6725,7 +6758,10 @@ function ltSetupHtml(){const h=ltCfg();
   return `<div class="glist"><div class="row"><span class="rt"><b>${LT.mode==="live"?"Live":LT.mode==="pilot"?"Pilot":"Read only"}</b><span>${esc(LT.mode==="live"?"Changes go to every light on a schedule here.":LT.mode==="pilot"?`Only ${(LT.pilot||[]).join(", ")||"the lights listed under light_pilot"} get changes. The rest show what would happen.`:"Nothing is sent to the lights.")} Set with light_mode and light_pilot in the add-on settings.</span></span></div>
       <div class="row"><span class="rt"><b>${LT.syncAt?"Loaded "+esc(whenText(LT.syncAt)):"Not loaded yet"}</b><span>The next 14 days, every night at 12:20 AM and a few seconds after a change.</span></span><button class="btn sm" type="button" data-ltsync>Load now</button></div></div>
     <h3 class="gh mk-h">When someone presses the light switch</h3><div class="glist form box"><div class="frow"><label for="ltPress">The light stays</label><select id="ltPress" data-ltsw="press"><option value="">Until the next scheduled change</option>${[["30","30 minutes"],["60","1 hour"],["120","2 hours"],["240","4 hours"]].map(([v,l])=>`<option value="${v}"${String(h.sw.press||"")===v?" selected":""}>${l}, then back to the schedule</option>`).join("")}</select></div></div>
-    <p class="gf">Shul Manager sees a press at the switch within 2 minutes.</p>
+    <div class="glist form box" style="margin-top:10px"><div class="frow"><label for="ltKeep">If the switch timer runs out while the schedule says on</label><select id="ltKeep" data-ltsw="keep"><option value="">Turn it right back on</option><option value="off"${h.sw.keep==="off"?" selected":""}>Let it go off</option></select></div>
+      <div class="frow"><label for="ltTimer">The switch timer in Pelican</label><select id="ltTimer" data-ltsw="timer">${[["30","30 minutes"],["60","1 hour"],["","2 hours"],["180","3 hours"],["240","4 hours"]].map(([v,l])=>`<option value="${v}"${String(h.sw.timer||"")===v?" selected":""}>${l}</option>`).join("")}</select></div></div>
+    <p class="gf">Shul Manager checks the lights every minute. When a switch turns a light on for a set time and a run time starts in the middle, Pelican still turns it off when the time is up. Shul Manager sees that and turns it back on within a minute. A light someone turns off at the switch stays off.</p>
+    ${(h.quick||[]).length?`<h3 class="gh mk-h">Buttons on the dashboard</h3><div class="glist">${h.quick.map(q=>`<div class="row"><span class="rt"><b>${esc(q.name)}</b><span>${esc((q.ids||[]).map(ltName).join(", "))} · ${esc(ltQText(q))}</span></span><button class="btn sm danger" type="button" data-ltqdel="${esc(q.id)}">Remove</button></div>`).join("")}</div>`:""}
     <h3 class="gh mk-h">Lights</h3><div class="glist">${LT.relays.map(r=>`<div class="row"><span class="rt"><b>${esc(r.name)}</b><span>${esc([r.group,ltSchedOf(r.id)?ltSchedOf(r.id).name:"No schedule here",r.took?"Run by Shul Manager":"Pelican's own schedule"].filter(Boolean).join(" · "))}</span></span>${r.took?`<button class="btn sm" type="button" data-ltgive="${esc(r.id)}">Give back to Pelican</button>`:""}</div>`).join("")||`<div class="row"><span class="hint">No lights found.</span></div>`}</div>
     ${(LT.would||[]).length?`<h3 class="gh mk-h">Not sent yet</h3><div class="glist">${LT.would.slice(0,30).map(x=>`<div class="row"><span class="rt"><b>${esc(x.name)}</b><span>${esc(x.what)} · ${esc(whenText(x.at))}</span></span></div>`).join("")}</div>`:""}`}
 
@@ -6735,6 +6771,9 @@ document.addEventListener("click",async ev=>{const t=ev.target,c=x=>t.closest(x)
   /* the light's sheet */
   if(LTQ&&c("#opSheet")){
     if((e=c("[data-ltqo]"))){LTQ.on=e.dataset.ltqo==="1";ltSheetDraw();return}
+    if(c("[data-ltqsave]")){const r=$("#ltSaveRow");r.hidden=!r.hidden;if(!r.hidden)$("#ltSaveName").focus();return}
+    if(c("[data-ltqsavego]")){const n=($("#ltSaveName").value||"").trim();if(!n){toast("Name the button.");return}const q=LTQ,h=ltCfg();h.quick=h.quick||[];
+      h.quick.push({id:"lq"+Date.now(),name:n,ids:[q.id],on:!!q.on,mins:q.until==="next"||q.until==="pick"?0:+q.until});save();log(`Lighting button saved: ${n}`);toast("Saved. It's on the dashboard.");LTQ=null;closeModal("mOpen");renderLt();return}
     if(c("[data-ltqgo]")){const q=LTQ;let until="next";if(q.until==="pick"){const h=$("#ltAt");const [hh,mm]=(h?h.value:q.at).split(":").map(Number);const d=new Date();d.setHours(hh,mm,0,0);if(d<Date.now())d.setDate(d.getDate()+1);until=d.getTime()}else if(q.until!=="next")until=Date.now()+ +q.until*60000;
       LTQ=null;closeModal("mOpen");await ltSend([q.id],q.on,until);return}
     if((e=c("[data-ltqsced]"))){const sc=ltSchedById(e.dataset.ltqsced);LTQ=null;closeModal("mOpen");LTT="sched";LTSE=structuredClone(sc);renderLt();return}
@@ -6755,6 +6794,15 @@ document.addEventListener("click",async ev=>{const t=ev.target,c=x=>t.closest(x)
       LTD.rows.sort((a,b)=>(hvMin(a.on,s)??9999)-(hvMin(b.on,s)??9999));if(LTSE){LTSE.days=LTSE.days||{};[LTD.key,...LTD.also].forEach(k=>{LTSE.days[k]=structuredClone(LTD.rows)})}
       LTD=null;closeModal("mOpen");renderLt();toast("Changed here. Tap Save to keep it.");return}
     return}
+  /* quick actions */
+  if((e=c("[data-ltqa]"))){const k=e.dataset.ltqa,ids=LT.relays.map(r=>r.id);
+    if(k==="back"){await ltBack(ids);return}
+    if(k==="on1"){await ltSend(ids,true,Date.now()+3600e3,true);toast("All on for 1 hour");LT.t=0;renderLt();return}
+    if(k==="off"){if(LTARM!=="off"){LTARM="off";renderLt();setTimeout(()=>{if(LTARM==="off"){LTARM="";if(CUR_TAB==="lights")renderLt()}},5000);return}LTARM="";await ltSend(ids,false,"next",true);toast("All off until the next scheduled change");LT.t=0;renderLt();return}}
+  if((e=c("[data-ltqc]"))){const q=(ltCfg().quick||[]).find(x=>x.id===e.dataset.ltqc);if(!q)return;const ids=(q.ids||[]).filter(id=>LT.relays.some(r=>r.id===id));
+    if(!ids.length){toast("Those lights aren't here anymore.");return}await ltSend(ids,q.on,q.mins?Date.now()+q.mins*60e3:"next",true);toast(`${q.name}: done`);LT.t=0;renderLt();return}
+  if(c("[data-ltqnew]")){toast("Tap a light, pick on or off and how long, then Save as a button.");return}
+  if((e=c("[data-ltgrp]"))){const g=e.dataset.ltgrp,ids=LT.relays.filter(r=>(r.group||"Lights")===g).map(r=>r.id),on=e.dataset.on==="1";await ltSend(ids,on,"next",true);toast(`${g}: all ${on?"on":"off"} until the next scheduled change`);LT.t=0;renderLt();return}
   /* dashboard */
   if((e=c("[data-ltgo]"))){await ltSend([e.dataset.ltgo],e.dataset.on==="1","next");return}
   if((e=c("[data-ltc]"))){ltSheet(e.dataset.ltc);return}
@@ -6777,11 +6825,13 @@ document.addEventListener("click",async ev=>{const t=ev.target,c=x=>t.closest(x)
   if(c("[data-ltspdel]")){const h=ltCfg();h.rules=h.rules.filter(x=>x.id!==LTS.id);save();log(`Lighting special day removed: ${LTS.name}`);LTS=null;renderLt();return}
   if(c("[data-ltspup]")){const l=ltCfg().rules,i=l.findIndex(x=>x.id===LTS.id);if(i>0){[l[i-1],l[i]]=[l[i],l[i-1]];save();toast("Moved up")}return}
   /* setup */
+  if((e=c("[data-ltqdel]"))){const h=ltCfg();h.quick=(h.quick||[]).filter(x=>x.id!==e.dataset.ltqdel);save();toast("Removed");renderLt();return}
   if(c("[data-ltsync]")){if(!ON_BOX){toast("Demo: nothing to load");return}toast("Loading…");try{await fetch("api/lights/sync",{method:"POST"})}catch(x){}LT.t=0;renderLt();toast("Done");return}
   if((e=c("[data-ltgive]"))){if(e.dataset.arm!=="1"){e.dataset.arm="1";e.textContent="Tap again to give it back";setTimeout(()=>{e.dataset.arm="";e.textContent="Give back to Pelican"},5000);return}let j;try{j=await (await fetch("api/lights/giveback",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:e.dataset.ltgive})})).json()}catch(x){j={ok:false,error:"Can't reach the box."}}toast(j.ok?"Pelican runs it again. It was taken off its schedules here.":j.error||"Didn't work");LT.t=0;if(j.ok){const id=e.dataset.ltgive,h=ltCfg();h.scheds.forEach(x=>{x.relays=(x.relays||[]).filter(y=>y!==id)});h.rules.forEach(x=>{x.relays=(x.relays||[]).filter(y=>y!==id)})}renderLt();return}
 });
 document.addEventListener("change",ev=>{const t=ev.target;if(CUR_TAB!=="lights"||(!t.closest("#ltBody")&&!t.closest("#opSheet")))return;const d=t.dataset;
   if(t.id==="ltUntil"&&LTQ){LTQ.until=t.value;ltSheetDraw();return}
+  if(t.id==="ltLgI"){LTLG.id=t.value;renderLt();return}if(t.id==="ltLgD"){LTLG.days=t.value;renderLt();return}if(t.id==="ltLgW"){LTLG.who=t.value;renderLt();return}
   if(LTD&&d.ltcrk){const [i,k]=d.ltcrk.split(/\|(.*)/s),r=LTD.rows[+i];r.when=r.when||{mode:"skip",keys:[]};const l=new Set(r.when.keys);t.checked?l.add(k):l.delete(k);r.when.keys=[...l];if(!r.when.keys.length&&r.when.mode==="skip")delete r.when;return}
   if(d.ltqsc){const h=ltCfg(),id=d.ltqsc;h.scheds.forEach(x=>{x.relays=(x.relays||[]).filter(r=>r!==id)});const sc=h.scheds.find(x=>x.id===t.value);if(sc)sc.relays.push(id);save();log(`Lighting: ${ltName(id)} ${sc?"put on "+sc.name:"taken off its schedule"}`);toast(sc?`${ltName(id)} is on ${sc.name} now.`:`${ltName(id)} keeps Pelican's own schedule.`);if(LTQ)ltSheetDraw();return}
   if(LTSE&&d.ltse==="repeat"){ltSeName();LTSE.repeat=t.value;renderLt();return}
@@ -7048,7 +7098,18 @@ $("#scrim").onclick=()=>setDrawer(false);
 document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab(b.dataset.go));
 addEventListener("keydown",ev=>{if(ev.key==="Escape")setDrawer(false)});
 const SUBS={parking:"The two parking lot entrances: who can get in, and when",mtemp:"The water temperature in each pool",mikvah:"The mikva door magnet. It runs on its own, even if this box is off",lockdown:"For an emergency. No one gets in, not even with a card or PIN, until you end it",open:"Tap a door, then buzz it or open it for a few minutes",people:"Everyone with a card or PIN in Protector.Net",live:"Who is coming in, at every door, as it happens",board:"",doors:"Live status of every door. Tap one to change it.",preview:"What every door does, hour by hour",sheet:"One week on one page, ready to print or email",rules:"The standing instructions the doors follow",events:"Weddings, sheva brachos and the shul's own dates",codes:"PINs for visitors that expire on their own",msgs:"Ask a teammate to make a change",reports:"How the doors are used",activity:"What changed, and what the doors were doing at any moment",setup:""};
-function showTab(t){if((t==="mikvah"||t==="mtemp")&&!isAdmin())t=can("mtview")?"mtemp":"board";if(t==="climate"&&!hvAny())t="board";if(t==="parking"&&!isAdmin())t="open";if(t==="lights"&&!isAdmin())t="board";CUR_TAB=t;useCount(t);if(t!=="doors"&&typeof SELMODE!=="undefined"&&SELMODE){SELMODE=false;DSEL.clear();document.body.classList.remove("selmode")}document.querySelectorAll(".navbtn[data-tab]").forEach(x=>x.classList.toggle("on",x.dataset.tab===t||(x.dataset.also||"").split(" ").includes(t)));
+/* back: every page and HVAC/Lighting tab you leave goes on a short list; Back returns to the last one */
+let NAVH=[],NAVB=false;
+function navSnap(){return {t:CUR_TAB,hvt:typeof HVT!=="undefined"?HVT:"",ltt:typeof LTT!=="undefined"?LTT:""}}
+function navLabel(x){if(x.t==="climate"){const m={now:"Dashboard",sched:"Schedules",rules:"Special days",cal:"Calendar",log:"Log",setup:"Setup"};return "HVAC"+(x.hvt&&x.hvt!=="now"?": "+(m[x.hvt]||""):"")}if(x.t==="lights"){const m={now:"Dashboard",sched:"Schedules",rules:"Special days",log:"Log",setup:"Setup"};return "Lighting"+(x.ltt&&x.ltt!=="now"?": "+(m[x.ltt]||""):"")}
+  const D={open:"Open a door",doors:"Doors",preview:"Schedule",sheet:"Week sheet",rules:"Rules",special:"Special times",codes:"Guest codes",activity:"Activity",live:"Live",reports:"Reports"};return D[x.t]||TITLES[x.t]||"Back"}
+function navPush(){if(NAVB)return;const x=navSnap(),l=NAVH[NAVH.length-1];if(l&&l.t===x.t&&l.hvt===x.hvt&&l.ltt===x.ltt)return;NAVH.push(x);if(NAVH.length>30)NAVH.shift();navDraw()}
+function navDraw(){const b=$("#navBack");if(!b)return;const l=NAVH[NAVH.length-1];b.hidden=!l;if(l)$("#navBackT").textContent=navLabel(l)}
+function navBack(){const x=NAVH.pop();if(!x){navDraw();return}NAVB=true;try{if(x.t==="climate"){HVT=x.hvt||"now";HVS=null;HVSE=null;HVSU=null}if(x.t==="lights"){LTT=x.ltt||"now";LTS=null;LTSE=null}showTab(x.t);if(x.t==="climate"&&CUR_TAB==="climate"){renderHv.force=true;renderHv()}if(x.t==="lights"&&CUR_TAB==="lights")renderLt()}finally{NAVB=false}navDraw()}
+document.addEventListener("click",ev=>{if(ev.target.closest("#navBack")){ev.preventDefault();navBack()}});
+// HVAC and Lighting tabs count as places too
+document.addEventListener("click",ev=>{const e=ev.target.closest("[data-hvt],[data-ltt]");if(!e)return;const x=navSnap();if((e.dataset.hvt&&e.dataset.hvt!==x.hvt)||(e.dataset.ltt&&e.dataset.ltt!==x.ltt))navPush()},true);
+function showTab(t){if(t!==CUR_TAB)navPush();if((t==="mikvah"||t==="mtemp")&&!isAdmin())t=can("mtview")?"mtemp":"board";if(t==="climate"&&!hvAny())t="board";if(t==="parking"&&!isAdmin())t="open";if(t==="lights"&&!isAdmin())t="board";CUR_TAB=t;useCount(t);if(t!=="doors"&&typeof SELMODE!=="undefined"&&SELMODE){SELMODE=false;DSEL.clear();document.body.classList.remove("selmode")}document.querySelectorAll(".navbtn[data-tab]").forEach(x=>x.classList.toggle("on",x.dataset.tab===t||(x.dataset.also||"").split(" ").includes(t)));
   drawPageTabs(t);
   const inBar=[...document.querySelectorAll(".bnav [data-tab]")].some(x=>x.dataset.tab===t||(x.dataset.also||"").split(" ").includes(t));
   $("#moreBtn").classList.toggle("on",!inBar);
