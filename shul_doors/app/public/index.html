@@ -1997,7 +1997,7 @@ button.hv-tile{cursor:pointer}button.hv-tile:hover{background:color-mix(in srgb,
 .hv-wkr .hv-dbar small{font-size:11px;color:var(--muted);display:block;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hv-sptag{background:var(--brass-soft);color:var(--brass);border-radius:5px;padding:0 5px;font-weight:600}
 .hv-sub{margin-top:0}.hv-rngrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px}.hv-rngrow select{width:auto}.hv-rngrow input[type=date]{width:auto}
 .hv-chips2{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.hv-tc{display:inline-flex;align-items:baseline;gap:4px;background:var(--line);border-radius:8px;padding:3px 8px;font-size:13px}.hv-tc small{color:var(--muted);font-size:11.5px}.hv-tc b{font-weight:600}.hv-tc b.cool{color:var(--b)}.hv-tc b.off{color:var(--muted)}.hv-tc.past{opacity:.45}
-.hv-wkr{grid-template-columns:84px minmax(0,1fr)!important}
+.hv-wkr{grid-template-columns:84px minmax(0,1fr) auto!important}.hv-wkr.tap{cursor:pointer}.hv-wkr.tap:active{background:var(--line)}.hv-dayhead .btn{margin-left:auto}.hv-dayhead{gap:10px;align-items:center}.hv-dnote{margin:0 0 10px;background:var(--line);border-radius:10px;padding:8px 10px}
 .hv-qa button.hv-selb{background:transparent!important;box-shadow:none!important;color:var(--accent)}
 .hv-card2{display:grid;grid-template-columns:44px minmax(0,1fr);background:var(--surface);border-radius:12px;overflow:hidden;margin-bottom:10px;box-shadow:0 0 0 1px var(--line)}.hv-cn{background:#34a853;color:#fff;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:10px 0}.hv-cn b{font-size:20px}.hv-cn .lnk{color:#fff;font-size:11px;writing-mode:vertical-rl;transform:rotate(180deg)}.hv-cb{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 .hv-wsg{display:grid;grid-template-columns:120px repeat(7,minmax(0,1fr));gap:6px;font-size:12.5px}
@@ -6206,10 +6206,11 @@ function hvSheetSched(serial){const h=hvCfg(),sc=hvSchedOf(serial),d=todayNY(),p
   if(!sc)return `<div class="glist"><div class="row"><span class="hint">Not on a schedule here. It runs what's on the thermostat.</span></div></div>${hvSheetRules(serial)}`;
   const all=hvEnt(hvDayList(p.sc||sc,dow(d)),d,adj,true),act=new Set(p.entries.map(e=>e.min)),nx=p.entries.find(e=>e.min>nm),cur=[...p.entries].reverse().find(e=>e.min<=nm)||hvPrevLast(serial,d);
   const week=[];for(let i=0;i<7;i++){const x=addDays(d,i),pp=hvPlan(serial,x);week.push({x,pp,prev:i?(week[i-1].pp.entries.slice(-1)[0]||week[i-1].prev):cur})}
-  return `<div class="hv-card3"><div class="hv-dayhead"><b>Today, ${HV_FULL[dow(d)]}</b><span class="hv-src">${esc(p.src)}</span></div>
+  const may=hvMay(serial,"sched");
+  return `<div class="hv-card3"><div class="hv-dayhead"><b>Today, ${HV_FULL[dow(d)]}</b><span class="hv-src">${esc(p.src)}</span>${may?`<button type="button" class="btn sm" data-hvqed="${d}">Edit times</button>`:""}</div>
       <div class="hv-steps">${all.map(e=>{const on=act.has(e.min),isN=nx&&e.min===nx.min,past=on&&e.min<=nm;return `<div class="hv-stp${on?"":" skip"}${isN?" nxt":""}${past?" past":""}"><span class="tm">${fmt(e.min)}</span><b>${esc(hvTempText(e))}</b>${isN?`<em>Next</em>`:""}${e.keypad==="Off"?`<span class="hv-lk2">Locked</span>`:""}${e.when&&(e.when.keys||[]).length?`<small>${esc(on?"":"Skipped today: ")}${esc(hvWhenText(e))}</small>`:""}</div>`}).join("")||`<span class="hint">No changes today. It keeps the last setting.</span>`}</div></div>
     <h3 class="op-sh">This week</h3>
-    <div class="glist hv-wk">${week.map(({x,pp},i)=>`<div class="hv-wkr${i===0?" tdy":""}"><span class="dn"><b>${i===0?"Today":i===1?"Tomorrow":HV_FULL[dow(x)]}</b><small>${esc(mdText(x))}</small></span><span class="hv-chips2">${pp.rule?`<span class="hv-sptag">${esc(pp.rule.name)}</span>`:""}${pp.entries.map(e=>`<span class="hv-tc${i===0&&e.min<=nm?" past":""}"><small>${esc(fmt(e.min).replace(":00","").replace(" AM","a").replace(" PM","p"))}</small><b class="${e.system==="Off"?"off":e.system==="Cool"?"cool":""}">${esc(e.system==="Off"?"Off":e.system==="Cool"?e.cool+"°":e.heat+"°")}</b></span>`).join("")||`<span class="hint">No changes</span>`}</span></div>`).join("")}</div>
+    <div class="glist hv-wk">${week.map(({x,pp},i)=>`<div class="hv-wkr${i===0?" tdy":""}${may?" tap":""}"${may?` data-hvqed="${x}" role="button" tabindex="0" aria-label="Edit ${esc(HV_FULL[dow(x)])}"`:""}><span class="dn"><b>${i===0?"Today":i===1?"Tomorrow":HV_FULL[dow(x)]}</b><small>${esc(mdText(x))}</small></span><span class="hv-chips2">${pp.rule?`<span class="hv-sptag">${esc(pp.rule.name)}</span>`:""}${pp.entries.map(e=>`<span class="hv-tc${i===0&&e.min<=nm?" past":""}"><small>${esc(fmt(e.min).replace(":00","").replace(" AM","a").replace(" PM","p"))}</small><b class="${e.system==="Off"?"off":e.system==="Cool"?"cool":""}">${esc(e.system==="Off"?"Off":e.system==="Cool"?e.cool+"°":e.heat+"°")}</b></span>`).join("")||`<span class="hint">No changes</span>`}</span>${may?`<span class="chev"></span>`:""}</div>`).join("")}</div>${may?`<p class="gf" style="margin-top:6px">Tap a day to change its times.</p>`:""}
     ${hvSheetRules(serial)}`}
 const HV_RNG=[["1","Today"],["y","Yesterday"],["3","3 days"],["7","7 days"],["14","14 days"],["30","30 days"],["90","90 days"],["pick","Pick dates"]];
 function hvRange(q){const t=todayNY(),r=q.hr||"1";if(r==="y")return [addDays(t,-1),addDays(t,-1)];if(r==="pick"){const f=q.hf||addDays(t,-7),to=q.ht||t;return to<f?[to,f]:[f,to]}return [addDays(t,-(+r-1)),t]}
@@ -6294,6 +6295,10 @@ function hvSchedEditHtml(){const sc=HVSE,list=hvSchedTs(),d0=todayNY(),keys=hvRe
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn pri" type="button" data-hvsesave>Save</button><button class="btn" type="button" data-hvseback>Cancel</button>${hvCfg().scheds.some(x=>x.id===sc.id)?`<button class="btn" type="button" data-hvsecopy>Copy</button><button class="btn danger" type="button" data-hvsedel>Remove</button>`:""}</div>`}
 
 /* ---- the day sheet: numbered cards, like Pelican ---- */
+function hvKeyFor(sc,x){const w=dow(x);return sc.repeat==="daily"?0:sc.repeat==="wkend"?(w===0||w===6?0:1):w}
+/* edit one day's times straight from a thermostat's sheet, then back to the sheet */
+function hvEditDay(serial,x){const sc0=hvSchedOf(serial);if(!sc0)return;const pp=hvPlan(serial,x),sc=pp.sc||sc0,k=hvKeyFor(sc,x),l=(hvRepKeys(sc.repeat).find(y=>y[0]===k)||[0,""])[1];
+  const back={...HVQ,hist:null};HVQ=null;hvDayOpen({key:k,rep:sc.repeat,title:`${sc.name}: ${l}`,rows:(sc.days||{})[k]||[],direct:{sid:sc.id,serial,back,shared:(sc.tstats||[]).length>1?sc.tstats.length:0,special:pp.rule?pp.rule.name:""}})}
 function hvDayOpen(o){HVD={...o,rows:structuredClone(o.rows||[]),also:new Set()};hvDayDraw();openModal("mOpen")}
 function hvSampleDate(){const d0=todayNY();return HVD&&HVD.key!=null?addDays(d0,(HVD.key-dow(d0)+7)%7):d0}
 function hvSortRows(){const s=hvSampleDate();HVD.rows.sort((a,b)=>(hvMin(a.at,s)??9999)-(hvMin(b.at,s)??9999))}
@@ -6307,8 +6312,8 @@ function hvCardRule(r,i){const w=r.when,has=w&&(w.keys||[]).length,open=HVD.rule
 function hvCardsRead(){if(!HVD)return;HVD.rows.forEach((r,i)=>{if(!r.at||r.at.a==="clock"){const h=$("#hvcT"+i);if(h)r.at={a:"clock",t:h.value}}else{const z=$("#hvcZ"+i),o=$("#hvcO"+i),b=$("#hvcB"+i);if(z)r.at={a:z.value,o:(Math.abs(+o.value)||0)*(+b.value||1)}}})}
 function hvDayDraw(){const s=hvSampleDate(),seg=(i,k,opts,cur)=>`<div class="hv-seg">${opts.map(([v,l])=>`<button type="button" class="${cur===v?"on":""}" data-hvcf="${i}|${k}" data-v="${v}">${l}</button>`).join("")}</div>`;
   const st=(i,k,lab,v)=>`<div class="hv-box"><div class="hint">${lab}</div><div class="hv-st"><button type="button" data-hvcst="${i}|${k}" data-d="-1" aria-label="Lower ${lab}">−</button><span><b>${v}°</b></span><button type="button" data-hvcst="${i}|${k}" data-d="1" aria-label="Raise ${lab}">+</button></div></div>`;
-  $("#opT").textContent=`${HVD.title||"Day"}`;
-  $("#opSheet").innerHTML=`${HVD.rows.map((r,i)=>{const at=r.at||{a:"clock",t:"06:00"},zm=at.a!=="clock",o=+at.o||0,m=hvMin(at,s);
+  $("#opT").textContent=`${HVD.title||"Day"}`;const dn=HVD.direct?`<p class="gf hv-dnote">${HVD.direct.special?`On ${esc(HVD.direct.special)} this thermostat uses this schedule. `:""}${HVD.direct.shared?`This changes the schedule for all ${HVD.direct.shared} thermostats on it.`:"Only this thermostat is on this schedule."} Saved when you tap Done.</p>`:"";
+  $("#opSheet").innerHTML=dn+`${HVD.rows.map((r,i)=>{const at=r.at||{a:"clock",t:"06:00"},zm=at.a!=="clock",o=+at.o||0,m=hvMin(at,s);
     return `<div class="hv-card2"><div class="hv-cn"><b>${i+1}</b><button type="button" class="lnk" data-hvcrm="${i}" aria-label="Remove change ${i+1}">Remove</button></div><div class="hv-cb">
       <div class="tline" style="flex-wrap:wrap">${seg(i,"tt",[["clock","Clock"],["zman","By a zman"]],zm?"zman":"clock")}${zm?`<select id="hvcZ${i}" aria-label="Zman">${HV_ANCH.filter(x=>x[0]!=="clock").map(([k,l])=>`<option value="${k}"${at.a===k?" selected":""}>${l}</option>`).join("")}</select><input type="number" id="hvcO${i}" value="${Math.abs(o)}" min="0" max="240" step="5" inputmode="numeric" aria-label="Minutes" style="width:70px"><select id="hvcB${i}" aria-label="Before or after"><option value="-1"${o<0?" selected":""}>min before</option><option value="1"${o>=0?" selected":""}>min after</option></select>${m!=null?`<span class="hint">${fmt(m)} this ${HV_DAYS[dow(s)]}</span>`:""}`:tpick("hvcT"+i,at.t||"06:00","Time")}</div>
       ${seg(i,"system",HV_SYS.map(x=>[x,x]),r.system||"Auto")}
@@ -6533,6 +6538,7 @@ document.addEventListener("click",async ev=>{const t=ev.target,c=x=>t.closest(x)
     if(c("[data-hvback]")){closeModal("mOpen");await hvResume(HVQ.serials);return}
     if(c("[data-hvgo]")){if(!HVQ.serials.length){toast("Pick a thermostat.");return}const u=hvUntil();if(!u){toast("Pick the time.");return}closeModal("mOpen");await hvSend(HVQ.serials,hvVals(),u);return}}
   if((e=c("[data-hvqt]"))&&HVQ){HVQ.tab=e.dataset.hvqt;hvSheetDraw();return}
+  if((e=c("[data-hvqed]"))&&HVQ){hvEditDay(HVQ.serials[0],e.dataset.hvqed);return}
   if((e=c("[data-hvqs]"))&&HVQ){HVQ.hs=e.dataset.hvqs;HVQ.hall=false;hvSheetDraw();return}
   if(c("[data-hvqhall]")&&HVQ){HVQ.hall=true;hvSheetDraw();return}
   if((e=c("[data-hvqhist]"))){const s=e.dataset.hvqhist;HVQ=null;closeModal("mOpen");HVT="log";HVLG.serial=s;HVLG.data=null;HVLG.key="";renderHv.force=true;renderHv();window.scrollTo(0,0);return}
@@ -6569,6 +6575,8 @@ document.addEventListener("click",async ev=>{const t=ev.target,c=x=>t.closest(x)
     if((e=c("[data-hvcrclear]"))){delete HVD.rows[+e.dataset.hvcrclear].when;HVD.rule=null;hvDayDraw();return}
     if((e=c("[data-hvcalso]"))){const i=+e.dataset.hvcalso;HVD.also.has(i)?HVD.also.delete(i):HVD.also.add(i);hvDayDraw();return}
     if(c("[data-hvcdone]")){if(HVD.rows.some(r=>hvMin(r.at,hvSampleDate())==null)){toast("Every change needs a time.");return}hvSortRows();
+      if(HVD.direct){const D=HVD.direct,sc=hvCfg().scheds.find(x=>x.id===D.sid);if(sc){sc.days=sc.days||{};[HVD.key,...HVD.also].forEach(k=>{sc.days[k]=structuredClone(HVD.rows)});save();log(`HVAC schedule changed: ${sc.name}`);toast("Saved. The thermostats get it in a few seconds.")}
+        HVD=null;HVQ={...D.back,tab:"sched"};$("#opT").textContent=hvName(D.serial);hvSheetDraw();renderHv.force=true;renderHv();return}
       if(HVSE){HVSE.days=HVSE.days||{};[HVD.key,...HVD.also].forEach(k=>{HVSE.days[k]=structuredClone(HVD.rows)})}
       HVD=null;closeModal("mOpen");renderHv.force=true;renderHv();toast("Changed here. Tap Save to keep it.");return}}
   /* calendar */
