@@ -344,6 +344,32 @@ th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mu
 .how{margin-bottom:12px;font-size:13.5px;color:var(--muted)}
 .how summary{cursor:pointer;color:var(--accent);font-weight:500}
 @media (prefers-reduced-motion:reduce){.side{transition:none}}
+.tnav,.tbreak{display:none}
+/* tablets and computers: the menu is one bar at the top that stays put, no side menu */
+@media (min-width:560px){
+  .shell{grid-template-columns:minmax(0,1fr)!important}
+  .menu-btn,.bnav,.scrim{display:none!important}
+  .topbar{flex-wrap:wrap!important;align-items:center;gap:2px 10px;padding:6px 14px 4px!important}
+  .brand{order:1;flex:none}.brand b{display:flex;flex-direction:column;font-size:15.5px;line-height:1.02;letter-spacing:-.2px}.brand .proto{display:none}
+  .tnav{display:flex;order:2;flex:1 1 200px;min-width:0}
+  .topbar .who{order:8;margin-left:0!important;font-size:0}.topbar .who select{font-size:12.5px;max-width:130px;padding:2px 6px}
+  .tbreak{display:block;order:4;flex-basis:100%;height:0}
+  .today{display:flex!important;order:5;flex:1 1 auto!important;flex-basis:auto!important;font-size:12.5px!important}.today .heb{font-size:13.5px}
+  .syspill{order:6;font-size:12px;padding:2px 9px}.viewseg{order:7}
+  .tnav .side{position:static!important;transform:none!important;box-shadow:none!important;height:auto!important;width:auto!important;flex:1;min-width:0;flex-direction:row;align-items:center;gap:2px;overflow-x:auto;overflow-y:hidden;padding:0!important;border:0;background:none;scrollbar-width:none}
+  .tnav .side::-webkit-scrollbar{display:none}
+  .tnav .side .navbtn{flex-direction:column;gap:2px;font-size:11px;line-height:1.15;padding:5px 7px;min-width:50px;justify-content:center;align-items:center;white-space:nowrap;position:relative;text-align:center}
+  .tnav .side .navbtn i,.tnav .side .navbtn svg{width:20px;height:20px}
+  .tnav .side .badge{position:absolute;top:1px;right:4px;margin:0}
+  .tnav .side .ng{flex:1 0 6px;padding:0;min-width:6px;font-size:0;border:0!important;background:none!important;height:auto;margin:0}
+  .tnav .side .navbtn.on{background:color-mix(in srgb,var(--accent) 12%,transparent)!important;color:var(--accent)!important}.tnav .side .navbtn.on i{color:var(--accent)!important}
+  .chiprow{top:var(--tbh,96px)}
+}
+@media (min-width:560px) and (max-width:820px){
+  .tnav .side .navbtn{min-width:0;padding:5px 4px;font-size:10.5px}.tnav .side .navbtn i,.tnav .side .navbtn svg{width:19px;height:19px}
+  .brand b{font-size:14px}.topbar{gap:2px 6px;padding:6px 10px 4px!important}
+  .main{padding-bottom:40px}
+}
 /* assistant */
 [hidden]{display:none!important}
 .ask-fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;border:0;border-radius:999px;padding:11px 18px;background:var(--accent);color:var(--accent-fg);font:inherit;font-weight:600;box-shadow:0 6px 20px rgb(0 0 0 / .22);cursor:pointer}
@@ -2271,7 +2297,7 @@ button.hv-tile{cursor:pointer}button.hv-tile:hover{background:color-mix(in srgb,
 <div class="shell" id="app">
   <header class="topbar">
     <button type="button" class="menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-    <div class="brand"><b>Shul Manager</b><span class="proto">Prototype</span></div>
+    <div class="brand"><b><span>Shul</span> <span>Manager</span></b><span class="proto">Prototype</span></div><div class="tnav" id="tnavSlot"></div><div class="tbreak" aria-hidden="true"></div>
     <div class="today"><span class="heb" id="hebNow"></span><span class="dot">·</span><span id="gregNow"></span><span class="dot">·</span><span>Shkiah <b id="sunNow"></b></span><span class="hint" id="seasonNow"></span></div>
     <button type="button" class="syspill" id="sysCell"></button><span id="sysSub" hidden></span>
     <div class="seg viewseg" role="group" aria-label="View"><button type="button" data-view="simple">Simple</button><button type="button" data-view="full">Full</button></div><label class="who hint">Signed in as <select id="meSel" aria-label="Signed in as"></select></label>
@@ -3531,7 +3557,7 @@ function ico(k){return `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]||""}
 function modeIco(m){return m==="Unlock"?"open":m==="Lockdown"?"lockdown":"lock"}
 function initials(n){return String(n||"?").replace(/[^A-Za-z ]/g,"").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("")||"?"}
 let LAST_FOCUS=null;
-function openModal(id){const m=$("#"+id);if(!m)return;LAST_FOCUS=document.activeElement;m.hidden=false;if(window.vvPlace)vvPlace();document.body.classList.add("modal-open");
+function openModal(id){try{window.vvPlace&&window.vvPlace()}catch(e){}const m=$("#"+id);if(!m)return;LAST_FOCUS=document.activeElement;m.hidden=false;if(window.vvPlace)vvPlace();document.body.classList.add("modal-open");
   requestAnimationFrame(()=>m.classList.add("show"));
   // no typing box on open for touch screens (keyboard pops up) or when editing an existing rule
   const touch=window.matchMedia&&matchMedia("(pointer:coarse)").matches;if(touch||(id==="mRule"&&E&&!E.isNew))return;
@@ -7196,6 +7222,11 @@ function fixActNav(){const n=$("#actNav");if(n)n.hidden=!actFirst()}
 
 const TITLES={climate:"HVAC",lights:"Lighting",parking:"Parking lot",mtemp:"Mikva",mikvah:"Mikva",open:"Doors",lockdown:"Lockdown",people:"People",live:"Doors",board:"Home",doors:"Doors",preview:"Doors",sheet:"Doors",rules:"Doors",events:"Events",special:"Doors",codes:"Doors",msgs:"Messages",reports:"Doors",activity:"Doors",setup:"Settings"};
 document.querySelectorAll(".navbtn[data-tab]").forEach(b=>b.onclick=()=>showTab(b.dataset.tab==="activity"?actFirst()||"board":b.dataset.tab));
+function navPlace(){const nav=$("#sideNav"),slot=$("#tnavSlot"),hd=document.querySelector(".topbar");if(!nav||!slot||!hd)return;const top=matchMedia("(min-width:560px)").matches;
+  if(top&&nav.parentElement!==slot){slot.appendChild(nav);document.body.classList.remove("drawer");const sc=$("#scrim");if(sc)sc.hidden=true}else if(!top&&nav.parentElement===slot)hd.after(nav);
+  document.documentElement.style.setProperty("--tbh",hd.offsetHeight+"px")}
+try{matchMedia("(min-width:560px)").addEventListener("change",navPlace)}catch(e){}addEventListener("resize",()=>{clearTimeout(navPlace.t);navPlace.t=setTimeout(navPlace,120)});
+setTimeout(navPlace,0);document.addEventListener("DOMContentLoaded",navPlace);
 function setDrawer(open){document.body.classList.toggle("drawer",open);$("#scrim").hidden=!open;$("#menuBtn").setAttribute("aria-expanded",open)}
 document.querySelectorAll(".viewseg button").forEach(b=>b.onclick=()=>{SIMPLE=b.dataset.view==="simple";try{localStorage.setItem("shulDoorSimple",SIMPLE?"1":"0")}catch(e){}setPref("simple",SIMPLE);renderView();fixActNav();if(!tabOk(CUR_TAB))showTab(actFirst()||"board");else drawPageTabs(CUR_TAB);if(CUR_TAB==="setup")renderSetupIndex()});
 let CUR_TAB="board";
@@ -8472,14 +8503,16 @@ new MutationObserver(()=>{clearTimeout(PL_T);PL_T=setTimeout(()=>document.queryS
   const typing=el=>el&&(/^(TEXTAREA|SELECT)$/.test(el.tagName)||(el.tagName==="INPUT"&&!/^(checkbox|radio|button|submit|range|color|file|hidden)$/.test(el.type))||el.isContentEditable);
   let done=null;
   // inside Home Assistant the page sits in a frame that can be taller than the screen, so measure the part of the frame you can see
-  let fe=null,pw=null;try{if(window.parent!==window&&window.frameElement){fe=window.frameElement;pw=window.parent}}catch(e){}
+  // Home Assistant can nest the page two frames deep (its add-on page, then the app), so walk every frame up to the top and keep only what's on screen
+  const anc=[];try{let w=window;while(w.parent!==w&&w.frameElement){anc.push({fe:w.frameElement,p:w.parent});w=w.parent}}catch(e){}
+  const fe=anc.length?anc[0].fe:null,pw=anc.length?anc[0].p:null;
   const place=()=>{if(!vv)return;let t=vv.offsetTop,h=vv.height;
-    if(fe)try{const r=fe.getBoundingClientRect(),pv=pw.visualViewport,pt=pv?pv.offsetTop:0,ph=pv?pv.height:pw.innerHeight,top=Math.max(r.top,pt),bot=Math.min(r.bottom,pt+ph);
-      if(bot-top>120){const vt=top-r.top,vb=bot-r.top;t=Math.max(t,vt);h=Math.max(120,Math.min(t+h,vb)-t)}}catch(e){}
+    if(anc.length)try{let A=t,B=t+h,off=0;for(const {fe:f,p} of anc){const r=f.getBoundingClientRect(),pv=p.visualViewport,pt=pv?pv.offsetTop:0,ph=pv?pv.height:p.innerHeight;A+=r.top;B+=r.top;off+=r.top;A=Math.max(A,pt);B=Math.min(B,pt+ph)}
+      if(B-A>120){t=A-off;h=B-A}}catch(e){}
     root.style.setProperty("--vvh",h+"px");root.style.setProperty("--vvt",t+"px");
     if(done){const kb=Math.max(0,innerHeight-h-t);done.style.bottom=(kb+10)+"px";done.style.top="auto"}};
   if(vv){vv.addEventListener("resize",place);vv.addEventListener("scroll",place);addEventListener("resize",place);
-    if(pw)try{const pv=pw.visualViewport;if(pv){pv.addEventListener("resize",place);pv.addEventListener("scroll",place)}pw.addEventListener("resize",place);pw.addEventListener("scroll",place,true)}catch(e){}
+    anc.forEach(({p})=>{try{const pv=p.visualViewport;if(pv){pv.addEventListener("resize",place);pv.addEventListener("scroll",place)}p.addEventListener("resize",place);p.addEventListener("scroll",place,true)}catch(e){}});
     place();setTimeout(place,600)}
   window.vvPlace=place;
   if(!coarse)return;
