@@ -1975,6 +1975,7 @@ button.hv-tile{cursor:pointer}button.hv-tile:hover{background:color-mix(in srgb,
 .hv-mode select,.hv-fan select{width:auto;border:0;background:transparent;font:inherit;font-size:12.5px;font-weight:600;color:var(--fg);padding:1px 14px 1px 0;cursor:pointer}
 .hv-mode{font-size:12.5px;font-weight:600}
 .hv-mode small{font-size:10.5px;color:var(--muted);font-weight:500;margin-right:3px}.hv-step button[data-d="-1"]{order:-1}.hv-step button[data-d="1"]{order:1}.hv-mode{display:inline-flex;align-items:center;white-space:nowrap}.hv-line .lnk{font-size:inherit;font-weight:600;padding:0}
+.hv-ftr{display:inline-flex;align-items:center;gap:6px}.hv-lock{display:inline-flex;color:var(--muted);opacity:.55}.hv-lock svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}.hv-lock.on{color:var(--r);opacity:1}
 .hv-fan{display:inline-flex;align-items:center;gap:3px;font-size:12.5px;color:var(--muted)}.hv-fan svg{width:14px;height:14px;fill:currentColor;flex:none}
 .hv-fan.run{color:var(--b)}.hv-fan.run svg{animation:hvspin 1.6s linear infinite}@keyframes hvspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.hv-fan.run svg{animation:none}}
@@ -6038,7 +6039,7 @@ const hvMay=(s,k)=>{const r=hvRole(s);return k==="sched"?r==="sched":k==="change
 const hvT=s=>HV.tstats.find(t=>t.serial===s);
 const hvName=s=>(hvT(s)||{name:s}).name;
 async function hvLoad(force){
-  if(!ON_BOX){if(!HV.tstats.length){HV.tstats=HV_DEMO.map(([serial,name,temp,heat,cool,run])=>({serial,name,temp,heat,cool,system:"Auto",fan:"Auto",run,online:temp!=null,hold:null,writable:false,next:null}));HV.configured=true;HV.at=Date.now();HV.mode="read";
+  if(!ON_BOX){if(!HV.tstats.length){HV.tstats=HV_DEMO.map(([serial,name,temp,heat,cool,run])=>({serial,name,temp,heat,cool,system:"Auto",fan:"Auto",run,online:temp!=null,keypad:serial==="D1"?"Off":"On",hold:null,writable:false,next:null}));HV.configured=true;HV.at=Date.now();HV.mode="read";
     const h=hvCfg();if(!h.areas.length){h.areas=[{id:"main",name:"Main shul",tstats:["D1","D2","D3"]},{id:"bm",name:"Beis medrash",tstats:["D4","D5"]}]}
     const d0=todayNY(),days={};[[38,47],[35,44],[41,52],[50,63],[58,71],[66,82],[70,85],[62,74]].forEach(([lo,hi],i)=>{days[addDays(d0,i)]={lo,hi}});HV.wx={now:41,days,at:Date.now(),src:"ha"};HV.live={ready:!!(+h.wx.every&&h.wx.max),today:null,fixed:{}}}return}
   if(!force&&Date.now()-HV.t<30000)return;HV.t=Date.now();
@@ -6107,6 +6108,7 @@ function hvCardLine(t){if(!t.online)return "Can't reach it. It keeps running the
   if(t.hold){const h=t.hold;return h.kind==="perm"?"No end, until someone resumes":h.until?"Until "+(new Date(h.until).toDateString()===new Date().toDateString()?fmt(nyMinutes(h.until)):whenText(h.until)):"Until the next change"}
   const sc=hvSchedOf(t.serial);if(!sc)return "No schedule here";const n=hvNext(t.serial),p=hvPlan(t.serial,todayNY());
   return p.src+(n?` · ${n.day===todayNY()?fmt(n.min):WDN[dow(n.day)]+" "+fmt(n.min)} → ${hvTempText(n).replace(/ heat$/,"")}`:"")}
+const HV_LOCK=`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`,HV_UNLOCK=`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></svg>`;
 const HV_FAN_ICO=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c0-3 1-7 4-7s3 4 0 6l-4 1zm0 0c3 0 7 1 7 4s-4 3-6 0l-1-4zm0 0c0 3-1 7-4 7s-3-4 0-6l4-1zm0 0c-3 0-7-1-7-4s4-3 6 0l1 4z"/></svg>`;
 function hvKind(t){if(!t.online)return "x";if(/^Heat/.test(t.run))return "h";if(/^Cool/.test(t.run))return "c";if(t.system==="Off")return "o";return "i"}
 function hvCard(t){const [st]=hvState(t),k=hvSet(t),pend=HVPEND[t.serial],v=pend!=null?pend:t[k],ch=hvMay(t.serial,"change")&&t.online&&!HVSM,kd=hvKind(t);
@@ -6117,7 +6119,7 @@ function hvCard(t){const [st]=hvState(t),k=hvSet(t),pend=HVPEND[t.serial],v=pend
     <div class="hv-line">${held?`<span class="hv-held">${t.hold.would?"Not sent":"Held"}</span> `:""}${esc(line)}${held&&ch?` · <button type="button" class="lnk" data-hvres="${esc(t.serial)}">Resume</button>`:""}</div>
     ${t.online?`<div class="hv-ft">${ch?`<label class="hv-mode"><small>Mode</small><select data-hvcm="${esc(t.serial)}" aria-label="Mode for ${esc(t.name)}">${HV_SYS.map(m=>`<option${t.system===m?" selected":""}>${m}</option>`).join("")}</select></label>`:`<span class="hv-mode">${esc(t.system||"")}</span>`}
       <span class="hv-fan${fanRun?" run":""}" title="Fan ${fanRun?"running":"not running"}">${HV_FAN_ICO}${ch?`<select data-hvcfan="${esc(t.serial)}" aria-label="Fan for ${esc(t.name)}">${["Auto","On"].map(f=>`<option value="${f}"${(t.fan||"Auto")===f?" selected":""}>${f}</option>`).join("")}</select>`:`<span>${esc(t.fan||"Auto")}</span>`}</span>
-      ${t.humidity?`<span class="hint" title="Humidity">${Math.round(t.humidity)}%</span>`:""}</div>`:""}
+      <span class="hv-ftr">${t.humidity?`<span class="hint" title="Humidity">${Math.round(t.humidity)}%</span>`:""}${t.keypad?`<span class="hv-lock${t.keypad==="Off"?" on":""}" title="${t.keypad==="Off"?"Locked: the screen can't be changed":"Unlocked"}" aria-label="${t.keypad==="Off"?"Locked":"Unlocked"}">${t.keypad==="Off"?HV_LOCK:HV_UNLOCK}</span>`:""}</span></div>`:""}
   </div>`}
 function hvSummary(){const ts=HV.tstats,n=k=>ts.filter(t=>hvKind(t)===k).length,held=ts.filter(t=>t.hold).length,w=HV.wx||{},d=(w.days||{})[todayNY()]||{};
   const tile=(lab,val,cls,f,sub)=>`<${f?`button type="button" data-hvf="${f}"`:"div"} class="hv-tile${val===0?"":" "+cls}${f&&HVF===f?" on":""}"${f?` aria-pressed="${HVF===f}"`:""}><b>${val}</b><small>${lab}${sub?` <i>${sub}</i>`:""}</small></${f?"button":"div"}>`;
@@ -6152,7 +6154,7 @@ function hvSheetDraw(){const q=HVQ,st=(k,lab)=>`<div class="hv-box"><div class="
   const ch=HV.tstats.filter(t=>hvMay(t.serial,"change")),one=!q.pick&&q.serials.length===1?hvT(q.serials[0]):null;
   if(one){const [st,cl]=hvState(one),sc=hvSchedOf(one.serial),n=hvNext(one.serial);
     const head=`<div class="hv-head"><span class="big">${one.temp!=null?Math.round(one.temp)+"°":"--"}</span><span class="hv-stt"><span class="dot ${cl||"idle"}"></span>${esc(st)}${one.system!=="Off"&&/^(Heat|Cool)/.test(one.run||"")?" to "+(/^Cool/.test(one.run)?one.cool:one.heat)+"°":""}</span></div>
-      <div class="hv-kv">${one.humidity?`<span>Humidity</span><b>${Math.round(one.humidity)}%</b>`:""}${one.co2?`<span>CO₂</span><b>${Math.round(one.co2)} ppm</b>`:""}<span>Right now</span><b>${esc(hvLine(one))}</b>${sc&&one.hold?`<span>Schedule</span><b>${esc(sc.name)}</b>`:""}${n?`<span>Then</span><b>${esc(n.day===todayNY()?fmt(n.min):WDN[dow(n.day)]+" "+fmt(n.min))}: ${esc(hvTempText(n))}</b>`:""}</div>
+      <div class="hv-kv">${one.humidity?`<span>Humidity</span><b>${Math.round(one.humidity)}%</b>`:""}${one.co2?`<span>CO₂</span><b>${Math.round(one.co2)} ppm</b>`:""}<span>Right now</span><b>${esc(hvLine(one))}</b>${one.keypad?`<span>Screen</span><b>${one.keypad==="Off"?"Locked":"Unlocked"}</b>`:""}${sc&&one.hold?`<span>Schedule</span><b>${esc(sc.name)}</b>`:""}${n?`<span>Then</span><b>${esc(n.day===todayNY()?fmt(n.min):WDN[dow(n.day)]+" "+fmt(n.min))}: ${esc(hvTempText(n))}</b>`:""}</div>
       <div class="hv-seg2">${[["now","Change now"],["sched","Schedule"],["hist","History"]].map(([k,l])=>`<button type="button" class="${q.tab===k?"on":""}" data-hvqt="${k}">${l}</button>`).join("")}</div>`;
     if(q.tab==="sched"){$("#opSheet").innerHTML=head+hvSheetSched(one.serial);return}
     if(q.tab==="hist"){$("#opSheet").innerHTML=head+hvSheetHist(one.serial);return}

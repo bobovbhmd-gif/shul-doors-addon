@@ -5,7 +5,7 @@
 // Selection and value are "name:value;" pairs. Answers are XML.
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const FIELDS = ["name", "groupName", "serialNo", "temperature", "humidity", "co2Level", "heatSetting", "coolSetting", "system", "fan", "runStatus", "setBy", "statusDisplay", "schedule", "minHeatSetting", "maxHeatSetting", "minCoolSetting", "maxCoolSetting"];
+const FIELDS = ["name", "groupName", "serialNo", "temperature", "humidity", "co2Level", "heatSetting", "coolSetting", "system", "fan", "runStatus", "setBy", "statusDisplay", "schedule", "minHeatSetting", "maxHeatSetting", "minCoolSetting", "maxCoolSetting", "frontKeypad"];
 
 const unxml = (s) => String(s).replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
 function blocks(xml, tag) {
@@ -57,7 +57,7 @@ function createPelican({ site, username, password, log = () => {}, fetchImpl = (
     return blocks(xml, "Thermostat").filter((t) => t.serialNo).map((t) => ({
       serial: t.serialNo, name: t.name || t.serialNo, group: t.groupName || "",
       temp: num(t.temperature), humidity: num(t.humidity) || null, co2: num(t.co2Level) || null, heat: num(t.heatSetting), cool: num(t.coolSetting),
-      system: t.system || "", fan: t.fan || "", run: t.runStatus || "", setBy: t.setBy || "",
+      system: t.system || "", fan: t.fan || "", keypad: t.frontKeypad === "Off" ? "Off" : t.frontKeypad === "On" ? "On" : "", run: t.runStatus || "", setBy: t.setBy || "",
       online: !/unreachable/i.test(t.statusDisplay || ""), status: t.statusDisplay || "", schedule: t.schedule || "",
       limits: { heatMin: num(t.minHeatSetting), heatMax: num(t.maxHeatSetting), coolMin: num(t.minCoolSetting), coolMax: num(t.maxCoolSetting) },
     }));
