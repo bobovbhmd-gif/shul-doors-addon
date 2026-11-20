@@ -24,7 +24,7 @@ function createLights({ pelican, engine, getState, getStore, save, saveState = (
   const inPilot = (r) => { const p = pilot().map((x) => String(x).trim().toLowerCase()).filter(Boolean); return p.includes(r.name.toLowerCase()) || p.includes(r.id.toLowerCase()); };
   const writable = (r) => mode() === "live" || (mode() === "pilot" && inPilot(r));
   const would = (r, what) => { const s = st(); s.lightWould = s.lightWould || []; s.lightWould.unshift({ at: now(), id: r.id, name: r.name, what }); s.lightWould = s.lightWould.slice(0, 200); };
-  const event = (r, who, what) => { const s = st(); s.lightEvents = s.lightEvents || []; s.lightEvents.unshift({ at: now(), id: r.id, name: r.name, who, what }); s.lightEvents = s.lightEvents.slice(0, 500); try { note(who, `Lights: ${r.name}: ${what}`); } catch { /* no activity */ } };
+  const event = (r, who, what, quiet) => { const s = st(); s.lightEvents = s.lightEvents || []; s.lightEvents.unshift({ at: now(), id: r.id, name: r.name, who, what }); s.lightEvents = s.lightEvents.slice(0, 1500); if (quiet) return; try { note(who, `Lights: ${r.name}: ${what}`); } catch { /* no activity */ } };
 
   // ---- the plan ----
   const minOf = (at, z) => {
@@ -87,9 +87,30 @@ function createLights({ pelican, engine, getState, getStore, save, saveState = (
 
   // ---- reading the relays ----
   async function poll() {
-    try { list = await pelican.powerList(); listAt = now(); listErr = ""; await pressCheck(); }
+    try { list = await pelican.powerList(); listAt = now(); listErr = ""; await seenCheck(); await pressCheck(); }
     catch (e) { listErr = e.message; }
     return list;
+  }
+  // changes the box didn't make: Pelican's schedule turned it on or off (the switch is logged by pressCheck)
+  // keep on: the schedule here says on, but the light went off without anyone turning it off
+  // (Pelican's switch timer ran out in the middle of a run). Turn it back on. On unless Setup turns it off
+  const keepOn = (r) => cfg().sw.keep !== "off" && managed(r.id) && !((st().lightHold || {})[r.id] && st().lightHold[r.id].until > now()) && !!nowNext(r.id).on;
+  async function seenCheck() {
+    const s = st(); s.lightLast = s.lightLast || {}; let ch = false;
+    s.lightKept = s.lightKept || {};
+    for (const r of list) {
+      const was = s.lightLast[r.id];
+      // one we turned back on: when the run time ends, make sure it goes off (in case Pelican keeps our On past the run)
+      if (s.lightKept[r.id] && !nowNext(r.id).on) {
+        delete s.lightKept[r.id]; ch = true;
+        if (r.on && r.setBy === "Remote" && !((s.lightHold || {})[r.id])) { try { await setOut(r, false, "Shul Manager", "the run time ended"); } catch (e) { log("warn", `lights: ${r.name}: ${e.message}`); } }
+      }
+      if (was !== r.on) { s.lightLast[r.id] = r.on; ch = true; }
+      if (was === undefined || was === r.on || r.setBy === "Station" || r.setBy === "Remote") continue;
+      event(r, "Schedule", r.on ? "turned on" : "turned off", true);
+      if (!r.on && keepOn(r)) { try { await setOut(r, true, "Shul Manager", "turned back on: the schedule here says on"); (st().lightKept = st().lightKept || {})[r.id] = true; } catch (e) { log("warn", `lights: ${r.name}: ${e.message}`); } }
+    }
+    if (ch) save();
   }
   // someone pressed the light switch (Pelican says set by Station): leave it, or put it back after the time picked in Setup
   async function pressCheck() {
@@ -98,7 +119,16 @@ function createLights({ pelican, engine, getState, getStore, save, saveState = (
       if (!managed(r.id)) continue;
       const was = s.lightPress[r.id];
       if (r.setBy !== "Station") { if (was) { delete s.lightPress[r.id]; save(); } continue; }
-      if (!was || was.on !== r.on) { s.lightPress[r.id] = { at: now(), on: r.on }; save(); event(r, "Switch", `pressed at the switch: ${r.on ? "on" : "off"}`); continue; }
+      if (!was || was.on !== r.on) {
+        // on, then off by itself after the switch timer: that's Pelican's timer, not a person. Keep it on if the schedule says on
+        const timer = +cfg().sw.timer || 120;
+        if (was && was.on && !r.on && now() - was.at >= (timer - 6) * 60e3 && keepOn(r)) {
+          delete s.lightPress[r.id]; save(); event(r, "Switch", `the switch timer ran out (${timer} min)`, true);
+          try { await setOut(r, true, "Shul Manager", "turned back on: the schedule here says on"); (st().lightKept = st().lightKept || {})[r.id] = true; } catch (e) { log("warn", `lights: ${r.name}: ${e.message}`); }
+          continue;
+        }
+        s.lightPress[r.id] = { at: now(), on: r.on }; save(); event(r, "Switch", `pressed at the switch: ${r.on ? "on" : "off"}`); continue;
+      }
       if (wait && now() - was.at >= wait * 60e3) {
         const want = nowNext(r.id).on; delete s.lightPress[r.id]; save();
         if (want !== r.on) await setOut(r, want, "Shul Manager", `back to the schedule ${wait} min after the switch was pressed`);
@@ -107,7 +137,7 @@ function createLights({ pelican, engine, getState, getStore, save, saveState = (
   }
   async function setOut(r, on, who, why) {
     if (!writable(r)) { would(r, `turn ${on ? "on" : "off"}${why ? " (" + why + ")" : ""}`); event(r, who, `would turn ${on ? "on" : "off"} (not sent: ${mode() === "read" ? "read only" : "not in the pilot"})`); return { ok: true, would: true }; }
-    await pelican.powerSet(r, { output: on ? "On" : "Off" }); r.on = on; r.setBy = "Remote";
+    await pelican.powerSet(r, { output: on ? "On" : "Off" }); r.on = on; r.setBy = "Remote"; const s = st(); s.lightLast = s.lightLast || {}; s.lightLast[r.id] = on;
     event(r, who, `turned ${on ? "on" : "off"}${why ? " (" + why + ")" : ""}`); return { ok: true };
   }
   // turn lights on or off now; until: "next" (the next scheduled change), or a time (ms) to go back to the schedule
@@ -191,10 +221,12 @@ function createLights({ pelican, engine, getState, getStore, save, saveState = (
       mode: mode(), pilot: pilot(), configured: pelican.configured, err: listErr, at: listAt, syncAt: s.lightSyncAt || 0,
       relays: list.map((r) => { const sc = schedOf(r.id), nn = sc ? nowNext(r.id) : null;
         return { ...r, sched: sc ? sc.name : "", plan: nn, hold: (s.lightHold || {})[r.id] || null, press: (s.lightPress || {})[r.id] || null, writable: writable(r), took: !!(s.lightTook || {})[r.id] }; }),
-      would: (s.lightWould || []).slice(0, 60), events: (s.lightEvents || []).slice(0, 100),
+      would: (s.lightWould || []).slice(0, 60), events: (s.lightEvents || []).slice(0, 40),
     };
   }
-  return { poll, plan, nowNext, setNow, tick, sync, giveBack, status, list: () => list, find };
+  // the log: newest first, for one light or all, back to a time
+  const history = (id, from) => (st().lightEvents || []).filter((e) => (!id || e.id === id) && (!from || e.at >= from));
+  return { poll, plan, nowNext, setNow, tick, sync, giveBack, status, history, list: () => list, find };
 }
 
 module.exports = { createLights, dayOf };

@@ -547,7 +547,7 @@ let ltSyncT = null;
 function ltSyncSoon(ms = 20000) { clearTimeout(ltSyncT); ltSyncT = setTimeout(() => lights.sync(false).catch((e) => log("warn", "lights: " + e.message)), ms); }
 if (pelican.configured) {
   setTimeout(() => lights.poll().then(() => ltSyncSoon(8000)), 12000).unref();
-  setInterval(() => lights.poll(), 120000).unref();
+  setInterval(() => lights.poll(), 60000).unref();
   setInterval(() => { lights.tick().catch(() => {}); const p = nyParts(Date.now()); if (p.m === 20 && store && store.ltSyncDay !== p.d) { store.ltSyncDay = p.d; ltSyncSoon(1000); } }, 60000).unref();   // 12:20 AM: the new day's 14 days
 }
 let hvSyncT = null;
@@ -885,6 +885,7 @@ async function ctrlApi(req, res, p, u) {
       if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can use the lights for now." });
       if (req.method === "GET" && p === "/api/lights") { if (pelican.configured && Date.now() - (lights.status().at || 0) > 60000) await lights.poll(); return send(res, 200, { ok: true, ...lights.status() }); }
       const b = (await readBody(req)) || {};
+      if (req.method === "GET" && p === "/api/lights/log") { const days = Math.min(90, Math.max(1, +u.searchParams.get("days") || 7)); return send(res, 200, { ok: true, events: lights.history(u.searchParams.get("id") || "", Date.now() - days * 864e5) }); }
       if (req.method === "POST" && p === "/api/lights/set") { const until = b.until === "next" || !b.until ? "next" : +b.until; return send(res, 200, { ok: true, results: await lights.setNow([].concat(b.ids || []).map(String), !!b.on, until, haUser(req)) }); }
       if (req.method === "POST" && p === "/api/lights/sync") return send(res, 200, await lights.sync(true));
       if (req.method === "POST" && p === "/api/lights/giveback") { try { return send(res, 200, await lights.giveBack(String(b.id || ""), haUser(req))); } catch (e) { return send(res, 200, { ok: false, error: e.message }); } }
