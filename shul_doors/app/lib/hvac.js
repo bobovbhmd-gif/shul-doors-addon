@@ -178,7 +178,7 @@ function createHvac({ pelican, engine, saveState = () => {}, weather = { get: ()
       const t = find(serial); if (!t) { out.push({ serial, ok: false, error: "Not found" }); continue; }
       const val = {}; if (SYSTEMS.includes(v.system)) val.system = v.system; if (v.heat != null) val.heat = +v.heat; if (v.cool != null) val.cool = +v.cool; if (v.fan === "On" || v.fan === "Auto") val.fan = v.fan;
       const nn = nowNext(serial), kind = until === "next" ? "next" : until === "perm" ? "perm" : "until";
-      const end = kind === "next" ? nn.nextAt : kind === "perm" ? 0 : +until;
+      const end = kind === "next" ? nn.nextAt || now() + 12 * 3600e3 : kind === "perm" ? 0 : +until;   // no schedule here: Pelican's own next change isn't known, so it shows for 12 hours at most
       if (kind === "until" && !(end > now())) { out.push({ serial, ok: false, error: "Pick a time later than now." }); continue; }
       const what = `${desc(val)} ${kind === "next" ? "until the next change" : kind === "perm" ? "with no end" : "until " + clock(end)}`;
       try {
@@ -209,7 +209,7 @@ function createHvac({ pelican, engine, saveState = () => {}, weather = { get: ()
   async function tick() {
     const s = st(), h = s.hvHold || {}, t = now(); let dirty = false;
     for (const [serial, x] of Object.entries(h)) {
-      if (x.kind === "next" && x.until && x.until <= t) { delete h[serial]; dirty = true; }   // Pelican went back by itself
+      if (x.kind === "next" && ((x.until && x.until <= t) || (!x.until && t - (x.at || 0) > 12 * 3600e3))) { delete h[serial]; dirty = true; }   // Pelican went back by itself
       else if (x.kind === "until" && x.until <= t) await resume([serial], "Shul Manager", "the time ran out");
     }
     if (dirty) save();
