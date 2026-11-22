@@ -44,10 +44,12 @@ Current version at handoff: 0.4.14.
 - Local run for testing: `SD_DATA=/tmp/x SD_PORT=8199 SD_TEXT_PORT=8198 SD_ANY_IP=1 SD_HA_URL=http://127.0.0.1:8197/api SD_HA_TOKEN=x node server.js`
   with header `X-Remote-User-Name: Hershy` (Playwright for screenshots).
 
-**Missing from this repo:** the test suite (unit, server, layers, Playwright UI, xss, clash,
-fast forward simulations), `tools/publish.py`, `tools/extract-engine.js` and the HVAC editor source
-(`hv4.js`, `hv4.css`, `port.py`, `gen.py`) lived only in the old chat's workspace. Until they are
-recovered (into a private repo), write new tests here before relying on changes.
+**Development files** are in the private repo `bobovbhmd-gif/shul-manager-dev` (never copy them here):
+HVAC schedules editor source (`src/hv4.js`, `src/hv4.css`, `src/plan_block.js`), build scripts
+(`src/port.py`, `src/gen.py`, `src/mk2.sh`) that build it into `public/index.html`, the fake Pelican and
+Home Assistant (`src/pelmock.js`, `src/hamock.js`), Playwright screenshot scripts, and the demo.
+See its README. The older full test suite (unit, server, layers, UI, xss, clash) and `tools/publish.py`
+were not recovered yet; until they are, write tests for anything you change.
 
 ## Design decisions
 - Rule priority is layered, not scored: by hand > situation that beats all > situation > event > regular schedule.
