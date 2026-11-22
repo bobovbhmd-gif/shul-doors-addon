@@ -763,6 +763,7 @@ body.modal-open{overflow:hidden}
 /* page header */
 .pagehead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 16px;margin:4px 0 22px}
 .pagehead .ptitle{margin:0}
+.ph-txt{min-width:0;max-width:100%}   /* keep the heading inside the screen; its tab row scrolls on its own */
 .psub{margin:4px 0 0;color:var(--muted);font-size:15px}
 .pact{display:flex;gap:8px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
@@ -3269,9 +3270,9 @@ function hrMatches(r,h,s){if(!h)return false;const a=MORD[r.fm]*31+r.fd,b=MORD[r
   if(!inR||!r.y||!s)return inR;const hy=hebYear(s);return a<=b||x>=a?hy===+r.y:hy===+r.y+1}   // r.y: only that Hebrew year
 function hrText(r){const one=r.fd===r.td&&r.fm===r.tm;return `${r.fd} ${monthName(r.fm)}${one?"":` to ${r.td} ${monthName(r.tm)}`}${r.y?`, ${r.y} only`:", every year"}`}
 function monthName(m){return (HMONTHS.find(x=>x[0]===m)||[0,"?"])[1]}
-const RH_DAYS=Object.keys(CAL).filter(k=>CAL[k].includes("rh1")).sort();   // Rosh Hashana of 5787, 5788, ...
-function hebYear(s){let y=5786;RH_DAYS.forEach(d=>{if(s>=d)y++});return y}
-function hebYearSpan(y){const a=RH_DAYS[y-5787],b=RH_DAYS[y-5786];return a?(a.slice(0,4)+(b?"–"+b.slice(0,4):"")):""}
+const RH_DAYS=Object.keys(CAL).filter(k=>CAL[k].includes("rh1")).sort();   // every Rosh Hashana in the calendar (it starts about 400 days back, so the first one moves)
+function hebYear(s){let y=0;RH_DAYS.forEach(d=>{if(s>=d)y=+d.slice(0,4)+3761});return y||(RH_DAYS.length?+RH_DAYS[0].slice(0,4)+3760:5787)}   // Rosh Hashana of Hebrew year Y is always in September or October of Y-3761
+function hebYearSpan(y){const rh=x=>RH_DAYS.find(d=>+d.slice(0,4)+3761===x),a=rh(y),b=rh(y+1);return a?(a.slice(0,4)+(b?"–"+b.slice(0,4):"")):""}
 let DI_CACHE=null, PLAIN=false, NO_OV=false;
 function dayInfo(s){
   if(DI_CACHE&&DI_CACHE.has(s)) return DI_CACHE.get(s);

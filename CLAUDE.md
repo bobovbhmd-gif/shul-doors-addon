@@ -25,11 +25,14 @@ Rules, door names and codes live only on the box.
 
 ## Release process
 1. Bump `version` in `shul_doors/config.yaml` and `shul_doors/app/version.txt` (same number).
-2. Run tests, check screenshots on phone (390px) and PC widths.
+2. Run the tests (`tests/README.md`): `cd tests && npm test && npm run test:ui`, and `npm run planted` when
+   tests or logic changed. Look at `tests/screens/` (phone 390px, tablet, PC). GitHub runs the tests on every PR.
 3. Commit as `0.x.y: what changed`, push to `main`.
-4. Hershy updates in Home Assistant: Settings, Add-ons (Apps), Shul Manager, Update.
+4. Push a branch and open a pull request. Hershy taps Merge on GitHub; that is his final yes and makes
+   it a release (Home Assistant only sees `main`).
+5. Hershy updates in Home Assistant: Settings, Add-ons (Apps), Shul Manager, Update.
    If HA refuses, the Supervisor needs updating first.
-Current version at handoff: 0.4.14.
+Current version: 0.4.15.
 
 ## Where the code is
 - `shul_doors/app/server.js`: Node server (ingress port 8099, text port), portal API.
@@ -48,8 +51,9 @@ Current version at handoff: 0.4.14.
 HVAC schedules editor source (`src/hv4.js`, `src/hv4.css`, `src/plan_block.js`), build scripts
 (`src/port.py`, `src/gen.py`, `src/mk2.sh`) that build it into `public/index.html`, the fake Pelican and
 Home Assistant (`src/pelmock.js`, `src/hamock.js`), Playwright screenshot scripts, and the demo.
-See its README. The older full test suite (unit, server, layers, UI, xss, clash) and `tools/publish.py`
-were not recovered yet; until they are, write tests for anything you change.
+See its README. The old test suite and `tools/publish.py` were lost; a new suite is in `tests/` (calendar and
+zmanim against hebcal, rule engine, planner, sync against a pretend Protector.Net, main screens, planted bugs).
+Add tests for anything you change, and a planted bug in `tests/planted.mjs` for each new check.
 
 ## Design decisions
 - Rule priority is layered, not scored: by hand > situation that beats all > situation > event > regular schedule.
