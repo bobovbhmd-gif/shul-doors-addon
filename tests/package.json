@@ -1,0 +1,15 @@
+{
+  "name": "shul-manager-tests",
+  "private": true,
+  "description": "Tests for Shul Manager. Not part of the add-on image.",
+  "scripts": {
+    "test": "node --test --test-concurrency=1 unit/*.test.mjs",
+    "test:ui": "node --test ui/*.test.mjs",
+    "test:all": "node --test --test-concurrency=1 unit/*.test.mjs ui/*.test.mjs",
+    "planted": "node planted.mjs",
+    "planted:all": "node planted.mjs --ui"
+  },
+  "devDependencies": {
+    "@hebcal/core": "6.16.1"
+  }
+}

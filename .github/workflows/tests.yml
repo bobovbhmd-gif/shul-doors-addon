@@ -1,0 +1,31 @@
+name: Tests
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Calendar library (same version as the add-on)
+        run: pip install pyluach==2.3.0
+      - name: Test packages
+        working-directory: tests
+        run: npm ci
+      - name: Rule engine, calendar, zmanim, overrides, sync
+        working-directory: tests
+        run: npm test
+      - name: Browser for the screen tests
+        working-directory: tests
+        run: npm install --no-save playwright@1.49.1 && npx playwright install --with-deps chromium
+      - name: Main screens (phone, tablet, PC)
+        working-directory: tests
+        run: npm run test:ui
