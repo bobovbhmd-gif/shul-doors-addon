@@ -51,11 +51,19 @@ before(async () => {
 });
 after(async () => { await browser?.close(); srv?.kill(); ha?.close(); if (data) fs.rmSync(data, { recursive: true, force: true }); });
 
+// Home Assistant adds the signed in user's name to requests to the box only. Doing the same here:
+// sending it to other sites too (Google Fonts) makes the browser refuse those requests.
+async function newPage(w, h) {
+  const page = await browser.newPage({ viewport: { width: w, height: h } });
+  await page.route(`http://127.0.0.1:${port}/**`, (route) => route.continue({ headers: { ...route.request().headers(), "x-remote-user-name": "Tester" } }));
+  return page;
+}
+
 const TABS = ["home", "doors", "rules", "events", "preview", "open", "activity", "msgs", "setup", "parking", "mikvah", "lights", "codes", "lockdown", "climate"];
 
 for (const [w, h, label] of [[390, 844, "phone"], [820, 1180, "tablet"], [1280, 900, "pc"]]) {
   test(`main screens on a ${label} (${w}px)`, async () => {
-    const page = await browser.newPage({ viewport: { width: w, height: h }, extraHTTPHeaders: { "X-Remote-User-Name": "Tester" } });
+    const page = await newPage(w, h);
     const errors = [];
     page.on("pageerror", (e) => errors.push(`${e.message} ${(e.stack || "").split("\n")[1] || ""}`));
     page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) errors.push("console: " + m.text()); });
@@ -81,7 +89,7 @@ for (const [w, h, label] of [[390, 844, "phone"], [820, 1180, "tablet"], [1280, 
 }
 
 test("the rule editor opens and lists the rules with their numbers", async () => {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, extraHTTPHeaders: { "X-Remote-User-Name": "Tester" } });
+  const page = await newPage(1280, 900);
   const errors = []; page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(`http://127.0.0.1:${port}/`);
   await page.waitForFunction(() => typeof showTab === "function");
