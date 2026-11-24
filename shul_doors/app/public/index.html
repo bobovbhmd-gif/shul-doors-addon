@@ -763,6 +763,7 @@ body.modal-open{overflow:hidden}
 /* page header */
 .pagehead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 16px;margin:4px 0 22px}
 .pagehead .ptitle{margin:0}
+.ph-txt{min-width:0;max-width:100%}   /* keep the heading inside the screen; its tab row scrolls on its own */
 .psub{margin:4px 0 0;color:var(--muted);font-size:15px}
 .pact{display:flex;gap:8px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
@@ -2208,6 +2209,7 @@ button.hv-tile{cursor:pointer}button.hv-tile:hover{background:color-mix(in srgb,
 .utag{font-size:12px;font-weight:600;border-radius:999px;padding:3px 9px;white-space:nowrap}
 .utag.off{color:var(--r);background:color-mix(in srgb,var(--r) 12%,transparent)}
 .utag.new{color:var(--o);background:color-mix(in srgb,var(--o) 14%,transparent)}
+.utag.txt{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .ubody{padding:6px 16px 16px;background:var(--fill)}
 .usec h4{margin:14px 4px 6px;font-size:12.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .usec .glist{margin:0}
@@ -2223,6 +2225,7 @@ button.hv-tile{cursor:pointer}button.hv-tile:hover{background:color-mix(in srgb,
 .nu-f label{min-width:0;display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:var(--muted)}
 .nu-f input,.nu-f select{width:100%;box-sizing:border-box;min-width:0;font:inherit;font-size:16px;color:var(--fg);padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--fill2,var(--bg))}
 .nu-f .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.nu-f .nu-login:not(label){display:flex;flex-direction:column;gap:14px}.nu-f [hidden]{display:none!important}.nu-f .two:has(>[hidden]){grid-template-columns:1fr}
 .nu-note{display:flex;gap:10px;align-items:flex-start;background:var(--fill);border-radius:12px;padding:12px;font-size:13.5px;line-height:1.45;color:var(--muted)}
 .nu-note svg{width:20px;height:20px;flex:none;fill:none;stroke:var(--ok);stroke-width:2}
 @media (max-width:600px){.nu-f .two{grid-template-columns:1fr}}
@@ -3269,9 +3272,9 @@ function hrMatches(r,h,s){if(!h)return false;const a=MORD[r.fm]*31+r.fd,b=MORD[r
   if(!inR||!r.y||!s)return inR;const hy=hebYear(s);return a<=b||x>=a?hy===+r.y:hy===+r.y+1}   // r.y: only that Hebrew year
 function hrText(r){const one=r.fd===r.td&&r.fm===r.tm;return `${r.fd} ${monthName(r.fm)}${one?"":` to ${r.td} ${monthName(r.tm)}`}${r.y?`, ${r.y} only`:", every year"}`}
 function monthName(m){return (HMONTHS.find(x=>x[0]===m)||[0,"?"])[1]}
-const RH_DAYS=Object.keys(CAL).filter(k=>CAL[k].includes("rh1")).sort();   // Rosh Hashana of 5787, 5788, ...
-function hebYear(s){let y=5786;RH_DAYS.forEach(d=>{if(s>=d)y++});return y}
-function hebYearSpan(y){const a=RH_DAYS[y-5787],b=RH_DAYS[y-5786];return a?(a.slice(0,4)+(b?"–"+b.slice(0,4):"")):""}
+const RH_DAYS=Object.keys(CAL).filter(k=>CAL[k].includes("rh1")).sort();   // every Rosh Hashana in the calendar (it starts about 400 days back, so the first one moves)
+function hebYear(s){let y=0;RH_DAYS.forEach(d=>{if(s>=d)y=+d.slice(0,4)+3761});return y||(RH_DAYS.length?+RH_DAYS[0].slice(0,4)+3760:5787)}   // Rosh Hashana of Hebrew year Y is always in September or October of Y-3761
+function hebYearSpan(y){const rh=x=>RH_DAYS.find(d=>+d.slice(0,4)+3761===x),a=rh(y),b=rh(y+1);return a?(a.slice(0,4)+(b?"–"+b.slice(0,4):"")):""}
 let DI_CACHE=null, PLAIN=false, NO_OV=false;
 function dayInfo(s){
   if(DI_CACHE&&DI_CACHE.has(s)) return DI_CACHE.get(s);
@@ -4149,7 +4152,7 @@ let TMS="alerts";
 function tmShow(k){TMS=k;document.querySelectorAll("[data-tms]").forEach(b=>b.classList.toggle("on",b.dataset.tms===k));document.querySelectorAll("section[data-tm]").forEach(x=>x.hidden=x.dataset.tm!==k);if(k==="log")lgLoad(false,"tl");if(k==="doors"){tbRows();tbPeople()}}
 document.addEventListener("click",ev=>{const b=ev.target.closest("[data-tms]");if(b)tmShow(b.dataset.tms)});
 function tbPeople(){const el=$("#tbPeople");if(!el)return;
-  el.innerHTML=S.users.map((u,i)=>{const sa=u.role==="Super admin",on=sa||!!(u.can&&u.can.text),pin=null;
+  el.innerHTML=S.users.map((u,i)=>{if(u.textOnly)return "";const sa=u.role==="Super admin",on=sa||!!(u.can&&u.can.text),pin=null;
     return `<div class="row"><span class="avatar">${esc(initials(u.name))}</span><span class="rt"><b>${esc(u.name)}</b><span>${!u.phone?"No mobile number":sa?"Super admin, always allowed":on?"Allowed":"Not allowed"}${pin==null?"":pin?" · PIN picked":on?" · no PIN yet":""}</span></span>${sa||!u.phone?"":`<input type="checkbox" class="switch" data-tbu="${i}" aria-label="${esc(u.name)} may open doors by text"${on?" checked":""}>`}${pin?`<button class="btn sm" type="button" data-tbreset="${esc(u.name)}">Reset PIN</button>`:""}</div>`}).join("")}
 document.addEventListener("change",ev=>{const t=ev.target;if(!t.matches("[data-tbu]"))return;const u=S.users[+t.dataset.tbu];if(!u)return;u.can={...(u.can||{}),text:t.checked};commit(`Users and permissions: ${u.name}: "Open and lock their doors by text" turned ${t.checked?"on":"off"}`);tbPeople()});
 function renderSetup(){
@@ -4165,11 +4168,12 @@ function renderSetup(){
   const NOTYET=ON_BOX?["offline","ups","batt","heartbeat"]:[];
   $("#alertChecks").innerHTML=ALERTS.map(([k,l])=>`<label class="row swrow" for="al-${k}"><span class="rt"><b>${esc(l)}</b>${k==="held"?`<span>After <input type="number" id="heldMin" min="1" max="120" value="${S.alerts.heldMin}" aria-label="Minutes"> minutes</span>`:""}${NOTYET.includes(k)?`<span>Not connected yet</span>`:""}</span><input type="checkbox" class="switch" id="al-${k}" data-alert="${k}"${S.alerts[k]?" checked":""}></label>`).join("");
   if(isAdmin()){tbRows();if(!TB)tbLoad().then(tbRows)}
-  {const to=chgRecipients(),tx=chgSms();$("#chgTo").innerHTML=S.users.map(u=>{const v=!to.includes(u.name)?"off":tx.includes(u.name)?"text":"app";
+  {const to=chgRecipients(),tx=chgSms();$("#chgTo").innerHTML=S.users.filter(u=>!u.textOnly).map(u=>{const v=!to.includes(u.name)?"off":tx.includes(u.name)?"text":"app";
     return `<div class="row"><span class="avatar">${esc(initials(u.name))}</span><span class="rt"><b>${esc(u.name)}</b><span>${v==="off"?"Doesn't hear about changes":v==="text"?"Messages, and a text a few minutes after the last change":"Messages in the app only"}</span></span><select data-chg="${esc(u.name)}" aria-label="Changes by others for ${esc(u.name)}"><option value="off"${v==="off"?" selected":""}>Off</option><option value="app"${v==="app"?" selected":""}>In the app</option>${u.phone?`<option value="text"${v==="text"?" selected":""}>App and text</option>`:""}</select></div>`}).join("")}
   const CAPS=[["codes","Give guest codes"],["override","Open or lock doors by hand"],["parking","Open the parking lot"],["mtview","See the mikva temperature"],["text","Open and lock their doors by text"],["events","Add events"],["rabbi","Set the rabbi away and switch situations"]];
   renderCtrl();renderWelMsg();
   $("#userRows").innerHTML=`<div class="glist ulist">`+UL().map((u,i)=>{
+    if(u.textOnly)return uTextCard(u,i);
     const r=u.role==="Restricted",nd=S.doors.filter(d=>((u.perm||{})[d.id]||"hidden")!=="hidden").length;
     const sub=(r?`Restricted · ${nd} door${nd===1?"":"s"}`:"Super admin");
     const tag=u.login===false?`<span class="utag off">Can't sign in</span>`:NEWPW.has(u.name)?`<span class="utag new">Not saved yet</span>`:"";
@@ -4191,6 +4195,17 @@ function renderSetup(){
       <div class="uacts"><button class="lnk" type="button" data-uact="${esc(u.name)}">Activity</button><button class="lnk" type="button" data-uwel="${i}">Send welcome again</button>${u.name!==S.me?`<button class="lnk" type="button" data-uoff="${i}">${u.login===false?"Turn sign-in on":"Turn sign-in off"}</button><button class="lnk danger" type="button" data-udel="${i}">Remove</button>`:""}</div>
       </div></details>`}).join("")+`</div>`;
 }
+// a text only person: they ask the mikva temperature by text, and have no sign-in
+function uTextCard(u,i){
+  const sec=(t,body)=>`<div class="usec"><h4>${t}</h4><div class="glist">${body}</div></div>`;
+  return `<details class="ublock"${U_OPEN===u.name?" open":""} data-uname="${esc(u.name)}"><summary class="row"><span class="avatar">${esc(initials(u.name))}</span><div class="rt"><b>${esc(u.name)}</b><span>Mikva temperature by text</span></div><span class="utag txt">Text only</span><span class="chev"></span></summary>
+    <div class="ubody">
+    ${sec("Contact",`<div class="row"><span class="rt"><b>Mobile</b></span><input class="uphone" data-uphone="${i}" value="${esc(u.phone||"")}" placeholder="Add a number" inputmode="tel" aria-label="Mobile number for ${esc(u.name)}"></div>
+      <label class="row swrow"><span class="rt"><b>Mikva temperature alerts</b><span>By text, once texting is live</span></span><input type="checkbox" class="switch" data-umt="${i}"${u.mtAlert?" checked":""}></label>`)}
+    ${sec("What they can do",`<div class="row"><span class="rt"><b>Get the mikva temperature by text</b><span>Any text they send gets the same answer: each pool's temperature and whether it's ready.</span></span></div>
+      <div class="row"><span class="rt"><b>No sign-in</b><span>They can't open Shul Manager, and can't open doors or change anything by text.</span></span></div>`)}
+    <div class="uacts"><button class="lnk" type="button" data-uact="${esc(u.name)}">Activity</button><button class="lnk" type="button" data-umkw="${esc(u.name)}">Send welcome text again</button><button class="lnk danger" type="button" data-udel="${i}">Remove</button></div>
+    </div></details>`}
 function dayLabel(ms){const d=nyDate(ms),t=todayNY();return d===t?"Today":d===addDays(t,-1)?"Yesterday":longDate(d)}
 function renderStatus(){
   const t=dayInfo(todayNY());
@@ -4199,7 +4214,7 @@ function renderStatus(){
   $("#gregNow").textContent=new Date().toLocaleDateString("en-US",{timeZone:TZ,weekday:"short",month:"short",day:"numeric"});
   $("#sunNow").textContent=fmt(t.z.sunset);
   $("#rabLocal").classList.toggle("on",!S.rabbiAwayNow);$("#rabAway").classList.toggle("on",S.rabbiAwayNow);
-  $("#meSel").innerHTML=S.users.map(u=>`<option${u.name===S.me?" selected":""}>${esc(u.name)}</option>`).join("");
+  $("#meSel").innerHTML=S.users.filter(u=>!u.textOnly).map(u=>`<option${u.name===S.me?" selected":""}>${esc(u.name)}</option>`).join("");
   $("#app").classList.toggle("role-editor",!isAdmin());$("#app").classList.toggle("role-admin",isAdmin());
   ["override","events","rabbi","rules","codes"].forEach(k=>$("#app").classList.toggle("no-"+k,!can(k)));
   $("#rabRO").hidden=can("rabbi");
@@ -4763,7 +4778,7 @@ function openVendor(v){
   $("#vnName").value=x.name;$("#vnContact").value=x.contact||"";$("#vnPhone").value=x.phone||"";$("#vnAgree").checked=!!x.consentAt;$("#vnHours").value=x.hours||"";
   $("#vnSame").checked=!!x.samePin;$("#vnPin").value=x.pin||(x.samePin?randPin():"");$("#vnPinRow").hidden=!x.samePin;$("#vnNotes").value=x.notes||"";
   $("#vnDoors").innerHTML=vendorDoorChecks(x.doors);$("#vnArrive").checked=!!x.arriveAlert;$("#vnNotifyRow").hidden=!x.arriveAlert;
-  const nu=x.notifyUsers||(v?[]:[S.me]);$("#vnNotify").innerHTML=S.users.map(u=>`<label><input type="checkbox" name="vnNotify" value="${esc(u.name)}"${nu.includes(u.name)?" checked":""}>${esc(u.name)}${u.phone?"":` <span class="hint">(no number)</span>`}</label>`).join("");$("#vnErr").hidden=true;$("#vnDelWrap").hidden=!v;$("#vnDel").textContent="Delete vendor";
+  const nu=x.notifyUsers||(v?[]:[S.me]);$("#vnNotify").innerHTML=S.users.filter(u=>!u.textOnly).map(u=>`<label><input type="checkbox" name="vnNotify" value="${esc(u.name)}"${nu.includes(u.name)?" checked":""}>${esc(u.name)}${u.phone?"":` <span class="hint">(no number)</span>`}</label>`).join("");$("#vnErr").hidden=true;$("#vnDelWrap").hidden=!v;$("#vnDel").textContent="Delete vendor";
   openModal("mVendor")}
 function giveAccess(v,fromCode){
   TC_VENDOR=v?v.id:(fromCode&&fromCode.vendorId)||null;TC_NOPHONE=false;
@@ -4800,7 +4815,7 @@ function codeMessage(c){return `Your door code for ${S.shulName||"the shul"}: ${
 if(!S.requests) S.requests=structuredClone(SAMPLE.requests);
 let RQ_ALL=false;
 function recipName(t){return t==="admins"?"any super admin":t}
-function recipOptions(){return `<option value="admins">Any super admin</option>`+S.users.filter(u=>u.name!==S.me).map(u=>`<option value="${esc(u.name)}">${esc(u.name)} (${esc(u.role.toLowerCase())})</option>`).join("")}
+function recipOptions(){return `<option value="admins">Any super admin</option>`+S.users.filter(u=>u.name!==S.me&&!u.textOnly).map(u=>`<option value="${esc(u.name)}">${esc(u.name)} (${esc(u.role.toLowerCase())})</option>`).join("")}
 function newRequest(to,subject,text,change){const q={id:"q"+Date.now(),from:S.me,to,subject:subject||"Request",status:"open",created:Date.now(),msgs:[{u:S.me,t:Date.now(),text}],change,read:{[S.me]:Date.now()}};S.requests.push(q);return q}
 function forMe(q){return q.to===S.me||(q.to==="admins"&&isAdmin())}
 function seeReq(q){return isAdmin()||q.from===S.me||q.to===S.me}
@@ -4819,15 +4834,17 @@ $("#uSave").onclick=()=>{if(!UD){uDone();return}
   const n=UCH.length,text=UCH.length===1?UCH[0]:`Users and permissions: ${UCH.join("; ")}`;const before=S.users;S.users=UD;uDone();commit(text);
   const fresh=[...NEWPW.entries()].filter(([k])=>S.users.some(u=>u.name===k));NEWPW.clear();
   const flips=S.users.map(u=>{const b=before.find(x=>x.name===u.name);return b&&(b.login===false)!==(u.login===false)?{name:u.name,on:u.login!==false}:null}).filter(Boolean);
-  const gone=before.filter(b=>!S.users.some(u=>u.name===b.name)).map(b=>({name:b.name,username:b.login||loginName(b.name),on:false}));
-  if(fresh.length||flips.length||gone.length)afterUserSave(fresh,flips,gone);else toast(n===1?"Saved.":`Saved ${n} changes.`);
+  const gone=before.filter(b=>!b.textOnly&&!S.users.some(u=>u.name===b.name)).map(b=>({name:b.name,username:b.login||loginName(b.name),on:false}));
+  const newText=S.users.filter(u=>u.textOnly==="mikva"&&!before.some(b=>b.name===u.name)).map(u=>u.name);
+  if(fresh.length||flips.length||gone.length||newText.length)afterUserSave(fresh,flips,gone,newText);else toast(n===1?"Saved.":`Saved ${n} changes.`);
   if(ON_BOX)setTimeout(accessLine,6000)};
 // after Save: make the logins, then the welcome email, then the password text. Passwords are only held here until sent.
 async function boxSaved(){for(let i=0;i<60&&(typeof SAVING!=="undefined"&&SAVING);i++)await new Promise(r=>setTimeout(r,250))}
 async function postJ(url,body){try{return await (await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json()}catch(e){return {ok:false,error:"Can't reach the box."}}}
-async function afterUserSave(fresh,flips,gone){
+async function afterUserSave(fresh,flips,gone,newText=[]){
   if(!ON_BOX){toast(fresh.length?`Saved. ${fresh.map(f=>f[0]).join(", ")} can sign in. Welcome email sent; the password text goes out once texting is live.`:"Saved.");return}
-  toast("Saved. Setting up sign-in…");await boxSaved();const notes=[];
+  toast(fresh.length||flips.length||gone.length?"Saved. Setting up sign-in…":"Saved. Sending the welcome text…");await boxSaved();const notes=[];
+  for(const name of newText)notes.push(await mkWelcome(name));
   for(const g of gone){const j=await postJ("api/logins/active",g);if(!j.ok&&!/No sign-in was found/.test(j.error||""))notes.push(`${g.name}: sign-in not turned off (${j.error})`)}
   for(const f of flips){const j=await postJ("api/logins/active",f);if(!j.ok)notes.push(`${f.name}: ${j.error}`)}
   for(const [name,pw] of fresh){const u=S.users.find(x=>x.name===name);if(!u)continue;
@@ -4837,6 +4854,11 @@ async function afterUserSave(fresh,flips,gone){
     let tx="no mobile on file";if(u.phone){const t=await postJ("api/sms/password",{name,password:pw});tx=t.ok?"password texted":t.notLive?"texting isn't live yet, so give them the password in person":"password not texted ("+t.error+")"}
     notes.push(`${name}: can sign in, ${em}, ${tx}`)}
   showNotes(notes)}
+// the welcome text for a mikva temperature by text person
+async function mkWelcome(name){const j=await postJ("api/sms/mikvawelcome",{name});
+  return j.ok?`${name}: welcome text sent with short instructions`:j.notLive?`${name}: texting isn't live yet, so no welcome text went out. Use "Send welcome text again" on their card once it is.`:`${name}: welcome text not sent (${j.error})`}
+document.addEventListener("click",async ev=>{const b=ev.target.closest("[data-umkw]");if(!b)return;
+  if(UD){toast("Save your changes first, then send the welcome text.");return}b.disabled=true;const msg=await mkWelcome(b.dataset.umkw);b.disabled=false;toast(msg)});
 function showNotes(notes){if(!notes.length){toast("Saved.");return}const el=document.createElement("div");el.className="nb-sheet";
   el.innerHTML=`<div class="nb-box"><b>Done</b><ul>${notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul><button class="btn pri sm" type="button">OK</button></div>`;el.querySelector("button").onclick=()=>el.remove();document.body.appendChild(el)}
 $("#uCancel").onclick=()=>{uDone();renderSetup()};
@@ -4854,19 +4876,25 @@ const NU_NOTE=`<div class="nu-note">${ico("check")}<span>The password goes strai
 function openNewUser(){
   $("#nuBody").innerHTML=`<div class="nu-f">
     <label>Name<input id="nuName" placeholder="First and last name" autocomplete="off"></label>
-    <div class="two"><label>Username<input id="nuUser" autocomplete="off" spellcheck="false" placeholder="Filled in from the name"></label>
-    <label>What they can do<select id="nuRole"><option value="Restricted">Only what I choose</option><option value="Super admin">Everything (super admin)</option></select></label></div>
-    <label>Starting password${pwField("nuPw")}</label>
-    <div class="two"><label>Email<input id="nuEmail" inputmode="email" autocomplete="off" placeholder="For the sign-in code"></label>
+    <label>What they can do<select id="nuRole"><option value="Restricted">Only what I choose</option><option value="Super admin">Everything (super admin)</option><option value="mikva">Mikva temperature by text only</option></select></label>
+    <div class="nu-login"><label>Username<input id="nuUser" autocomplete="off" spellcheck="false" placeholder="Filled in from the name"></label>
+    <label>Starting password${pwField("nuPw")}</label></div>
+    <div class="two"><label class="nu-login">Email<input id="nuEmail" inputmode="email" autocomplete="off" placeholder="For the sign-in code"></label>
     <label>Mobile<input id="nuPhone" inputmode="tel" autocomplete="off" placeholder="Optional, for texts"></label></div>
-    <div class="nu-note">${ico("check")}<span>When you save, Shul Manager creates the login, emails a welcome with the sign-in link, then texts the password to their mobile. The password is never saved or emailed.</span></div></div>`;
+    <div class="nu-note nu-login">${ico("check")}<span>When you save, Shul Manager creates the login, emails a welcome with the sign-in link, then texts the password to their mobile. The password is never saved or emailed.</span></div>
+    <div class="nu-note" id="nuTextNote" hidden>${ico("check")}<span>When you save, they get a welcome text with short instructions. Any text they send to the shul's number gets each pool's temperature and whether it's ready. No sign-in is made, and they can't open Shul Manager or change anything.</span></div></div>`;
   openModal("mNewU");$("#nuName").focus()}
+document.addEventListener("change",ev=>{if(ev.target.id!=="nuRole")return;const t=ev.target.value==="mikva";
+  document.querySelectorAll("#nuBody .nu-login").forEach(el=>el.hidden=t);$("#nuTextNote").hidden=!t;$("#nuPhone").placeholder=t?"Their mobile, needed":"Optional, for texts"});
 document.addEventListener("input",ev=>{if(ev.target.id==="nuName"){const u=$("#nuUser");if(!u.dataset.touched)u.value=loginName(ev.target.value)}if(ev.target.id==="nuUser")ev.target.dataset.touched="1"});
 document.addEventListener("click",ev=>{const t=ev.target;
   const mp=t.closest("[data-mkpw]");if(mp){$("#"+mp.dataset.mkpw).value=makePw();return}
   if(t.closest("#nuOpen")){openNewUser();return}
   if(t.closest("#nuGo")){const n=$("#nuName").value.trim(),un=$("#nuUser").value.trim(),pw=$("#nuPw").value;
     if(!n){toast("Type their name first.");$("#nuName").focus();return}if(ud().some(u=>u.name===n)){toast("Someone with that name is already added.");return}
+    if($("#nuRole").value==="mikva"){const ph=$("#nuPhone").value.trim();if(ph.replace(/\D/g,"").length<10){toast("Add their mobile number. That's how they ask.");$("#nuPhone").focus();return}
+      const u={name:n,role:"Restricted",textOnly:"mikva",login:false,phone:ph,perm:{},sched:"none",can:{},added:Date.now()};ud().push(u);U_OPEN=n;closeModal("mNewU");
+      uchg(`Added ${n}, mikva temperature by text only`,true);toast(`${n} is added. Tap Save changes. They can text the shul's number for the mikva temperature.`);return}
     if(pw.length<8){toast("Pick a starting password of at least 8 characters.");$("#nuPw").focus();return}
     const r=$("#nuRole").value,u=r==="Restricted"?{name:n,role:"Restricted",perm:{},sched:"none",can:{rules:false,override:false,events:false,rabbi:false},added:Date.now()}:{name:n,role:"Super admin",added:Date.now()};
     u.login=un||loginName(n);u.email=$("#nuEmail").value.trim();u.phone=$("#nuPhone").value.trim();ud().push(u);NEWPW.set(n,pw);U_OPEN=n;closeModal("mNewU");uchg(`Added user ${n} with the username ${u.login}`,true);toast(`${n} is added. Tap Save changes to create the login and send the welcome.`);return}
@@ -8705,7 +8733,7 @@ async function boxSampler(){
         return proposal({title:"Save this as a note for next time?",lines:[t,isAdmin()?"The assistant follows it from the next chat.":"A super admin approves it first."],apply:()=>addNote(t,"chat"),logText:(isAdmin()?"Added":"Suggested")+` assistant note: "${t}"`})}},
     {name:"send_request",description:"Send a message to another user or to any super admin asking them to make a change this person can't or doesn't want to make. Use when a propose_ tool fails for permission reasons, or when asked. Optionally attach a rule using the same fields as propose_rule in 'rule'. Shown for confirmation first.",
       inputSchema:{type:"object",properties:{to:{type:"string",description:"A user name, or 'admins'"},subject:{type:"string"},message:{type:"string"},rule:{type:"object"}},required:["to","subject","message"]},
-      execute(i){const to=String(i.to).toLowerCase().includes("admin")?"admins":(S.users.find(u=>u.name.toLowerCase()===String(i.to).toLowerCase())||{}).name;if(!to)throw new Error("Unknown user. Users: "+S.users.map(u=>u.name).join(", ")+", or admins");
+      execute(i){const to=String(i.to).toLowerCase().includes("admin")?"admins":(S.users.find(u=>!u.textOnly&&u.name.toLowerCase()===String(i.to).toLowerCase())||{}).name;if(!to)throw new Error("Unknown user. Users: "+S.users.map(u=>u.name).join(", ")+", or admins");
         let change=null;if(i.rule){const x=i.rule;const doors=resolveDoors(x.doors);if(!MODES.includes(x.mode))throw new Error("rule.mode must be one of "+MODES.join(", "));
           const r=R({id:Date.now(),name:String(x.name||i.subject).slice(0,80),doors,mode:x.mode,rabbi:["local","away"].includes(x.rabbi)?x.rabbi:"any",season:x.clock==="summer"?"dst":x.clock==="winter"?"std":"any",note:String(x.note||""),
             inc:{wd:wd(x.weekdays),fest:dayKeys(x.day_keys),dates:dates(x.dates),hr:[]},exc:{wd:wd(x.except_weekdays),fest:dayKeys(x.except_day_keys),dates:dates(x.except_dates),hr:[]},start:anchor(x.start,"Start"),end:anchor(x.end,"End")});

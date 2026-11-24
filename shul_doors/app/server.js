@@ -68,7 +68,7 @@ async function init() {
   store = loadStore();
   sms = createSms({ opts, file: file("sms.jsonl"), store, save: () => writeJson("store.json", store), log });
   if (!store.textHook) { store.textHook = crypto.randomBytes(18).toString("hex"); writeJson("store.json", store); }
-  textbot = createTextBot({ hvac: hvTextApi, store, chat: opts.anthropic_api_key ? async ({ system, messages, tools }) => {
+  textbot = createTextBot({ hvac: hvTextApi, mikva: { can: mtTextOk, only: (u) => u.textOnly === "mikva", status: (u) => mtStatusText({ simple: !!u.textOnly }) }, store, chat: opts.anthropic_api_key ? async ({ system, messages, tools }) => {
       const r = await aiAsk({ system, messages, tools, max_tokens: 500 });
       if (r.status !== 200) throw new Error("assistant answered " + r.status + (r.body && r.body.code ? " (" + r.body.code + ")" : ""));
       return r.body;
@@ -173,7 +173,7 @@ function changeAlerts(before, after, who) {
   const SETTING = /^(Alert |Changes by others|Doors by text|Users and permissions|Added alert contact|Removed alert contact|Welcome|Saved the mikva|Mikva |Turned (on|off) mikva|Changed the mikva|Parking lot |Controllers|Settings)/i;
   const real = fresh.filter((e) => !SETTING.test(String(e.text)));
   for (const name of to) {
-    const u = (after.users || []).find((x) => x.name === name); if (!u || !u.phone) continue;
+    const u = (after.users || []).find((x) => x.name === name); if (!u || !u.phone || u.textOnly) continue;
     const mine = real.filter((e) => String(e.u || who).toLowerCase() !== name.toLowerCase()); if (!mine.length) continue;
     const q = changeQueue[name] = changeQueue[name] || { by: new Set(), lines: [], timer: null };
     for (const e of mine) { q.by.add(e.u || who); q.lines.push(String(e.text)); }
@@ -379,7 +379,7 @@ function codeEntry(e) {
   if (!v || !v.arriveAlert || !(v.notifyUsers || []).length || !sms) return;
   // the people picked on the vendor card, at the mobile number in their user (Settings, Users)
   for (const n of v.notifyUsers) {
-    const u = (state.users || []).find((x) => String(x.name || "").toLowerCase() === String(n).toLowerCase());
+    const u = (state.users || []).find((x) => !x.textOnly && String(x.name || "").toLowerCase() === String(n).toLowerCase());
     if (!u || !u.phone) { log("info", `${v.name} arrived; ${n} has no mobile number to text`); continue; }
     sms.sendOne(u.phone, `${v.name} just came in at ${e.door}.`, "arrive").catch(() => {});
   }
@@ -532,7 +532,7 @@ const wxRefresh = async () => { const w = (state && state.hvac && state.hvac.wx)
 // a text to the people picked in Setup when a plan switches during the day
 function hvAlert(text, key) {
   const ids = ((state && state.hvac && state.hvac.wx && state.hvac.wx.text) || []).map(String);
-  const phones = ((state && state.users) || []).filter((u) => ids.includes(String(u.id)) && u.phone).map((u) => e164(u.phone)).filter(Boolean);
+  const phones = ((state && state.users) || []).filter((u) => !u.textOnly && ids.includes(String(u.id)) && u.phone).map((u) => e164(u.phone)).filter(Boolean);
   if (sms && phones.length) sms.alertTo(state, phones, "hvwx:" + key, "HVAC: " + text, "hvac", 60e3).catch((e) => log("warn", "HVAC text: " + e.message));
 }
 const hvac = createHvac({ pelican, saveState: () => { try { backup(); version++; writeJson("state.json", state); writeJson("version.json", { v: version }); } catch (e) { log("warn", "HVAC: " + e.message); } }, weather: { get: () => weather.get(), refresh: async () => { const r = await wxRefresh(); return r; } }, alert: hvAlert, engine: { info: (d) => engine.info(d), addDays: (d, n) => engine.addDays(d, n), cond: (n, x, d) => engine.cond(n, x, d) }, getState: () => state, getStore: () => store, save: () => writeJson("store.json", store),
@@ -579,7 +579,7 @@ function hvRoleU(u, serial) {
 const hvTextOn = (u) => pelican.configured && (u.role === "Super admin" || (u.can || {}).text);
 const hvTextApi = {
   async list(u) {
-    if (!hvTextOn(u)) return [];
+    if (u.textOnly || !textOn() || !hvTextOn(u)) return [];
     if (!hvac.list().length) await hvac.poll();
     return hvac.list().map((t) => ({ t, r: hvRoleU(u, t.serial) })).filter((x) => x.r).map(({ t, r }) => ({ serial: t.serial, name: t.name, change: r === "change" || r === "sched",
       now: `${t.online ? (t.temp != null ? Math.round(t.temp) + "°" : "?") : "offline"}, ${t.system}${t.system === "Off" ? "" : t.system === "Cool" ? " " + t.cool + "°" : " " + t.heat + "°"}` }));
@@ -979,6 +979,7 @@ async function ctrlApi(req, res, p, u) {
       let who = (state.users || []).find((x) => x.name === b.name);
       if (!who && p === "/api/logins/active" && b.on === false && b.name) who = { name: String(b.name), login: String(b.username || "") };   // someone just removed: turn their sign-in off
       if (!who) return send(res, 200, { ok: false, error: "Save the person first." });
+      if (who.textOnly) return send(res, 200, { ok: false, error: `${who.name} is text only and has no sign-in.` });
       const username = b.username || who.login || "";
       if (req.method === "POST" && p === "/api/logins/create") return send(res, 200, await haAuth.create({ name: who.name, username, password: b.password }));
       if (req.method === "POST" && p === "/api/logins/password") return send(res, 200, await haAuth.setPassword({ name: who.name, username, password: b.password }));
@@ -1184,8 +1185,12 @@ function nyTime(t) {
   return f(t, D) === f(Date.now(), D) ? tm : `${f(t, { weekday: "short" })} ${tm}`;
 }
 const textOn = () => !!(state && state.alerts && state.alerts.textDoors && sms && sms.mode === "live" && sms.configured);
-function textUsers() { return ((state && state.users) || []).filter((u) => u.login !== false).map((u) => ({ ...u, phone: e164(u.phone) })).filter((u) => u.phone); }
+// people who get an answer by text: everyone who may sign in, and the text only people (they have no sign-in)
+function textUsers() { return ((state && state.users) || []).filter((u) => u.login !== false || u.textOnly).map((u) => ({ ...u, phone: e164(u.phone) })).filter((u) => u.phone); }
+// the mikva temperature by text: super admins, "See the mikva temperature", the mikva alert people, and text only mikva people
+const mtTextOk = (u) => !!u && (u.textOnly === "mikva" || (!u.textOnly && (u.role === "Super admin" || (u.can || {}).mtview || u.mtAlert)));
 function textDoorsFor(u) {
+  if (u.textOnly || !textOn()) return [];   // text only people never get doors, whatever else their record says
   const admin = u.role === "Super admin";
   if (!admin && !(u.can || {}).text) return [];   // the "Open and lock their doors by text" switch on their page
   const out = (state.doors || []).filter((d) => admin || ((u.can || {}).override && (u.perm || {})[d.id] === "edit")).map((d) => ({ id: d.id, name: d.name }));
@@ -1336,6 +1341,22 @@ function lev(a, b) { const d = Array.from({ length: a.length + 1 }, (_, i) => [i
   for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) { d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1); }   // a swap of two letters counts as one
   return d[a.length][b.length]; }
 const near = (w, list) => list.some((x) => w === x || (w.length >= 3 && lev(w, x) <= (x.length >= 8 ? 2 : 1)));
+// the welcome text for a text only mikva person (the shul's name goes in front, and "Reply STOP to opt out" after)
+function mtWelcomeText(u) {
+  const first = String(u.name || "").trim().split(/\s+/)[0] || "there";
+  return `Hi ${first}, you can now get the mikva temperature by text. Send any message to this number, any time, and you'll get each pool's temperature and whether it's ready.`;
+}
+// the simple answer: each pool's water temperature, and whether it's ready (no set points, nothing about heating)
+function mtSimpleText(list, time) {
+  const rows = list.map((x) => {
+    if (!x.online || x.cur == null) return `${x.name}: can't read it right now`;
+    const t = Math.round(x.cur) + "°";
+    if (x.set == null) return `${x.name}: ${t}`;
+    if (x.set < 80) return `${x.name}: ${t}, not in use now`;
+    return `${x.name}: ${t}, ${x.cur >= x.set - 1 ? "ready" : "not ready yet"}`;
+  });
+  return `Mikva now (${time}):\n` + rows.join("\n");
+}
 function mtAsked(body) {
   const t = String(body || "").toLowerCase().trim(); if (!t || t.length > 60) return false;
   const words = t.replace(/[^a-z\s]/g, " ").split(/\s+/).filter(Boolean);
@@ -1343,10 +1364,11 @@ function mtAsked(body) {
   if (words.some((w) => near(w, MK)) && (words.some((w) => near(w, TP)) || /how hot|how warm/.test(t))) return true;
   return words.some((w) => w.length >= 8 && MK.some((m) => w.startsWith(m.slice(0, 3)) && TP.some((x) => near(w.slice(-x.length), [x]) && near(w.slice(0, w.length - x.length), MK))));   // run together
 }
-async function mtStatusText() {
+async function mtStatusText({ simple = false } = {}) {
   let list; try { list = await mtemp.list(); } catch { list = mtLast; }
   if (!list || !list.length) return "I can't read the mikva thermostats right now.";
   const deg = (v, u) => (v == null ? "?" : Math.round(v * 10) / 10 + (u || "°F"));
+  if (simple) return mtSimpleText(list, nyTime(Date.now()));
   const rows = list.map((x) => {
     if (!x.online) return `${x.name}: offline`;
     const hand = store.mtHand && store.mtHand[x.id] ? ", set by hand" : "";
@@ -1370,15 +1392,26 @@ async function textIn(q) {
     if (r) { sms.keepIn(from, body); await sms.sendOne(from, r, "textbot"); return; }
   }
   {   // "mikva temp": works even when doors by text is off
-    const u = (state.users || []).find((x) => e164(x.phone) === from && x.login !== false);
-    if (u && (u.role === "Super admin" || (u.can || {}).mtview || u.mtAlert) && !(+q.get("NumMedia")) && mtAsked(body)) {
+    const u = (state.users || []).find((x) => e164(x.phone) === from && (x.login !== false || x.textOnly));
+    if (mtTextOk(u) && !u.textOnly && !(+q.get("NumMedia")) && mtAsked(body)) {
       sms.keepIn(from, body); const ans = await mtStatusText(); await sms.sendOne(from, ans, "textbot");
       aiLog({ at: Date.now(), who: u.name, via: "text", thread: "text:" + from, title: "Texts", c: "me", t: body.slice(0, 600) });
       aiLog({ at: Date.now(), who: u.name, via: "text", thread: "text:" + from, title: "Texts", c: "ai", t: ans });
       return;
     }
   }
-  if (!textOn()) return;
+  if (!textOn() && !mtTextOk(textUsers().find((x) => x.phone === from))) return;
+  {   // a text only mikva person: every text, voice note or picture gets the reading (nothing is listened to or sent to the AI)
+    const tu = textUsers().find((x) => x.phone === from);
+    if (tu && tu.textOnly === "mikva") {
+      const said = body || (+q.get("NumMedia") ? "(voice note or picture)" : "");
+      sms.keepIn(from, said);
+      aiLog({ at: Date.now(), who: tu.name, via: "text", thread: "text:" + from, title: "Texts", c: "me", t: said.slice(0, 600) });
+      const answer = await textbot.handle({ from, body: said });
+      if (answer) { await sms.sendOne(from, answer, "textbot"); aiLog({ at: Date.now(), who: tu.name, via: "text", thread: "text:" + from, title: "Texts", c: "ai", t: answer }); }
+      return;
+    }
+  }
   // a voice note: listen to it and answer what was said
   const nMedia = +q.get("NumMedia") || 0, mType = String(q.get("MediaContentType0") || "").toLowerCase(), mUrl = q.get("MediaUrl0") || "";
   const known = textUsers().some((x) => x.phone === from); let voice = false;
@@ -1421,7 +1454,8 @@ function haUser(req) { return String(req.headers["x-remote-user-display-name"] |
 function matchUser(name) {
   const n = String(name || "").toLowerCase(); if (!n) return null;
   const us = (state && state.users) || [];
-  return us.find((u) => u.name.toLowerCase() === n) || us.find((u) => n.startsWith(u.name.toLowerCase() + " ")) || null;
+  const can = us.filter((u) => !u.textOnly);   // text only people have no sign-in
+  return can.find((u) => u.name.toLowerCase() === n) || can.find((u) => n.startsWith(u.name.toLowerCase() + " ")) || null;
 }
 // Home Assistant users who aren't added in Shul Manager get a short page instead of the app.
 // (Until the first super admin exists, the first person in is let in, as before.)
@@ -1484,6 +1518,18 @@ const server = http.createServer((req, res) => {
       catch (e) { log("warn", "welcome email: " + e.message); send(res, 200, { ok: false, error: "The email didn't go out: " + e.message }); }
     }); return;
   }
+  if (req.method === "POST" && p === "/api/sms/mikvawelcome") {
+    readBody(req).then(async (b) => {
+      if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can send the welcome text." });
+      const u = (state.users || []).find((x) => x.name === (b && b.name));
+      if (!u || u.textOnly !== "mikva") return send(res, 200, { ok: false, error: "That person isn't set up for the mikva temperature by text." });
+      if (!e164(u.phone)) return send(res, 200, { ok: false, error: `Add a mobile number for ${u.name} first.` });
+      if (!sms || sms.mode !== "live" || !sms.configured) return send(res, 200, { ok: false, notLive: true, error: "Texting isn't live yet, so nothing was sent." });
+      const r = await sms.sendOne(u.phone, mtWelcomeText(u), "welcome");
+      log("info", `mikva welcome text to ${u.name}: ${r.status}`);
+      send(res, 200, r.status === "sent" ? { ok: true } : { ok: false, error: "The text didn't go out: " + (r.why || r.status) });
+    }); return;
+  }
   if (req.method === "POST" && p === "/api/sms/password") {
     readBody(req).then(async (b) => {
       const me = matchUser(personOf(req));
@@ -1491,6 +1537,7 @@ const server = http.createServer((req, res) => {
       const u = (state.users || []).find((x) => x.name === (b && b.name));
       const pw = String((b && b.password) || "");
       if (!u) return send(res, 200, { ok: false, error: "No such user." });
+      if (u.textOnly) return send(res, 200, { ok: false, error: `${u.name} is text only and has no password.` });
       if (!u.phone) return send(res, 200, { ok: false, error: `Add a mobile number for ${u.name} first.` });
       if (pw.length < 8) return send(res, 200, { ok: false, error: "Use a password of at least 8 characters." });
       if (!sms || sms.mode !== "live") return send(res, 200, { ok: false, notLive: true, error: "Texting isn't live yet, so nothing was sent. Give them the password in person for now." });
