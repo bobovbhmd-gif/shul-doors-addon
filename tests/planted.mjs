@@ -53,7 +53,10 @@ const BUGS = [
   ["server.js", "const can = us.filter((u) => !u.textOnly);", "const can = us;", "a text only person can open Shul Manager"],
   ["server.js", 'if (who.textOnly) return send(res, 200, { ok: false, error: `${who.name} is text only and has no sign-in.` });', "", "a login can be made for a text only person"],
   ["server.js", 'return `${x.name}: ${t}, ${x.cur >= x.set - 1 ? "ready" : "not ready yet"}`;', 'return `${x.name}: ${t}, ${x.cur >= x.set - 10 ? "ready" : "not ready yet"}`;', "a pool 9 degrees short says ready"],
-  ["server.js", "const ans = await mtStatusText({ simple: !!u.textOnly });", "const ans = await mtStatusText();", "text only people get set points and heating"],
+  ["server.js", "status: (u) => mtStatusText({ simple: !!u.textOnly })", "status: (u) => mtStatusText()", "text only people get set points and heating"],
+  ["lib/textbot.js", "if (mikva && mikva.can(u) && mikva.only && mikva.only(u)) {", "if (false) {", "a text only person's texts go to the AI instead of the same reply"],
+  ["server.js", "Send any message to this number, any time, and you'll get each pool's temperature and whether it's ready.", "Welcome.", "the welcome text has no instructions"],
+  ["server.js", 'if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can send the welcome text." });', "", "anyone can send the welcome text"],
   ["server.js", "if (!textOn() && !mtTextOk(textUsers().find((x) => x.phone === from))) return;", "if (!textOn()) return;", "mikva questions unanswered while door texting is off"],
   ["lib/time.js", "const exact = cands.filter((c) => wallKey(c) === wallKeyNaive(naive)).sort((p, q) => p - q);", "const exact = cands.filter((c) => wallKey(c) === wallKeyNaive(naive)).sort((p, q) => q - p);", "fall back day uses the second 1 AM"],
 ];

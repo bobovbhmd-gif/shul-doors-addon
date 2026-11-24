@@ -110,6 +110,11 @@ function createTextBot({ hvac = null, mikva = null, store, chat = null, onIssue 
     const s = seen[num] = (seen[num] || []).filter((x) => x > t - 3600e3); s.push(t);
     if (s.length > PER_HOUR) return s.length === PER_HOUR + 1 ? "Too many texts this hour. Please use the Shul Manager app." : null;
     const lock = store.textLock[num], paused = lock && lock.until > t;
+    // someone who may only ask the mikva temperature: whatever they text, the same answer, without the AI
+    if (mikva && mikva.can(u) && mikva.only && mikva.only(u)) {
+      let ans; try { ans = await mikva.status(u); } catch (e) { ans = "I can't read the mikva thermostats right now."; }
+      remember(num, "user", text); remember(num, "assistant", ans); return ans;
+    }
 
     // a thermostat change waiting for OK (not YES: Twilio keeps YES for signing up to texts)
     store.textHvPending = store.textHvPending || {};

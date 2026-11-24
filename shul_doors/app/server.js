@@ -1341,6 +1341,11 @@ function lev(a, b) { const d = Array.from({ length: a.length + 1 }, (_, i) => [i
   for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) { d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1); }   // a swap of two letters counts as one
   return d[a.length][b.length]; }
 const near = (w, list) => list.some((x) => w === x || (w.length >= 3 && lev(w, x) <= (x.length >= 8 ? 2 : 1)));
+// the welcome text for a text only mikva person (the shul's name goes in front, and "Reply STOP to opt out" after)
+function mtWelcomeText(u) {
+  const first = String(u.name || "").trim().split(/\s+/)[0] || "there";
+  return `Hi ${first}, you can now get the mikva temperature by text. Send any message to this number, any time, and you'll get each pool's temperature and whether it's ready.`;
+}
 // the simple answer: each pool's water temperature, and whether it's ready (no set points, nothing about heating)
 function mtSimpleText(list, time) {
   const rows = list.map((x) => {
@@ -1388,14 +1393,25 @@ async function textIn(q) {
   }
   {   // "mikva temp": works even when doors by text is off
     const u = (state.users || []).find((x) => e164(x.phone) === from && (x.login !== false || x.textOnly));
-    if (mtTextOk(u) && !(+q.get("NumMedia")) && mtAsked(body)) {
-      sms.keepIn(from, body); const ans = await mtStatusText({ simple: !!u.textOnly }); await sms.sendOne(from, ans, "textbot");
+    if (mtTextOk(u) && !u.textOnly && !(+q.get("NumMedia")) && mtAsked(body)) {
+      sms.keepIn(from, body); const ans = await mtStatusText(); await sms.sendOne(from, ans, "textbot");
       aiLog({ at: Date.now(), who: u.name, via: "text", thread: "text:" + from, title: "Texts", c: "me", t: body.slice(0, 600) });
       aiLog({ at: Date.now(), who: u.name, via: "text", thread: "text:" + from, title: "Texts", c: "ai", t: ans });
       return;
     }
   }
   if (!textOn() && !mtTextOk(textUsers().find((x) => x.phone === from))) return;
+  {   // a text only mikva person: every text, voice note or picture gets the reading (nothing is listened to or sent to the AI)
+    const tu = textUsers().find((x) => x.phone === from);
+    if (tu && tu.textOnly === "mikva") {
+      const said = body || (+q.get("NumMedia") ? "(voice note or picture)" : "");
+      sms.keepIn(from, said);
+      aiLog({ at: Date.now(), who: tu.name, via: "text", thread: "text:" + from, title: "Texts", c: "me", t: said.slice(0, 600) });
+      const answer = await textbot.handle({ from, body: said });
+      if (answer) { await sms.sendOne(from, answer, "textbot"); aiLog({ at: Date.now(), who: tu.name, via: "text", thread: "text:" + from, title: "Texts", c: "ai", t: answer }); }
+      return;
+    }
+  }
   // a voice note: listen to it and answer what was said
   const nMedia = +q.get("NumMedia") || 0, mType = String(q.get("MediaContentType0") || "").toLowerCase(), mUrl = q.get("MediaUrl0") || "";
   const known = textUsers().some((x) => x.phone === from); let voice = false;
@@ -1500,6 +1516,18 @@ const server = http.createServer((req, res) => {
         store.welcomeSent = store.welcomeSent || {}; store.welcomeSent[u.name] = { at: Date.now(), by: who, to }; writeJson("store.json", store);
         log("info", `welcome email sent to ${u.name} by ${who}`); send(res, 200, { ok: true, id, at: Date.now() }); }
       catch (e) { log("warn", "welcome email: " + e.message); send(res, 200, { ok: false, error: "The email didn't go out: " + e.message }); }
+    }); return;
+  }
+  if (req.method === "POST" && p === "/api/sms/mikvawelcome") {
+    readBody(req).then(async (b) => {
+      if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can send the welcome text." });
+      const u = (state.users || []).find((x) => x.name === (b && b.name));
+      if (!u || u.textOnly !== "mikva") return send(res, 200, { ok: false, error: "That person isn't set up for the mikva temperature by text." });
+      if (!e164(u.phone)) return send(res, 200, { ok: false, error: `Add a mobile number for ${u.name} first.` });
+      if (!sms || sms.mode !== "live" || !sms.configured) return send(res, 200, { ok: false, notLive: true, error: "Texting isn't live yet, so nothing was sent." });
+      const r = await sms.sendOne(u.phone, mtWelcomeText(u), "welcome");
+      log("info", `mikva welcome text to ${u.name}: ${r.status}`);
+      send(res, 200, r.status === "sent" ? { ok: true } : { ok: false, error: "The text didn't go out: " + (r.why || r.status) });
     }); return;
   }
   if (req.method === "POST" && p === "/api/sms/password") {

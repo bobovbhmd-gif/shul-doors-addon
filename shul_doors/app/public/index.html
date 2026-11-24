@@ -4202,9 +4202,9 @@ function uTextCard(u,i){
     <div class="ubody">
     ${sec("Contact",`<div class="row"><span class="rt"><b>Mobile</b></span><input class="uphone" data-uphone="${i}" value="${esc(u.phone||"")}" placeholder="Add a number" inputmode="tel" aria-label="Mobile number for ${esc(u.name)}"></div>
       <label class="row swrow"><span class="rt"><b>Mikva temperature alerts</b><span>By text, once texting is live</span></span><input type="checkbox" class="switch" data-umt="${i}"${u.mtAlert?" checked":""}></label>`)}
-    ${sec("What they can do",`<div class="row"><span class="rt"><b>Ask the mikva temperature by text</b><span>In their own words. The answer is each pool's temperature and whether it's ready.</span></span></div>
+    ${sec("What they can do",`<div class="row"><span class="rt"><b>Get the mikva temperature by text</b><span>Any text they send gets the same answer: each pool's temperature and whether it's ready.</span></span></div>
       <div class="row"><span class="rt"><b>No sign-in</b><span>They can't open Shul Manager, and can't open doors or change anything by text.</span></span></div>`)}
-    <div class="uacts"><button class="lnk" type="button" data-uact="${esc(u.name)}">Activity</button><button class="lnk danger" type="button" data-udel="${i}">Remove</button></div>
+    <div class="uacts"><button class="lnk" type="button" data-uact="${esc(u.name)}">Activity</button><button class="lnk" type="button" data-umkw="${esc(u.name)}">Send welcome text again</button><button class="lnk danger" type="button" data-udel="${i}">Remove</button></div>
     </div></details>`}
 function dayLabel(ms){const d=nyDate(ms),t=todayNY();return d===t?"Today":d===addDays(t,-1)?"Yesterday":longDate(d)}
 function renderStatus(){
@@ -4835,14 +4835,16 @@ $("#uSave").onclick=()=>{if(!UD){uDone();return}
   const fresh=[...NEWPW.entries()].filter(([k])=>S.users.some(u=>u.name===k));NEWPW.clear();
   const flips=S.users.map(u=>{const b=before.find(x=>x.name===u.name);return b&&(b.login===false)!==(u.login===false)?{name:u.name,on:u.login!==false}:null}).filter(Boolean);
   const gone=before.filter(b=>!b.textOnly&&!S.users.some(u=>u.name===b.name)).map(b=>({name:b.name,username:b.login||loginName(b.name),on:false}));
-  if(fresh.length||flips.length||gone.length)afterUserSave(fresh,flips,gone);else toast(n===1?"Saved.":`Saved ${n} changes.`);
+  const newText=S.users.filter(u=>u.textOnly==="mikva"&&!before.some(b=>b.name===u.name)).map(u=>u.name);
+  if(fresh.length||flips.length||gone.length||newText.length)afterUserSave(fresh,flips,gone,newText);else toast(n===1?"Saved.":`Saved ${n} changes.`);
   if(ON_BOX)setTimeout(accessLine,6000)};
 // after Save: make the logins, then the welcome email, then the password text. Passwords are only held here until sent.
 async function boxSaved(){for(let i=0;i<60&&(typeof SAVING!=="undefined"&&SAVING);i++)await new Promise(r=>setTimeout(r,250))}
 async function postJ(url,body){try{return await (await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json()}catch(e){return {ok:false,error:"Can't reach the box."}}}
-async function afterUserSave(fresh,flips,gone){
+async function afterUserSave(fresh,flips,gone,newText=[]){
   if(!ON_BOX){toast(fresh.length?`Saved. ${fresh.map(f=>f[0]).join(", ")} can sign in. Welcome email sent; the password text goes out once texting is live.`:"Saved.");return}
-  toast("Saved. Setting up sign-in…");await boxSaved();const notes=[];
+  toast(fresh.length||flips.length||gone.length?"Saved. Setting up sign-in…":"Saved. Sending the welcome text…");await boxSaved();const notes=[];
+  for(const name of newText)notes.push(await mkWelcome(name));
   for(const g of gone){const j=await postJ("api/logins/active",g);if(!j.ok&&!/No sign-in was found/.test(j.error||""))notes.push(`${g.name}: sign-in not turned off (${j.error})`)}
   for(const f of flips){const j=await postJ("api/logins/active",f);if(!j.ok)notes.push(`${f.name}: ${j.error}`)}
   for(const [name,pw] of fresh){const u=S.users.find(x=>x.name===name);if(!u)continue;
@@ -4852,6 +4854,11 @@ async function afterUserSave(fresh,flips,gone){
     let tx="no mobile on file";if(u.phone){const t=await postJ("api/sms/password",{name,password:pw});tx=t.ok?"password texted":t.notLive?"texting isn't live yet, so give them the password in person":"password not texted ("+t.error+")"}
     notes.push(`${name}: can sign in, ${em}, ${tx}`)}
   showNotes(notes)}
+// the welcome text for a mikva temperature by text person
+async function mkWelcome(name){const j=await postJ("api/sms/mikvawelcome",{name});
+  return j.ok?`${name}: welcome text sent with short instructions`:j.notLive?`${name}: texting isn't live yet, so no welcome text went out. Use "Send welcome text again" on their card once it is.`:`${name}: welcome text not sent (${j.error})`}
+document.addEventListener("click",async ev=>{const b=ev.target.closest("[data-umkw]");if(!b)return;
+  if(UD){toast("Save your changes first, then send the welcome text.");return}b.disabled=true;const msg=await mkWelcome(b.dataset.umkw);b.disabled=false;toast(msg)});
 function showNotes(notes){if(!notes.length){toast("Saved.");return}const el=document.createElement("div");el.className="nb-sheet";
   el.innerHTML=`<div class="nb-box"><b>Done</b><ul>${notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul><button class="btn pri sm" type="button">OK</button></div>`;el.querySelector("button").onclick=()=>el.remove();document.body.appendChild(el)}
 $("#uCancel").onclick=()=>{uDone();renderSetup()};
@@ -4875,7 +4882,7 @@ function openNewUser(){
     <div class="two"><label class="nu-login">Email<input id="nuEmail" inputmode="email" autocomplete="off" placeholder="For the sign-in code"></label>
     <label>Mobile<input id="nuPhone" inputmode="tel" autocomplete="off" placeholder="Optional, for texts"></label></div>
     <div class="nu-note nu-login">${ico("check")}<span>When you save, Shul Manager creates the login, emails a welcome with the sign-in link, then texts the password to their mobile. The password is never saved or emailed.</span></div>
-    <div class="nu-note" id="nuTextNote" hidden>${ico("check")}<span>They can text the shul's number to ask the mikva temperature, in their own words. They get each pool's temperature and whether it's ready. No sign-in is made, and they can't open Shul Manager or change anything.</span></div></div>`;
+    <div class="nu-note" id="nuTextNote" hidden>${ico("check")}<span>When you save, they get a welcome text with short instructions. Any text they send to the shul's number gets each pool's temperature and whether it's ready. No sign-in is made, and they can't open Shul Manager or change anything.</span></div></div>`;
   openModal("mNewU");$("#nuName").focus()}
 document.addEventListener("change",ev=>{if(ev.target.id!=="nuRole")return;const t=ev.target.value==="mikva";
   document.querySelectorAll("#nuBody .nu-login").forEach(el=>el.hidden=t);$("#nuTextNote").hidden=!t;$("#nuPhone").placeholder=t?"Their mobile, needed":"Optional, for texts"});

@@ -80,29 +80,43 @@ const mikvaAi = (r) => {
   return { stop_reason: "end_turn", content: [{ type: "text", text: "Sorry, by text I can only tell you the mikva temperature." }] };
 };
 
-test("asked in their own words, the AI answers with each pool's temperature and ready or not", async () => {
-  aiScript = mikvaAi;
-  const { replies, ai } = await text(PH.mk, "is the water ready yet?");
-  assert.equal(replies.length, 1, out);
-  assert.equal(replies[0].to, PH.mk);
-  assert.match(replies[0].body, /Big pool: 104°, ready/);
-  assert.match(replies[0].body, /Small pool: 95°, not ready yet/);
-  assert.doesNotMatch(replies[0].body, /set|heating/i, "the simple answer: no set points, nothing about heating");
-  assert.deepEqual(ai[0].tools.map((t) => t.name), ["mikva_temperature"]);
-});
+const SIMPLE = /^Mikva now \(.+\):\nBig pool: 104°, ready\nSmall pool: 95°, not ready yet$/;
 
-test("'mikva temp' is answered straight away, without the AI", async () => {
-  const { replies, ai } = await text(PH.mk, "mikva temp");
-  assert.equal(ai.length, 0);
-  assert.match(replies[0].body, /^Mikva now \(.+\):\nBig pool: 104°, ready\nSmall pool: 95°, not ready yet$/);
-});
-
-test("they can't open a door by text", async () => {
-  const { replies, ai } = await text(PH.mk, "open the front door for 30 min");
-  assert.ok(ai.every((c) => !c.tools.some((t) => t.name === "do_door")), "doors are never offered");
-  assert.equal(replies.length, 1);
-  assert.match(replies[0].body, /only tell you the mikva temperature/);
+test("any text gets each pool's temperature and ready or not, without the AI", async () => {
+  aiScript = () => { throw new Error("the AI should not be asked"); };
+  for (const body of ["is the water ready yet?", "mikva temp", "hello", "open the front door for 30 min"]) {
+    const { replies, ai } = await text(PH.mk, body);
+    assert.equal(ai.length, 0, body);
+    assert.equal(replies.length, 1, body + "\n" + out);
+    assert.equal(replies[0].to, PH.mk);
+    assert.match(replies[0].body, SIMPLE, body);
+  }
   assert.doesNotMatch(out, /opened|unlock/i);
+});
+
+test("a voice note or picture gets the same reading; STOP gets nothing from us", async () => {
+  const sid = "SM" + "9".repeat(32), hook = JSON.parse(fs.readFileSync(path.join(data, "store.json"), "utf8")).textHook;
+  inbound.set(sid, { from: PH.mk, body: "" });
+  const before = sent.length;
+  await fetch(`http://127.0.0.1:${textPort}/twilio/sms/${hook}`, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ MessageSid: sid, AccountSid: ACCT, From: PH.mk, Body: "", NumMedia: "1", MediaContentType0: "audio/amr", MediaUrl0: "https://api.twilio.com/x" }) });
+  for (let i = 0; i < 40 && sent.length === before; i++) await new Promise((res) => setTimeout(res, 50));
+  assert.match(sent.at(-1).body, SIMPLE);
+  const { replies } = await text(PH.mk, "STOP");
+  assert.equal(replies.length, 0);
+});
+
+test("the welcome text: the shul's name, short instructions, and how to stop", async () => {
+  const before = sent.length;
+  const r = await (await fetch(`http://127.0.0.1:${appPort}/api/sms/mikvawelcome`, { method: "POST", headers: { "X-Remote-User-Name": "Tester", "content-type": "application/json" }, body: JSON.stringify({ name: "Mikva Lady" }) })).json();
+  assert.deepEqual(r, { ok: true });
+  const w = sent.slice(before);
+  assert.equal(w.length, 1); assert.equal(w[0].to, PH.mk);
+  assert.equal(w[0].body, "K'hal Shaarei Zion: Hi Mikva, you can now get the mikva temperature by text. Send any message to this number, any time, and you'll get each pool's temperature and whether it's ready. Reply STOP to opt out.");
+  assert.doesNotMatch(w[0].body, /[\u2013\u2014]/, "no dashes");
+  const no = await (await fetch(`http://127.0.0.1:${appPort}/api/sms/mikvawelcome`, { method: "POST", headers: { "X-Remote-User-Name": "Gabbai", "content-type": "application/json" }, body: JSON.stringify({ name: "Mikva Lady" }) })).json();
+  assert.match(no.error || "", /Only a super admin/);
+  const other = await (await fetch(`http://127.0.0.1:${appPort}/api/sms/mikvawelcome`, { method: "POST", headers: { "X-Remote-User-Name": "Tester", "content-type": "application/json" }, body: JSON.stringify({ name: "Gabbai" }) })).json();
+  assert.equal(other.ok, false, "only for text only mikva people");
 });
 
 test("someone without the mikva switch gets nothing while door texting is off", async () => {
