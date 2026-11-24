@@ -48,7 +48,6 @@ const BUGS = [
   ["lib/sync.js", "if ((await act(\"update panels\", () => client.updatePanels())) !== undefined) store.needUpdate = false;", "store.needUpdate = false; await act(\"update panels\", () => client.updatePanels());", "failed panel update forgotten"],
   ["lib/outputs.js", 'const managed = mode === "live" || mode === "practice" || (mode === "pilot" && pilotDoors.includes(o.id));', 'const managed = mode !== "restore";', "magnet run in pilot without being listed"],
   // texting: the text only mikva person
-  ["lib/textbot.js", "const mine = only ? [] : doorsFor(u), hv = only || !hvac ? [] : await hvac.list(u);", "const mine = doorsFor(u), hv = !hvac ? [] : await hvac.list(u);", "a text only mikva person is offered doors"],
   ["lib/textbot.js", 'if (!mk) res = { status: "refused", why: "this person may not ask the mikva temperature" };', "if (false) res = null;", "anyone may read the mikva by text"],
   ["server.js", "const can = us.filter((u) => !u.textOnly);", "const can = us;", "a text only person can open Shul Manager"],
   ["server.js", 'if (who.textOnly) return send(res, 200, { ok: false, error: `${who.name} is text only and has no sign-in.` });', "", "a login can be made for a text only person"],

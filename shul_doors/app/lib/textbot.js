@@ -153,9 +153,8 @@ function createTextBot({ hvac = null, mikva = null, store, chat = null, onIssue 
     if (pend) { delete store.textPending[num]; save(); }   // a new request replaces an old one
     if (/^\d{1,10}$/.test(text) && pend) return "That took more than 5 minutes, so nothing was changed. Please text your request again.";
 
-    const mk = !!(mikva && mikva.can(u)), only = mk && !!(mikva.only && mikva.only(u));
-    // a mikva only person never reaches doors or thermostats, whatever the lists below would say
-    const mine = only ? [] : doorsFor(u), hv = only || !hvac ? [] : await hvac.list(u);
+    const mk = !!(mikva && mikva.can(u));   // (a mikva only person was answered above and never gets here)
+    const mine = doorsFor(u), hv = hvac ? await hvac.list(u) : [];
     if (!mine.length && !hv.length && !mk) return "You don't have any doors or thermostats you can change by text.";
     if (chat) {
       try { const out = await converse(u, num, text, mine, paused, lock, hv, mk); if (out) return out; }
