@@ -47,6 +47,14 @@ const BUGS = [
   ["lib/sync.js", "else if (byName.length > 1)", "else if (byName.length > 99)", "a door named twice gets guessed"],
   ["lib/sync.js", "if ((await act(\"update panels\", () => client.updatePanels())) !== undefined) store.needUpdate = false;", "store.needUpdate = false; await act(\"update panels\", () => client.updatePanels());", "failed panel update forgotten"],
   ["lib/outputs.js", 'const managed = mode === "live" || mode === "practice" || (mode === "pilot" && pilotDoors.includes(o.id));', 'const managed = mode !== "restore";', "magnet run in pilot without being listed"],
+  // texting: the text only mikva person
+  ["lib/textbot.js", "const mine = only ? [] : doorsFor(u), hv = only || !hvac ? [] : await hvac.list(u);", "const mine = doorsFor(u), hv = !hvac ? [] : await hvac.list(u);", "a text only mikva person is offered doors"],
+  ["lib/textbot.js", 'if (!mk) res = { status: "refused", why: "this person may not ask the mikva temperature" };', "if (false) res = null;", "anyone may read the mikva by text"],
+  ["server.js", "const can = us.filter((u) => !u.textOnly);", "const can = us;", "a text only person can open Shul Manager"],
+  ["server.js", 'if (who.textOnly) return send(res, 200, { ok: false, error: `${who.name} is text only and has no sign-in.` });', "", "a login can be made for a text only person"],
+  ["server.js", 'return `${x.name}: ${t}, ${x.cur >= x.set - 1 ? "ready" : "not ready yet"}`;', 'return `${x.name}: ${t}, ${x.cur >= x.set - 10 ? "ready" : "not ready yet"}`;', "a pool 9 degrees short says ready"],
+  ["server.js", "const ans = await mtStatusText({ simple: !!u.textOnly });", "const ans = await mtStatusText();", "text only people get set points and heating"],
+  ["server.js", "if (!textOn() && !mtTextOk(textUsers().find((x) => x.phone === from))) return;", "if (!textOn()) return;", "mikva questions unanswered while door texting is off"],
   ["lib/time.js", "const exact = cands.filter((c) => wallKey(c) === wallKeyNaive(naive)).sort((p, q) => p - q);", "const exact = cands.filter((c) => wallKey(c) === wallKeyNaive(naive)).sort((p, q) => q - p);", "fall back day uses the second 1 AM"],
 ];
 const UI_BUGS = [
