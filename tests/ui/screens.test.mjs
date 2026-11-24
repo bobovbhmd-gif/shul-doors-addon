@@ -8,10 +8,9 @@ import { spawn, execSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import net from "node:net";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
-import { APP, baseState, rule, clock, zman, W5 } from "../helpers.mjs";
+import { APP, baseState, rule, clock, zman, W5, freePorts } from "../helpers.mjs";
 import { fakeHa } from "../fakes/ha.mjs";
 
 const require = createRequire(import.meta.url);
@@ -24,7 +23,6 @@ function playwright() {
 const { chromium } = playwright();
 const here = path.dirname(fileURLToPath(import.meta.url));
 const SHOTS = path.join(here, "..", "screens");
-const freePort = () => new Promise((r) => { const s = net.createServer(); s.listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => r(p)); }); });
 
 let ha, srv, browser, port, data, out = "";
 before(async () => {
@@ -40,8 +38,8 @@ before(async () => {
   });
   fs.writeFileSync(path.join(data, "state.json"), JSON.stringify(st));
   fs.writeFileSync(path.join(data, "options.json"), JSON.stringify({ mode: "practice" }));
-  port = await freePort();
-  srv = spawn(process.execPath, ["server.js"], { cwd: APP, env: { ...process.env, SD_DATA: data, SD_PORT: String(port), SD_TEXT_PORT: String(await freePort()), SD_ANY_IP: "1",
+  let textPort; [port, textPort] = await freePorts(2);
+  srv = spawn(process.execPath, ["server.js"], { cwd: APP, env: { ...process.env, SD_DATA: data, SD_PORT: String(port), SD_TEXT_PORT: String(textPort), SD_ANY_IP: "1",
     SD_HA_URL: `http://127.0.0.1:${ha.port}/api`, SD_HA_TOKEN: "x", SD_HA_WS: "" } });
   srv.stdout.on("data", (d) => { out += d; }); srv.stderr.on("data", (d) => { out += d; });
   for (let i = 0; i < 100 && !/portal on port/.test(out); i++) await new Promise((r) => setTimeout(r, 100));

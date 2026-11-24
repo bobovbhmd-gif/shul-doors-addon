@@ -7,12 +7,10 @@ import http from "node:http";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import net from "node:net";
-import { APP, baseState } from "../helpers.mjs";
+import { APP, baseState, freePorts } from "../helpers.mjs";
 
 const ACCT = "AC" + "0".repeat(32);
 const PH = { mk: "+17185550102", gabbai: "+17185550103", boss: "+17185550101" };
-const freePort = () => new Promise((r) => { const s = net.createServer(); s.listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => r(p)); }); });
 
 let fake, fakePort, srv, textPort, appPort, data, out = "";
 const inbound = new Map(), sent = [], aiCalls = [];
@@ -51,7 +49,7 @@ before(async () => {
   });
   fs.writeFileSync(path.join(data, "state.json"), JSON.stringify(st));
   fs.writeFileSync(path.join(data, "options.json"), JSON.stringify({ mode: "practice", sms_mode: "live", twilio_account_sid: ACCT, twilio_api_key_sid: "SK" + "0".repeat(32), twilio_api_key_secret: "x", twilio_messaging_service_sid: "MG" + "0".repeat(32), anthropic_api_key: "test" }));
-  [appPort, textPort] = [await freePort(), await freePort()];
+  [appPort, textPort] = await freePorts(2);
   srv = spawn(process.execPath, ["server.js"], { cwd: APP, env: { ...process.env, SD_DATA: data, SD_PORT: String(appPort), SD_TEXT_PORT: String(textPort), SD_ANY_IP: "1",
     SD_HA_URL: `${F}/api`, SD_HA_TOKEN: "x", SD_HA_WS: "", SD_TWILIO_API: F, SD_TWILIO_URL: `${F}/send`, SD_AI_URL: `${F}/ai`, SD_MT_MS: "3600000" } });
   srv.stdout.on("data", (d) => { out += d; }); srv.stderr.on("data", (d) => { out += d; });

@@ -85,3 +85,12 @@ export function ruleAt(e, door, date, hm, opts) {
   return g && g.rule;
 }
 export const hm = (min) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+
+// n different free ports: all are held open together, so two can never come back the same
+export async function freePorts(n) {
+  const net = await import("node:net");
+  const socks = await Promise.all(Array.from({ length: n }, () => new Promise((r) => { const s = net.createServer(); s.listen(0, "127.0.0.1", () => r(s)); })));
+  const ports = socks.map((s) => s.address().port);
+  await Promise.all(socks.map((s) => new Promise((r) => s.close(r))));
+  return ports;
+}
