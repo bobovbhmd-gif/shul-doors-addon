@@ -32,7 +32,7 @@ Rules, door names and codes live only on the box.
    and makes it a release (Home Assistant only sees `main`). Never merge without his words in chat.
 5. Hershy updates in Home Assistant: Settings, Add-ons (Apps), Shul Manager, Update.
    If HA refuses, the Supervisor needs updating first.
-Current version: 0.4.16.
+Current version: 0.4.17.
 
 ## Where the code is
 - `shul_doors/app/server.js`: Node server (ingress port 8099, text port), portal API.

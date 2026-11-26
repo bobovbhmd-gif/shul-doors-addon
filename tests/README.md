@@ -27,7 +27,7 @@ GitHub runs `npm test` and `npm run test:ui` on every pull request (Actions, "Te
 | `unit/textbot.test.mjs` | The text assistant with a pretend AI: a text only mikva person is offered only the mikva tool, a door request is refused even if the AI tries, the answer without the AI, who may ask. |
 | `unit/text-mikva.test.mjs` | End to end: the real server with a pretend Twilio, Home Assistant (two Meross pools) and AI. The exact reply a text only person gets, with door texting off; they can't open Shul Manager and no login can be made for them. |
 | `unit/time.test.mjs` | New York time and UTC, including both clock change days. |
-| `ui/screens.test.mjs` | Starts the real server (practice mode, pretend Home Assistant) and opens every main screen: no script errors, nothing empty, no sideways scrolling. Screenshots go to `tests/screens/` (not committed). |
+| `ui/screens.test.mjs` | Starts the real server (practice mode, pretend Home Assistant) and opens every main screen: no script errors, nothing empty, no sideways scrolling. Pop-ups inside frames like Home Assistant's (a top bar over a scrolling area) must stay fully on screen. Screenshots go to `tests/screens/` (not committed). |
 | `planted.mjs` | The planted bugs and which test catches each. Add one whenever a test is added. |
 
 When a test fails, read its message: it names the date, door or rule that differs.
