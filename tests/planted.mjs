@@ -64,6 +64,8 @@ const BUGS = [
   ["lib/time.js", "const exact = cands.filter((c) => wallKey(c) === wallKeyNaive(naive)).sort((p, q) => p - q);", "const exact = cands.filter((c) => wallKey(c) === wallKeyNaive(naive)).sort((p, q) => q - p);", "fall back day uses the second 1 AM"],
 ];
 const UI_BUGS = [
+  ["public/index.html", "if(seen){const A=Math.max(t,seen.t),B=Math.min(t+h,seen.b);if(B-A>120){t=A;h=B-A}}", "", "pop-ups placed under Home Assistant's top bar or below the screen again (fixed in 0.4.17)", "ui"],
+  ["public/index.html", "const measure=()=>{try{if(!sent", "const measure=()=>{return;try{if(!sent", "the visible part never measured afresh (only when the amount on screen changes)", "ui"],
   ["public/index.html", ".ph-txt{min-width:0;max-width:100%}", "", "phone pages scroll sideways again (fixed in 0.4.15)", "ui"],
   ["public/index.html", 'if(t==="activity")renderLog();', 'if(t==="activity"){renderLog();null.x}', "a script error on the Activity screen", "ui"],
   ["public/index.html", ".ptabs{display:flex;gap:22px;margin-top:10px;overflow-x:auto;scrollbar-width:none}", ".ptabs{display:flex;gap:22px;margin-top:10px;scrollbar-width:none}", "tab row no longer scrolls on its own", "ui"],

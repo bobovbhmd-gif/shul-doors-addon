@@ -2315,7 +2315,13 @@ button.hv-tile{cursor:pointer}button.hv-tile:hover{background:color-mix(in srgb,
   #heldMin,input.mt-in,.tline input{min-height:40px}
   .ux{min-width:40px;min-height:40px}
 }
-.modal{height:var(--vvh,100dvh);top:var(--vvt,0px);bottom:auto}
+.modal,.pwcard,.nb-sheet,.tour{height:var(--vvh,100dvh);top:var(--vvt,0px);bottom:auto}
+/* if a pop-up is ever taller than the space it has, the dark backdrop scrolls, so its top and bottom can both be reached */
+.modal,.pwcard,.nb-sheet,.tour{overflow-y:auto;overscroll-behavior:contain}
+.modal{align-items:flex-start}.modal>.mbox{margin:auto;flex-shrink:0}
+@media (max-width:700px){.modal>.mbox{margin:auto auto 0}}
+.pwcard,.nb-sheet{place-items:start center}.pwcard>*,.nb-sheet>*{margin:auto 0}
+.tour{align-items:flex-start}.tour>*{margin-top:auto;flex-shrink:0}
 .mbox{max-height:min(88vh,calc(var(--vvh,100dvh) - 16px),920px)}
 @media (max-width:700px){.mbox{max-height:calc(var(--vvh,100dvh) - 8px)}}
 @media (max-width:700px){.wd{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.wd button{min-width:0;padding:9px 0;text-align:center}}
@@ -3606,7 +3612,7 @@ function ico(k){return `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]||""}
 function modeIco(m){return m==="Unlock"?"open":m==="Lockdown"?"lockdown":"lock"}
 function initials(n){return String(n||"?").replace(/[^A-Za-z ]/g,"").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("")||"?"}
 let LAST_FOCUS=null;
-function openModal(id){try{window.vvPlace&&window.vvPlace()}catch(e){}const m=$("#"+id);if(!m)return;LAST_FOCUS=document.activeElement;m.hidden=false;if(window.vvPlace)vvPlace();document.body.classList.add("modal-open");
+function openModal(id){try{window.vvPlace&&window.vvPlace();window.vvMeasure&&window.vvMeasure()}catch(e){}const m=$("#"+id);if(!m)return;LAST_FOCUS=document.activeElement;m.hidden=false;if(window.vvPlace)vvPlace();document.body.classList.add("modal-open");
   requestAnimationFrame(()=>m.classList.add("show"));
   // no typing box on open for touch screens (keyboard pops up) or when editing an existing rule
   const touch=window.matchMedia&&matchMedia("(pointer:coarse)").matches;if(touch||(id==="mRule"&&E&&!E.isNew))return;
@@ -9096,7 +9102,7 @@ new MutationObserver(()=>{clearTimeout(PL_T);PL_T=setTimeout(()=>document.queryS
 (function(){
   const vv=window.visualViewport,root=document.documentElement,coarse=window.matchMedia&&matchMedia("(pointer:coarse)").matches;
   const typing=el=>el&&(/^(TEXTAREA|SELECT)$/.test(el.tagName)||(el.tagName==="INPUT"&&!/^(checkbox|radio|button|submit|range|color|file|hidden)$/.test(el.type))||el.isContentEditable);
-  let done=null;
+  let done=null,seen=null;
   // inside Home Assistant the page sits in a frame that can be taller than the screen, so measure the part of the frame you can see
   // Home Assistant can nest the page two frames deep (its add-on page, then the app), so walk every frame up to the top and keep only what's on screen
   const anc=[];try{let w=window;while(w.parent!==w&&w.frameElement){anc.push({fe:w.frameElement,p:w.parent});w=w.parent}}catch(e){}
@@ -9104,12 +9110,25 @@ new MutationObserver(()=>{clearTimeout(PL_T);PL_T=setTimeout(()=>document.queryS
   const place=()=>{if(!vv)return;let t=vv.offsetTop,h=vv.height;
     if(anc.length)try{let A=t,B=t+h,off=0;for(const {fe:f,p} of anc){const r=f.getBoundingClientRect(),pv=p.visualViewport,pt=pv?pv.offsetTop:0,ph=pv?pv.height:p.innerHeight;A+=r.top;B+=r.top;off+=r.top;A=Math.max(A,pt);B=Math.min(B,pt+ph)}
       if(B-A>120){t=A-off;h=B-A}}catch(e){}
+    if(seen){const A=Math.max(t,seen.t),B=Math.min(t+h,seen.b);if(B-A>120){t=A;h=B-A}}
     root.style.setProperty("--vvh",h+"px");root.style.setProperty("--vvt",t+"px");
     if(done){const kb=Math.max(0,innerHeight-h-t);done.style.bottom=(kb+10)+"px";done.style.top="auto"}};
   if(vv){vv.addEventListener("resize",place);vv.addEventListener("scroll",place);addEventListener("resize",place);
     anc.forEach(({p})=>{try{const pv=p.visualViewport;if(pv){pv.addEventListener("resize",place);pv.addEventListener("scroll",place)}p.addEventListener("resize",place);p.addEventListener("scroll",place,true)}catch(e){}});
     place();setTimeout(place,600)}
-  window.vvPlace=place;
+  // The browser itself can say which part of this page is really on screen: through every frame around it
+  // (also ones from another address), and clipped by Home Assistant's own scrolling areas under its top bar.
+  // An invisible box the size of the screen is watched, and the pop-ups are kept inside the part of it that shows.
+  // It only speaks up when the AMOUNT on screen changes, not when the same amount moves (Home Assistant's area scrolled),
+  // so it is also asked afresh whenever a pop-up opens, and a few times a second while one is open.
+  let sent=null;const seenFrom=e=>{const r=e.intersectionRect;seen=e.isIntersecting&&r.height>120?{t:r.top,b:r.bottom}:null;place()};
+  const measure=()=>{try{if(!sent||!window.IntersectionObserver)return;const io=new IntersectionObserver(es=>{io.disconnect();seenFrom(es[es.length-1])});io.observe(sent)}catch(e){}};
+  try{if(window.IntersectionObserver){sent=document.createElement("div");sent.setAttribute("aria-hidden","true");
+    sent.style.cssText="position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;visibility:hidden;z-index:-1";
+    (document.body||root).appendChild(sent);const th=[];for(let i=0;i<=200;i++)th.push(i/200);
+    new IntersectionObserver(es=>seenFrom(es[es.length-1]),{threshold:th}).observe(sent);
+    setInterval(()=>{if(document.querySelector(".modal.show,.modal:not([hidden]),.pwcard,.nb-sheet,.tour"))measure()},300)}}catch(e){}
+  window.vvPlace=place;window.vvMeasure=measure;
   if(!coarse)return;
   done=document.createElement("button");done.type="button";done.className="kbdone";done.innerHTML="Done <span aria-hidden='true'>&#8964;</span>";done.setAttribute("aria-label","Close the keyboard");
   done.addEventListener("pointerdown",e=>e.preventDefault());done.addEventListener("click",()=>{const a=document.activeElement;if(a&&a.blur)a.blur();done.classList.remove("on")});

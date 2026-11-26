@@ -44,7 +44,7 @@ before(async () => {
   srv.stdout.on("data", (d) => { out += d; }); srv.stderr.on("data", (d) => { out += d; });
   for (let i = 0; i < 100 && !/portal on port/.test(out); i++) await new Promise((r) => setTimeout(r, 100));
   assert.match(out, /portal on port/, "server did not start:\n" + out);
-  browser = await chromium.launch();
+  browser = await chromium.launch({ args: ["--disable-features=BlockInsecurePrivateNetworkRequests,PrivateNetworkAccessSendPreflights,LocalNetworkAccessChecks"] });   // the pretend outer page has no real address; let it frame the app
   fs.mkdirSync(SHOTS, { recursive: true });
 });
 after(async () => { await browser?.close(); srv?.kill(); ha?.close(); if (data) fs.rmSync(data, { recursive: true, force: true }); });
@@ -144,3 +144,35 @@ test("Users: add a text only mikva person (no login fields, Text only card, save
   assert.deepEqual(errors, []);
   await page.close();
 });
+
+// Inside Home Assistant, Shul Manager sits in frames, under Home Assistant's top bar and inside its scrolling area.
+// A pop-up must stay inside the part of the screen you can see: never under the top bar, never below the bottom.
+for (const [label, host] of [["same address", "127.0.0.1"], ["another address", "127.0.0.2"]]) {
+  test(`pop-ups stay inside the visible part of the screen inside Home Assistant's frames (${label})`, async () => {
+    const page = await newPage(390, 844);
+    const outer = `http://${host}:${port}/__frame_test.html`;
+    await page.route(outer, (r) => r.fulfill({ contentType: "text/html", body: `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="margin:0">
+      <div style="position:fixed;top:0;left:0;right:0;height:100px;background:#123;z-index:2"></div>
+      <div id="sc" style="position:absolute;top:100px;bottom:0;left:0;right:0;overflow:auto">
+        <iframe id="app" src="http://127.0.0.1:${port}/" style="display:block;width:100%;height:1400px;border:0"></iframe></div></body>` }));
+    await page.goto(outer);
+    const fr = page.frameLocator("#app");
+    let frame = null;
+    for (let i = 0; i < 100 && !frame; i++) { frame = page.frames().find((f) => f !== page.mainFrame() && f.url().startsWith(`http://127.0.0.1:${port}/`)); if (!frame) await page.waitForTimeout(100); }
+    assert.ok(frame, "the app loaded in the frame: " + page.frames().map((f) => f.url()).join(" | "));
+    await frame.waitForFunction(() => typeof showTab === "function");
+    await page.evaluate(() => { document.getElementById("sc").scrollTop = 200; });   // Home Assistant's area scrolled down a bit
+    await page.waitForTimeout(400);
+    await frame.evaluate(() => { showTab("setup"); });
+    await fr.locator('#setupIdx [data-sp="users"]').click();
+    await fr.locator("#nuOpen").click();
+    await page.waitForTimeout(500);
+    const off = await page.evaluate(() => document.getElementById("app").getBoundingClientRect().top);
+    const box = await frame.evaluate(() => { const r = document.querySelector("#mNewU .mbox").getBoundingClientRect(); return { top: r.top, bottom: r.bottom }; });
+    const top = box.top + off, bottom = box.bottom + off;
+    assert.ok(top >= 99, `the pop-up's top is under the top bar (${Math.round(top)}px, the bar ends at 100px)`);
+    assert.ok(bottom <= 845, `the pop-up's bottom is below the screen (${Math.round(bottom)}px of 844px)`);
+    assert.ok(await fr.locator("#nuGo").isVisible(), "the Add button in the pop-up's header can be seen");
+    await page.close();
+  });
+}
