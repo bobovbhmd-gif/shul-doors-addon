@@ -1,7 +1,7 @@
 "use strict";
 // The mikva thermostats (Meross MTS960 and the like), read and set through Home Assistant.
 // Also decides when to send a temperature alert. Nothing here talks to the thermostats directly.
-function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, fetchImpl = (...a) => fetch(...a), now = () => Date.now() }) {
+function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, fetchImpl = (...a) => fetch(...a), now = () => Date.now(), settleMs = 4000 }) {
   const H = { Authorization: "Bearer " + token, "Content-Type": "application/json" };
   let unit = null, areaMap = {}, areaAt = 0, histCache = { at: 0, ids: "", data: {} };
   async function ha(path, opts = {}) {
@@ -84,11 +84,19 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
   }
   const toC = (v, unit) => (/F/.test(unit || "") ? (v - 32) * 5 / 9 : v);
   const fromC = (c, unit) => (/F/.test(unit || "") ? c * 9 / 5 + 32 : c);
+  // Meross thermostats count degrees C in tenths (scale 10) or hundredths (scale 100), depending on the model.
+  // The water temperature tells which: the thermostat's own number and Home Assistant's reading are the same
+  // water at the same moment. (The target can't be trusted for this: after a change by hand it can be an old
+  // number while Home Assistant shows the schedule's.) Only a clear answer is kept; otherwise nothing is written.
   const scaleCache = {};
+  const ratioScale = (raw, c) => { if (!(raw > 0) || !(c > 0)) return 0; const r = raw / c; return Math.abs(r / 10 - 1) < 0.15 ? 10 : Math.abs(r / 100 - 1) < 0.15 ? 100 : 0; };
   async function scaleOf(x) {
     if (scaleCache[x.uuid]) return scaleCache[x.uuid];
-    let sc = 10;
-    try { const p = await meross(x.uuid, "Appliance.Control.Thermostat.ModeB", "GET", { modeB: [{ channel: 0 }] }); const raw = Number(((p.modeB || [])[0] || {}).targetTemp); const c = toC(x.set, x.unit); if (raw && c) sc = Math.abs(raw / c - 100) < Math.abs(raw / c - 10) ? 100 : 10; } catch { /* keep 10 */ }
+    const p = await meross(x.uuid, "Appliance.Control.Thermostat.ModeB", "GET", { modeB: [{ channel: 0 }] });
+    const m = (p.modeB || [])[0] || {};
+    const sc = ratioScale(Number(m.currentTemp), toC(x.cur, x.unit)) || ratioScale(Number(m.targetTemp), toC(x.set, x.unit));
+    if (!sc) throw new Error(`Couldn't tell how ${x.name || "this thermostat"} counts degrees, so its schedule wasn't read or changed. Try again in a few minutes.`);
+    if (!ratioScale(Number(m.currentTemp), toC(x.cur, x.unit))) log("warn", `thermostat ${x.id}: scale ${sc} from the target only (water temperature didn't settle it)`);
     return (scaleCache[x.uuid] = sc);
   }
   async function getSchedule(x) {
@@ -113,8 +121,29 @@ function createMtemp({ haUrl, token, areas = async () => ({}), log = () => {}, f
       out[d] = rows;
     }
     await meross(x.uuid, "Appliance.Control.Thermostat.ScheduleB", "SET", { scheduleB: [out] });
-    log("info", `thermostat ${x.id}: schedule saved`);
+    log("info", `thermostat ${x.id}: schedule saved (scale ${sc})`);
+    await checkWritten(x, week, sc);
     return { ok: true };
+  }
+  // After writing: a thermostat that follows its schedule must now show the schedule's temperature for this
+  // minute. Home Assistant's own Meross integration knows the right scale, so this catches a wrong one.
+  async function checkWritten(x, week, sc) {
+    if (x.sched !== true) return;   // set by hand right now: its set point doesn't come from the schedule
+    const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date(now()));
+    const wd = DAYS[["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(p.find((y) => y.type === "weekday").value)], m = +p.find((y) => y.type === "hour").value * 60 + +p.find((y) => y.type === "minute").value;
+    const day = (week[wd] || []).map((e) => [Math.round(+e[0] / 15) * 15, +e[1]]).sort((a, b) => a[0] - b[0]);
+    if (!day.length) return;
+    const want = day.reduce((v, e) => (e[0] <= m ? e[1] : v), day[0][1]);
+    if (day.some((e) => Math.abs(e[0] - m) <= 2)) return;   // right at a change: either side of it is fine
+    let got = null;
+    for (let i = 0; i < 4; i++) {
+      if (settleMs) await new Promise((r) => setTimeout(r, settleMs));
+      try { const st = await ha("/states/" + encodeURIComponent(x.id)); got = Number((st.attributes || {}).temperature); } catch { got = null; }
+      if (got != null && Math.abs(got - want) <= 2) return;
+    }
+    if (got == null) return;   // couldn't read it back: nothing to compare
+    delete scaleCache[x.uuid];
+    throw new Error(`${x.name || x.id}: the schedule was written, but the thermostat now shows ${got}° where the schedule says ${want}° (scale ${sc}). Check it in the Meross app.`);
   }
   // ---- alerts: run every minute with the settings from the app ----
   const since = {};

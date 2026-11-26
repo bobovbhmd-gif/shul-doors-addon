@@ -27,12 +27,12 @@ Rules, door names and codes live only on the box.
 1. Bump `version` in `shul_doors/config.yaml` and `shul_doors/app/version.txt` (same number).
 2. Run the tests (`tests/README.md`): `cd tests && npm test && npm run test:ui`, and `npm run planted` when
    tests or logic changed. Look at `tests/screens/` (phone 390px, tablet, PC). GitHub runs the tests on every PR.
-3. Commit as `0.x.y: what changed`, push to `main`.
-4. Push a branch and open a pull request. Hershy taps Merge on GitHub; that is his final yes and makes
-   it a release (Home Assistant only sees `main`).
+3. Commit as `0.x.y: what changed` on a branch and open a pull request (GitHub runs the tests).
+4. When Hershy says "push the update" (or "merge it") in chat, merge the pull request: that is his final yes
+   and makes it a release (Home Assistant only sees `main`). Never merge without his words in chat.
 5. Hershy updates in Home Assistant: Settings, Add-ons (Apps), Shul Manager, Update.
    If HA refuses, the Supervisor needs updating first.
-Current version: 0.4.15.
+Current version: 0.4.16.
 
 ## Where the code is
 - `shul_doors/app/server.js`: Node server (ingress port 8099, text port), portal API.
