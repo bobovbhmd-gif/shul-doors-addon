@@ -723,7 +723,7 @@ async function mtApply(force) {
   const out = []; store.mtWritten = store.mtWritten || {};
   for (const x of (await mtemp.list()).filter((y) => y.uuid && cfg.base[y.id])) {
     const r = mtResolve(cfg, x.id); if (!r) continue;
-    const h = JSON.stringify(r.week);
+    const h = JSON.stringify({ v: 2, week: r.week });   // v2: written once again after the 0.4.16 scale fix
     if (!force && store.mtWritten[x.id] === h) { out.push({ id: x.id, name: x.name, same: true }); continue; }
     try { await mtemp.setSchedule(x, r.week); store.mtWritten[x.id] = h; out.push({ id: x.id, name: x.name, ok: true }); }
     catch (e) { out.push({ id: x.id, name: x.name, ok: false, error: e.message }); log("warn", `thermostat schedule for ${x.name}: ${e.message}`); }
@@ -731,11 +731,18 @@ async function mtApply(force) {
   writeJson("store.json", store);
   return { ok: out.every((o) => o.ok !== false), out };
 }
+// a nightly schedule write that didn't work: a text to the people who get mikva alerts, so a pool isn't left cold
+function mtWriteAlert(r) {
+  const bad = ((r && r.out) || []).filter((o) => o.ok === false); if (!bad.length || !sms) return;
+  const phones = (state.users || []).filter((u) => u.mtAlert && u.phone).map((u) => e164(u.phone)).filter(Boolean); if (!phones.length) return;
+  const text = `Mikva: the thermostat schedule wasn't written for ${bad.map((o) => o.name).join(", ")}. ${bad[0].error} Check it in Shul Manager, Mikva, Schedule.`;
+  sms.alertTo(state, phones, "mtsched:" + engine.today(), text.slice(0, 480), "mikva", 6 * 3600e3).catch((e) => log("warn", "mikva schedule text: " + e.message));
+}
 let mtAppliedDay = "";
 if (HA_URL) setInterval(() => {
   try { const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date());
     const m = +p.find((x) => x.type === "hour").value * 60 + +p.find((x) => x.type === "minute").value, t = engine.today();
-    if (m >= 15 && m < 60 && mtAppliedDay !== t && state && state.mtSched) { mtAppliedDay = t; mtApply(false).then((r) => log("info", "thermostat schedules: nightly write " + (r.ok ? "done" : r.error || "had problems"))).catch(() => {}); }
+    if (m >= 15 && m < 60 && mtAppliedDay !== t && state && state.mtSched) { mtAppliedDay = t; mtApply(false).then((r) => { log("info", "thermostat schedules: nightly write " + (r.ok ? "done" : r.error || "had problems")); mtWriteAlert(r); }).catch(() => {}); }
   } catch { /* try again later */ }
 }, 5 * 60e3).unref();
 // parking lot events: read every minute, kept on the box for Activity

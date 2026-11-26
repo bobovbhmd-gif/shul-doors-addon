@@ -57,6 +57,10 @@ const BUGS = [
   ["server.js", "Send any message to this number, any time, and you'll get each pool's temperature and whether it's ready.", "Welcome.", "the welcome text has no instructions"],
   ["server.js", 'if (!meAdmin(req)) return send(res, 403, { error: "Only a super admin can send the welcome text." });', "", "anyone can send the welcome text"],
   ["server.js", "if (!textOn() && !mtTextOk(textUsers().find((x) => x.phone === from))) return;", "if (!textOn()) return;", "mikva questions unanswered while door texting is off"],
+  // mikva thermostat schedules (the Nov 2026 15 Ave hot bug)
+  ["lib/mtemp.js", "const sc = ratioScale(Number(m.currentTemp), toC(x.cur, x.unit)) || ratioScale(Number(m.targetTemp), toC(x.set, x.unit));", "const c0 = toC(x.set, x.unit), r0 = Number(m.targetTemp); const sc = r0 && c0 ? (Math.abs(r0 / c0 - 100) < Math.abs(r0 / c0 - 10) ? 100 : 10) : 10;", "the old scale guess from the target (schedule written ten times too small)"],
+  ["lib/mtemp.js", "if (!sc) throw new Error(", "if (!sc) return 10; if (0) throw new Error(", "a schedule written when the scale isn't known"],
+  ["lib/mtemp.js", "if (x.sched !== true) return;   // set by hand right now", "return;   // set by hand right now", "a wrong schedule write goes unnoticed"],
   ["lib/time.js", "const exact = cands.filter((c) => wallKey(c) === wallKeyNaive(naive)).sort((p, q) => p - q);", "const exact = cands.filter((c) => wallKey(c) === wallKeyNaive(naive)).sort((p, q) => q - p);", "fall back day uses the second 1 AM"],
 ];
 const UI_BUGS = [
